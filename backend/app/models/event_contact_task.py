@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, Text
+from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.core.db import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class EventContactTaskStatus(str, Enum):
@@ -34,6 +38,9 @@ class EventContactTask(Base):
         ForeignKey("structures.id", ondelete="SET NULL"), nullable=True
     )
     assigned_user: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assigned_user_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[EventContactTaskStatus] = mapped_column(
         SQLEnum(EventContactTaskStatus, name="event_contact_task_status"),
         nullable=False,
@@ -54,6 +61,9 @@ class EventContactTask(Base):
 
     event: Mapped["Event"] = relationship("Event", back_populates="tasks")
     structure: Mapped["Structure"] = relationship("Structure")
+    assigned_user_ref: Mapped[Optional["User"]] = relationship(
+        "User", foreign_keys=[assigned_user_id]
+    )
 
 
 __all__ = [

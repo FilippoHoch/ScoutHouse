@@ -19,6 +19,11 @@ dependencies = [
   "psycopg[binary]>=3.1",
   "python-dotenv>=1.0",
   "openpyxl>=3.1",
+  "python-jose[cryptography]>=3.3",
+  "argon2-cffi>=23.1",
+  "slowapi>=0.1.7",
+  "httpx>=0.26",
+  "email-validator>=2.0",
 ]
 
 [project.optional-dependencies]

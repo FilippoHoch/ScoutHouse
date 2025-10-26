@@ -89,6 +89,7 @@ class EventCandidateCreate(BaseModel):
     structure_id: int | None = None
     structure_slug: str | None = None
     assigned_user: str | None = None
+    assigned_user_id: str | None = None
 
     @model_validator(mode="after")
     def validate_structure(self) -> "EventCandidateCreate":
@@ -100,6 +101,7 @@ class EventCandidateCreate(BaseModel):
 class EventCandidateUpdate(BaseModel):
     status: EventStructureCandidateStatus | None = None
     assigned_user: str | None = None
+    assigned_user_id: str | None = None
 
 
 class EventCandidateRead(BaseModel):
@@ -108,6 +110,7 @@ class EventCandidateRead(BaseModel):
     structure_id: int
     status: EventStructureCandidateStatus
     assigned_user: str | None
+    assigned_user_id: str | None = None
     last_update: datetime
     structure: EventCandidateStructure | None = None
 
@@ -119,6 +122,7 @@ class EventCandidateRead(BaseModel):
 class EventContactTaskBase(BaseModel):
     structure_id: int | None = None
     assigned_user: str | None = None
+    assigned_user_id: str | None = None
     status: EventContactTaskStatus = EventContactTaskStatus.TODO
     outcome: EventContactTaskOutcome = EventContactTaskOutcome.PENDING
     notes: str | None = None
@@ -131,6 +135,7 @@ class EventContactTaskCreate(EventContactTaskBase):
 class EventContactTaskUpdate(BaseModel):
     structure_id: int | None = None
     assigned_user: str | None = None
+    assigned_user_id: str | None = None
     status: EventContactTaskStatus | None = None
     outcome: EventContactTaskOutcome | None = None
     notes: str | None = None

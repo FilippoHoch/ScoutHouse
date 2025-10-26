@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
 from app.core.db import get_db
+from app.deps import require_admin
 from app.models import (
     Structure,
     StructureCostOption,
@@ -334,7 +335,11 @@ def get_structure(structure_id: int, db: DbSession) -> Structure:
 
 
 @router.post("/", response_model=StructureRead, status_code=status.HTTP_201_CREATED)
-def create_structure(structure_in: StructureCreate, db: DbSession) -> Structure:
+def create_structure(
+    structure_in: StructureCreate,
+    db: DbSession,
+    _: Annotated[None, Depends(require_admin)] = None,
+) -> Structure:
     existing = db.execute(
         select(Structure).where(Structure.slug == structure_in.slug)
     ).scalar_one_or_none()
@@ -360,6 +365,7 @@ def create_structure_availability(
     structure_id: int,
     availability_in: StructureAvailabilityCreate,
     db: DbSession,
+    _: Annotated[None, Depends(require_admin)] = None,
 ) -> StructureAvailabilityRead:
     structure = _get_structure_or_404(db, structure_id)
 
@@ -384,6 +390,7 @@ def upsert_structure_availabilities(
     structure_id: int,
     availabilities_in: list[StructureAvailabilityUpdate],
     db: DbSession,
+    _: Annotated[None, Depends(require_admin)] = None,
 ) -> list[StructureAvailabilityRead]:
     structure = _get_structure_or_404(db, structure_id, with_details=True)
 
@@ -431,6 +438,7 @@ def create_structure_cost_option(
     structure_id: int,
     cost_option_in: StructureCostOptionCreate,
     db: DbSession,
+    _: Annotated[None, Depends(require_admin)] = None,
 ) -> StructureCostOptionRead:
     structure = _get_structure_or_404(db, structure_id)
 
@@ -458,6 +466,7 @@ def upsert_structure_cost_options(
     structure_id: int,
     cost_options_in: list[StructureCostOptionUpdate],
     db: DbSession,
+    _: Annotated[None, Depends(require_admin)] = None,
 ) -> list[StructureCostOptionRead]:
     structure = _get_structure_or_404(db, structure_id, with_details=True)
 
