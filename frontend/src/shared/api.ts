@@ -65,22 +65,33 @@ const API_URL = resolveApiBaseUrl();
 export class ApiError extends Error {
   status: number;
   body: unknown;
+  cause?: unknown;
 
-  constructor(status: number, body: unknown, message?: string) {
+  constructor(status: number, body: unknown, message?: string, cause?: unknown) {
     super(message ?? `API request failed with status ${status}`);
     this.status = status;
     this.body = body;
+    if (cause !== undefined) {
+      this.cause = cause;
+    }
   }
 }
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers
-    },
-    ...options
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers
+      },
+      ...options
+    });
+  } catch (error) {
+    const message = `Unable to reach the API at ${API_URL}. Please make sure the backend server is running.`;
+    throw new ApiError(0, null, message, error);
+  }
 
   if (!response.ok) {
     let body: unknown;
