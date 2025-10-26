@@ -158,6 +158,41 @@
 * Rate limiting, CSRF dove serve, MFA opzionale.
   **DoD**: test autorizzazioni su 10 endpoint critici; OWASP ASVS checklist L1.
 
+## 7) Strategia di testing end-to-end
+
+Per garantire copertura su tutti i casi d'uso, la roadmap include una batteria di test progressiva e multilivello:
+
+1. **Unit test backend**
+   * Validazione schemi Pydantic per ogni entità (`Structure`, `Event`, `Quote`, ecc.).
+   * Branch coverage su servizi critici: filtri strutture, calcolo disponibilità, generazione preventivi.
+   * Test parametrizzati per tutte le combinazioni di stagioni, unità scout e fasce di costo.
+   * Test di error handling (input invalido, risorse mancanti, limiti di quota).
+
+2. **Unit test frontend**
+   * Test componenti UI con casi edge (filtri vuoti, dati massimi, errori API).
+   * Snapshot per varianti responsive e localizzazioni IT/EN.
+   * Test di accessibilità automatizzati (axe) per modali, wizard e tabelle.
+
+3. **Contract e API testing**
+   * Suite OpenAPI generata automaticamente con validazione schema requests/responses.
+   * Test end-to-end delle principali rotte (`/structures`, `/events`, `/quotes`) con ruoli utente differenti.
+   * Mock integrazioni esterne (geocoding, email) con casi di successo/fallimento/retry.
+
+4. **End-to-end & scenari utente**
+   * Percorsi completi: creazione struttura → shortlist evento → generazione preventivo → invio contatti.
+   * Test di concorrenza (due utenti che modificano lo stesso evento) e resilienza a riconnessioni.
+   * Verifiche mobile/desktop con Playwright (viewport differenti) e regressioni visive.
+
+5. **Quality gates CI/CD**
+   * Coverage minimo 85% backend e 80% frontend, con trend monitorato in CI.
+   * Linting (ESLint, Prettier, Ruff) + security scans (Bandit, npm audit) blocking.
+   * Performance smoke test per endpoint critici (p95 latenza, limiti rate limiting).
+
+6. **Testing operazionale**
+   * Disaster recovery: restore backup DB e verifica integrità allegati.
+   * Chaos test su code asincrone (task falliti, reti lente) con metriche di retry.
+   * Verifica manuale checklist GDPR (diritto all'oblio, export dati) per release candidate.
+
 ### M6 · Rifiniture e release
 
 * Performance (cache filtri, compressione, lazy immagini).
