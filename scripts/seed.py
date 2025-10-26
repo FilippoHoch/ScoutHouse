@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
+from datetime import date
 from collections import defaultdict
 from decimal import Decimal
 import sys
@@ -17,6 +19,11 @@ from sqlalchemy import select  # noqa: E402
 
 from app.core.db import SessionLocal  # noqa: E402
 from app.models import (  # noqa: E402
+    Event,
+    EventBranch,
+    EventStatus,
+    EventStructureCandidate,
+    EventStructureCandidateStatus,
     Structure,
     StructureCostModel,
     StructureCostOption,
@@ -29,6 +36,8 @@ from app.models import (  # noqa: E402
 DEFAULT_STRUCTURES_DATASET = ROOT_DIR / "data" / "structures_seed.csv"
 DEFAULT_AVAILABILITY_DATASET = ROOT_DIR / "data" / "structures_availability_seed.csv"
 DEFAULT_COST_DATASET = ROOT_DIR / "data" / "structures_costs_seed.csv"
+DEFAULT_EVENTS_DATASET = ROOT_DIR / "data" / "events_seed.csv"
+DEFAULT_EVENT_CANDIDATES_DATASET = ROOT_DIR / "data" / "event_candidates_seed.csv"
 
 
 def parse_float(value: str | None) -> float | None:
@@ -48,6 +57,21 @@ def parse_decimal(value: str | None) -> Decimal | None:
         return None
     return Decimal(value)
 
+
+def parse_participants(value: str | None) -> dict[str, int]:
+    if not value:
+        return {"lc": 0, "eg": 0, "rs": 0, "leaders": 0}
+    try:
+        raw = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise ValueError("Invalid participants_json value") from exc
+    participants = {"lc": 0, "eg": 0, "rs": 0, "leaders": 0}
+    for key in participants:
+        val = int(raw.get(key, 0))
+        if val < 0:
+            raise ValueError("Participant counts cannot be negative")
+        participants[key] = val
+    return participants
 
 def load_rows(path: Path) -> list[dict[str, Any]]:
     with path.open("r", encoding="utf-8") as csvfile:
@@ -98,6 +122,128 @@ def seed_structures(dataset: Path) -> None:
                 action = "updated"
 
             print(f"{action.capitalize()} structure '{slug}'")
+
+        session.commit()
+
+
+def seed_events(dataset: Path) -> None:
+    rows = load_rows(dataset)
+    if not rows:
+        print("No rows found in events seed file; nothing to seed.")
+        return
+
+    with SessionLocal() as session:
+        for row in rows:
+            slug = (row.get("slug") or "").strip()
+            if not slug:
+                print("Skipping event row without slug")
+                continue
+
+            title = (row.get("title") or "").strip()
+            branch_raw = (row.get("branch") or EventBranch.ALL.value).strip() or EventBranch.ALL.value
+            try:
+                branch = EventBranch(branch_raw)
+            except ValueError as exc:
+                raise ValueError(f"Invalid branch '{branch_raw}' for event '{slug}'") from exc
+
+            try:
+                start_date = date.fromisoformat((row.get("start_date") or "").strip())
+                end_date = date.fromisoformat((row.get("end_date") or "").strip())
+            except ValueError as exc:
+                raise ValueError(f"Invalid date range for event '{slug}'") from exc
+            if end_date < start_date:
+                raise ValueError(f"end_date cannot be earlier than start_date for event '{slug}'")
+
+            participants = parse_participants(row.get("participants_json"))
+            budget_total = parse_decimal(row.get("budget_total"))
+            status_raw = (row.get("status") or EventStatus.DRAFT.value).strip() or EventStatus.DRAFT.value
+            try:
+                status_value = EventStatus(status_raw)
+            except ValueError as exc:
+                raise ValueError(f"Invalid event status '{status_raw}' for slug '{slug}'") from exc
+
+            data = {
+                "title": title,
+                "branch": branch,
+                "start_date": start_date,
+                "end_date": end_date,
+                "budget_total": budget_total,
+                "status": status_value,
+                "notes": (row.get("notes") or None),
+            }
+
+            existing = session.execute(select(Event).where(Event.slug == slug)).scalar_one_or_none()
+            if existing is None:
+                event = Event(slug=slug, **data)
+                event.participants = participants
+                session.add(event)
+                action = "created"
+            else:
+                for key, value in data.items():
+                    setattr(existing, key, value)
+                existing.participants = participants
+                action = "updated"
+
+            print(f"{action.capitalize()} event '{slug}'")
+
+        session.commit()
+
+
+def seed_event_candidates(dataset: Path) -> None:
+    rows = load_rows(dataset)
+    if not rows:
+        print("No event candidates to seed.")
+        return
+
+    with SessionLocal() as session:
+        for row in rows:
+            event_slug = (row.get("event_slug") or "").strip()
+            structure_slug = (row.get("structure_slug") or "").strip()
+            if not event_slug or not structure_slug:
+                print("Skipping candidate row missing slugs")
+                continue
+
+            event = session.execute(select(Event).where(Event.slug == event_slug)).scalar_one_or_none()
+            if event is None:
+                print(f"Skipping candidate for unknown event '{event_slug}'")
+                continue
+
+            structure = session.execute(select(Structure).where(Structure.slug == structure_slug)).scalar_one_or_none()
+            if structure is None:
+                print(f"Skipping candidate for unknown structure '{structure_slug}'")
+                continue
+
+            status_raw = (row.get("status") or EventStructureCandidateStatus.TO_CONTACT.value).strip() or EventStructureCandidateStatus.TO_CONTACT.value
+            try:
+                status_value = EventStructureCandidateStatus(status_raw)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Invalid candidate status '{status_raw}' for event '{event_slug}'"
+                ) from exc
+
+            assigned_user = (row.get("assigned_user") or None)
+
+            candidate = session.execute(
+                select(EventStructureCandidate)
+                .where(EventStructureCandidate.event_id == event.id)
+                .where(EventStructureCandidate.structure_id == structure.id)
+            ).scalar_one_or_none()
+
+            if candidate is None:
+                candidate = EventStructureCandidate(
+                    event_id=event.id,
+                    structure_id=structure.id,
+                    status=status_value,
+                    assigned_user=assigned_user,
+                )
+                session.add(candidate)
+                action = "created"
+            else:
+                candidate.status = status_value
+                candidate.assigned_user = assigned_user
+                action = "updated"
+
+            print(f"{action.capitalize()} candidate for event '{event_slug}' and structure '{structure_slug}'")
 
         session.commit()
 
@@ -168,6 +314,7 @@ def seed_availabilities(dataset: Path) -> None:
         session.commit()
 
 
+
 def seed_cost_options(dataset: Path) -> None:
     rows = load_rows(dataset)
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -226,6 +373,7 @@ def seed_cost_options(dataset: Path) -> None:
         session.commit()
 
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Seed structure data from CSV")
     parser.add_argument(
@@ -246,6 +394,18 @@ def main() -> None:
         default=DEFAULT_COST_DATASET,
         help=f"Path to the cost options CSV file (default: {DEFAULT_COST_DATASET})",
     )
+    parser.add_argument(
+        "--events-file",
+        type=Path,
+        default=DEFAULT_EVENTS_DATASET,
+        help=f"Path to the events CSV file (default: {DEFAULT_EVENTS_DATASET})",
+    )
+    parser.add_argument(
+        "--event-candidates-file",
+        type=Path,
+        default=DEFAULT_EVENT_CANDIDATES_DATASET,
+        help=f"Path to the event candidates CSV file (default: {DEFAULT_EVENT_CANDIDATES_DATASET})",
+    )
     args = parser.parse_args()
 
     if args.file.exists():
@@ -262,6 +422,16 @@ def main() -> None:
         seed_cost_options(args.cost_file)
     else:
         print(f"Cost seed file '{args.cost_file}' not found; skipping.")
+
+    if args.events_file.exists():
+        seed_events(args.events_file)
+    else:
+        print(f"Events seed file '{args.events_file}' not found; skipping.")
+
+    if args.event_candidates_file.exists():
+        seed_event_candidates(args.event_candidates_file)
+    else:
+        print(f"Event candidates seed file '{args.event_candidates_file}' not found; skipping.")
 
 
 if __name__ == "__main__":

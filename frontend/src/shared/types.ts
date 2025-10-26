@@ -79,3 +79,124 @@ export interface StructureSearchParams {
   sort?: "name" | "created_at" | "distance";
   order?: "asc" | "desc";
 }
+
+
+export type EventBranch = "LC" | "EG" | "RS" | "ALL";
+export type EventStatus = "draft" | "planning" | "booked" | "archived";
+export type EventCandidateStatus =
+  | "to_contact"
+  | "contacting"
+  | "available"
+  | "unavailable"
+  | "followup"
+  | "confirmed"
+  | "option";
+export type EventContactTaskStatus = "todo" | "in_progress" | "done" | "n_a";
+export type EventContactTaskOutcome = "pending" | "positive" | "negative";
+
+export interface EventParticipants {
+  lc: number;
+  eg: number;
+  rs: number;
+  leaders: number;
+}
+
+export interface EventCandidateStructure {
+  id: number;
+  name: string;
+  slug: string;
+  province: string | null;
+}
+
+export interface EventCandidate {
+  id: number;
+  event_id: number;
+  structure_id: number;
+  status: EventCandidateStatus;
+  assigned_user: string | null;
+  last_update: string;
+  structure?: EventCandidateStructure | null;
+}
+
+export interface EventContactTask {
+  id: number;
+  event_id: number;
+  structure_id: number | null;
+  assigned_user: string | null;
+  status: EventContactTaskStatus;
+  outcome: EventContactTaskOutcome;
+  notes: string | null;
+  updated_at: string;
+}
+
+export interface Event {
+  id: number;
+  slug: string;
+  title: string;
+  branch: EventBranch;
+  start_date: string;
+  end_date: string;
+  participants: EventParticipants;
+  budget_total: number | null;
+  status: EventStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  candidates?: EventCandidate[] | null;
+  tasks?: EventContactTask[] | null;
+}
+
+export interface EventListResponse {
+  items: Event[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface EventSummary {
+  status_counts: Record<EventCandidateStatus, number>;
+  has_conflicts: boolean;
+}
+
+export interface EventSuggestion {
+  structure_id: number;
+  structure_name: string;
+  structure_slug: string;
+  distance_km: number | null;
+  estimated_cost: number | null;
+  cost_band: string | null;
+}
+
+export interface EventCreateDto {
+  title: string;
+  branch: EventBranch;
+  start_date: string;
+  end_date: string;
+  participants?: Partial<EventParticipants>;
+  budget_total?: number | null;
+  status?: EventStatus;
+  notes?: string | null;
+}
+
+export type EventUpdateDto = Partial<EventCreateDto>;
+
+export interface EventCandidateCreateDto {
+  structure_id?: number;
+  structure_slug?: string;
+  assigned_user?: string | null;
+}
+
+export interface EventCandidateUpdateDto {
+  status?: EventCandidateStatus;
+  assigned_user?: string | null;
+}
+
+export interface EventContactTaskCreateDto {
+  structure_id?: number | null;
+  assigned_user?: string | null;
+  status?: EventContactTaskStatus;
+  outcome?: EventContactTaskOutcome;
+  notes?: string | null;
+}
+
+export type EventContactTaskUpdateDto = Partial<EventContactTaskCreateDto>;

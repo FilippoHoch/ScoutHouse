@@ -144,3 +144,140 @@ curl -X POST http://localhost:8000/api/v1/structures/1/cost-options \
 
 `PUT /api/v1/structures/{id}/cost-options` replaces all existing cost options
 with the provided array, making it easy to keep CSV imports idempotent.
+
+# Events API
+
+## GET `/api/v1/events`
+
+List events with pagination, optional text search, and status filtering. Query
+parameters:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `q` | string | Optional case-insensitive match on title or slug. |
+| `status` | string | Optional status filter: `draft`, `planning`, `booked`, `archived`. |
+| `page` | integer | Page number (default `1`). |
+| `page_size` | integer | Page size (default `20`). |
+
+Response:
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "slug": "camp-invernale",
+      "title": "Camp Invernale",
+      "branch": "LC",
+      "start_date": "2025-02-10",
+      "end_date": "2025-02-13",
+      "participants": { "lc": 24, "eg": 0, "rs": 0, "leaders": 6 },
+      "budget_total": 4200.0,
+      "status": "planning",
+      "notes": null,
+      "created_at": "2024-10-01T09:00:00Z",
+      "updated_at": "2024-10-05T18:22:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 20
+}
+```
+
+Example:
+
+```bash
+curl "http://localhost:8000/api/v1/events?page=1&page_size=10&status=planning"
+```
+
+## POST `/api/v1/events`
+
+Create a new event. The slug is generated automatically from the title. Payload:
+
+```json
+{
+  "title": "Route Estiva",
+  "branch": "RS",
+  "start_date": "2025-07-12",
+  "end_date": "2025-07-20",
+  "participants": { "rs": 18, "leaders": 4 },
+  "budget_total": 6500,
+  "status": "draft",
+  "notes": "Allestire campi base a turni"
+}
+```
+
+Validation rules:
+
+- `start_date` must be on or before `end_date`.
+- `participants` counts must be non-negative. Missing keys default to zero.
+- `status` must be one of the allowed values.
+
+## GET `/api/v1/events/{id}`
+
+Fetch a single event. Use `?include=candidates,tasks` to expand the response with
+candidates and contact tasks.
+
+```bash
+curl "http://localhost:8000/api/v1/events/1?include=candidates,tasks"
+```
+
+## PATCH `/api/v1/events/{id}`
+
+Update an event. Send only the fields that should change. Date updates are
+validated to avoid inverted ranges.
+
+## POST `/api/v1/events/{id}/candidates`
+
+Add a structure to the event's candidate list. The payload accepts either a
+`structure_id` or `structure_slug` plus an optional `assigned_user`.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/events/1/candidates \
+  -H "Content-Type: application/json" \
+  -d '{ "structure_slug": "casa-inverno", "assigned_user": "Chiara" }'
+```
+
+## PATCH `/api/v1/events/{id}/candidates/{candidate_id}`
+
+Update candidate status or assignment. When setting `status=confirmed`, the API
+verifies that no other confirmed event overlaps for the same structure; a 409 is
+returned when a conflict is detected.
+
+## GET `/api/v1/events/{id}/summary`
+
+Returns the number of candidates per status and a `has_conflicts` boolean flag
+indicating whether any confirmed candidate collides with other events.
+
+```json
+{
+  "status_counts": {
+    "to_contact": 2,
+    "contacting": 1,
+    "confirmed": 1,
+    "available": 0,
+    "unavailable": 1,
+    "followup": 0,
+    "option": 0
+  },
+  "has_conflicts": true
+}
+```
+
+## GET `/api/v1/events/{id}/suggest`
+
+Suggest structures that match the event's branch and season. Suggestions include
+basic metadata and the distance from the configured base coordinates.
+
+```bash
+curl "http://localhost:8000/api/v1/events/1/suggest"
+```
+
+## Tasks endpoints
+
+- `POST /api/v1/events/{id}/tasks` creates a contact task for the event.
+- `PATCH /api/v1/events/{id}/tasks/{task_id}` updates status, outcome, assigned
+  user, or notes.
+
+Both endpoints return the updated task with the latest `updated_at` timestamp.
