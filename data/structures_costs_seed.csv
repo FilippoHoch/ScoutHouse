@@ -1,0 +1,5 @@
+slug,model,amount,currency,deposit,city_tax_per_night,utilities_flat
+casa-alpina,per_person_day,12.50,EUR,200.00,1.50,15.00
+casa-alpina,forfait,750.00,EUR,300.00,,30.00
+baita-del-sole,per_person_night,9.00,EUR,,0.80,
+campo-bosco-san-francesco,forfait,1500.00,EUR,500.00,1.20,45.00

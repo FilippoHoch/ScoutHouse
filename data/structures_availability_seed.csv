@@ -1,0 +1,6 @@
+slug,season,units,capacity_min,capacity_max
+casa-alpina,winter,EG;RS,20,80
+casa-alpina,summer,LC;EG;RS,15,120
+baita-del-sole,summer,LC;EG,10,60
+campo-bosco-san-francesco,spring,LC;EG;RS;ALL,50,250
+campo-bosco-san-francesco,autumn,LC;EG;RS,40,200

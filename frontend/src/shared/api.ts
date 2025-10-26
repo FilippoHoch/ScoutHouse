@@ -1,4 +1,8 @@
-import { Structure, StructureSearchParams, StructureSearchResponse } from "./types";
+import {
+  Structure,
+  StructureSearchParams,
+  StructureSearchResponse
+} from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -55,6 +59,9 @@ export async function getStructures(
     province: params.province,
     type: params.type,
     max_km: params.max_km,
+    season: params.season,
+    unit: params.unit,
+    cost_band: params.cost_band,
     page: params.page,
     page_size: params.page_size,
     sort: params.sort,
@@ -63,6 +70,10 @@ export async function getStructures(
   return apiFetch<StructureSearchResponse>(`/api/v1/structures/search${query}`);
 }
 
-export async function getStructureBySlug(slug: string): Promise<Structure> {
-  return apiFetch<Structure>(`/api/v1/structures/by-slug/${slug}`);
+export async function getStructureBySlug(
+  slug: string,
+  options: { include?: string } = {}
+): Promise<Structure> {
+  const query = options.include ? `?include=${encodeURIComponent(options.include)}` : "";
+  return apiFetch<Structure>(`/api/v1/structures/by-slug/${slug}${query}`);
 }

@@ -43,7 +43,11 @@ const sampleResponse: StructureSearchResponse = {
       latitude: 45.6,
       longitude: 10.16,
       type: "house",
-      distance_km: 12.4
+      distance_km: 12.4,
+      estimated_cost: 11.75,
+      cost_band: "medium",
+      seasons: ["summer"],
+      units: ["LC", "EG"]
     },
     {
       id: 2,
@@ -54,7 +58,11 @@ const sampleResponse: StructureSearchResponse = {
       latitude: null,
       longitude: null,
       type: "land",
-      distance_km: null
+      distance_km: null,
+      estimated_cost: null,
+      cost_band: null,
+      seasons: [],
+      units: []
     }
   ],
   page: 1,
@@ -77,6 +85,7 @@ describe("StructuresPage", () => {
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
     expect(screen.getByLabelText(/Search/i)).toBeInTheDocument();
     expect(screen.getByText(/Distance: 12.4 km/)).toBeInTheDocument();
+    expect(screen.getByText(/Estimated cost: €11.75/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Casa Alpina/i })).toHaveAttribute(
       "href",
       "/structures/casa-alpina"
@@ -89,10 +98,16 @@ describe("StructuresPage", () => {
     render(<StructuresPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: /^Season$/i })).toBeInTheDocument()
+    );
 
     await user.type(screen.getByLabelText(/Search/i), "alpina");
     await user.selectOptions(screen.getByLabelText(/Province/i), "BS");
     await user.selectOptions(screen.getByLabelText(/Type/i), "house");
+    await user.selectOptions(screen.getByRole("combobox", { name: /^Season$/i }), "summer");
+    await user.selectOptions(screen.getByRole("combobox", { name: /^Unit$/i }), "LC");
+    await user.selectOptions(screen.getByRole("combobox", { name: /Cost band/i }), "medium");
     await user.type(screen.getByLabelText(/Max distance/i), "25");
     await user.click(screen.getByRole("button", { name: /Apply/i }));
 
@@ -102,6 +117,9 @@ describe("StructuresPage", () => {
           q: "alpina",
           province: "BS",
           type: "house",
+          season: "summer",
+          unit: "LC",
+          cost_band: "medium",
           max_km: 25,
           sort: "distance",
           order: "asc",
