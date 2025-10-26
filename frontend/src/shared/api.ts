@@ -23,7 +23,44 @@ import {
   StructureSearchResponse
 } from "./types";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const LOCALHOST_NAMES = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function stripTrailingSlash(url: string): string {
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+}
+
+function resolveApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL;
+
+  if (envUrl) {
+    try {
+      const parsed = new URL(envUrl);
+
+      if (
+        typeof window !== "undefined" &&
+        LOCALHOST_NAMES.has(window.location.hostname) &&
+        parsed.hostname === "api"
+      ) {
+        parsed.hostname = window.location.hostname;
+        return stripTrailingSlash(parsed.toString());
+      }
+
+      return stripTrailingSlash(parsed.toString());
+    } catch (error) {
+      console.warn("Invalid VITE_API_URL provided, falling back to defaults", error);
+    }
+  }
+
+  if (typeof window !== "undefined") {
+    const { protocol, hostname, port } = window.location;
+    const base = `${protocol}//${hostname}${port ? `:${port}` : ""}`;
+    return stripTrailingSlash(base);
+  }
+
+  return "http://localhost:8000";
+}
+
+const API_URL = resolveApiBaseUrl();
 
 export class ApiError extends Error {
   status: number;
