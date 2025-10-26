@@ -164,6 +164,20 @@
 * Localizzazione pronta; guide utenti; monitoraggio e backup automazione.
   **DoD**: staging pubblico; runbook; prova ripristino DB riuscita.
 
+### M7 · Rifinitura interfaccia e integrazione API
+
+* Revisione del design system e dei componenti UI rispetto a requisiti e concept.
+* Miglioramento UX per flussi chiave (catalogo, eventi, preventivi) valorizzando le API disponibili.
+* Audit accessibilità e performance con ottimizzazione di layout, stati e messaggi di feedback.
+  **DoD**: scenari end-to-end documentati con verifiche UX/API e checklist accessibilità aggiornata.
+
+### M8 · Indicizzazione e ricerca avanzata
+
+* Strategia di indicizzazione per strutture, eventi e preventivi con aggiornamenti incrementali.
+* Integrazione motore di ricerca (PostgreSQL full-text/Elastic) e ottimizzazione del ranking.
+* Monitoraggio qualità risultati con metriche di precision/recall e feedback utenti.
+  **DoD**: pipeline di indicizzazione attiva in CI/CD e dashboard metriche ricerca popolata.
+
 ## 7) Piano temporale suggerito (sprint 2 settimane)
 
 * Sprint 1: M0
@@ -172,7 +186,9 @@
 * Sprint 5–6: M3
 * Sprint 7: M4
 * Sprint 8: M5
-* Sprint 9+: M6 e hardening continuo
+* Sprint 9: M6
+* Sprint 10: M7
+* Sprint 11+: M8 e hardening continuo
 
 ## 8) API principali (v1, estratto)
 
