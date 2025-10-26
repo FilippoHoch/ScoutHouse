@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scouthouse-api"
-version = "0.1.0"
+version = "0.2.0"
 description = "ScoutHouse FastAPI backend"
 authors = [{ name = "ScoutHouse" }]
 readme = "README.md"

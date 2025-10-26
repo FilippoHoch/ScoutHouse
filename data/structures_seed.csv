@@ -1,0 +1,22 @@
+name,slug,province,address,latitude,longitude,type
+Casa Alpina,casa-alpina,BS,"Via Panoramica 12, Ponte di Legno",46.2542,10.5071,house
+Baita del Sole,baita-del-sole,TN,"Località Passo Tonale",46.2573,10.5801,house
+Campo Bosco San Francesco,campo-bosco-san-francesco,BS,"Via del Bosco 8, Gussago",45.5953,10.1661,mixed
+Tenuta Valle Verde,tenuta-valle-verde,CR,"Strada Provinciale 21, Cremona",45.1337,10.0245,land
+Rifugio Lago Nero,rifugio-lago-nero,SO,"Valdidentro",46.5007,10.2884,house
+Oasi Pianura,oasi-pianura,MN,"Strada Argine Po 4, Viadana",44.9274,10.5185,land
+Centro Scout del Garda,centro-scout-del-garda,VR,"Via dei Colli 22, Bardolino",45.5603,10.7218,mixed
+Foresteria Monte Maddalena,foresteria-monte-maddalena,BS,"Località Maddalena",45.5732,10.2287,house
+Cascina delle Lucciole,cascina-delle-lucciole,MI,"Via Cascina Antica 3, Abbiategrasso",45.4171,8.9065,land
+Fattoria San Martino,fattoria-san-martino,RE,"Via Campagna 14, Guastalla",44.9284,10.7052,land
+Base Fiume Chiese,base-fiume-chiese,BS,"Via Fiume 6, Carpenedolo",45.3638,10.4225,mixed
+Casa sul Lago di Iseo,casa-sul-lago-di-iseo,BG,"Via Lido 7, Sarnico",45.6613,9.9588,house
+Tenuta Le Roverelle,tenuta-le-roverelle,PD,"Via Romea 112, Monselice",45.2429,11.7486,land
+Rifugio Corna Rossa,rifugio-corna-rossa,BS,"Località Maniva",45.7861,10.3205,house
+Campo Vallecamonica,campo-vallecamonica,BS,,46.0307,10.2923,mixed
+Borgo San Daniele,borgo-san-daniele,UD,"Via San Daniele 9, Cividale",46.0928,13.4321,house
+Bosco dell'Arciere,bosco-dell-arciere,FE,"Via delle Valli 33, Codigoro",44.8347,12.1115,land
+Pian del Noce,pian-del-noce,TO,"Via Montagna 4, Lanzo Torinese",45.2923,7.4856,house
+Campo Mare Adriatico,campo-mare-adriatico,RA,"Viale delle Dune 5, Ravenna",44.4311,12.2958,mixed
+Ostello Valle Blu,ostello-valle-blu,AO,,45.737,7.3174,house
+Centro Pian dei Ciliegi,centro-pian-dei-ciliegi,PV,"Via dei Ciliegi 2, Pavia",45.1783,9.1584,mixed

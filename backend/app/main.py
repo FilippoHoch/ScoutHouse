@@ -5,7 +5,7 @@ from app.api.v1 import api_router
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="ScoutHouse API", version="0.1.0")
+    app = FastAPI(title="ScoutHouse API", version="0.2.0")
 
     app.add_middleware(
         CORSMiddleware,
