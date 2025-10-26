@@ -9,7 +9,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.db import get_db
-from app.models import Event, Quote, Structure
+from app.deps import get_current_user, require_event_member
+from app.models import Event, EventMember, EventMemberRole, Quote, Structure, User
 from app.schemas import (
     QuoteCalcRequest,
     QuoteCalcResponse,
@@ -24,6 +25,28 @@ from app.services.export import quote_to_xlsx
 router = APIRouter()
 
 DbSession = Annotated[Session, Depends(get_db)]
+
+_ROLE_RANK = {
+    EventMemberRole.VIEWER: 1,
+    EventMemberRole.COLLAB: 2,
+    EventMemberRole.OWNER: 3,
+}
+
+
+def _ensure_membership(db: Session, event_id: int, user: User, min_role: EventMemberRole) -> None:
+    membership = (
+        db.execute(
+            select(EventMember).where(
+                EventMember.event_id == event_id, EventMember.user_id == user.id
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member")
+    if _ROLE_RANK[membership.role] < _ROLE_RANK[min_role]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
 
 
 def _get_event(db: Session, event_id: int) -> Event:
@@ -56,7 +79,12 @@ def _get_quote(db: Session, quote_id: int) -> Quote:
 
 
 @router.post("/quotes/calc", response_model=QuoteCalcResponse)
-def calculate_quote(payload: QuoteCalcRequest, db: DbSession) -> QuoteCalcResponse:
+def calculate_quote(
+    payload: QuoteCalcRequest,
+    db: DbSession,
+    current_user: User = Depends(get_current_user),
+) -> QuoteCalcResponse:
+    _ensure_membership(db, payload.event_id, current_user, EventMemberRole.VIEWER)
     event = _get_event(db, payload.event_id)
     structure = _get_structure(db, payload.structure_id)
 
@@ -79,7 +107,12 @@ def calculate_quote(payload: QuoteCalcRequest, db: DbSession) -> QuoteCalcRespon
     response_model=QuoteRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_quote(event_id: int, payload: QuoteCreate, db: DbSession) -> QuoteRead:
+def create_quote(
+    event_id: int,
+    payload: QuoteCreate,
+    db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+) -> QuoteRead:
     event = _get_event(db, event_id)
     structure = _get_structure(db, payload.structure_id)
 
@@ -116,7 +149,11 @@ def create_quote(event_id: int, payload: QuoteCreate, db: DbSession) -> QuoteRea
 
 
 @router.get("/events/{event_id}/quotes", response_model=list[QuoteListItem])
-def list_quotes(event_id: int, db: DbSession) -> list[QuoteListItem]:
+def list_quotes(
+    event_id: int,
+    db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
+) -> list[QuoteListItem]:
     _get_event(db, event_id)
     results = db.execute(
         select(Quote, Structure.name)
@@ -144,8 +181,13 @@ def list_quotes(event_id: int, db: DbSession) -> list[QuoteListItem]:
 
 
 @router.get("/quotes/{quote_id}", response_model=QuoteRead)
-def get_quote(quote_id: int, db: DbSession) -> QuoteRead:
+def get_quote(
+    quote_id: int,
+    db: DbSession,
+    current_user: User = Depends(get_current_user),
+) -> QuoteRead:
     quote = _get_quote(db, quote_id)
+    _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)
     scenarios = QuoteScenarios.model_validate(
         apply_scenarios(quote.totals.get("total", 0))
     )
@@ -168,8 +210,10 @@ def export_quote(
     quote_id: int,
     db: DbSession,
     format: str = Query(default="xlsx", pattern="^(xlsx|html)$"),
+    current_user: User = Depends(get_current_user),
 ):
     quote = _get_quote(db, quote_id)
+    _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)
 
     if format == "xlsx":
         data = quote_to_xlsx(quote)

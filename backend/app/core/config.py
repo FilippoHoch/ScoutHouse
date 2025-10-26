@@ -2,7 +2,9 @@ from functools import lru_cache
 
 from decimal import Decimal
 
-from pydantic import Field
+from typing import Sequence
+
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -16,11 +18,25 @@ class Settings(BaseSettings):
     scenario_margin_best: Decimal = Field(Decimal("0.05"), alias="SCENARIO_MARGIN_BEST")
     scenario_margin_worst: Decimal = Field(Decimal("0.10"), alias="SCENARIO_MARGIN_WORST")
 
+    jwt_secret: str = Field("change-me", alias="JWT_SECRET")
+    access_ttl_min: int = Field(10, alias="ACCESS_TTL_MIN")
+    refresh_ttl_days: int = Field(14, alias="REFRESH_TTL_DAYS")
+    allow_registration: bool = Field(True, alias="ALLOW_REGISTRATION")
+    cors_allowed_origins: Sequence[str] = Field(default_factory=list, alias="CORS_ALLOWED_ORIGINS")
+    secure_cookies: bool = Field(False, alias="SECURE_COOKIES")
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
     }
+
+    @field_validator("cors_allowed_origins", mode="before")
+    @classmethod
+    def _split_origins(cls, value: Sequence[str] | str) -> Sequence[str]:
+        if isinstance(value, str):
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
 
 
 @lru_cache

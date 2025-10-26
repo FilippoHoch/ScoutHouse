@@ -1,20 +1,24 @@
 from __future__ import annotations
 
 import re
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
+from app.deps import get_current_user, require_event_member
 from app.models import (
     Event,
     EventContactTask,
+    EventMember,
+    EventMemberRole,
     EventStructureCandidate,
     EventStructureCandidateStatus,
     EventStatus,
     Structure,
+    User,
 )
 from app.schemas import (
     EventCandidateCreate,
@@ -64,6 +68,26 @@ def _generate_unique_slug(db: Session, base: str) -> str:
     return slug
 
 
+def _ensure_member_user(db: Session, event_id: int, user_id: str | None) -> str | None:
+    if user_id is None:
+        return None
+    membership = (
+        db.execute(
+            select(EventMember).where(
+                EventMember.event_id == event_id, EventMember.user_id == user_id
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if membership is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not a member of the event",
+        )
+    return membership.user_id
+
+
 def _load_event(db: Session, event_id: int, *, with_candidates: bool = False, with_tasks: bool = False) -> Event:
     options = []
     if with_candidates:
@@ -97,7 +121,11 @@ def _get_structure(db: Session, *, structure_id: int | None = None, slug: str | 
 
 
 @router.post("/", response_model=EventRead, status_code=status.HTTP_201_CREATED)
-def create_event(event_in: EventCreate, db: DbSession) -> EventRead:
+def create_event(
+    event_in: EventCreate,
+    db: DbSession,
+    current_user: User = Depends(get_current_user),
+) -> EventRead:
     base_slug = _slugify(event_in.title)
     slug = _generate_unique_slug(db, base_slug)
 
@@ -110,6 +138,11 @@ def create_event(event_in: EventCreate, db: DbSession) -> EventRead:
     event.status = status_value
 
     db.add(event)
+    db.flush()
+
+    membership = EventMember(event_id=event.id, user_id=current_user.id, role=EventMemberRole.OWNER)
+    db.add(membership)
+
     db.commit()
     db.refresh(event)
     return EventRead.model_validate(event)
@@ -122,6 +155,7 @@ def list_events(
     page_size: int = Query(default=20, ge=1, le=100),
     q: str | None = Query(default=None, min_length=1),
     status_filter: EventStatus | None = Query(default=None, alias="status"),
+    current_user: User = Depends(get_current_user),
 ) -> EventListResponse:
     filters = []
     if q:
@@ -132,7 +166,12 @@ def list_events(
     if status_filter:
         filters.append(Event.status == status_filter)
 
-    base_query = select(Event)
+    base_query = (
+        select(Event)
+        .join(EventMember, EventMember.event_id == Event.id)
+        .where(EventMember.user_id == current_user.id)
+        .distinct()
+    )
     if filters:
         base_query = base_query.where(and_(*filters))
 
@@ -161,6 +200,7 @@ def get_event(
     event_id: int,
     db: DbSession,
     include: str | None = Query(default=None),
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
 ) -> EventWithRelations | EventRead:
     include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
     with_candidates = "candidates" in include_parts
@@ -174,7 +214,12 @@ def get_event(
 
 
 @router.patch("/{event_id}", response_model=EventRead)
-def update_event(event_id: int, event_in: EventUpdate, db: DbSession) -> EventRead:
+def update_event(
+    event_id: int,
+    event_in: EventUpdate,
+    db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+) -> EventRead:
     event = _load_event(db, event_id)
 
     data = event_in.model_dump(exclude_unset=True)
@@ -199,7 +244,12 @@ def update_event(event_id: int, event_in: EventUpdate, db: DbSession) -> EventRe
 
 
 @router.post("/{event_id}/candidates", response_model=EventCandidateRead, status_code=status.HTTP_201_CREATED)
-def add_candidate(event_id: int, candidate_in: EventCandidateCreate, db: DbSession) -> EventCandidateRead:
+def add_candidate(
+    event_id: int,
+    candidate_in: EventCandidateCreate,
+    db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+) -> EventCandidateRead:
     event = _load_event(db, event_id)
     structure = _get_structure(
         db,
@@ -218,10 +268,13 @@ def add_candidate(event_id: int, candidate_in: EventCandidateCreate, db: DbSessi
             detail="Structure already added to this event",
         )
 
+    assigned_user_id = _ensure_member_user(db, event.id, candidate_in.assigned_user_id)
+
     candidate = EventStructureCandidate(
         event_id=event.id,
         structure_id=structure.id,
         assigned_user=candidate_in.assigned_user,
+        assigned_user_id=assigned_user_id,
     )
     db.add(candidate)
     db.commit()
@@ -236,6 +289,7 @@ def update_candidate(
     candidate_id: int,
     candidate_in: EventCandidateUpdate,
     db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventCandidateRead:
     event = _load_event(db, event_id)
     candidate = (
@@ -254,6 +308,8 @@ def update_candidate(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
 
     data = candidate_in.model_dump(exclude_unset=True)
+    if "assigned_user_id" in data:
+        candidate.assigned_user_id = _ensure_member_user(db, event.id, data.pop("assigned_user_id"))
     status_value = data.get("status")
     if status_value == EventStructureCandidateStatus.CONFIRMED:
         if is_structure_occupied(
@@ -278,7 +334,11 @@ def update_candidate(
 
 
 @router.get("/{event_id}/summary", response_model=EventSummary)
-def get_event_summary(event_id: int, db: DbSession) -> EventSummary:
+def get_event_summary(
+    event_id: int,
+    db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
+) -> EventSummary:
     event = _load_event(db, event_id, with_candidates=True)
 
     counts: dict[str, int] = {status.value: 0 for status in EventStructureCandidateStatus}
@@ -301,16 +361,24 @@ def get_event_summary(event_id: int, db: DbSession) -> EventSummary:
 
 
 @router.post("/{event_id}/tasks", response_model=EventContactTaskRead, status_code=status.HTTP_201_CREATED)
-def create_task(event_id: int, task_in: EventContactTaskCreate, db: DbSession) -> EventContactTaskRead:
+def create_task(
+    event_id: int,
+    task_in: EventContactTaskCreate,
+    db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+) -> EventContactTaskRead:
     _ = _load_event(db, event_id)
     structure_id = task_in.structure_id
     if structure_id is not None:
         _get_structure(db, structure_id=structure_id)
 
+    assigned_user_id = _ensure_member_user(db, event_id, task_in.assigned_user_id)
+
     task = EventContactTask(
         event_id=event_id,
         structure_id=structure_id,
         assigned_user=task_in.assigned_user,
+        assigned_user_id=assigned_user_id,
         status=task_in.status,
         outcome=task_in.outcome,
         notes=task_in.notes,
@@ -327,6 +395,7 @@ def update_task(
     task_id: int,
     task_in: EventContactTaskUpdate,
     db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventContactTaskRead:
     task = (
         db.execute(
@@ -343,6 +412,8 @@ def update_task(
     data = task_in.model_dump(exclude_unset=True)
     if "structure_id" in data and data["structure_id"] is not None:
         _get_structure(db, structure_id=data["structure_id"])
+    if "assigned_user_id" in data:
+        task.assigned_user_id = _ensure_member_user(db, event_id, data.pop("assigned_user_id"))
 
     for key, value in data.items():
         setattr(task, key, value)
@@ -358,6 +429,7 @@ def get_suggestions(
     event_id: int,
     db: DbSession,
     limit: int = Query(default=20, ge=1, le=50),
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
 ) -> list[EventSuggestion]:
     event = _load_event(db, event_id)
     raw_suggestions = suggest_structures(db, event, limit=limit)
