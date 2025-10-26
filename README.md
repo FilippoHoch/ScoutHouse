@@ -71,6 +71,7 @@ Useful backend commands:
 A CSV dataset with 20+ sample structures lives in `data/structures_seed.csv`.
 Seasonal availability and cost data live in
 `data/structures_availability_seed.csv` and `data/structures_costs_seed.csv`.
+Event fixtures live in `data/events_seed.csv` and `data/event_candidates_seed.csv`.
 Load or refresh the catalog with:
 
 ```bash
@@ -78,8 +79,8 @@ python scripts/seed.py
 ```
 
 The script is idempotent and updates existing rows by slug. Customize the input
-files via `--file`, `--availability-file`, and `--cost-file` to seed other
-datasets.
+files via `--file`, `--availability-file`, `--cost-file`, `--events-file`, and
+`--event-candidates-file` to seed other datasets.
 
 The API exposes:
 
@@ -90,6 +91,11 @@ The API exposes:
   slug
 - `GET /api/v1/structures/` → legacy list of all structures
 - `POST /api/v1/structures/` → create a new structure record
+- `GET /api/v1/events` → list events with pagination, search, and status filters
+- `POST /api/v1/events` → create an event with automatic slug generation
+- `GET /api/v1/events/{id}?include=candidates,tasks` → fetch details, candidates, and tasks
+- `POST /api/v1/events/{id}/candidates` / `PATCH` → manage event candidates
+- `GET /api/v1/events/{id}/summary` and `/suggest` → status totals and structure suggestions
 
 #### Frontend
 
@@ -103,7 +109,9 @@ Visit the application at http://localhost:5173. The `/structures` page now
 provides search filters (including season, unit, and cost band),
 distance-aware sorting, and pagination backed by the `/structures/search` API,
 with badges summarising availability and estimated costs plus links to the
-detail view for each entry.
+detail view for each entry. The `/events` area introduces a creation wizard
+(determine details, participants/budget, suggestions) and an event dashboard
+with candidate management, conflict indicators, and polling-powered summaries.
 
 You can lint and test the frontend with:
 

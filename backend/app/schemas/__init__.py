@@ -1,3 +1,19 @@
+
+from .event import (
+    EventCandidateCreate,
+    EventCandidateRead,
+    EventCandidateUpdate,
+    EventContactTaskCreate,
+    EventContactTaskRead,
+    EventContactTaskUpdate,
+    EventCreate,
+    EventListResponse,
+    EventRead,
+    EventSuggestion,
+    EventSummary,
+    EventUpdate,
+    EventWithRelations,
+)
 from .structure import (
     StructureAvailabilityCreate,
     StructureAvailabilityRead,
@@ -24,4 +40,17 @@ __all__ = [
     "StructureSearchItem",
     "StructureSearchResponse",
     "StructureUpdate",
+    "EventCreate",
+    "EventRead",
+    "EventUpdate",
+    "EventWithRelations",
+    "EventListResponse",
+    "EventCandidateCreate",
+    "EventCandidateUpdate",
+    "EventCandidateRead",
+    "EventContactTaskCreate",
+    "EventContactTaskUpdate",
+    "EventContactTaskRead",
+    "EventSummary",
+    "EventSuggestion",
 ]

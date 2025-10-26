@@ -1,5 +1,13 @@
+
 from .availability import StructureSeason, StructureSeasonAvailability, StructureUnit
 from .cost_option import StructureCostModel, StructureCostOption
+from .event import Event, EventBranch, EventStatus
+from .event_candidate import EventStructureCandidate, EventStructureCandidateStatus
+from .event_contact_task import (
+    EventContactTask,
+    EventContactTaskOutcome,
+    EventContactTaskStatus,
+)
 from .structure import Structure, StructureType
 
 __all__ = [
@@ -10,4 +18,12 @@ __all__ = [
     "StructureUnit",
     "StructureCostOption",
     "StructureCostModel",
+    "Event",
+    "EventBranch",
+    "EventStatus",
+    "EventStructureCandidate",
+    "EventStructureCandidateStatus",
+    "EventContactTask",
+    "EventContactTaskStatus",
+    "EventContactTaskOutcome",
 ]

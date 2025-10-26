@@ -1,4 +1,18 @@
+
 import {
+  Event,
+  EventCandidate,
+  EventCandidateCreateDto,
+  EventCandidateUpdateDto,
+  EventContactTask,
+  EventContactTaskCreateDto,
+  EventContactTaskUpdateDto,
+  EventCreateDto,
+  EventListResponse,
+  EventStatus,
+  EventSuggestion,
+  EventSummary,
+  EventUpdateDto,
   Structure,
   StructureSearchParams,
   StructureSearchResponse
@@ -76,4 +90,94 @@ export async function getStructureBySlug(
 ): Promise<Structure> {
   const query = options.include ? `?include=${encodeURIComponent(options.include)}` : "";
   return apiFetch<Structure>(`/api/v1/structures/by-slug/${slug}${query}`);
+}
+
+
+export interface EventListParams {
+  q?: string;
+  status?: EventStatus;
+  page?: number;
+  page_size?: number;
+}
+
+export async function getEvents(params: EventListParams = {}): Promise<EventListResponse> {
+  const query = buildQuery({
+    q: params.q,
+    status: params.status,
+    page: params.page,
+    page_size: params.page_size
+  });
+  return apiFetch<EventListResponse>(`/api/v1/events${query}`);
+}
+
+export async function createEvent(dto: EventCreateDto): Promise<Event> {
+  return apiFetch<Event>("/api/v1/events", {
+    method: "POST",
+    body: JSON.stringify(dto)
+  });
+}
+
+export async function getEvent(
+  id: number,
+  options: { include?: Array<"candidates" | "tasks"> } = {}
+): Promise<Event> {
+  const include = options.include?.length ? `?include=${options.include.join(",")}` : "";
+  return apiFetch<Event>(`/api/v1/events/${id}${include}`);
+}
+
+export async function patchEvent(id: number, dto: EventUpdateDto): Promise<Event> {
+  return apiFetch<Event>(`/api/v1/events/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(dto)
+  });
+}
+
+export async function addCandidate(
+  eventId: number,
+  dto: EventCandidateCreateDto
+): Promise<EventCandidate> {
+  return apiFetch<EventCandidate>(`/api/v1/events/${eventId}/candidates`, {
+    method: "POST",
+    body: JSON.stringify(dto)
+  });
+}
+
+export async function patchCandidate(
+  eventId: number,
+  candidateId: number,
+  dto: EventCandidateUpdateDto
+): Promise<EventCandidate> {
+  return apiFetch<EventCandidate>(`/api/v1/events/${eventId}/candidates/${candidateId}`, {
+    method: "PATCH",
+    body: JSON.stringify(dto)
+  });
+}
+
+export async function getEventSummary(eventId: number): Promise<EventSummary> {
+  return apiFetch<EventSummary>(`/api/v1/events/${eventId}/summary`);
+}
+
+export async function getSuggestions(eventId: number): Promise<EventSuggestion[]> {
+  return apiFetch<EventSuggestion[]>(`/api/v1/events/${eventId}/suggest`);
+}
+
+export async function addTask(
+  eventId: number,
+  dto: EventContactTaskCreateDto
+): Promise<EventContactTask> {
+  return apiFetch<EventContactTask>(`/api/v1/events/${eventId}/tasks`, {
+    method: "POST",
+    body: JSON.stringify(dto)
+  });
+}
+
+export async function patchTask(
+  eventId: number,
+  taskId: number,
+  dto: EventContactTaskUpdateDto
+): Promise<EventContactTask> {
+  return apiFetch<EventContactTask>(`/api/v1/events/${eventId}/tasks/${taskId}`, {
+    method: "PATCH",
+    body: JSON.stringify(dto)
+  });
 }

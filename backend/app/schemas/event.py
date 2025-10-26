@@ -1,0 +1,189 @@
+from __future__ import annotations
+
+from datetime import date, datetime
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, model_validator
+
+from app.models.event import EventBranch, EventStatus
+from app.models.event_candidate import EventStructureCandidateStatus
+from app.models.event_contact_task import (
+    EventContactTaskOutcome,
+    EventContactTaskStatus,
+)
+
+
+class EventParticipants(BaseModel):
+    lc: int = Field(default=0, ge=0)
+    eg: int = Field(default=0, ge=0)
+    rs: int = Field(default=0, ge=0)
+    leaders: int = Field(default=0, ge=0)
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class EventBase(BaseModel):
+    title: str = Field(..., min_length=1)
+    branch: EventBranch
+    start_date: date
+    end_date: date
+    participants: EventParticipants = Field(default_factory=EventParticipants)
+    budget_total: Decimal | None = Field(default=None, ge=0)
+    status: EventStatus = EventStatus.DRAFT
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def validate_dates(self) -> "EventBase":
+        if self.end_date < self.start_date:
+            raise ValueError("end_date cannot be earlier than start_date")
+        return self
+
+
+class EventCreate(EventBase):
+    pass
+
+
+class EventUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1)
+    branch: EventBranch | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    participants: EventParticipants | None = None
+    budget_total: Decimal | None = Field(default=None, ge=0)
+    status: EventStatus | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def validate_dates(self) -> "EventUpdate":
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            raise ValueError("end_date cannot be earlier than start_date")
+        return self
+
+
+class EventRead(EventBase):
+    id: int
+    slug: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {Decimal: float},
+    }
+
+
+class EventCandidateStructure(BaseModel):
+    id: int
+    name: str
+    slug: str
+    province: str | None = None
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class EventCandidateCreate(BaseModel):
+    structure_id: int | None = None
+    structure_slug: str | None = None
+    assigned_user: str | None = None
+
+    @model_validator(mode="after")
+    def validate_structure(self) -> "EventCandidateCreate":
+        if bool(self.structure_id) == bool(self.structure_slug):
+            raise ValueError("Provide either structure_id or structure_slug")
+        return self
+
+
+class EventCandidateUpdate(BaseModel):
+    status: EventStructureCandidateStatus | None = None
+    assigned_user: str | None = None
+
+
+class EventCandidateRead(BaseModel):
+    id: int
+    event_id: int
+    structure_id: int
+    status: EventStructureCandidateStatus
+    assigned_user: str | None
+    last_update: datetime
+    structure: EventCandidateStructure | None = None
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class EventContactTaskBase(BaseModel):
+    structure_id: int | None = None
+    assigned_user: str | None = None
+    status: EventContactTaskStatus = EventContactTaskStatus.TODO
+    outcome: EventContactTaskOutcome = EventContactTaskOutcome.PENDING
+    notes: str | None = None
+
+
+class EventContactTaskCreate(EventContactTaskBase):
+    pass
+
+
+class EventContactTaskUpdate(BaseModel):
+    structure_id: int | None = None
+    assigned_user: str | None = None
+    status: EventContactTaskStatus | None = None
+    outcome: EventContactTaskOutcome | None = None
+    notes: str | None = None
+
+
+class EventContactTaskRead(EventContactTaskBase):
+    id: int
+    event_id: int
+    updated_at: datetime
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class EventSummary(BaseModel):
+    status_counts: dict[str, int]
+    has_conflicts: bool
+
+
+class EventWithRelations(EventRead):
+    candidates: list[EventCandidateRead] | None = None
+    tasks: list[EventContactTaskRead] | None = None
+
+
+class EventListResponse(BaseModel):
+    items: list[EventRead]
+    total: int
+    page: int
+    page_size: int
+
+
+class EventSuggestion(BaseModel):
+    structure_id: int
+    structure_name: str
+    structure_slug: str
+    distance_km: float | None = None
+    estimated_cost: float | None = None
+    cost_band: str | None = None
+
+
+__all__ = [
+    "EventCreate",
+    "EventUpdate",
+    "EventRead",
+    "EventWithRelations",
+    "EventListResponse",
+    "EventCandidateCreate",
+    "EventCandidateUpdate",
+    "EventCandidateRead",
+    "EventContactTaskCreate",
+    "EventContactTaskUpdate",
+    "EventContactTaskRead",
+    "EventSummary",
+    "EventSuggestion",
+]
