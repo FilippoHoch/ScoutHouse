@@ -22,6 +22,7 @@ import {
   EventSuggestion,
   EventSummary
 } from "../shared/types";
+import { EventQuotesTab } from "./EventQuotesTab";
 
 const candidateStatuses: EventCandidateStatus[] = [
   "to_contact",
@@ -192,7 +193,9 @@ export const EventDetailsPage = () => {
   const { eventId } = useParams();
   const numericId = Number(eventId);
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"candidature" | "attivita">("candidature");
+  const [activeTab, setActiveTab] = useState<"candidature" | "attivita" | "preventivi">(
+    "candidature"
+  );
   const [candidateSlug, setCandidateSlug] = useState("");
   const [candidateError, setCandidateError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<EventSuggestion[]>([]);
@@ -359,6 +362,13 @@ export const EventDetailsPage = () => {
           >
             Attività
           </button>
+          <button
+            type="button"
+            className={activeTab === "preventivi" ? "active" : ""}
+            onClick={() => setActiveTab("preventivi")}
+          >
+            Preventivi
+          </button>
         </nav>
         {activeTab === "candidature" && (
           <div className="tab-panel">
@@ -461,6 +471,11 @@ export const EventDetailsPage = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+        {activeTab === "preventivi" && (
+          <div className="tab-panel">
+            <EventQuotesTab event={event} />
           </div>
         )}
       </div>

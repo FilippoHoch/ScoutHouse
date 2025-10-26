@@ -200,3 +200,80 @@ export interface EventContactTaskCreateDto {
 }
 
 export type EventContactTaskUpdateDto = Partial<EventContactTaskCreateDto>;
+
+export type QuoteScenario = "best" | "realistic" | "worst";
+
+export interface QuoteTotals {
+  subtotal: number;
+  utilities: number;
+  city_tax: number;
+  deposit: number;
+  total: number;
+}
+
+export interface QuoteBreakdownEntry {
+  option_id: number | null;
+  type: string;
+  description: string;
+  currency: string;
+  unit_amount?: number | null;
+  quantity?: number | null;
+  metadata?: Record<string, unknown> | null;
+  total: number;
+}
+
+export interface QuoteScenarios {
+  best: number;
+  realistic: number;
+  worst: number;
+}
+
+export interface QuoteCalcResponse {
+  currency: string;
+  totals: QuoteTotals;
+  breakdown: QuoteBreakdownEntry[];
+  scenarios: QuoteScenarios;
+  inputs: Record<string, unknown>;
+}
+
+export interface QuoteOverrides {
+  participants?: Partial<EventParticipants>;
+  days?: number;
+  nights?: number;
+}
+
+export interface QuoteCalcRequestDto {
+  event_id: number;
+  structure_id: number;
+  overrides?: QuoteOverrides;
+}
+
+export interface QuoteCreateDto {
+  structure_id: number;
+  scenario?: QuoteScenario;
+  overrides?: QuoteOverrides;
+}
+
+export interface QuoteListItem {
+  id: number;
+  event_id: number;
+  structure_id: number;
+  structure_name: string | null;
+  scenario: QuoteScenario;
+  currency: string;
+  total: number;
+  created_at: string;
+}
+
+export interface Quote {
+  id: number;
+  event_id: number;
+  structure_id: number;
+  scenario: QuoteScenario;
+  currency: string;
+  totals: QuoteTotals;
+  breakdown: QuoteBreakdownEntry[];
+  inputs: Record<string, unknown>;
+  scenarios: QuoteScenarios;
+  created_at: string;
+}

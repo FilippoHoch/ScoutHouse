@@ -8,6 +8,7 @@ from .event_contact_task import (
     EventContactTaskOutcome,
     EventContactTaskStatus,
 )
+from .quote import Quote, QuoteScenario
 from .structure import Structure, StructureType
 
 __all__ = [
@@ -26,4 +27,6 @@ __all__ = [
     "EventContactTask",
     "EventContactTaskStatus",
     "EventContactTaskOutcome",
+    "Quote",
+    "QuoteScenario",
 ]

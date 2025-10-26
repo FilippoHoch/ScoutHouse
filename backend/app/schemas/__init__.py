@@ -27,6 +27,16 @@ from .structure import (
     StructureSearchResponse,
     StructureUpdate,
 )
+from .quote import (
+    QuoteBreakdownEntry,
+    QuoteCalcRequest,
+    QuoteCalcResponse,
+    QuoteCreate,
+    QuoteListItem,
+    QuoteRead,
+    QuoteScenarios,
+    QuoteTotals,
+)
 
 __all__ = [
     "StructureAvailabilityCreate",
@@ -53,4 +63,12 @@ __all__ = [
     "EventContactTaskRead",
     "EventSummary",
     "EventSuggestion",
+    "QuoteCalcRequest",
+    "QuoteCalcResponse",
+    "QuoteCreate",
+    "QuoteRead",
+    "QuoteListItem",
+    "QuoteTotals",
+    "QuoteBreakdownEntry",
+    "QuoteScenarios",
 ]
