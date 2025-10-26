@@ -40,3 +40,6 @@ voglio poi una casa che fa preventivi in base alle informaizoni inserite dal eve
 
 
 Voglio che crei anche un python che va a esporre il sito in localhost per ora
+
+
+Voglio anche un importazione ed esposrtaizione in excel e altri formati
