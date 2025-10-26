@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     default_base_lon: float = Field(10.1655, alias="DEFAULT_BASE_LON")
     cost_band_cheap_max: Decimal = Field(Decimal("8"), alias="COST_BAND_CHEAP_MAX")
     cost_band_medium_max: Decimal = Field(Decimal("15"), alias="COST_BAND_MEDIUM_MAX")
+    scenario_margin_best: Decimal = Field(Decimal("0.05"), alias="SCENARIO_MARGIN_BEST")
+    scenario_margin_worst: Decimal = Field(Decimal("0.10"), alias="SCENARIO_MARGIN_WORST")
 
     model_config = {
         "env_file": ".env",

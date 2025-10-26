@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-10-26
+### Added
+- Tabella `quotes` con migrazione `20240320_0005_quotes`.
+- Servizio calcolo preventivi con breakdown voci e scenari `best/realistic/worst`.
+- API: `POST /quotes/calc`, `POST /events/{id}/quotes`, `GET /events/{id}/quotes`, `GET /quotes/{id}`, `GET /quotes/{id}/export?format=xlsx|html`.
+- Frontend: tab **Preventivi** in pagina evento, confronto versioni, export XLSX e HTML stampabile.
+- Config `SCENARIO_MARGIN_BEST`, `SCENARIO_MARGIN_WORST`.
+
+### Changed
+- Documentazione `docs/API.md` e README con definizioni giorni/notti e flusso preventivi.
+
+### Security
+- N/A
+
+[0.5.0]: https://github.com/<org>/<repo>/compare/0.4.0...0.5.0
+
 ## [0.4.0] - 2025-10-26
 ### Added
 - Tabelle `events`, `event_structure_candidate`, `event_contact_task` con migrazione `20240320_0004_events_contacts`.

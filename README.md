@@ -72,6 +72,7 @@ A CSV dataset with 20+ sample structures lives in `data/structures_seed.csv`.
 Seasonal availability and cost data live in
 `data/structures_availability_seed.csv` and `data/structures_costs_seed.csv`.
 Event fixtures live in `data/events_seed.csv` and `data/event_candidates_seed.csv`.
+Sample quote snapshots can be provided via `data/quotes_seed.csv` (optional).
 Load or refresh the catalog with:
 
 ```bash
@@ -79,8 +80,8 @@ python scripts/seed.py
 ```
 
 The script is idempotent and updates existing rows by slug. Customize the input
-files via `--file`, `--availability-file`, `--cost-file`, `--events-file`, and
-`--event-candidates-file` to seed other datasets.
+files via `--file`, `--availability-file`, `--cost-file`, `--events-file`,
+`--event-candidates-file`, and `--quotes-file` to seed other datasets.
 
 The API exposes:
 
@@ -96,6 +97,11 @@ The API exposes:
 - `GET /api/v1/events/{id}?include=candidates,tasks` → fetch details, candidates, and tasks
 - `POST /api/v1/events/{id}/candidates` / `PATCH` → manage event candidates
 - `GET /api/v1/events/{id}/summary` and `/suggest` → status totals and structure suggestions
+- `POST /api/v1/quotes/calc` → calcola un preventivo deterministico senza salvarlo
+- `POST /api/v1/events/{id}/quotes` → salva una versione del preventivo per l'evento
+- `GET /api/v1/events/{id}/quotes` → elenca le versioni salvate
+- `GET /api/v1/quotes/{id}` → recupera i dettagli completi (totali, breakdown, scenari)
+- `GET /api/v1/quotes/{id}/export?format=xlsx|html` → esporta in XLSX o HTML stampabile
 
 #### Frontend
 
@@ -112,6 +118,15 @@ with badges summarising availability and estimated costs plus links to the
 detail view for each entry. The `/events` area introduces a creation wizard
 (determine details, participants/budget, suggestions) and an event dashboard
 with candidate management, conflict indicators, and polling-powered summaries.
+
+### Calcolare e salvare un preventivo
+
+1. Apri la pagina di dettaglio di un evento e seleziona la scheda **Preventivi**.
+2. Scegli una struttura candidata dall'elenco (le informazioni provengono dalle candidature dell'evento).
+3. Verifica o modifica i parametri: i partecipanti di default sono quelli dell'evento; le notti sono calcolate come differenza di calendario tra fine e inizio (`nights = end_date - start_date`), mentre i giorni corrispondono a `nights + 1`.
+4. Se servono valori differenti, inserisci le sovrascritture locali (partecipanti, giorni, notti) e premi **Calcola** per generare il breakdown.
+5. Seleziona lo scenario desiderato (`best`, `realistic`, `worst`) e usa **Salva versione** per memorizzare il preventivo. Le versioni salvate appaiono nell'elenco, da cui è possibile confrontarne due alla volta.
+6. Per l'export scegli **Esporta XLSX** (file Excel pronto per la condivisione) oppure **Stampa (HTML)** e usa la stampa del browser per generare un PDF.
 
 You can lint and test the frontend with:
 

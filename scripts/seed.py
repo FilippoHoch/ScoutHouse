@@ -24,6 +24,8 @@ from app.models import (  # noqa: E402
     EventStatus,
     EventStructureCandidate,
     EventStructureCandidateStatus,
+    Quote,
+    QuoteScenario,
     Structure,
     StructureCostModel,
     StructureCostOption,
@@ -32,12 +34,14 @@ from app.models import (  # noqa: E402
     StructureType,
     StructureUnit,
 )
+from app.services.costs import calc_quote  # noqa: E402
 
 DEFAULT_STRUCTURES_DATASET = ROOT_DIR / "data" / "structures_seed.csv"
 DEFAULT_AVAILABILITY_DATASET = ROOT_DIR / "data" / "structures_availability_seed.csv"
 DEFAULT_COST_DATASET = ROOT_DIR / "data" / "structures_costs_seed.csv"
 DEFAULT_EVENTS_DATASET = ROOT_DIR / "data" / "events_seed.csv"
 DEFAULT_EVENT_CANDIDATES_DATASET = ROOT_DIR / "data" / "event_candidates_seed.csv"
+DEFAULT_QUOTES_DATASET = ROOT_DIR / "data" / "quotes_seed.csv"
 
 
 def parse_float(value: str | None) -> float | None:
@@ -248,6 +252,69 @@ def seed_event_candidates(dataset: Path) -> None:
         session.commit()
 
 
+def seed_quotes(dataset: Path) -> None:
+    rows = load_rows(dataset)
+    if not rows:
+        print("No quotes to seed.")
+        return
+
+    with SessionLocal() as session:
+        for row in rows:
+            event_slug = (row.get("event_slug") or "").strip()
+            structure_slug = (row.get("structure_slug") or "").strip()
+            if not event_slug or not structure_slug:
+                print("Skipping quote row missing slugs")
+                continue
+
+            event = session.execute(select(Event).where(Event.slug == event_slug)).scalar_one_or_none()
+            if event is None:
+                print(f"Skipping quote for unknown event '{event_slug}'")
+                continue
+
+            structure = session.execute(select(Structure).where(Structure.slug == structure_slug)).scalar_one_or_none()
+            if structure is None:
+                print(f"Skipping quote for unknown structure '{structure_slug}'")
+                continue
+
+            # Ensure cost options are loaded for calculation
+            _ = structure.cost_options  # noqa: B018
+
+            scenario_raw = (row.get("scenario") or QuoteScenario.REALISTIC.value).strip().lower()
+            try:
+                scenario = QuoteScenario(scenario_raw)
+            except ValueError:
+                scenario = QuoteScenario.REALISTIC
+
+            existing = session.execute(
+                select(Quote)
+                .where(Quote.event_id == event.id)
+                .where(Quote.structure_id == structure.id)
+                .where(Quote.scenario == scenario)
+            ).scalar_one_or_none()
+            if existing is not None:
+                print(
+                    f"Quote for event '{event_slug}' and structure '{structure_slug}' already exists; skipping."
+                )
+                continue
+
+            calculation = calc_quote(event, structure)
+            quote = Quote(
+                event_id=event.id,
+                structure_id=structure.id,
+                scenario=scenario,
+                currency=calculation["currency"],
+                totals=calculation["totals"],
+                breakdown=calculation["breakdown"],
+                inputs=calculation["inputs"],
+            )
+            session.add(quote)
+            print(
+                f"Created quote for event '{event_slug}' and structure '{structure_slug}' ({scenario.value})."
+            )
+
+        session.commit()
+
+
 def parse_units(value: str) -> list[str]:
     raw_units = value.replace(",", ";").split(";")
     cleaned = []
@@ -406,6 +473,12 @@ def main() -> None:
         default=DEFAULT_EVENT_CANDIDATES_DATASET,
         help=f"Path to the event candidates CSV file (default: {DEFAULT_EVENT_CANDIDATES_DATASET})",
     )
+    parser.add_argument(
+        "--quotes-file",
+        type=Path,
+        default=DEFAULT_QUOTES_DATASET,
+        help=f"Path to the quotes CSV file (default: {DEFAULT_QUOTES_DATASET})",
+    )
     args = parser.parse_args()
 
     if args.file.exists():
@@ -432,6 +505,11 @@ def main() -> None:
         seed_event_candidates(args.event_candidates_file)
     else:
         print(f"Event candidates seed file '{args.event_candidates_file}' not found; skipping.")
+
+    if args.quotes_file.exists():
+        seed_quotes(args.quotes_file)
+    else:
+        print(f"Quotes seed file '{args.quotes_file}' not found; skipping.")
 
 
 if __name__ == "__main__":

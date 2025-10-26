@@ -281,3 +281,136 @@ curl "http://localhost:8000/api/v1/events/1/suggest"
   user, or notes.
 
 Both endpoints return the updated task with the latest `updated_at` timestamp.
+
+## Quotes API
+
+The quotes endpoints provide deterministic budgeting for an event/structure
+pair. By default the system computes the number of nights as the difference in
+calendar days between `end_date` and `start_date`, and the number of days as
+`nights + 1`.
+
+### POST `/api/v1/quotes/calc`
+
+Temporary calculation for a specific event and structure. Accepts optional
+participant, day, or night overrides.
+
+**Request**
+
+```json
+{
+  "event_id": 12,
+  "structure_id": 5,
+  "overrides": {
+    "participants": {"lc": 18, "leaders": 4},
+    "nights": 3
+  }
+}
+```
+
+**Response**
+
+```json
+{
+  "currency": "EUR",
+  "totals": {
+    "subtotal": 1520.0,
+    "utilities": 60.0,
+    "city_tax": 135.0,
+    "deposit": 300.0,
+    "total": 1715.0
+  },
+  "breakdown": [
+    {
+      "option_id": 23,
+      "type": "per_person_day",
+      "description": "Costo per persona/giorno",
+      "currency": "EUR",
+      "unit_amount": 20.0,
+      "quantity": 180,
+      "metadata": {"people": 20, "days": 9},
+      "total": 3600.0
+    },
+    {
+      "option_id": 23,
+      "type": "deposit",
+      "description": "Caparra",
+      "currency": "EUR",
+      "unit_amount": 300.0,
+      "quantity": 1,
+      "metadata": {},
+      "total": 300.0
+    }
+  ],
+  "scenarios": {
+    "best": 1629.25,
+    "realistic": 1715.0,
+    "worst": 1886.5
+  },
+  "inputs": {
+    "event_id": 12,
+    "structure_id": 5,
+    "participants": {"lc": 18, "eg": 0, "rs": 0, "leaders": 4},
+    "people_total": 22,
+    "taxable_people": 20,
+    "days": 4,
+    "nights": 3,
+    "cost_band": "medium",
+    "rules": {
+      "city_tax_exempt_units": ["leaders"],
+      "scenario_margins": {"best": 0.05, "worst": 0.1}
+    },
+    "overrides": {"participants": {"lc": 18, "leaders": 4}, "nights": 3}
+  }
+}
+```
+
+### POST `/api/v1/events/{event_id}/quotes`
+
+Persists a quote snapshot for an event. The payload matches the calculation
+request minus the `event_id` field and includes the scenario to store.
+
+```json
+{
+  "structure_id": 5,
+  "scenario": "realistic",
+  "overrides": {"nights": 3}
+}
+```
+
+The response mirrors the calculation output and adds identifiers and timestamps.
+
+### GET `/api/v1/events/{event_id}/quotes`
+
+Lists saved quotes for the event (newest first).
+
+```json
+[
+  {
+    "id": 42,
+    "event_id": 12,
+    "structure_id": 5,
+    "structure_name": "Casa Alpina",
+    "scenario": "realistic",
+    "currency": "EUR",
+    "total": 1715.0,
+    "created_at": "2025-03-02T14:12:00Z"
+  }
+]
+```
+
+### GET `/api/v1/quotes/{quote_id}`
+
+Fetches the full details (totals, breakdown, inputs snapshot and recomputed
+scenarios) for a saved quote.
+
+### GET `/api/v1/quotes/{quote_id}/export`
+
+Export a stored quote. Supported formats:
+
+- `format=xlsx` – returns an Excel workbook (`Content-Type:
+  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`).
+- `format=html` – returns a print-ready HTML page suitable for browser PDF
+  export.
+
+Use `format=html` together with the browser “Print to PDF” feature to obtain a
+PDF copy.

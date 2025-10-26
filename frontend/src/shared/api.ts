@@ -13,6 +13,11 @@ import {
   EventSuggestion,
   EventSummary,
   EventUpdateDto,
+  Quote,
+  QuoteCalcRequestDto,
+  QuoteCalcResponse,
+  QuoteCreateDto,
+  QuoteListItem,
   Structure,
   StructureSearchParams,
   StructureSearchResponse
@@ -180,4 +185,55 @@ export async function patchTask(
     method: "PATCH",
     body: JSON.stringify(dto)
   });
+}
+
+export async function calcQuote(dto: QuoteCalcRequestDto): Promise<QuoteCalcResponse> {
+  return apiFetch<QuoteCalcResponse>("/api/v1/quotes/calc", {
+    method: "POST",
+    body: JSON.stringify(dto)
+  });
+}
+
+export async function createQuote(eventId: number, dto: QuoteCreateDto): Promise<Quote> {
+  return apiFetch<Quote>(`/api/v1/events/${eventId}/quotes`, {
+    method: "POST",
+    body: JSON.stringify(dto)
+  });
+}
+
+export async function getQuotes(eventId: number): Promise<QuoteListItem[]> {
+  return apiFetch<QuoteListItem[]>(`/api/v1/events/${eventId}/quotes`);
+}
+
+export async function getQuote(id: number): Promise<Quote> {
+  return apiFetch<Quote>(`/api/v1/quotes/${id}`);
+}
+
+export async function exportQuote(
+  id: number,
+  format: "xlsx" | "html"
+): Promise<Blob | string> {
+  const response = await fetch(`${API_URL}/api/v1/quotes/${id}/export?format=${format}`, {
+    headers: {
+      Accept:
+        format === "xlsx"
+          ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          : "text/html"
+    }
+  });
+
+  if (!response.ok) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch (error) {
+      body = await response.text();
+    }
+    throw new ApiError(response.status, body);
+  }
+
+  if (format === "xlsx") {
+    return response.blob();
+  }
+  return response.text();
 }
