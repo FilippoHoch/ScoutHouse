@@ -69,14 +69,17 @@ Useful backend commands:
 #### Seed data
 
 A CSV dataset with 20+ sample structures lives in `data/structures_seed.csv`.
+Seasonal availability and cost data live in
+`data/structures_availability_seed.csv` and `data/structures_costs_seed.csv`.
 Load or refresh the catalog with:
 
 ```bash
 python scripts/seed.py
 ```
 
-The script is idempotent and updates existing rows by slug. Customize the
-input file via `--file` to seed other datasets.
+The script is idempotent and updates existing rows by slug. Customize the input
+files via `--file`, `--availability-file`, and `--cost-file` to seed other
+datasets.
 
 The API exposes:
 
@@ -97,8 +100,10 @@ npm run dev
 ```
 
 Visit the application at http://localhost:5173. The `/structures` page now
-provides search filters, distance-aware sorting, and pagination backed by the
-`/structures/search` API, with links to the new detail view for each entry.
+provides search filters (including season, unit, and cost band),
+distance-aware sorting, and pagination backed by the `/structures/search` API,
+with badges summarising availability and estimated costs plus links to the
+detail view for each entry.
 
 You can lint and test the frontend with:
 

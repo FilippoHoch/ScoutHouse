@@ -1,4 +1,10 @@
 from .structure import (
+    StructureAvailabilityCreate,
+    StructureAvailabilityRead,
+    StructureAvailabilityUpdate,
+    StructureCostOptionCreate,
+    StructureCostOptionRead,
+    StructureCostOptionUpdate,
     StructureCreate,
     StructureRead,
     StructureSearchItem,
@@ -7,6 +13,12 @@ from .structure import (
 )
 
 __all__ = [
+    "StructureAvailabilityCreate",
+    "StructureAvailabilityRead",
+    "StructureAvailabilityUpdate",
+    "StructureCostOptionCreate",
+    "StructureCostOptionRead",
+    "StructureCostOptionUpdate",
     "StructureCreate",
     "StructureRead",
     "StructureSearchItem",

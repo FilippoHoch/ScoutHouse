@@ -4,13 +4,19 @@ import { useQuery } from "@tanstack/react-query";
 
 import { ApiError, getStructures } from "../shared/api";
 import {
+  CostBand,
+  Season,
   StructureSearchItem,
   StructureSearchParams,
   StructureSearchResponse,
-  StructureType
+  StructureType,
+  Unit
 } from "../shared/types";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
+const seasons: Season[] = ["winter", "spring", "summer", "autumn"];
+const units: Unit[] = ["LC", "EG", "RS", "ALL"];
+const costBands: CostBand[] = ["cheap", "medium", "expensive"];
 const sortOptions: Array<{ value: StructureSearchParams["sort"]; label: string }> = [
   { value: "distance", label: "Distance" },
   { value: "name", label: "Name" },
@@ -39,6 +45,9 @@ interface FilterFormState {
   province: string;
   type: string;
   max_km: string;
+  season: string;
+  unit: string;
+  cost_band: string;
   sort: StructureSearchParams["sort"];
   order: StructureSearchParams["order"];
 }
@@ -48,9 +57,14 @@ const initialFormState: FilterFormState = {
   province: "",
   type: "",
   max_km: "",
+  season: "",
+  unit: "",
+  cost_band: "",
   sort: "distance",
   order: "asc"
 };
+
+const capitalize = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);
 
 export const StructuresPage = () => {
   const [form, setForm] = useState<FilterFormState>(initialFormState);
@@ -89,6 +103,18 @@ export const StructuresPage = () => {
 
     if (form.type) {
       nextFilters.type = form.type as StructureType;
+    }
+
+    if (form.season) {
+      nextFilters.season = form.season as Season;
+    }
+
+    if (form.unit) {
+      nextFilters.unit = form.unit as Unit;
+    }
+
+    if (form.cost_band) {
+      nextFilters.cost_band = form.cost_band as CostBand;
     }
 
     if (form.max_km) {
@@ -194,6 +220,36 @@ export const StructuresPage = () => {
               </select>
             </label>
             <label>
+              Season
+              <select
+                value={form.season}
+                onChange={(event) => setForm((prev) => ({ ...prev, season: event.target.value }))}
+              >
+                <option value="">All</option>
+                {seasons.map((season) => (
+                  <option key={season} value={season}>
+                    {season}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Unit
+              <select
+                value={form.unit}
+                onChange={(event) => setForm((prev) => ({ ...prev, unit: event.target.value }))}
+              >
+                <option value="">All</option>
+                {units.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="filters-row">
+            <label>
               Max distance (km)
               <input
                 type="number"
@@ -204,8 +260,20 @@ export const StructuresPage = () => {
                 placeholder="e.g. 25"
               />
             </label>
-          </div>
-          <div className="filters-row">
+            <label>
+              Cost band
+              <select
+                value={form.cost_band}
+                onChange={(event) => setForm((prev) => ({ ...prev, cost_band: event.target.value }))}
+              >
+                <option value="">All</option>
+                {costBands.map((band) => (
+                  <option key={band} value={band}>
+                    {band}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label>
               Sort by
               <select
@@ -276,8 +344,34 @@ export const StructuresPage = () => {
                   <strong>{item.type}</strong> · {item.province ?? "N/A"}
                 </p>
                 {item.address && <p>{item.address}</p>}
-                {item.distance_km !== null && (
-                  <p>Distance: {item.distance_km.toFixed(1)} km</p>
+                {(item.seasons.length > 0 || item.units.length > 0) && (
+                  <div className="structure-badges">
+                    {item.seasons.length > 0 && (
+                      <div className="badge-group" aria-label="Seasons">
+                        {item.seasons.map((season) => (
+                          <span key={`${item.id}-season-${season}`} className="badge badge-season">
+                            {season}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {item.units.length > 0 && (
+                      <div className="badge-group" aria-label="Units">
+                        {item.units.map((unit) => (
+                          <span key={`${item.id}-unit-${unit}`} className="badge badge-unit">
+                            {unit}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {item.distance_km !== null && <p>Distance: {item.distance_km.toFixed(1)} km</p>}
+                {item.estimated_cost !== null && (
+                  <p>
+                    Estimated cost: €{item.estimated_cost.toFixed(2)}
+                    {item.cost_band && ` · ${capitalize(item.cost_band)}`}
+                  </p>
                 )}
               </li>
             ))}

@@ -6,9 +6,11 @@ from enum import Enum
 
 from sqlalchemy import DateTime, Integer, Numeric, String, Text, func
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+from app.models.availability import StructureSeasonAvailability
+from app.models.cost_option import StructureCostOption
 
 
 class StructureType(str, Enum):
@@ -35,6 +37,21 @@ class Structure(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+
+    availabilities: Mapped[list[StructureSeasonAvailability]] = relationship(
+        StructureSeasonAvailability,
+        back_populates="structure",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="StructureSeasonAvailability.season",
+    )
+    cost_options: Mapped[list[StructureCostOption]] = relationship(
+        StructureCostOption,
+        back_populates="structure",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="StructureCostOption.id",
     )
 
     @property
