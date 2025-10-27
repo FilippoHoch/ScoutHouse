@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-10-27
+### Added
+- Logging strutturato JSON con request-id e middleware correlato.
+- Endpoint `GET /health/live` e `GET /health/ready` più healthcheck Docker.
+- Endpoint `/metrics` compatibile Prometheus con metriche HTTP e pool DB.
+- Integrazione Sentry opzionale via `SENTRY_DSN` e `SENTRY_TRACES_SAMPLE_RATE`.
+- Job di backup `pg_dump` giornaliero con retention e guida al restore.
+
+### Changed
+- Documentazione README e `docs/OPS.md`; aggiornati `.env.example` e `docker-compose.yml`.
+
+### Security
+- Backup cifrabili lato bucket; sanitizzazione variabili nei log (no secret).
+
 ## [0.7.0] - 2025-10-27
 ### Added
 - Ruoli e permessi con membership evento; tabelle `event_members`, `audit_log`, `password_reset_tokens` (migrazione `20240320_0007_roles_audit`).
@@ -31,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Argon2 hashing; cookie HttpOnly per refresh; CORS con credenziali.
 
+[0.8.0]: https://github.com/<org>/<repo>/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/<org>/<repo>/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/<org>/<repo>/compare/0.5.0...0.6.0
 

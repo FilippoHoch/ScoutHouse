@@ -47,6 +47,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backup:
+    build:
+      context: ./infra/backup
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://scout:scout@db:5432/scouthouse
+    volumes:
+      - backup_data:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   web:
     build:
@@ -70,3 +90,4 @@ services:
 
 volumes:
   db_data:
+  backup_data:

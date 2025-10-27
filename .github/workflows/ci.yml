@@ -44,6 +44,13 @@ jobs:
       - run: mypy app
       - run: bandit -r app -ll
       - run: pytest -q
+      - name: Smoke test metrics endpoint
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8001 &
+          UVICORN_PID=$!
+          sleep 3
+          curl -f http://127.0.0.1:8001/metrics | grep http_requests_total
+          kill $UVICORN_PID
 
   docker:
     name: Docker images
