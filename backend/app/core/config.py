@@ -2,7 +2,7 @@ from functools import lru_cache
 
 from decimal import Decimal
 
-from typing import Sequence
+from typing import List, Sequence
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     access_ttl_min: int = Field(10, alias="ACCESS_TTL_MIN")
     refresh_ttl_days: int = Field(14, alias="REFRESH_TTL_DAYS")
     allow_registration: bool = Field(False, alias="ALLOW_REGISTRATION")
-    cors_allowed_origins: Sequence[str] = Field(default_factory=list, alias="CORS_ALLOWED_ORIGINS")
+    cors_allowed_origins: List[str] = Field(
+        default_factory=lambda: ["http://localhost:5173"], alias="CORS_ALLOWED_ORIGINS"
+    )
     secure_cookies: bool = Field(False, alias="SECURE_COOKIES")
     frontend_base_url: str = Field("http://localhost:5173", alias="FRONTEND_BASE_URL")
     password_reset_ttl_minutes: int = Field(60, alias="PASSWORD_RESET_TTL_MINUTES")
@@ -45,10 +47,26 @@ class Settings(BaseSettings):
 
     @field_validator("cors_allowed_origins", mode="before")
     @classmethod
-    def _split_origins(cls, value: Sequence[str] | str) -> Sequence[str]:
+    def _split_origins(cls, value: Sequence[str] | str | None) -> Sequence[str]:
+        if value is None:
+            return ["http://localhost:5173"]
         if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+            cleaned = value.strip()
+            if not cleaned:
+                return ["http://localhost:5173"]
+            import json
+
+            try:
+                parsed = json.loads(cleaned)
+            except Exception:
+                return [origin.strip() for origin in cleaned.split(",") if origin.strip()]
+
+            if isinstance(parsed, list):
+                return [str(origin).strip() for origin in parsed if str(origin).strip()]
+            if isinstance(parsed, str):
+                return [parsed.strip()] if parsed.strip() else ["http://localhost:5173"]
+            raise ValueError("CORS_ALLOWED_ORIGINS must be a list or CSV string")
+        return list(value)
 
     @field_validator("sentry_traces_sample_rate")
     @classmethod

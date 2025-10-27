@@ -1,9 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
-  echo "DATABASE_URL is required for backups" >&2
-  exit 1
+  missing_vars=()
+  for var in POSTGRES_HOST POSTGRES_DB POSTGRES_USER; do
+    if [[ -z "${!var:-}" ]]; then
+      missing_vars+=("$var")
+    fi
+  done
+
+  if (( ${#missing_vars[@]} > 0 )); then
+    echo "DATABASE_URL or POSTGRES_* variables are required (missing: ${missing_vars[*]})" >&2
+    exit 1
+  fi
+
+  : "${POSTGRES_PORT:=5432}"
+  if [[ -n "${POSTGRES_PASSWORD:-}" ]]; then
+    DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+  else
+    DATABASE_URL="postgresql://${POSTGRES_USER}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+  fi
 fi
 
 timestamp="$(date '+%Y-%m-%d_%H%M')"

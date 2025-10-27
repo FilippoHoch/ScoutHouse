@@ -1,21 +1,20 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: scouthouse
-      POSTGRES_USER: scout
-      POSTGRES_PASSWORD: scout
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: scout
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - scouthouse_db_data:/var/lib/postgresql/data
+      - ./infra/db/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U scout"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d scout"]
       interval: 5s
-      timeout: 5s
-      retries: 5
+      timeout: 3s
+      retries: 20
 
   cache:
     image: redis:7-alpine
@@ -36,7 +35,8 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg://scout:scout@db:5432/scouthouse
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/scout
+      CORS_ALLOWED_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173"]'
     volumes:
       - ./backend/app:/app/app
       - ./backend/migrations:/app/migrations
@@ -57,10 +57,12 @@ services:
   backup:
     build:
       context: ./infra/backup
-    env_file:
-      - ./.env
     environment:
-      DATABASE_URL: postgresql://scout:scout@db:5432/scouthouse
+      POSTGRES_HOST: db
+      POSTGRES_DB: scout
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      BACKUP_CRON: "0 2 * * *"
     volumes:
       - backup_data:/backups
     depends_on:
@@ -89,5 +91,5 @@ services:
       - api
 
 volumes:
-  db_data:
+  scouthouse_db_data:
   backup_data:
