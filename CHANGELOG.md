@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2025-10-27
+### Added
+- Tabella `contacts` con API CRUD e inclusione nei dettagli struttura.
+- Estensione candidature con `contact_id` e UI per selezione contatto.
+- Azioni rapide: link `mailto:` precompilato e `tel:` da candidature.
+- Frontend: tab **Contatti** in pagina struttura con create/edit/delete e gestione “primary”.
+
+### Changed
+- `docs/API.md` e README aggiornati con flusso contatti.
+
+### Security
+- Validazione formati email/phone; nessun dato sensibile nei log.
+
 ## [0.11.0] - 2025-10-27
 ### Added
 - Endpoint SSE `GET /events/{id}/live` per aggiornamenti in tempo reale di candidature, task e summary.
@@ -75,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Argon2 hashing; cookie HttpOnly per refresh; CORS con credenziali.
 
+[0.12.0]: https://github.com/<org>/<repo>/compare/0.11.0...0.12.0
 [0.11.0]: https://github.com/<org>/<repo>/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/<org>/<repo>/compare/0.9.0...0.10.0
 [0.9.0]: https://github.com/<org>/<repo>/compare/0.8.0...0.9.0

@@ -24,6 +24,58 @@
       "error": "Impossibile caricare le strutture.",
       "empty": "Nessuna struttura corrisponde ai filtri selezionati."
     },
+    "contacts": {
+      "tab": "Contatti",
+      "new": "Nuovo contatto",
+      "empty": "Nessun contatto registrato per questa struttura.",
+      "channels": {
+        "email": "Email",
+        "phone": "Telefono",
+        "other": "Altro"
+      },
+      "table": {
+        "name": "Nome",
+        "role": "Ruolo",
+        "channel": "Canale",
+        "email": "Email",
+        "phone": "Telefono",
+        "primary": "Primario",
+        "actions": "Azioni"
+      },
+      "actions": {
+        "edit": "Modifica",
+        "delete": "Elimina",
+        "makePrimary": "Imposta come primario"
+      },
+      "primary": {
+        "yes": "Sì",
+        "no": "No"
+      },
+      "placeholders": {
+        "none": "—"
+      },
+      "form": {
+        "createTitle": "Nuovo contatto",
+        "editTitle": "Modifica contatto",
+        "name": "Nome",
+        "role": "Ruolo",
+        "email": "Email",
+        "phone": "Telefono",
+        "preferredChannel": "Canale preferito",
+        "isPrimary": "Segna come contatto primario",
+        "notes": "Note",
+        "create": "Crea contatto",
+        "save": "Aggiorna contatto",
+        "saving": "Salvataggio…",
+        "cancel": "Annulla"
+      },
+      "errors": {
+        "nameRequired": "Inserisci un nome.",
+        "saveFailed": "Impossibile salvare il contatto.",
+        "deleteFailed": "Impossibile eliminare il contatto."
+      },
+      "confirmDelete": "Eliminare il contatto {{name}}?"
+    },
     "filters": {
       "search": {
         "label": "Cerca",
@@ -92,6 +144,41 @@
     "title": "Eventi",
     "actions": {
       "new": "Nuovo evento"
+    },
+    "candidates": {
+      "conflict": "Conflitto",
+      "mail": {
+        "subject": "Richiesta disponibilità – {{title}} ({{start}}–{{end}})",
+        "body": "Ciao,\n\nsiamo interessati alla struttura per l'evento {{title}} dal {{start}} al {{end}}. Fateci sapere disponibilità e condizioni.\n\nGrazie,\nSquadra eventi",
+        "subjectNoDates": "Richiesta disponibilità – {{title}}"
+      },
+      "contact": {
+        "loading": "Caricamento contatti…",
+        "error": "Impossibile caricare i contatti.",
+        "none": "Nessun contatto disponibile.",
+        "label": "Contatto struttura",
+        "unassigned": "Nessun contatto",
+        "primaryFlag": "primario",
+        "unknownStructure": "Struttura"
+      },
+      "actions": {
+        "email": "Scrivi email",
+        "call": "Chiama",
+        "save": "Salva",
+        "saving": "Salvataggio…"
+      },
+      "errors": {
+        "conflict": "Conflitto di disponibilità rilevato.",
+        "forbidden": "Non hai i permessi per modificare la candidatura.",
+        "updateFailed": "Impossibile aggiornare la candidatura."
+      },
+      "labels": {
+        "structure": "Struttura",
+        "assignee": "Assegnato a",
+        "noAssignee": "Non assegnato",
+        "currentAssignee": "Attuale: {{name}}",
+        "status": "Stato"
+      }
     },
     "filters": {
       "search": {

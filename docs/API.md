@@ -140,7 +140,9 @@ curl "http://localhost:8000/api/v1/structures/search?q=alpina&province=BS&max_km
 
 Fetch the full record for a structure identified by its slug. Returns a 404 if
 no structure is found. Use `include=details` to expand the payload with
-seasonal availability, cost options, and the estimated cost band.
+seasonal availability, cost options, and the estimated cost band. Supplying
+`include=contacts` (or `include=details`, which implies contacts) appends the
+structure's contacts ordered with the primary contact first.
 
 ```bash
 curl "http://localhost:8000/api/v1/structures/by-slug/casa-alpina?include=details"
@@ -154,6 +156,50 @@ The detailed payload contains:
   `deposit`, `city_tax_per_night`, and `utilities_flat`
 - `estimated_cost` and `cost_band`: the average daily rate calculated from the
   configured cost options
+- `contacts`: when requested, each contact with `name`, `role`, `email`, `phone`,
+  `preferred_channel`, `is_primary`, and timestamps
+
+### Structure contacts
+
+Contacts can be managed through authenticated endpoints. Email addresses are
+validated and phone numbers may include digits, spaces, and a leading `+`.
+
+#### GET `/api/v1/structures/{id}/contacts`
+
+List all contacts for a structure, returning the primary contact first.
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/v1/structures/42/contacts"
+```
+
+#### POST `/api/v1/structures/{id}/contacts`
+
+Create a new contact. Setting `is_primary=true` automatically demotes any
+previous primary contact.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/structures/42/contacts \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "name": "Lucia Bianchi",
+        "role": "Amministrazione",
+        "email": "lucia@example.com",
+        "phone": "+39 02 1234567",
+        "preferred_channel": "phone",
+        "is_primary": true
+      }'
+```
+
+#### PATCH `/api/v1/structures/{id}/contacts/{contact_id}`
+
+Update a contact in place. Fields omitted from the payload are left unchanged.
+Setting `is_primary=true` reassigns the primary flag to the selected contact.
+
+#### DELETE `/api/v1/structures/{id}/contacts/{contact_id}`
+
+Remove a contact permanently.
 
 ## POST `/api/v1/structures/`
 
@@ -306,7 +352,7 @@ Validation rules:
 ## GET `/api/v1/events/{id}`
 
 Fetch a single event. Use `?include=candidates,tasks` to expand the response with
-candidates and contact tasks.
+candidates (including linked structure contacts) and contact tasks.
 
 ```bash
 curl "http://localhost:8000/api/v1/events/1?include=candidates,tasks"
@@ -332,10 +378,11 @@ validated to avoid inverted ranges.
 ## POST `/api/v1/events/{id}/candidates`
 
 Add a structure to the event's candidate list. The payload accepts either a
-`structure_id` or `structure_slug` plus optional `assigned_user` and
-`assigned_user_id` fields. When `assigned_user_id` is provided the user must
-already be a member of the event; responses expose both `assigned_user_id` and
-`assigned_user_name`.
+`structure_id` or `structure_slug` plus optional `assigned_user`,
+`assigned_user_id`, and `contact_id` fields. When `assigned_user_id` is provided
+the user must already be a member of the event; responses expose both
+`assigned_user_id` and `assigned_user_name`. When `contact_id` is provided it
+must reference a contact belonging to the structure.
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/events/1/candidates \
@@ -345,9 +392,9 @@ curl -X POST http://localhost:8000/api/v1/events/1/candidates \
 
 ## PATCH `/api/v1/events/{id}/candidates/{candidate_id}`
 
-Update candidate status or assignment. When setting `status=confirmed`, the API
-verifies that no other confirmed event overlaps for the same structure; a 409 is
-returned when a conflict is detected.
+Update candidate status, assigned user, or associated structure contact. When
+setting `status=confirmed`, the API verifies that no other confirmed event
+overlaps for the same structure; a 409 is returned when a conflict is detected.
 
 ## GET `/api/v1/events/{id}/summary`
 

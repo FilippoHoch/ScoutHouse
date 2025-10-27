@@ -1,9 +1,24 @@
-import { useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
-import { ApiError, getStructureBySlug } from "../shared/api";
-import type { Availability, CostOption, CostBand, Structure } from "../shared/types";
+import {
+  ApiError,
+  createStructureContact,
+  deleteStructureContact,
+  getStructureBySlug,
+  updateStructureContact
+} from "../shared/api";
+import type {
+  Availability,
+  Contact,
+  ContactCreateDto,
+  ContactPreferredChannel,
+  CostOption,
+  CostBand,
+  Structure
+} from "../shared/types";
 
 const formatCurrency = (value: number, currency: string) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency }).format(value);
@@ -11,11 +26,58 @@ const formatCurrency = (value: number, currency: string) =>
 const formatCostBand = (band: CostBand | null | undefined) =>
   band ? band.charAt(0).toUpperCase() + band.slice(1) : null;
 
+type ContactFormState = {
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  preferred_channel: ContactPreferredChannel;
+  is_primary: boolean;
+  notes: string;
+};
+
+const initialContactForm: ContactFormState = {
+  name: "",
+  role: "",
+  email: "",
+  phone: "",
+  preferred_channel: "email",
+  is_primary: false,
+  notes: ""
+};
+
+const sortContacts = (items: Contact[]): Contact[] =>
+  [...items].sort((a, b) => {
+    if (a.is_primary !== b.is_primary) {
+      return a.is_primary ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name);
+  });
+
 export const StructureDetailsPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [activeTab, setActiveTab] = useState<"overview" | "availability" | "costs">("overview");
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<"overview" | "availability" | "costs" | "contacts">(
+    "overview"
+  );
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [formState, setFormState] = useState<ContactFormState>(initialContactForm);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [savingContact, setSavingContact] = useState(false);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const channelLabels = useMemo(
+    () => ({
+      email: t("structures.contacts.channels.email"),
+      phone: t("structures.contacts.channels.phone"),
+      other: t("structures.contacts.channels.other")
+    }),
+    [t]
+  );
+
+  const { data, isLoading, isError, error, refetch } = useQuery<Structure, ApiError>({
     queryKey: ["structure", slug],
     queryFn: () => {
       if (!slug) {
@@ -24,8 +86,14 @@ export const StructureDetailsPage = () => {
       return getStructureBySlug(slug, { include: "details" });
     },
     enabled: Boolean(slug),
-    retry: false
+    retry: false,
   });
+
+  useEffect(() => {
+    if (data) {
+      setContacts(sortContacts(data.contacts ?? []));
+    }
+  }, [data]);
 
   if (!slug) {
     return (
@@ -82,6 +150,131 @@ export const StructureDetailsPage = () => {
 
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
+
+  const resetContactForm = () => {
+    setEditingContact(null);
+    setFormState(initialContactForm);
+    setIsFormVisible(false);
+    setFormError(null);
+  };
+
+  const startCreateContact = () => {
+    setActionError(null);
+    setEditingContact(null);
+    setFormState({
+      ...initialContactForm,
+      is_primary: contacts.length === 0 || !contacts.some((item) => item.is_primary)
+    });
+    setIsFormVisible(true);
+  };
+
+  const startEditContact = (contact: Contact) => {
+    setActionError(null);
+    setEditingContact(contact);
+    setFormState({
+      name: contact.name,
+      role: contact.role ?? "",
+      email: contact.email ?? "",
+      phone: contact.phone ?? "",
+      preferred_channel: contact.preferred_channel,
+      is_primary: contact.is_primary,
+      notes: contact.notes ?? ""
+    });
+    setIsFormVisible(true);
+    setFormError(null);
+  };
+
+  const buildPayload = (state: ContactFormState): ContactCreateDto => {
+    const payload: ContactCreateDto = {
+      name: state.name.trim(),
+      preferred_channel: state.preferred_channel,
+      is_primary: state.is_primary
+    };
+    if (state.role.trim()) {
+      payload.role = state.role.trim();
+    }
+    if (state.email.trim()) {
+      payload.email = state.email.trim();
+    }
+    if (state.phone.trim()) {
+      payload.phone = state.phone.trim();
+    }
+    if (state.notes.trim()) {
+      payload.notes = state.notes.trim();
+    }
+    return payload;
+  };
+
+  const handleContactSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedName = formState.name.trim();
+    if (!trimmedName) {
+      setFormError(t("structures.contacts.errors.nameRequired"));
+      return;
+    }
+
+    setSavingContact(true);
+    setFormError(null);
+    setActionError(null);
+
+    const payload = buildPayload({ ...formState, name: trimmedName });
+
+    try {
+      let saved: Contact;
+      if (editingContact) {
+        saved = await updateStructureContact(structure.id, editingContact.id, payload);
+      } else {
+        saved = await createStructureContact(structure.id, payload);
+      }
+      setContacts((prev) => {
+        const next = editingContact
+          ? prev.map((item) => (item.id === saved.id ? saved : item))
+          : [...prev, saved];
+        return sortContacts(next);
+      });
+      resetContactForm();
+      await refetch();
+    } catch (apiError) {
+      setFormError(t("structures.contacts.errors.saveFailed"));
+    } finally {
+      setSavingContact(false);
+    }
+  };
+
+  const handleDeleteContact = async (contact: Contact) => {
+    const confirmed = window.confirm(
+      t("structures.contacts.confirmDelete", { name: contact.name })
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await deleteStructureContact(structure.id, contact.id);
+      setContacts((prev) => prev.filter((item) => item.id !== contact.id));
+      if (editingContact?.id === contact.id) {
+        resetContactForm();
+      }
+      setActionError(null);
+      await refetch();
+    } catch (apiError) {
+      setActionError(t("structures.contacts.errors.deleteFailed"));
+    }
+  };
+
+  const handleSetPrimary = async (contact: Contact) => {
+    try {
+      const updated = await updateStructureContact(structure.id, contact.id, {
+        is_primary: true
+      });
+      setContacts((prev) =>
+        sortContacts(prev.map((item) => (item.id === updated.id ? updated : item)))
+      );
+      setActionError(null);
+      await refetch();
+    } catch (apiError) {
+      setActionError(t("structures.contacts.errors.saveFailed"));
+    }
+  };
 
   return (
     <section>
@@ -145,6 +338,13 @@ export const StructureDetailsPage = () => {
             onClick={() => setActiveTab("costs")}
           >
             Costs
+          </button>
+          <button
+            type="button"
+            className={activeTab === "contacts" ? "active" : ""}
+            onClick={() => setActiveTab("contacts")}
+          >
+            {t("structures.contacts.tab")}
           </button>
         </div>
 
@@ -214,6 +414,182 @@ export const StructureDetailsPage = () => {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+        )}
+
+        {activeTab === "contacts" && (
+          <div className="detail-panel">
+            <div className="contacts-header" style={{ marginBottom: "1rem" }}>
+              <button type="button" onClick={startCreateContact}>
+                {t("structures.contacts.new")}
+              </button>
+            </div>
+            {actionError && <p className="error">{actionError}</p>}
+            {contacts.length === 0 ? (
+              <p>{t("structures.contacts.empty")}</p>
+            ) : (
+              <table className="detail-table">
+                <thead>
+                  <tr>
+                    <th>{t("structures.contacts.table.name")}</th>
+                    <th>{t("structures.contacts.table.role")}</th>
+                    <th>{t("structures.contacts.table.channel")}</th>
+                    <th>{t("structures.contacts.table.email")}</th>
+                    <th>{t("structures.contacts.table.phone")}</th>
+                    <th>{t("structures.contacts.table.primary")}</th>
+                    <th>{t("structures.contacts.table.actions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts.map((contact) => {
+                    const mailHref = contact.email ? `mailto:${contact.email}` : null;
+                    const telHref = contact.phone
+                      ? `tel:${contact.phone.replace(/\s+/g, "")}`
+                      : null;
+                    return (
+                      <tr key={contact.id}>
+                        <td>{contact.name}</td>
+                        <td>{contact.role ?? t("structures.contacts.placeholders.none")}</td>
+                        <td>{channelLabels[contact.preferred_channel]}</td>
+                        <td>
+                          {mailHref ? (
+                            <a href={mailHref}>{contact.email}</a>
+                          ) : (
+                            t("structures.contacts.placeholders.none")
+                          )}
+                        </td>
+                        <td>
+                          {telHref ? (
+                            <a href={telHref}>{contact.phone}</a>
+                          ) : (
+                            t("structures.contacts.placeholders.none")
+                          )}
+                        </td>
+                        <td>
+                          {contact.is_primary
+                            ? t("structures.contacts.primary.yes")
+                            : t("structures.contacts.primary.no")}
+                        </td>
+                        <td>
+                          <div className="inline-actions" style={{ display: "flex", gap: "0.5rem" }}>
+                            <button type="button" onClick={() => startEditContact(contact)}>
+                              {t("structures.contacts.actions.edit")}
+                            </button>
+                            <button type="button" onClick={() => handleDeleteContact(contact)}>
+                              {t("structures.contacts.actions.delete")}
+                            </button>
+                            {!contact.is_primary && (
+                              <button type="button" onClick={() => handleSetPrimary(contact)}>
+                                {t("structures.contacts.actions.makePrimary")}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            {isFormVisible && (
+              <form className="contact-form" onSubmit={handleContactSubmit} style={{ marginTop: "1.5rem" }}>
+                <h3>
+                  {editingContact
+                    ? t("structures.contacts.form.editTitle")
+                    : t("structures.contacts.form.createTitle")}
+                </h3>
+                <label>
+                  {t("structures.contacts.form.name")}
+                  <input
+                    type="text"
+                    value={formState.name}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, name: event.target.value }))
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  {t("structures.contacts.form.role")}
+                  <input
+                    type="text"
+                    value={formState.role}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, role: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  {t("structures.contacts.form.email")}
+                  <input
+                    type="email"
+                    value={formState.email}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, email: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  {t("structures.contacts.form.phone")}
+                  <input
+                    type="tel"
+                    value={formState.phone}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, phone: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  {t("structures.contacts.form.preferredChannel")}
+                  <select
+                    value={formState.preferred_channel}
+                    onChange={(event) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        preferred_channel: event.target.value as ContactPreferredChannel
+                      }))
+                    }
+                  >
+                    <option value="email">{channelLabels.email}</option>
+                    <option value="phone">{channelLabels.phone}</option>
+                    <option value="other">{channelLabels.other}</option>
+                  </select>
+                </label>
+                <label style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={formState.is_primary}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, is_primary: event.target.checked }))
+                    }
+                  />
+                  {t("structures.contacts.form.isPrimary")}
+                </label>
+                <label>
+                  {t("structures.contacts.form.notes")}
+                  <textarea
+                    value={formState.notes}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, notes: event.target.value }))
+                    }
+                  />
+                </label>
+                {formError && <p className="error">{formError}</p>}
+                <div className="form-actions" style={{ display: "flex", gap: "0.75rem" }}>
+                  <button type="submit" disabled={savingContact}>
+                    {savingContact
+                      ? t("structures.contacts.form.saving")
+                      : editingContact
+                      ? t("structures.contacts.form.save")
+                      : t("structures.contacts.form.create")}
+                  </button>
+                  <button type="button" onClick={resetContactForm}>
+                    {t("structures.contacts.form.cancel")}
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         )}

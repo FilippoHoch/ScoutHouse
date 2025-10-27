@@ -89,6 +89,7 @@ beforeEach(() => {
     assigned_user: null,
     assigned_user_id: null,
     assigned_user_name: null,
+    contact_id: null,
     last_update: new Date().toISOString(),
     structure: {
       id: 1,

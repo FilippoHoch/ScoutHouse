@@ -30,6 +30,7 @@ from .structure import (
     StructureSearchResponse,
     StructureUpdate,
 )
+from .contact import ContactCreate, ContactRead, ContactUpdate
 from .quote import (
     QuoteBreakdownEntry,
     QuoteCalcRequest,
@@ -62,6 +63,9 @@ __all__ = [
     "StructureSearchItem",
     "StructureSearchResponse",
     "StructureUpdate",
+    "ContactCreate",
+    "ContactUpdate",
+    "ContactRead",
     "EventCreate",
     "EventRead",
     "EventUpdate",

@@ -12,6 +12,7 @@ from app.models.event_contact_task import (
     EventContactTaskStatus,
 )
 from app.models.user import EventMemberRole
+from .contact import ContactRead
 
 
 class EventParticipants(BaseModel):
@@ -91,6 +92,7 @@ class EventCandidateCreate(BaseModel):
     structure_slug: str | None = None
     assigned_user: str | None = None
     assigned_user_id: str | None = None
+    contact_id: int | None = None
 
     @model_validator(mode="after")
     def validate_structure(self) -> "EventCandidateCreate":
@@ -103,6 +105,7 @@ class EventCandidateUpdate(BaseModel):
     status: EventStructureCandidateStatus | None = None
     assigned_user: str | None = None
     assigned_user_id: str | None = None
+    contact_id: int | None = None
 
 
 class EventCandidateRead(BaseModel):
@@ -113,6 +116,8 @@ class EventCandidateRead(BaseModel):
     assigned_user: str | None
     assigned_user_id: str | None = None
     assigned_user_name: str | None = None
+    contact_id: int | None = None
+    contact: ContactRead | None = None
     last_update: datetime
     structure: EventCandidateStructure | None = None
 
