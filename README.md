@@ -43,8 +43,11 @@ cp frontend/.env.example frontend/.env
 
 The backend `.env` exposes `DATABASE_URL`, `APP_ENV`, and the optional
 `DEFAULT_BASE_LAT`/`DEFAULT_BASE_LON` coordinates used for distance
-calculations. The frontend `.env` exposes the `VITE_API_URL` used to talk to the
-API and `VITE_BASE_COORDS` for the default map reference point.
+calculations. Authentication adds `JWT_SECRET`, `ACCESS_TTL_MIN`,
+`REFRESH_TTL_DAYS`, `ALLOW_REGISTRATION` (disabled by default),
+`CORS_ALLOWED_ORIGINS`, and `SECURE_COOKIES`. The frontend `.env` exposes the
+`VITE_API_URL` used to talk to the API and `VITE_BASE_COORDS` for the default
+map reference point.
 
 ### Local development (without Docker)
 
@@ -65,6 +68,10 @@ Useful backend commands:
 - Run the test suite: `pytest -q`
 - Static analysis: `ruff check .` and `mypy app`
 - Security scan: `bandit -r app -ll`
+
+User registration is disabled unless you explicitly opt-in. For local testing,
+set `ALLOW_REGISTRATION=true` in `backend/.env`, restart the API, and use
+`POST /api/v1/auth/register` to create an account.
 
 #### Seed data
 
@@ -92,6 +99,10 @@ The API exposes:
   slug
 - `GET /api/v1/structures/` → legacy list of all structures
 - `POST /api/v1/structures/` → create a new structure record
+- `POST /api/v1/auth/login`, `/refresh`, `/logout` and `GET /api/v1/auth/me` →
+  manage authenticated sessions with Argon2-hashed users, short-lived access
+  tokens, and HttpOnly refresh cookies. `POST /api/v1/auth/register` is
+  available when registration is enabled in configuration.
 - `GET /api/v1/events` → list events with pagination, search, and status filters
 - `POST /api/v1/events` → create an event with automatic slug generation
 - `GET /api/v1/events/{id}?include=candidates,tasks` → fetch details, candidates, and tasks
@@ -115,9 +126,12 @@ Visit the application at http://localhost:5173. The `/structures` page now
 provides search filters (including season, unit, and cost band),
 distance-aware sorting, and pagination backed by the `/structures/search` API,
 with badges summarising availability and estimated costs plus links to the
-detail view for each entry. The `/events` area introduces a creation wizard
-(determine details, participants/budget, suggestions) and an event dashboard
-with candidate management, conflict indicators, and polling-powered summaries.
+detail view for each entry. Sign in to access protected areas: `/events`,
+`/events/:id`, and `/structures/new` are guarded client-side and automatically
+refresh access tokens when the API returns `401`. The `/events` area introduces
+a creation wizard (determine details, participants/budget, suggestions) and an
+event dashboard with candidate management, conflict indicators, and
+polling-powered summaries.
 
 ### Calcolare e salvare un preventivo
 

@@ -12,6 +12,8 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 
+from tests.utils import auth_headers
+
 
 @pytest.fixture(autouse=True)
 def setup_database() -> Generator[None, None, None]:
@@ -21,8 +23,11 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
-def get_client() -> TestClient:
-    return TestClient(app)
+def get_client(*, authenticated: bool = False, is_admin: bool = False) -> TestClient:
+    client = TestClient(app)
+    if authenticated:
+        client.headers.update(auth_headers(client, is_admin=is_admin))
+    return client
 
 
 def create_structure(client: TestClient, payload: dict) -> dict:
@@ -44,7 +49,7 @@ def add_cost_option(client: TestClient, structure_id: int, payload: dict) -> dic
 
 
 def test_search_filters_by_season_and_unit() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
 
     alpine = create_structure(
         client,
@@ -89,7 +94,7 @@ def test_search_filters_by_season_and_unit() -> None:
 
 
 def test_search_filters_by_cost_band() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
 
     cheap = create_structure(
         client,

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     jwt_secret: str = Field("change-me", alias="JWT_SECRET")
     access_ttl_min: int = Field(10, alias="ACCESS_TTL_MIN")
     refresh_ttl_days: int = Field(14, alias="REFRESH_TTL_DAYS")
-    allow_registration: bool = Field(True, alias="ALLOW_REGISTRATION")
+    allow_registration: bool = Field(False, alias="ALLOW_REGISTRATION")
     cors_allowed_origins: Sequence[str] = Field(default_factory=list, alias="CORS_ALLOWED_ORIGINS")
     secure_cookies: bool = Field(False, alias="SECURE_COOKIES")
 

@@ -4,6 +4,14 @@ export type Unit = "LC" | "EG" | "RS" | "ALL";
 export type CostModel = "per_person_day" | "per_person_night" | "forfait";
 export type CostBand = "cheap" | "medium" | "expensive";
 
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  is_admin: boolean;
+  created_at: string;
+}
+
 export interface Availability {
   id: number;
   season: Season;

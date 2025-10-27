@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-10-27
+### Added
+- Autenticazione core: JWT access + refresh HttpOnly con rotazione; `/auth/login`, `/auth/refresh`, `/auth/logout`, `/me`; registrazione opzionale.
+- Migrazione `20240320_0006_auth_core` con tabelle `users` e `refresh_tokens`.
+- Frontend: gestione sessione, interceptor 401→refresh, guard su rotte protette, pagina `/login`.
+
+### Changed
+- README e `docs/API.md` per flusso auth core.
+
+### Security
+- Argon2 hashing; cookie HttpOnly per refresh; CORS con credenziali.
+
+[0.6.0]: https://github.com/<org>/<repo>/compare/0.5.0...0.6.0
+
 ## [0.5.0] - 2025-10-26
 ### Added
 - Tabella `quotes` con migrazione `20240320_0005_quotes`.

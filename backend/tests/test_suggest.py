@@ -16,6 +16,8 @@ from app.models import (  # noqa: E402
     StructureType,
 )
 
+from tests.utils import auth_headers
+
 
 @pytest.fixture(autouse=True)
 def setup_database() -> Generator[None, None, None]:
@@ -25,8 +27,11 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
-def get_client() -> TestClient:
-    return TestClient(app)
+def get_client(*, authenticated: bool = False, is_admin: bool = False) -> TestClient:
+    client = TestClient(app)
+    if authenticated:
+        client.headers.update(auth_headers(client, is_admin=is_admin))
+    return client
 
 
 def create_structure_with_availability(
@@ -61,7 +66,7 @@ def create_structure_with_availability(
 
 
 def test_suggestions_match_branch_and_season() -> None:
-    client = get_client()
+    client = get_client(authenticated=True)
     create_structure_with_availability(
         "Casa Inverno",
         "casa-inverno",

@@ -31,10 +31,6 @@ function computeNights(startDate: string, endDate: string): number {
   return Math.max(diff, 1);
 }
 
-function computeDays(startDate: string, endDate: string): number {
-  return computeNights(startDate, endDate) + 1;
-}
-
 function getCandidateStructures(candidates: EventCandidate[] | null | undefined) {
   if (!candidates) {
     return [];
@@ -205,7 +201,6 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
   };
 
   const quotes = quotesQuery.data ?? [];
-  const selectedQuote = quotes.find((item) => item.id === selectedQuoteId) ?? null;
 
   const comparisonQuotes: QuoteListItem[] = comparisonIds
     .map((id) => quotes.find((item) => item.id === id))

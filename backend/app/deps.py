@@ -8,7 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.security import decode_token
+from app.core.security import decode_token, hash_token
 from app.models import EventMember, EventMemberRole, RefreshToken, User
 
 auth_scheme = HTTPBearer(auto_error=False)
@@ -78,25 +78,19 @@ def get_refresh_token_from_cookie(request: Request, db: Session = Depends(get_db
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")
 
-    token_hash = decode_refresh_cookie(token)
+    token_hash = hash_token(token)
 
     token_record = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
     if token_record is None or token_record.revoked:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-    if token_record.expires_at < datetime.now(timezone.utc):
+    expires_at = token_record.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Expired refresh token")
     return token_record
-
-
-def decode_refresh_cookie(token: str) -> str:
-    from app.core.security import hash_token
-
-    return hash_token(token)
-
-
 __all__ = [
     "auth_scheme",
-    "decode_refresh_cookie",
     "get_current_user",
     "get_refresh_token_from_cookie",
     "require_admin",
