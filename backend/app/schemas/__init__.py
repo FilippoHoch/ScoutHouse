@@ -8,6 +8,9 @@ from .event import (
     EventContactTaskUpdate,
     EventCreate,
     EventListResponse,
+    EventMemberCreate,
+    EventMemberRead,
+    EventMemberUpdate,
     EventRead,
     EventSuggestion,
     EventSummary,
@@ -38,7 +41,14 @@ from .quote import (
     QuoteTotals,
 )
 from .user import UserCreate, UserRead, UserUpdate
-from .auth import AuthResponse, LoginRequest, RefreshResponse, RegisterRequest
+from .auth import (
+    AuthResponse,
+    ForgotPasswordRequest,
+    LoginRequest,
+    RefreshResponse,
+    RegisterRequest,
+    ResetPasswordRequest,
+)
 
 __all__ = [
     "StructureAvailabilityCreate",
@@ -65,6 +75,9 @@ __all__ = [
     "EventContactTaskRead",
     "EventSummary",
     "EventSuggestion",
+    "EventMemberRead",
+    "EventMemberCreate",
+    "EventMemberUpdate",
     "QuoteCalcRequest",
     "QuoteCalcResponse",
     "QuoteCreate",
@@ -80,4 +93,6 @@ __all__ = [
     "RegisterRequest",
     "LoginRequest",
     "RefreshResponse",
+    "ForgotPasswordRequest",
+    "ResetPasswordRequest",
 ]

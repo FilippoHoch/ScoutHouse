@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from app.models.event import EventBranch, EventStatus
 from app.models.event_candidate import EventStructureCandidateStatus
@@ -11,6 +11,7 @@ from app.models.event_contact_task import (
     EventContactTaskOutcome,
     EventContactTaskStatus,
 )
+from app.models.user import EventMemberRole
 
 
 class EventParticipants(BaseModel):
@@ -111,6 +112,7 @@ class EventCandidateRead(BaseModel):
     status: EventStructureCandidateStatus
     assigned_user: str | None
     assigned_user_id: str | None = None
+    assigned_user_name: str | None = None
     last_update: datetime
     structure: EventCandidateStructure | None = None
 
@@ -145,6 +147,7 @@ class EventContactTaskRead(EventContactTaskBase):
     id: int
     event_id: int
     updated_at: datetime
+    assigned_user_name: str | None = None
 
     model_config = {
         "from_attributes": True,
@@ -159,6 +162,36 @@ class EventSummary(BaseModel):
 class EventWithRelations(EventRead):
     candidates: list[EventCandidateRead] | None = None
     tasks: list[EventContactTaskRead] | None = None
+
+
+class EventMemberUser(BaseModel):
+    id: str
+    email: EmailStr
+    name: str
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class EventMemberRead(BaseModel):
+    id: int
+    event_id: int
+    role: EventMemberRole
+    user: EventMemberUser
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class EventMemberCreate(BaseModel):
+    email: EmailStr
+    role: EventMemberRole
+
+
+class EventMemberUpdate(BaseModel):
+    role: EventMemberRole
 
 
 class EventListResponse(BaseModel):
@@ -191,4 +224,7 @@ __all__ = [
     "EventContactTaskRead",
     "EventSummary",
     "EventSuggestion",
+    "EventMemberRead",
+    "EventMemberCreate",
+    "EventMemberUpdate",
 ]

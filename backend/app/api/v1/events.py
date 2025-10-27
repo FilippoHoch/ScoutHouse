@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -29,6 +29,9 @@ from app.schemas import (
     EventContactTaskUpdate,
     EventCreate,
     EventListResponse,
+    EventMemberCreate,
+    EventMemberRead,
+    EventMemberUpdate,
     EventRead,
     EventSuggestion,
     EventSummary,
@@ -36,6 +39,7 @@ from app.schemas import (
     EventWithRelations,
 )
 from app.services.events import is_structure_occupied, suggest_structures
+from app.services.audit import record_audit
 
 router = APIRouter()
 
@@ -84,8 +88,19 @@ def _ensure_member_user(db: Session, event_id: int, user_id: str | None) -> str 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User is not a member of the event",
-        )
+    )
     return membership.user_id
+
+
+def _owner_count(db: Session, event_id: int, *, exclude_member_id: int | None = None) -> int:
+    query = (
+        select(func.count())
+        .select_from(EventMember)
+        .where(EventMember.event_id == event_id, EventMember.role == EventMemberRole.OWNER)
+    )
+    if exclude_member_id is not None:
+        query = query.where(EventMember.id != exclude_member_id)
+    return db.execute(query).scalar_one()
 
 
 def _load_event(db: Session, event_id: int, *, with_candidates: bool = False, with_tasks: bool = False) -> Event:
@@ -124,6 +139,7 @@ def _get_structure(db: Session, *, structure_id: int | None = None, slug: str | 
 def create_event(
     event_in: EventCreate,
     db: DbSession,
+    request: Request,
     current_user: User = Depends(get_current_user),
 ) -> EventRead:
     base_slug = _slugify(event_in.title)
@@ -142,6 +158,16 @@ def create_event(
 
     membership = EventMember(event_id=event.id, user_id=current_user.id, role=EventMemberRole.OWNER)
     db.add(membership)
+
+    record_audit(
+        db,
+        actor=current_user,
+        action="event.create",
+        entity_type="event",
+        entity_id=event.id,
+        diff={"after": EventRead.model_validate(event).model_dump()},
+        request=request,
+    )
 
     db.commit()
     db.refresh(event)
@@ -218,9 +244,11 @@ def update_event(
     event_id: int,
     event_in: EventUpdate,
     db: DbSession,
+    request: Request,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventRead:
     event = _load_event(db, event_id)
+    before_snapshot = EventRead.model_validate(event).model_dump()
 
     data = event_in.model_dump(exclude_unset=True)
     if "participants" in data and data["participants"] is not None:
@@ -238,6 +266,21 @@ def update_event(
         setattr(event, key, value)
 
     db.add(event)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=_.user if _ is not None else None,
+        action="event.update",
+        entity_type="event",
+        entity_id=event.id,
+        diff={
+            "before": before_snapshot,
+            "after": EventRead.model_validate(event).model_dump(),
+        },
+        request=request,
+    )
+
     db.commit()
     db.refresh(event)
     return EventRead.model_validate(event)
@@ -248,6 +291,7 @@ def add_candidate(
     event_id: int,
     candidate_in: EventCandidateCreate,
     db: DbSession,
+    request: Request,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventCandidateRead:
     event = _load_event(db, event_id)
@@ -277,6 +321,18 @@ def add_candidate(
         assigned_user_id=assigned_user_id,
     )
     db.add(candidate)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=_.user if _ is not None else None,
+        action="event.candidate.create",
+        entity_type="event_candidate",
+        entity_id=candidate.id,
+        diff={"after": EventCandidateRead.model_validate(candidate).model_dump()},
+        request=request,
+    )
+
     db.commit()
     db.refresh(candidate)
 
@@ -289,6 +345,7 @@ def update_candidate(
     candidate_id: int,
     candidate_in: EventCandidateUpdate,
     db: DbSession,
+    request: Request,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventCandidateRead:
     event = _load_event(db, event_id)
@@ -308,6 +365,7 @@ def update_candidate(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
 
     data = candidate_in.model_dump(exclude_unset=True)
+    before_snapshot = EventCandidateRead.model_validate(candidate).model_dump()
     if "assigned_user_id" in data:
         candidate.assigned_user_id = _ensure_member_user(db, event.id, data.pop("assigned_user_id"))
     status_value = data.get("status")
@@ -328,6 +386,21 @@ def update_candidate(
         setattr(candidate, key, value)
 
     db.add(candidate)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=_.user if _ is not None else None,
+        action="event.candidate.update",
+        entity_type="event_candidate",
+        entity_id=candidate.id,
+        diff={
+            "before": before_snapshot,
+            "after": EventCandidateRead.model_validate(candidate).model_dump(),
+        },
+        request=request,
+    )
+
     db.commit()
     db.refresh(candidate)
     return EventCandidateRead.model_validate(candidate)
@@ -422,6 +495,178 @@ def update_task(
     db.commit()
     db.refresh(task)
     return EventContactTaskRead.model_validate(task)
+
+
+@router.get("/{event_id}/members", response_model=list[EventMemberRead])
+def list_members(
+    event_id: int,
+    db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
+) -> list[EventMemberRead]:
+    _load_event(db, event_id)
+    memberships = (
+        db.execute(
+            select(EventMember)
+            .options(selectinload(EventMember.user))
+            .where(EventMember.event_id == event_id)
+            .order_by(EventMember.role.desc(), EventMember.id.asc())
+        )
+        .scalars()
+        .all()
+    )
+    return [EventMemberRead.model_validate(item) for item in memberships]
+
+
+@router.post(
+    "/{event_id}/members",
+    response_model=EventMemberRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_member(
+    event_id: int,
+    payload: EventMemberCreate,
+    db: DbSession,
+    request: Request,
+    actor_membership: Annotated[
+        EventMember, Depends(require_event_member(EventMemberRole.OWNER))
+    ],
+) -> EventMemberRead:
+    event = _load_event(db, event_id)
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    existing = (
+        db.query(EventMember)
+        .filter(EventMember.event_id == event.id, EventMember.user_id == user.id)
+        .first()
+    )
+    if existing is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already a member")
+
+    membership = EventMember(event_id=event.id, user_id=user.id, role=payload.role)
+    membership.user = user
+    db.add(membership)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=actor_membership.user,
+        action="event.member.add",
+        entity_type="event_member",
+        entity_id=membership.id,
+        diff={"after": EventMemberRead.model_validate(membership).model_dump()},
+        request=request,
+    )
+
+    db.commit()
+    db.refresh(membership)
+    return EventMemberRead.model_validate(membership)
+
+
+@router.patch("/{event_id}/members/{member_id}", response_model=EventMemberRead)
+def update_member(
+    event_id: int,
+    member_id: int,
+    payload: EventMemberUpdate,
+    db: DbSession,
+    request: Request,
+    actor_membership: Annotated[
+        EventMember, Depends(require_event_member(EventMemberRole.OWNER))
+    ],
+) -> EventMemberRead:
+    membership = (
+        db.execute(
+            select(EventMember)
+            .options(selectinload(EventMember.user))
+            .where(EventMember.id == member_id, EventMember.event_id == event_id)
+        )
+        .scalars()
+        .first()
+    )
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+
+    if membership.role == payload.role:
+        return EventMemberRead.model_validate(membership)
+
+    if (
+        membership.role == EventMemberRole.OWNER
+        and payload.role != EventMemberRole.OWNER
+        and _owner_count(db, event_id, exclude_member_id=member_id) == 0
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one owner must remain",
+        )
+
+    before_snapshot = EventMemberRead.model_validate(membership).model_dump()
+    membership.role = payload.role
+    db.add(membership)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=actor_membership.user,
+        action="event.member.update",
+        entity_type="event_member",
+        entity_id=membership.id,
+        diff={
+            "before": before_snapshot,
+            "after": EventMemberRead.model_validate(membership).model_dump(),
+        },
+        request=request,
+    )
+
+    db.commit()
+    db.refresh(membership)
+    return EventMemberRead.model_validate(membership)
+
+
+@router.delete("/{event_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_member(
+    event_id: int,
+    member_id: int,
+    db: DbSession,
+    request: Request,
+    actor_membership: Annotated[
+        EventMember, Depends(require_event_member(EventMemberRole.OWNER))
+    ],
+) -> None:
+    membership = (
+        db.execute(
+            select(EventMember)
+            .options(selectinload(EventMember.user))
+            .where(EventMember.id == member_id, EventMember.event_id == event_id)
+        )
+        .scalars()
+        .first()
+    )
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+
+    if membership.role == EventMemberRole.OWNER and _owner_count(db, event_id, exclude_member_id=member_id) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one owner must remain",
+        )
+
+    before_snapshot = EventMemberRead.model_validate(membership).model_dump()
+    db.delete(membership)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=actor_membership.user,
+        action="event.member.remove",
+        entity_type="event_member",
+        entity_id=member_id,
+        diff={"before": before_snapshot},
+        request=request,
+    )
+
+    db.commit()
+    return None
 
 
 @router.get("/{event_id}/suggest", response_model=list[EventSuggestion])

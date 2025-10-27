@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     allow_registration: bool = Field(False, alias="ALLOW_REGISTRATION")
     cors_allowed_origins: Sequence[str] = Field(default_factory=list, alias="CORS_ALLOWED_ORIGINS")
     secure_cookies: bool = Field(False, alias="SECURE_COOKIES")
+    frontend_base_url: str = Field("http://localhost:5173", alias="FRONTEND_BASE_URL")
+    password_reset_ttl_minutes: int = Field(60, alias="PASSWORD_RESET_TTL_MINUTES")
 
     model_config = {
         "env_file": ".env",

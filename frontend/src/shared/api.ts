@@ -9,6 +9,9 @@ import {
   EventContactTaskUpdateDto,
   EventCreateDto,
   EventListResponse,
+  EventMember,
+  EventMemberCreateDto,
+  EventMemberUpdateDto,
   EventStatus,
   EventSuggestion,
   EventSummary,
@@ -247,6 +250,40 @@ export async function patchTask(
   });
 }
 
+export async function getEventMembers(eventId: number): Promise<EventMember[]> {
+  return apiFetch<EventMember[]>(`/api/v1/events/${eventId}/members`, { auth: true });
+}
+
+export async function addEventMember(
+  eventId: number,
+  dto: EventMemberCreateDto
+): Promise<EventMember> {
+  return apiFetch<EventMember>(`/api/v1/events/${eventId}/members`, {
+    method: "POST",
+    body: JSON.stringify(dto),
+    auth: true
+  });
+}
+
+export async function updateEventMember(
+  eventId: number,
+  memberId: number,
+  dto: EventMemberUpdateDto
+): Promise<EventMember> {
+  return apiFetch<EventMember>(`/api/v1/events/${eventId}/members/${memberId}`, {
+    method: "PATCH",
+    body: JSON.stringify(dto),
+    auth: true
+  });
+}
+
+export async function removeEventMember(eventId: number, memberId: number): Promise<void> {
+  await apiFetch<void>(`/api/v1/events/${eventId}/members/${memberId}`, {
+    method: "DELETE",
+    auth: true
+  });
+}
+
 export async function calcQuote(dto: QuoteCalcRequestDto): Promise<QuoteCalcResponse> {
   return apiFetch<QuoteCalcResponse>("/api/v1/quotes/calc", {
     method: "POST",
@@ -318,4 +355,18 @@ export async function exportQuote(
     return response.blob();
   }
   return response.text();
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  await apiFetch<void>("/api/v1/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email })
+  });
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await apiFetch<void>("/api/v1/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password })
+  });
 }

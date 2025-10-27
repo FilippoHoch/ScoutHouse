@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -17,6 +17,7 @@ from app.models import (
     StructureSeasonAvailability,
     StructureType,
     StructureUnit,
+    User,
 )
 from app.schemas import (
     StructureCreate,
@@ -30,6 +31,7 @@ from app.schemas import (
     StructureSearchItem,
     StructureSearchResponse,
 )
+from app.services.audit import record_audit
 from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
 from app.services.filters import structure_matches_filters
 from app.services.geo import haversine_km
@@ -338,7 +340,8 @@ def get_structure(structure_id: int, db: DbSession) -> Structure:
 def create_structure(
     structure_in: StructureCreate,
     db: DbSession,
-    _: Annotated[None, Depends(require_admin)] = None,
+    request: Request,
+    admin_user: Annotated[User, Depends(require_admin)],
 ) -> Structure:
     existing = db.execute(
         select(Structure).where(Structure.slug == structure_in.slug)
@@ -351,6 +354,18 @@ def create_structure(
 
     structure = Structure(**structure_in.model_dump())
     db.add(structure)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=admin_user,
+        action="structure.create",
+        entity_type="structure",
+        entity_id=structure.id,
+        diff={"after": StructureRead.model_validate(structure).model_dump()},
+        request=request,
+    )
+
     db.commit()
     db.refresh(structure)
     return structure
@@ -365,7 +380,8 @@ def create_structure_availability(
     structure_id: int,
     availability_in: StructureAvailabilityCreate,
     db: DbSession,
-    _: Annotated[None, Depends(require_admin)] = None,
+    request: Request,
+    admin_user: Annotated[User, Depends(require_admin)],
 ) -> StructureAvailabilityRead:
     structure = _get_structure_or_404(db, structure_id)
 
@@ -377,6 +393,21 @@ def create_structure_availability(
         capacity_max=availability_in.capacity_max,
     )
     db.add(availability)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=admin_user,
+        action="structure.availability.create",
+        entity_type="structure_availability",
+        entity_id=availability.id,
+        diff={
+            "structure_id": structure.id,
+            "after": _serialize_availability(availability).model_dump(),
+        },
+        request=request,
+    )
+
     db.commit()
     db.refresh(availability)
     return _serialize_availability(availability)
@@ -390,9 +421,15 @@ def upsert_structure_availabilities(
     structure_id: int,
     availabilities_in: list[StructureAvailabilityUpdate],
     db: DbSession,
-    _: Annotated[None, Depends(require_admin)] = None,
+    request: Request,
+    admin_user: Annotated[User, Depends(require_admin)],
 ) -> list[StructureAvailabilityRead]:
     structure = _get_structure_or_404(db, structure_id, with_details=True)
+
+    before_snapshot = [
+        _serialize_availability(availability).model_dump()
+        for availability in structure.availabilities
+    ]
 
     existing = {availability.id: availability for availability in structure.availabilities}
     seen_ids: set[int] = set()
@@ -420,9 +457,31 @@ def upsert_structure_availabilities(
         if availability_id not in seen_ids:
             db.delete(availability)
 
-    db.commit()
+    db.flush()
 
     updated_structure = _get_structure_or_404(db, structure_id, with_details=True)
+    after_snapshot = [
+        _serialize_availability(availability).model_dump()
+        for availability in updated_structure.availabilities
+    ]
+
+    record_audit(
+        db,
+        actor=admin_user,
+        action="structure.availability.upsert",
+        entity_type="structure_availability",
+        entity_id=structure_id,
+        diff={
+            "structure_id": structure_id,
+            "before": before_snapshot,
+            "after": after_snapshot,
+            "payload": [item.model_dump() for item in availabilities_in],
+        },
+        request=request,
+    )
+
+    db.commit()
+
     return [
         _serialize_availability(availability)
         for availability in updated_structure.availabilities
@@ -438,7 +497,8 @@ def create_structure_cost_option(
     structure_id: int,
     cost_option_in: StructureCostOptionCreate,
     db: DbSession,
-    _: Annotated[None, Depends(require_admin)] = None,
+    request: Request,
+    admin_user: Annotated[User, Depends(require_admin)],
 ) -> StructureCostOptionRead:
     structure = _get_structure_or_404(db, structure_id)
 
@@ -453,6 +513,21 @@ def create_structure_cost_option(
         age_rules=cost_option_in.age_rules,
     )
     db.add(cost_option)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=admin_user,
+        action="structure.cost_option.create",
+        entity_type="structure_cost_option",
+        entity_id=cost_option.id,
+        diff={
+            "structure_id": structure.id,
+            "after": _serialize_cost_option(cost_option).model_dump(),
+        },
+        request=request,
+    )
+
     db.commit()
     db.refresh(cost_option)
     return _serialize_cost_option(cost_option)
@@ -466,9 +541,15 @@ def upsert_structure_cost_options(
     structure_id: int,
     cost_options_in: list[StructureCostOptionUpdate],
     db: DbSession,
-    _: Annotated[None, Depends(require_admin)] = None,
+    request: Request,
+    admin_user: Annotated[User, Depends(require_admin)],
 ) -> list[StructureCostOptionRead]:
     structure = _get_structure_or_404(db, structure_id, with_details=True)
+
+    before_snapshot = [
+        _serialize_cost_option(option).model_dump()
+        for option in structure.cost_options
+    ]
 
     existing = {option.id: option for option in structure.cost_options}
     seen_ids: set[int] = set()
@@ -501,9 +582,31 @@ def upsert_structure_cost_options(
         if option_id not in seen_ids:
             db.delete(option)
 
-    db.commit()
+    db.flush()
 
     updated_structure = _get_structure_or_404(db, structure_id, with_details=True)
+    after_snapshot = [
+        _serialize_cost_option(option).model_dump()
+        for option in updated_structure.cost_options
+    ]
+
+    record_audit(
+        db,
+        actor=admin_user,
+        action="structure.cost_option.upsert",
+        entity_type="structure_cost_option",
+        entity_id=structure_id,
+        diff={
+            "structure_id": structure_id,
+            "before": before_snapshot,
+            "after": after_snapshot,
+            "payload": [item.model_dump() for item in cost_options_in],
+        },
+        request=request,
+    )
+
+    db.commit()
+
     return [
         _serialize_cost_option(option)
         for option in updated_structure.cost_options

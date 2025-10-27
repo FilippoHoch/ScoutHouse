@@ -43,6 +43,11 @@ class User(Base):
     memberships: Mapped[list["EventMember"]] = relationship(
         "EventMember", back_populates="user", cascade="all, delete-orphan"
     )
+    password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
+        "PasswordResetToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class RefreshToken(Base):
@@ -83,13 +88,31 @@ class EventMember(Base):
         SQLEnum(EventMemberRole, name="event_member_role"), nullable=False
     )
 
-    event: Mapped["Event"] = relationship("Event")
+    event: Mapped["Event"] = relationship("Event", back_populates="members")
     user: Mapped[User] = relationship("User", back_populates="memberships")
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    token_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped[User] = relationship("User", back_populates="password_reset_tokens")
 
 
 __all__ = [
     "EventMember",
     "EventMemberRole",
+    "PasswordResetToken",
     "RefreshToken",
     "User",
 ]

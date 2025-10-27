@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.6.0] - 2025-10-27
+## [0.7.0] - 2025-10-27
+### Added
+- Ruoli e permessi con membership evento; tabelle `event_members`, `audit_log`, `password_reset_tokens` (migrazione `20240320_0007_roles_audit`).
+- Endpoint membership eventi; reset password; assegnazioni tramite `assigned_user_id`.
+- Rate limiting su endpoint auth; audit log su azioni strutture/eventi/candidature/quote.
+- Frontend: pagine reset password; UI “Team” e selettori assegnatario.
+
+### Changed
+- Enforced access control per structures/events/quotes.
+- Documentazione `docs/API.md`, `SECURITY.md`, README.
+
+### Security
+- Token reset monouso; audit trail; limiti richieste su auth.
+
+[0.7.0]: https://github.com/<org>/<repo>/compare/0.6.0...0.7.0
+## [0.6.0] - 2025-10-27
 ### Added
 - Autenticazione core: JWT access + refresh HttpOnly con rotazione; `/auth/login`, `/auth/refresh`, `/auth/logout`, `/me`; registrazione opzionale.
 - Migrazione `20240320_0006_auth_core` con tabelle `users` e `refresh_tokens`.

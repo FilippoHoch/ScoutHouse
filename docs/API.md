@@ -43,6 +43,39 @@ Create a new user when `ALLOW_REGISTRATION=true` in configuration. The endpoint
 mirrors the login response: the user is created, issued an access token, and a
 refresh cookie is set.
 
+### Rate limits
+
+Authentication endpoints are protected with per-IP quotas:
+
+- `POST /api/v1/auth/login`: 5 requests per minute.
+- `POST /api/v1/auth/refresh`: 30 requests per minute.
+- `POST /api/v1/auth/forgot-password`: 5 requests per hour.
+
+Clients should surface 429 responses to users or implement exponential backoff.
+
+## POST `/api/v1/auth/forgot-password`
+
+Trigger the password reset flow. The endpoint always returns `202 Accepted`
+and, in development environments, logs the reset URL to the backend console.
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ada@example.com"}'
+```
+
+## POST `/api/v1/auth/reset-password`
+
+Complete the reset using the token produced by the previous step. Tokens are
+single-use and expire after the interval configured via
+`PASSWORD_RESET_TTL_MINUTES` (default 60 minutes).
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{"token":"...","password":"NewSecurePassword!"}'
+```
+
 # Structures API
 
 ## GET `/api/v1/structures/search`
@@ -192,6 +225,17 @@ with the provided array, making it easy to keep CSV imports idempotent.
 
 # Events API
 
+### Access control
+
+- Listing events and fetching details require membership: only users assigned to
+  the event can access it.
+- Creating an event requires authentication; the creator becomes the owner.
+- Updating an event, candidate, or task requires a collaborator or owner role.
+- Creating quotes requires at least collaborator permissions; viewing quotes
+  requires membership.
+
+Event roles are `owner`, `collab`, and `viewer`. Owners can manage memberships.
+
 ## GET `/api/v1/events`
 
 List events with pagination, optional text search, and status filtering. Query
@@ -268,6 +312,18 @@ candidates and contact tasks.
 curl "http://localhost:8000/api/v1/events/1?include=candidates,tasks"
 ```
 
+### Event membership management
+
+Memberships link users to events with a specific role.
+
+- `GET /api/v1/events/{id}/members`: list members with their role and profile.
+- `POST /api/v1/events/{id}/members`: owners can invite a user by email and
+  assign a role (`viewer`, `collab`, or `owner`).
+- `PATCH /api/v1/events/{id}/members/{member_id}`: owners can change the role of
+  an existing member, as long as at least one owner remains.
+- `DELETE /api/v1/events/{id}/members/{member_id}`: owners can remove a member,
+  again ensuring at least one owner stays assigned.
+
 ## PATCH `/api/v1/events/{id}`
 
 Update an event. Send only the fields that should change. Date updates are
@@ -276,7 +332,10 @@ validated to avoid inverted ranges.
 ## POST `/api/v1/events/{id}/candidates`
 
 Add a structure to the event's candidate list. The payload accepts either a
-`structure_id` or `structure_slug` plus an optional `assigned_user`.
+`structure_id` or `structure_slug` plus optional `assigned_user` and
+`assigned_user_id` fields. When `assigned_user_id` is provided the user must
+already be a member of the event; responses expose both `assigned_user_id` and
+`assigned_user_name`.
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/events/1/candidates \

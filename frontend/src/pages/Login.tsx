@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { ApiError } from "../shared/api";
 import { login, useAuth } from "../shared/auth";
@@ -86,6 +86,9 @@ export const LoginPage = () => {
             {isSubmitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
+        <p>
+          <Link to="/forgot-password">Password dimenticata?</Link>
+        </p>
       </div>
     </section>
   );

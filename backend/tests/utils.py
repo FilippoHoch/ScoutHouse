@@ -13,25 +13,46 @@ TEST_USER_EMAIL = "test@example.com"
 TEST_USER_PASSWORD = "password123"
 
 
-def ensure_user(*, is_admin: bool = False) -> User:
+def create_user(
+    *,
+    email: str,
+    name: str,
+    password: str = TEST_USER_PASSWORD,
+    is_admin: bool = False,
+) -> User:
     with SessionLocal() as db:
-        user = db.query(User).filter(User.email == TEST_USER_EMAIL).first()
+        user = db.query(User).filter(User.email == email).first()
         if user is None:
             user = User(
-                name="Test User",
-                email=TEST_USER_EMAIL,
-                password_hash=hash_password(TEST_USER_PASSWORD),
+                name=name,
+                email=email,
+                password_hash=hash_password(password),
                 is_admin=is_admin,
             )
             db.add(user)
             db.commit()
             db.refresh(user)
-        elif is_admin and not user.is_admin:
-            user.is_admin = True
-            db.add(user)
-            db.commit()
-            db.refresh(user)
+        else:
+            updated = False
+            if is_admin and not user.is_admin:
+                user.is_admin = True
+                updated = True
+            if user.name != name:
+                user.name = name
+                updated = True
+            if updated:
+                db.add(user)
+                db.commit()
+                db.refresh(user)
         return user
+
+
+def ensure_user(*, is_admin: bool = False) -> User:
+    return create_user(
+        email=TEST_USER_EMAIL,
+        name="Test User",
+        is_admin=is_admin,
+    )
 
 
 def auth_headers(client: TestClient, *, is_admin: bool = False) -> dict[str, str]:
