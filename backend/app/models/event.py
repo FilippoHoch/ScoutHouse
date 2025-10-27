@@ -6,11 +6,16 @@ from decimal import Decimal
 from enum import Enum
 
 from sqlalchemy import Date, DateTime, Enum as SQLEnum, Integer, Numeric, String, Text
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import JSON
 
 from app.core.db import Base
+
+if TYPE_CHECKING:
+    from .user import EventMember
 
 
 class EventBranch(str, Enum):
@@ -69,6 +74,12 @@ class Event(Base):
         back_populates="event",
         cascade="all, delete-orphan",
         lazy="selectin",
+    )
+
+    members: Mapped[list["EventMember"]] = relationship(
+        "EventMember",
+        back_populates="event",
+        cascade="all, delete-orphan",
     )
 
 

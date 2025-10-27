@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
-from typing import Tuple
+from typing import Any, Tuple
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.models import RefreshToken
 
 _password_hasher = PasswordHasher()
 
@@ -46,6 +48,22 @@ def generate_refresh_token() -> Tuple[str, datetime, str]:
     expires = _token_expiry(days=settings.refresh_ttl_days)
     token_hash = sha256(token.encode("utf-8")).hexdigest()
     return token, expires, token_hash
+
+
+def rotate_refresh_token(
+    db: Session,
+    user: Any,
+    *,
+    previous: RefreshToken | None = None,
+) -> tuple[str, RefreshToken]:
+    if previous is not None:
+        previous.revoked = True
+        db.add(previous)
+
+    token_value, expires_at, token_hash = generate_refresh_token()
+    new_refresh = RefreshToken(user_id=user.id, token_hash=token_hash, expires_at=expires_at)
+    db.add(new_refresh)
+    return token_value, new_refresh
 
 
 def decode_token(token: str) -> dict:

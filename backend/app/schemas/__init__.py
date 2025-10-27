@@ -37,7 +37,14 @@ from .quote import (
     QuoteScenarios,
     QuoteTotals,
 )
-from .user import UserCreate, UserRead, UserUpdate
+from .user import (
+    EventMemberCreate,
+    EventMemberRead,
+    EventMemberUpdate,
+    UserCreate,
+    UserRead,
+    UserUpdate,
+)
 from .auth import (
     AuthResponse,
     AuthWellKnownResponse,
@@ -84,6 +91,9 @@ __all__ = [
     "UserRead",
     "UserCreate",
     "UserUpdate",
+    "EventMemberRead",
+    "EventMemberCreate",
+    "EventMemberUpdate",
     "AuthResponse",
     "RegisterRequest",
     "LoginRequest",
