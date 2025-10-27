@@ -37,11 +37,15 @@ Key service names:
 Create the following files from the provided examples:
 
 ```
+cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-The backend `.env` exposes `DATABASE_URL`, `APP_ENV`, and the optional
+The root `.env` is used by the backup service defined in `docker-compose.yml`
+and currently only contains the credentials needed to connect to the local
+PostgreSQL instance. The backend `.env` exposes `DATABASE_URL`, `APP_ENV`, and
+the optional
 `DEFAULT_BASE_LAT`/`DEFAULT_BASE_LON` coordinates used for distance
 calculations. Authentication adds `JWT_SECRET`, `ACCESS_TTL_MIN`,
 `REFRESH_TTL_DAYS`, `ALLOW_REGISTRATION` (disabled by default),
