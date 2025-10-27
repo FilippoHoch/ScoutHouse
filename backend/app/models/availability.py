@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import Enum as SQLEnum, Index
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import JSON
@@ -51,6 +51,12 @@ class StructureSeasonAvailability(Base):
         back_populates="availabilities",
     )
 
+
+Index(
+    "ix_structure_season_availability_structure_id_season",
+    StructureSeasonAvailability.structure_id,
+    StructureSeasonAvailability.season,
+)
 
 __all__ = [
     "StructureSeason",

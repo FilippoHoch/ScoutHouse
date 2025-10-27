@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import ForeignKey, Integer, Numeric, String
+from sqlalchemy import ForeignKey, Integer, Numeric, String, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
@@ -46,6 +46,12 @@ class StructureCostOption(Base):
         back_populates="cost_options",
     )
 
+
+Index(
+    "ix_structure_cost_option_structure_id_model",
+    StructureCostOption.structure_id,
+    StructureCostOption.model,
+)
 
 __all__ = [
     "StructureCostModel",

@@ -3,11 +3,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
+from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
 from app.deps import require_admin
 from app.models import (
@@ -145,7 +146,10 @@ def get_structure_by_slug(
     slug: str,
     db: DbSession,
     include: str | None = Query(default=None),
-) -> StructureRead:
+    *,
+    request: Request,
+    response: Response,
+) -> StructureRead | Response:
     include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
     include_details = "details" in include_parts
 
@@ -166,7 +170,9 @@ def get_structure_by_slug(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Structure not found",
         )
-    return _build_structure_read(structure, include_details=include_details)
+    result = _build_structure_read(structure, include_details=include_details)
+    cached = apply_http_cache(request, response, result)
+    return cached
 
 
 @router.get("/search", response_model=StructureSearchResponse)
@@ -183,7 +189,10 @@ def search_structures(
     page_size: int = Query(default=20, ge=1, le=100),
     sort: str = Query(default=DEFAULT_SORT_FIELD),
     order: str = Query(default=DEFAULT_SORT_ORDER),
-) -> StructureSearchResponse:
+    *,
+    request: Request,
+    response: Response,
+) -> StructureSearchResponse | Response:
     sort = sort.lower()
     order = order.lower()
 
@@ -314,7 +323,7 @@ def search_structures(
         for structure, distance, band, estimated_cost, seasons, units in paginated
     ]
 
-    return StructureSearchResponse(
+    result = StructureSearchResponse(
         items=items,
         page=page,
         page_size=page_size,
@@ -323,6 +332,8 @@ def search_structures(
         order=order,
         base_coords={"lat": base_lat, "lon": base_lon},
     )
+    cached = apply_http_cache(request, response, result)
+    return cached
 
 
 @router.get("/{structure_id}", response_model=StructureRead)
