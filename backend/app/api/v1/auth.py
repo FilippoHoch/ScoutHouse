@@ -11,9 +11,9 @@ from app.core.db import get_db
 from app.core.limiter import limiter
 from app.core.security import (
     create_access_token,
-    generate_refresh_token,
     hash_password,
     hash_token,
+    rotate_refresh_token,
     verify_password,
 )
 from app.deps import get_current_user, get_refresh_token_from_cookie
@@ -53,13 +53,6 @@ def _clear_refresh_cookie(response: Response) -> None:
     response.delete_cookie("refresh_token", path="/")
 
 
-def _create_refresh_record(db: Session, user: User) -> tuple[str, RefreshToken]:
-    token, expires, token_hash = generate_refresh_token()
-    refresh = RefreshToken(user_id=user.id, token_hash=token_hash, expires_at=expires)
-    db.add(refresh)
-    return token, refresh
-
-
 @router.get("/.well-known", response_model=AuthWellKnownResponse, status_code=status.HTTP_200_OK)
 def auth_well_known() -> AuthWellKnownResponse:
     settings = get_settings()
@@ -84,7 +77,7 @@ def register(
     db.add(user)
     db.flush()
 
-    token, refresh_record = _create_refresh_record(db, user)
+    token, refresh_record = rotate_refresh_token(db, user)
     db.flush()
     db.commit()
     db.refresh(user)
@@ -109,7 +102,7 @@ def login(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User disabled")
 
-    token, refresh_record = _create_refresh_record(db, user)
+    token, refresh_record = rotate_refresh_token(db, user)
     db.flush()
     db.commit()
     db.refresh(user)
@@ -134,9 +127,7 @@ def refresh(
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
 
-    refresh_token.revoked = True
-
-    new_token_value, new_refresh = _create_refresh_record(db, user)
+    new_token_value, new_refresh = rotate_refresh_token(db, user, previous=refresh_token)
     db.flush()
     db.commit()
 

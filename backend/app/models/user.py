@@ -101,7 +101,7 @@ class EventMember(Base):
         SQLEnum(EventMemberRole, name="event_member_role"), nullable=False
     )
 
-    event: Mapped["Event"] = relationship("Event")
+    event: Mapped["Event"] = relationship("Event", back_populates="members")
     user: Mapped[User] = relationship("User", back_populates="memberships")
 
 
