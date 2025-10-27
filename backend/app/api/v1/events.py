@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import re
+from contextlib import suppress
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
+from app.core.pubsub import event_bus
+from app.core.security import decode_token
 from app.deps import get_current_user, require_event_member
 from app.models import (
     Event,
@@ -72,6 +78,26 @@ def _generate_unique_slug(db: Session, base: str) -> str:
     return slug
 
 
+def _authenticate_access_token(db: Session, token: str) -> User:
+    try:
+        payload = decode_token(token)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+
+    if payload.get("type") != "access":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    user = db.get(User, user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    return user
+
+
 def _ensure_member_user(db: Session, event_id: int, user_id: str | None) -> str | None:
     if user_id is None:
         return None
@@ -90,6 +116,22 @@ def _ensure_member_user(db: Session, event_id: int, user_id: str | None) -> str 
             detail="User is not a member of the event",
     )
     return membership.user_id
+
+
+def _require_event_membership(db: Session, event_id: int, user_id: str) -> EventMember:
+    membership = (
+        db.execute(
+            select(EventMember).where(
+                EventMember.event_id == event_id,
+                EventMember.user_id == user_id,
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member")
+    return membership
 
 
 def _owner_count(db: Session, event_id: int, *, exclude_member_id: int | None = None) -> int:
@@ -118,6 +160,64 @@ def _load_event(db: Session, event_id: int, *, with_candidates: bool = False, wi
     if event is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return event
+
+
+@router.get("/{event_id}/live", response_class=StreamingResponse)
+async def stream_event_updates(
+    event_id: int,
+    request: Request,
+    db: DbSession,
+    access_token: str = Query(..., alias="access_token"),
+) -> StreamingResponse:
+    request.state.skip_access_log = True
+
+    event = db.get(Event, event_id)
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    user = _authenticate_access_token(db, access_token)
+    _require_event_membership(db, event_id, user.id)
+
+    subscriber = event_bus.subscribe()
+    keepalive_payload = {"type": "keepalive", "event_id": event_id, "payload": {}}
+    keepalive_line = f"data: {json.dumps(keepalive_payload, separators=(',', ':'))}\n\n"
+
+    async def event_stream() -> AsyncIterator[str]:
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    message = await asyncio.wait_for(
+                        subscriber.__anext__(), timeout=KEEPALIVE_INTERVAL_SECONDS
+                    )
+                except asyncio.TimeoutError:
+                    yield keepalive_line
+                    continue
+                except StopAsyncIteration:  # pragma: no cover - defensive
+                    break
+
+                payload_event_id = message.payload.get("event_id")
+                if payload_event_id != event_id:
+                    continue
+
+                envelope = {
+                    "type": message.type,
+                    "event_id": event_id,
+                    "payload": message.payload,
+                }
+                yield f"data: {json.dumps(envelope, separators=(',', ':'))}\n\n"
+        except asyncio.CancelledError:  # pragma: no cover - connection closed
+            pass
+        finally:
+            with suppress(Exception):
+                await subscriber.aclose()
+
+    headers = {
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+    }
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers=headers)
 
 
 def _get_structure(db: Session, *, structure_id: int | None = None, slug: str | None = None) -> Structure:
@@ -283,6 +383,7 @@ def update_event(
 
     db.commit()
     db.refresh(event)
+    event_bus.publish("summary_updated", {"event_id": event.id})
     return EventRead.model_validate(event)
 
 
@@ -335,6 +436,8 @@ def add_candidate(
 
     db.commit()
     db.refresh(candidate)
+    event_bus.publish("candidate_updated", {"event_id": event.id})
+    event_bus.publish("summary_updated", {"event_id": event.id})
 
     return EventCandidateRead.model_validate(candidate)
 
@@ -403,6 +506,8 @@ def update_candidate(
 
     db.commit()
     db.refresh(candidate)
+    event_bus.publish("candidate_updated", {"event_id": event.id})
+    event_bus.publish("summary_updated", {"event_id": event.id})
     return EventCandidateRead.model_validate(candidate)
 
 
@@ -459,6 +564,8 @@ def create_task(
     db.add(task)
     db.commit()
     db.refresh(task)
+    event_bus.publish("task_updated", {"event_id": event_id})
+    event_bus.publish("summary_updated", {"event_id": event_id})
     return EventContactTaskRead.model_validate(task)
 
 
@@ -494,6 +601,8 @@ def update_task(
     db.add(task)
     db.commit()
     db.refresh(task)
+    event_bus.publish("task_updated", {"event_id": event_id})
+    event_bus.publish("summary_updated", {"event_id": event_id})
     return EventContactTaskRead.model_validate(task)
 
 
@@ -696,3 +805,4 @@ def get_suggestions(
 
 
 __all__ = ["router"]
+KEEPALIVE_INTERVAL_SECONDS = 60
