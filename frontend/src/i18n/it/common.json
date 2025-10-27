@@ -6,6 +6,7 @@
       "home": "Home",
       "structures": "Strutture",
       "events": "Eventi",
+      "importExport": "Import strutture",
       "newStructure": "Nuova struttura",
       "logout": "Esci ({{name}})",
       "login": "Accedi"
@@ -13,6 +14,36 @@
   },
   "auth": {
     "verifying": "Verifica della sessione in corso…"
+  },
+  "importExport": {
+    "title": "Import strutture (CSV/XLSX)",
+    "description": "Carica il file CSV o XLSX con le strutture per validare i dati prima dell'import definitivo.",
+    "downloadTemplateXlsx": "Scarica template XLSX",
+    "downloadTemplateCsv": "Scarica template CSV",
+    "fileLabel": "File CSV o XLSX",
+    "loading": "Elaborazione in corso…",
+    "summary": "Righe valide: {{valid}}, righe con errori: {{invalid}}",
+    "actions": {
+      "import": "Importa"
+    },
+    "errors": {
+      "title": "Errori rilevati",
+      "row": "Riga",
+      "field": "Campo",
+      "message": "Messaggio",
+      "generic": "Impossibile completare l'operazione.",
+      "forbidden": "Solo gli amministratori possono accedere a questa sezione."
+    },
+    "preview": {
+      "title": "Anteprima azioni",
+      "slug": "Slug",
+      "action": "Azione",
+      "actions": {
+        "create": "Creazione",
+        "update": "Aggiornamento"
+      }
+    },
+    "success": "Import completato: {{created}} create, {{updated}} aggiornate, {{skipped}} righe ignorate"
   },
   "common": {
     "loading": "Caricamento…"

@@ -9,6 +9,7 @@ import { LandingPage } from "../pages/Landing";
 import { ResetPasswordPage } from "../pages/ResetPassword";
 import { StructuresPage } from "../pages/Structures";
 import { StructureCreatePage } from "../pages/StructureCreate";
+import { ImportExportPage } from "../pages/ImportExport";
 import { ensureSession, restoreSession, useAuth } from "../shared/auth";
 
 const EventsPage = lazy(() => import("../pages/Events").then((module) => ({ default: module.EventsPage })));
@@ -74,6 +75,7 @@ export const AppRouter = () => {
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:eventId" element={<EventDetailsPage />} />
               <Route path="/structures/new" element={<StructureCreatePage />} />
+              <Route path="/import-export" element={<ImportExportPage />} />
             </Route>
             <Route path="/login" element={<LoginPage />} />
           </Route>

@@ -106,6 +106,34 @@ export interface StructureSearchResponse {
   };
 }
 
+export type StructureImportSourceFormat = "csv" | "xlsx";
+
+export interface StructureImportError {
+  row: number;
+  field: string;
+  msg: string;
+  source_format: StructureImportSourceFormat;
+}
+
+export interface StructureImportPreviewItem {
+  slug: string;
+  action: "create" | "update";
+}
+
+export interface StructureImportDryRunResponse {
+  valid_rows: number;
+  invalid_rows: number;
+  errors: StructureImportError[];
+  preview: StructureImportPreviewItem[];
+  source_format: StructureImportSourceFormat;
+}
+
+export interface StructureImportResult {
+  created: number;
+  updated: number;
+  skipped: number;
+}
+
 export interface StructureSearchParams {
   q?: string;
   province?: string;

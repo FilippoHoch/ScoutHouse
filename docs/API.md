@@ -201,6 +201,83 @@ Setting `is_primary=true` reassigns the primary flag to the selected contact.
 
 Remove a contact permanently.
 
+## GET `/api/v1/templates/structures.xlsx`
+
+Generate and download the Excel template for structure imports. The workbook is
+created at request time, includes the canonical headers, and two sample rows.
+
+## GET `/api/v1/templates/structures.csv`
+
+Generate and download the CSV template for structure imports. The response is
+UTF-8 encoded, uses `,` as separator, and mirrors the XLSX headers and sample
+rows.
+
+Both endpoints generate content on the fly so no binary assets need to be stored
+in the repository.
+
+## POST `/api/v1/import/structures`
+
+Bulk import structures from a CSV or XLSX file. The endpoint accepts
+`multipart/form-data` uploads under the `file` field and is limited to admin
+users. Supported query parameters:
+
+- `dry_run` (default `true`): when `true` the API validates the file and returns
+  a summary without persisting changes.
+
+Accepted MIME types are `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
+`application/csv`, and `text/csv`, up to 5 MB in size and 2 000 data rows. CSV
+files must be UTF-8 encoded, comma-separated, and use `.` for decimals. The
+file must contain the following headers as the first row: `name`, `slug`,
+`province`, `address`, `latitude`, `longitude`, `type`.
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/import/structures?dry_run=true" \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@./structures_import_template.csv;type=text/csv"
+```
+
+Dry runs return validation errors and a preview of the upsert action (create or
+update) that would be executed for each valid slug:
+
+```json
+{
+  "valid_rows": 2,
+  "invalid_rows": 0,
+  "source_format": "csv",
+  "errors": [],
+  "preview": [
+    { "slug": "casa-alpina", "action": "update" },
+    { "slug": "baite-unite", "action": "create" }
+  ]
+}
+```
+
+When `dry_run=false` and the file contains no validation errors the endpoint
+performs an upsert based on the slug and returns how many rows were created or
+updated. Blank rows are reported as `skipped`:
+
+```json
+{
+  "created": 5,
+  "updated": 12,
+  "skipped": 0
+}
+```
+
+Validation rules:
+
+- `slug` must be present and unique within the file.
+- `province` must be a two-letter uppercase code.
+- `type` must be one of `house`, `land`, `mixed`.
+- `latitude`/`longitude`, when provided, must fall within the [-90, 90] and
+  [-180, 180] ranges respectively.
+
+Validation errors include the `source_format` attribute so clients can surface
+whether the payload originated from a CSV or XLSX file.
+
+The backend logs an `import_structures` audit entry with the counts returned in
+the response.
+
 ## POST `/api/v1/structures/`
 
 Create a new structure. Payload must include `name`, `slug`, `type`, and (optionally)

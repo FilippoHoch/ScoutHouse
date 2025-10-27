@@ -34,6 +34,9 @@ export const Layout = () => {
           <Link to="/">{t("layout.nav.home")}</Link>
           <Link to="/structures">{t("layout.nav.structures")}</Link>
           <Link to="/events">{t("layout.nav.events")}</Link>
+          {auth.user?.is_admin && (
+            <Link to="/import-export">{t("layout.nav.importExport")}</Link>
+          )}
           {auth.user && <Link to="/structures/new">{t("layout.nav.newStructure")}</Link>}
           {auth.user ? (
             <button type="button" onClick={handleLogout} className="link-button">

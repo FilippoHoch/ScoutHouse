@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.1] - 2025-10-27
+### Changed
+- Rimosso asset binario del template dal repository; template generati a runtime via API.
+- Endpoint import ora accetta anche CSV oltre a XLSX; documentazione aggiornata.
+### Security
+- Stesse restrizioni di accesso e limiti upload; audit invariato.
+
+## [0.13.0] - 2025-10-27
+### Added
+- Endpoint `POST /import/structures` con `dry_run` per anteprima e upsert per `slug`.
+- Validazioni schema fisso e limiti upload (5 MB, 2000 righe).
+- Frontend `/import-export` con flusso upload → anteprima → conferma.
+- Template `structures_import_template.xlsx` pubblico.
+### Security
+- Accesso riservato admin; audit log dell’operazione.
+
 ## [0.12.0] - 2025-10-27
 ### Added
 - Tabella `contacts` con API CRUD e inclusione nei dettagli struttura.
@@ -89,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Argon2 hashing; cookie HttpOnly per refresh; CORS con credenziali.
 
 [0.12.0]: https://github.com/<org>/<repo>/compare/0.11.0...0.12.0
+[0.13.0]: https://github.com/<org>/<repo>/compare/0.12.0...0.13.0
 [0.11.0]: https://github.com/<org>/<repo>/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/<org>/<repo>/compare/0.9.0...0.10.0
 [0.9.0]: https://github.com/<org>/<repo>/compare/0.8.0...0.9.0
