@@ -87,6 +87,8 @@ beforeEach(() => {
     structure_id: 1,
     status: "to_contact",
     assigned_user: null,
+    assigned_user_id: null,
+    assigned_user_name: null,
     last_update: new Date().toISOString(),
     structure: {
       id: 1,
@@ -110,16 +112,20 @@ describe("Event wizard", () => {
     await user.type(screen.getByLabelText(/Fine/i), "2025-03-03");
     await user.click(screen.getByRole("button", { name: /Continua/i }));
 
-    await user.clear(screen.getByLabelText(/^LC$/i));
-    await user.type(screen.getByLabelText(/^LC$/i), "12");
-    await user.clear(screen.getByLabelText(/^leaders$/i));
-    await user.type(screen.getByLabelText(/^leaders$/i), "3");
+    await user.clear(screen.getByLabelText(/Lupetti/i));
+    await user.type(screen.getByLabelText(/Lupetti/i), "12");
+    await user.clear(screen.getByLabelText(/Capi/i));
+    await user.type(screen.getByLabelText(/Capi/i), "3");
     await user.type(screen.getByLabelText(/Budget totale/i), "2500");
 
     await user.click(screen.getByRole("button", { name: /Crea evento/i }));
 
     await waitFor(() => expect(createEvent).toHaveBeenCalled());
-    await waitFor(() => expect(screen.getByText(/Evento Nuovo Evento creato/)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Evento Nuovo Evento creato con successo/i)
+      ).toBeInTheDocument()
+    );
 
     await user.click(screen.getByRole("button", { name: /Aggiungi candidato/i }));
     expect(addCandidate).toHaveBeenCalledWith(createdEvent.id, { structure_id: 1 });

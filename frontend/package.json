@@ -8,13 +8,16 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "vitest"
+    "test": "vitest",
+    "analyze": "node scripts/analyze-bundle.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.27.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0"
+    "react-router-dom": "^6.22.0",
+    "i18next": "^23.11.5",
+    "react-i18next": "^13.5.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.2",
@@ -31,6 +34,10 @@
     "eslint-plugin-react": "^7.36.1",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "gzip-size": "^7.0.0",
+    "jest-axe": "^9.0.0",
+    "rollup-plugin-visualizer": "^5.12.0",
     "jsdom": "^24.0.0",
     "prettier": "^3.2.5",
     "typescript": "~5.5.4",

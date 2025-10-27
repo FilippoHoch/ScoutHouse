@@ -50,13 +50,13 @@ describe("StructuresPage filters", () => {
     render(<StructuresPage />, { wrapper: Wrapper });
 
     await waitFor(() =>
-      expect(screen.getByRole("combobox", { name: /^Season$/i })).toBeInTheDocument()
+      expect(screen.getByRole("combobox", { name: /^Stagione$/i })).toBeInTheDocument()
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: /^Season$/i }), "summer");
-    await user.selectOptions(screen.getByRole("combobox", { name: /^Unit$/i }), "LC");
-    await user.selectOptions(screen.getByRole("combobox", { name: /Cost band/i }), "cheap");
-    await user.click(screen.getByRole("button", { name: /Apply/i }));
+    await user.selectOptions(screen.getByRole("combobox", { name: /^Stagione$/i }), "summer");
+    await user.selectOptions(screen.getByRole("combobox", { name: /^Unità$/i }), "LC");
+    await user.selectOptions(screen.getByRole("combobox", { name: /Fascia di costo/i }), "cheap");
+    await user.click(screen.getByRole("button", { name: /Applica/i }));
 
     await waitFor(() =>
       expect(vi.mocked(getStructures)).toHaveBeenLastCalledWith(
