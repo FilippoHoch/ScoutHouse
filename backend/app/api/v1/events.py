@@ -16,6 +16,7 @@ from app.core.pubsub import event_bus
 from app.core.security import decode_token
 from app.deps import get_current_user, require_event_member
 from app.models import (
+    Contact,
     Event,
     EventContactTask,
     EventMember,
@@ -151,6 +152,9 @@ def _load_event(db: Session, event_id: int, *, with_candidates: bool = False, wi
         options.append(
             selectinload(Event.candidates).selectinload(EventStructureCandidate.structure)
         )
+        options.append(
+            selectinload(Event.candidates).selectinload(EventStructureCandidate.contact)
+        )
     if with_tasks:
         options.append(selectinload(Event.tasks))
     query = select(Event).where(Event.id == event_id)
@@ -233,6 +237,30 @@ def _get_structure(db: Session, *, structure_id: int | None = None, slug: str | 
     if structure is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Structure not found")
     return structure
+
+
+def _get_structure_contact(
+    db: Session,
+    *,
+    structure_id: int,
+    contact_id: int | None,
+) -> Contact | None:
+    if contact_id is None:
+        return None
+    contact = (
+        db.execute(
+            select(Contact)
+            .where(Contact.id == contact_id, Contact.structure_id == structure_id)
+        )
+        .scalars()
+        .first()
+    )
+    if contact is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contact does not belong to this structure",
+        )
+    return contact
 
 
 @router.post("/", response_model=EventRead, status_code=status.HTTP_201_CREATED)
@@ -402,6 +430,12 @@ def add_candidate(
         slug=candidate_in.structure_slug,
     )
 
+    contact = _get_structure_contact(
+        db,
+        structure_id=structure.id,
+        contact_id=candidate_in.contact_id,
+    )
+
     existing = db.execute(
         select(EventStructureCandidate)
         .where(EventStructureCandidate.event_id == event.id)
@@ -420,7 +454,10 @@ def add_candidate(
         structure_id=structure.id,
         assigned_user=candidate_in.assigned_user,
         assigned_user_id=assigned_user_id,
+        contact_id=contact.id if contact else None,
     )
+    if contact is not None:
+        candidate.contact = contact
     db.add(candidate)
     db.flush()
 
@@ -436,6 +473,7 @@ def add_candidate(
 
     db.commit()
     db.refresh(candidate)
+    db.refresh(candidate, attribute_names=["contact"])
     event_bus.publish("candidate_updated", {"event_id": event.id})
     event_bus.publish("summary_updated", {"event_id": event.id})
 
@@ -455,7 +493,10 @@ def update_candidate(
     candidate = (
         db.execute(
             select(EventStructureCandidate)
-            .options(selectinload(EventStructureCandidate.structure))
+            .options(
+                selectinload(EventStructureCandidate.structure),
+                selectinload(EventStructureCandidate.contact),
+            )
             .where(
                 EventStructureCandidate.id == candidate_id,
                 EventStructureCandidate.event_id == event.id,
@@ -469,6 +510,19 @@ def update_candidate(
 
     data = candidate_in.model_dump(exclude_unset=True)
     before_snapshot = EventCandidateRead.model_validate(candidate).model_dump()
+    if "contact_id" in data:
+        contact_id_value = data.pop("contact_id")
+        if contact_id_value is None:
+            candidate.contact_id = None
+            candidate.contact = None
+        else:
+            contact = _get_structure_contact(
+                db,
+                structure_id=candidate.structure_id,
+                contact_id=contact_id_value,
+            )
+            candidate.contact_id = contact.id
+            candidate.contact = contact
     if "assigned_user_id" in data:
         candidate.assigned_user_id = _ensure_member_user(db, event.id, data.pop("assigned_user_id"))
     status_value = data.get("status")
@@ -506,6 +560,7 @@ def update_candidate(
 
     db.commit()
     db.refresh(candidate)
+    db.refresh(candidate, attribute_names=["contact"])
     event_bus.publish("candidate_updated", {"event_id": event.id})
     event_bus.publish("summary_updated", {"event_id": event.id})
     return EventCandidateRead.model_validate(candidate)

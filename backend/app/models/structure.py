@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.db import Base
 from app.models.availability import StructureSeasonAvailability
 from app.models.cost_option import StructureCostOption
+from app.models.contact import Contact
 
 
 class StructureType(str, Enum):
@@ -52,6 +53,13 @@ class Structure(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="StructureCostOption.id",
+    )
+    contacts: Mapped[list[Contact]] = relationship(
+        Contact,
+        back_populates="structure",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="Contact.name",
     )
 
     @property

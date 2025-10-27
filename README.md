@@ -109,6 +109,8 @@ The API exposes:
 - `GET /api/v1/structures/by-slug/{slug}` → retrieve a single structure by its
   slug
 - `GET /api/v1/structures/` → legacy list of all structures
+- `GET/POST/PATCH/DELETE /api/v1/structures/{id}/contacts` → gestisci i contatti
+  di riferimento della struttura con canale preferito e flag “primario”
 - `POST /api/v1/structures/` → create a new structure record
 - `POST /api/v1/auth/login`, `/refresh`, `/logout` and `GET /api/v1/auth/me` →
   manage authenticated sessions with Argon2-hashed users, short-lived access
@@ -140,11 +142,14 @@ Visit the application at http://localhost:5173. The `/structures` page now
 provides search filters (including season, unit, and cost band),
 distance-aware sorting, and pagination backed by the `/structures/search` API,
 with badges summarising availability and estimated costs plus links to the
-detail view for each entry. Sign in to access protected areas: `/events`,
-`/events/:id`, and `/structures/new` are guarded client-side and automatically
-refresh access tokens when the API returns `401`. The `/events` area introduces
-a creation wizard (determine details, participants/budget, suggestions) and an
-event dashboard with candidate management, conflict indicators, and
+detail view for each entry. The structure detail screen includes a dedicated
+**Contatti** tab where you can add, edit, promote, or remove contact records and
+trigger quick email/phone actions. Sign in to access protected areas:
+`/events`, `/events/:id`, and `/structures/new` are guarded client-side and
+automatically refresh access tokens when the API returns `401`. The `/events`
+area introduces a creation wizard (determine details, participants/budget,
+suggestions) and an event dashboard with candidate management, conflict
+indicators, quick links to contact the selected structure reference, and
 polling-powered summaries.
 
 ### Live updates (SSE)

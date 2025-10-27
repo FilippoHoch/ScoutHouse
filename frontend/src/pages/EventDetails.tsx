@@ -1,12 +1,14 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import {
   ApiError,
   addCandidate,
   addEventMember,
   addTask,
+  getStructureContacts,
   getEvent,
   getEventMembers,
   getEventSummary,
@@ -26,7 +28,8 @@ import {
   EventMember,
   EventMemberRole,
   EventSuggestion,
-  EventSummary
+  EventSummary,
+  Contact
 } from "../shared/types";
 import { useAuth } from "../shared/auth";
 import { useEventLive } from "../shared/live";
@@ -54,6 +57,7 @@ const roleLabels: Record<EventMemberRole, string> = {
 type CandidateSavePayload = {
   status: EventCandidateStatus;
   assigned_user_id: string | null;
+  contact_id: number | null;
 };
 
 type CandidateSaveHandler = (candidateId: number, payload: CandidateSavePayload) => Promise<void>;
@@ -72,13 +76,88 @@ interface CandidateRowProps {
   hasConflict: boolean;
   members: EventMember[];
   onSave: CandidateSaveHandler;
+  eventTitle: string;
+  eventStart: string;
+  eventEnd: string;
 }
 
-const CandidateRow = ({ candidate, hasConflict, members, onSave }: CandidateRowProps) => {
+const CandidateRow = ({
+  candidate,
+  hasConflict,
+  members,
+  onSave,
+  eventTitle,
+  eventStart,
+  eventEnd
+}: CandidateRowProps) => {
+  const { t } = useTranslation();
   const [assignedUserId, setAssignedUserId] = useState(candidate.assigned_user_id ?? "");
   const [status, setStatus] = useState<EventCandidateStatus>(candidate.status);
+  const [contactId, setContactId] = useState(candidate.contact_id ? String(candidate.contact_id) : "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setAssignedUserId(candidate.assigned_user_id ?? "");
+    setStatus(candidate.status);
+    setContactId(candidate.contact_id ? String(candidate.contact_id) : "");
+  }, [candidate.assigned_user_id, candidate.status, candidate.contact_id]);
+
+  const {
+    data: fetchedContacts,
+    isLoading: contactsLoading,
+    isError: contactsError,
+  } = useQuery<Contact[], ApiError>({
+    queryKey: ["structure-contacts", candidate.structure_id],
+    queryFn: () => getStructureContacts(candidate.structure_id),
+    enabled: Boolean(candidate.structure_id),
+  });
+
+  const contactOptions = useMemo(() => {
+    const base = fetchedContacts ?? [];
+    const withCandidate = candidate.contact
+      ? base.some((item) => item.id === candidate.contact!.id)
+        ? base
+        : [...base, candidate.contact]
+      : base;
+    return [...withCandidate].sort((a, b) => {
+      if (a.is_primary !== b.is_primary) {
+        return a.is_primary ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [fetchedContacts, candidate.contact]);
+
+  const selectedContact = contactOptions.find((item) => String(item.id) === contactId) ?? null;
+  const emailSubject = selectedContact
+    ? t("events.candidates.mail.subject", { title: eventTitle, start: eventStart, end: eventEnd })
+    : "";
+  const emailBody = selectedContact
+    ? t("events.candidates.mail.body", {
+        title: eventTitle,
+        start: eventStart,
+        end: eventEnd,
+        structure: candidate.structure?.name ?? t("events.candidates.contact.unknownStructure"),
+      })
+    : "";
+  const mailHref = selectedContact?.email
+    ? `mailto:${selectedContact.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
+    : null;
+  const telHref = selectedContact?.phone
+    ? `tel:${selectedContact.phone.replace(/\s+/g, "")}`
+    : null;
+
+  const handleSendEmail = () => {
+    if (mailHref) {
+      window.location.href = mailHref;
+    }
+  };
+
+  const handleCall = () => {
+    if (telHref) {
+      window.location.href = telHref;
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -86,16 +165,17 @@ const CandidateRow = ({ candidate, hasConflict, members, onSave }: CandidateRowP
     try {
       await onSave(candidate.id, {
         status,
-        assigned_user_id: assignedUserId ? assignedUserId : null
+        assigned_user_id: assignedUserId ? assignedUserId : null,
+        contact_id: contactId ? Number(contactId) : null,
       });
     } catch (apiError) {
       const statusCode = apiError instanceof ApiError ? apiError.status : (apiError as { status?: number })?.status;
       if (statusCode === 409) {
-        setError("Conflitto di disponibilità rilevato.");
+        setError(t("events.candidates.errors.conflict"));
       } else if (statusCode === 403) {
-        setError("Non hai i permessi per modificare questa candidatura.");
+        setError(t("events.candidates.errors.forbidden"));
       } else {
-        setError("Impossibile aggiornare la candidatura.");
+        setError(t("events.candidates.errors.updateFailed"));
       }
     } finally {
       setSaving(false);
@@ -108,27 +188,64 @@ const CandidateRow = ({ candidate, hasConflict, members, onSave }: CandidateRowP
         {candidate.structure ? (
           <Link to={`/structures/${candidate.structure.slug}`}>{candidate.structure.name}</Link>
         ) : (
-          "Struttura"
+          t("events.candidates.labels.structure")
         )}
-        {candidate.status === "confirmed" && hasConflict && <span className="badge">Conflitto</span>}
+        {candidate.status === "confirmed" && hasConflict && <span className="badge">{t("events.candidates.conflict")}</span>}
+      </td>
+      <td>
+        {contactsLoading ? (
+          <span>{t("events.candidates.contact.loading")}</span>
+        ) : contactsError ? (
+          <span className="error">{t("events.candidates.contact.error")}</span>
+        ) : contactOptions.length === 0 ? (
+          <span>{t("events.candidates.contact.none")}</span>
+        ) : (
+          <select
+            value={contactId}
+            onChange={(event) => setContactId(event.target.value)}
+            aria-label={t("events.candidates.contact.label")}
+          >
+            <option value="">{t("events.candidates.contact.unassigned")}</option>
+            {contactOptions.map((contact) => (
+              <option key={contact.id} value={contact.id}>
+                {contact.name}
+                {contact.is_primary ? ` · ${t("events.candidates.contact.primaryFlag")}` : ""}
+              </option>
+            ))}
+          </select>
+        )}
+      </td>
+      <td>
+        <div className="inline-actions" style={{ display: "flex", gap: "0.5rem" }}>
+          <button type="button" onClick={handleSendEmail} disabled={!mailHref}>
+            {t("events.candidates.actions.email")}
+          </button>
+          <button type="button" onClick={handleCall} disabled={!telHref}>
+            {t("events.candidates.actions.call")}
+          </button>
+        </div>
       </td>
       <td>
         <select
           value={assignedUserId}
           onChange={(event) => setAssignedUserId(event.target.value)}
-          aria-label="Assegnato a"
+          aria-label={t("events.candidates.labels.assignee")}
         >
-          <option value="">Non assegnato</option>
+          <option value="">{t("events.candidates.labels.noAssignee")}</option>
           {members.map((member) => (
             <option key={member.id} value={member.user.id}>
               {member.user.name} ({roleLabels[member.role]})
             </option>
           ))}
         </select>
-        {candidate.assigned_user_name && <p className="muted">Attuale: {candidate.assigned_user_name}</p>}
+        {candidate.assigned_user_name && (
+          <p className="muted">
+            {t("events.candidates.labels.currentAssignee", { name: candidate.assigned_user_name })}
+          </p>
+        )}
       </td>
       <td>
-        <select value={status} onChange={(event) => setStatus(event.target.value as EventCandidateStatus)} aria-label="Stato">
+        <select value={status} onChange={(event) => setStatus(event.target.value as EventCandidateStatus)} aria-label={t("events.candidates.labels.status")}>
           {candidateStatuses.map((item) => (
             <option key={item} value={item}>
               {item}
@@ -139,7 +256,7 @@ const CandidateRow = ({ candidate, hasConflict, members, onSave }: CandidateRowP
       <td>{new Date(candidate.last_update).toLocaleString()}</td>
       <td>
         <button type="button" onClick={handleSave} disabled={saving}>
-          {saving ? "Salvataggio…" : "Salva"}
+          {saving ? t("events.candidates.actions.saving") : t("events.candidates.actions.save")}
         </button>
         {error && <p className="error">{error}</p>}
       </td>
@@ -430,6 +547,9 @@ export const EventDetailsPage = () => {
     );
   }
 
+  const eventStartLabel = new Date(event.start_date).toLocaleDateString("it-IT");
+  const eventEndLabel = new Date(event.end_date).toLocaleDateString("it-IT");
+
   return (
     <section>
       <div className="card">
@@ -622,6 +742,8 @@ export const EventDetailsPage = () => {
               <thead>
                 <tr>
                   <th>Struttura</th>
+                  <th>Contatto</th>
+                  <th>Azioni rapide</th>
                   <th>Assegnato a</th>
                   <th>Stato</th>
                   <th>Aggiornato</th>
@@ -637,6 +759,9 @@ export const EventDetailsPage = () => {
                       hasConflict={summary?.has_conflicts ?? false}
                       members={members}
                       onSave={handleCandidateSave}
+                      eventTitle={event.title}
+                      eventStart={eventStartLabel}
+                      eventEnd={eventEndLabel}
                     />
                   ))
                 ) : (

@@ -13,6 +13,7 @@ from app.core.db import Base
 
 if TYPE_CHECKING:
     from .user import User
+    from .contact import Contact
 
 
 class EventStructureCandidateStatus(str, Enum):
@@ -44,6 +45,9 @@ class EventStructureCandidate(Base):
     assigned_user_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    contact_id: Mapped[int | None] = mapped_column(
+        ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True
+    )
     last_update: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -56,6 +60,7 @@ class EventStructureCandidate(Base):
     assigned_user_ref: Mapped[Optional["User"]] = relationship(
         "User", foreign_keys=[assigned_user_id]
     )
+    contact: Mapped[Optional["Contact"]] = relationship("Contact", back_populates="candidates")
 
     @property
     def assigned_user_name(self) -> str | None:

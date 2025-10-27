@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.cost_option import StructureCostModel
 from app.models.structure import StructureType
+from .contact import ContactRead
 from app.services.costs import CostBand
 
 
@@ -141,6 +142,7 @@ class StructureRead(StructureBase):
     cost_band: CostBand | None = None
     availabilities: list[StructureAvailabilityRead] | None = None
     cost_options: list[StructureCostOptionRead] | None = None
+    contacts: list[ContactRead] | None = None
 
     model_config = {
         "from_attributes": True,

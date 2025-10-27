@@ -4,14 +4,15 @@ from collections.abc import Sequence
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
 from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
-from app.deps import require_admin
+from app.deps import get_current_user, require_admin
 from app.models import (
+    Contact,
     Structure,
     StructureCostOption,
     StructureSeason,
@@ -21,6 +22,9 @@ from app.models import (
     User,
 )
 from app.schemas import (
+    ContactCreate,
+    ContactRead,
+    ContactUpdate,
     StructureCreate,
     StructureAvailabilityCreate,
     StructureAvailabilityRead,
@@ -84,7 +88,12 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
     )
 
 
-def _build_structure_read(structure: Structure, *, include_details: bool = False) -> StructureRead:
+def _build_structure_read(
+    structure: Structure,
+    *,
+    include_details: bool = False,
+    include_contacts: bool = False,
+) -> StructureRead:
     base = StructureRead.model_validate(structure)
 
     estimated_cost = estimate_mean_daily_cost(structure)
@@ -103,6 +112,15 @@ def _build_structure_read(structure: Structure, *, include_details: bool = False
             for option in structure.cost_options
         ]
 
+    if include_contacts:
+        contacts = sorted(
+            structure.contacts,
+            key=lambda item: (not item.is_primary, item.name.lower()),
+        )
+        update["contacts"] = [ContactRead.model_validate(contact) for contact in contacts]
+    else:
+        update["contacts"] = None
+
     return base.model_copy(update=update)
 
 
@@ -111,16 +129,23 @@ def _get_structure_or_404(
     structure_id: int,
     *,
     with_details: bool = False,
+    with_contacts: bool = False,
 ) -> Structure:
+    options = []
     if with_details:
+        options.extend(
+            [
+                selectinload(Structure.availabilities),
+                selectinload(Structure.cost_options),
+            ]
+        )
+    if with_contacts:
+        options.append(selectinload(Structure.contacts))
+
+    if options:
         structure = (
             db.execute(
-                select(Structure)
-                .options(
-                    selectinload(Structure.availabilities),
-                    selectinload(Structure.cost_options),
-                )
-                .where(Structure.id == structure_id)
+                select(Structure).options(*options).where(Structure.id == structure_id)
             )
             .unique()
             .scalar_one_or_none()
@@ -133,6 +158,23 @@ def _get_structure_or_404(
             detail="Structure not found",
         )
     return structure
+
+
+def _get_contact_or_404(db: Session, structure_id: int, contact_id: int) -> Contact:
+    contact = (
+        db.execute(
+            select(Contact)
+            .where(Contact.id == contact_id, Contact.structure_id == structure_id)
+        )
+        .scalars()
+        .first()
+    )
+    if contact is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contact not found",
+        )
+    return contact
 
 
 @router.get("/", response_model=list[StructureRead])
@@ -152,6 +194,7 @@ def get_structure_by_slug(
 ) -> StructureRead | Response:
     include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
     include_details = "details" in include_parts
+    include_contacts = include_details or "contacts" in include_parts
 
     query = select(Structure)
     if include_details:
@@ -159,6 +202,8 @@ def get_structure_by_slug(
             selectinload(Structure.availabilities),
             selectinload(Structure.cost_options),
         )
+    if include_contacts:
+        query = query.options(selectinload(Structure.contacts))
 
     structure = (
         db.execute(query.where(Structure.slug == slug))
@@ -170,7 +215,11 @@ def get_structure_by_slug(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Structure not found",
         )
-    result = _build_structure_read(structure, include_details=include_details)
+    result = _build_structure_read(
+        structure,
+        include_details=include_details,
+        include_contacts=include_contacts,
+    )
     cached = apply_http_cache(request, response, result)
     return cached
 
@@ -380,6 +429,157 @@ def create_structure(
     db.commit()
     db.refresh(structure)
     return structure
+
+
+@router.get("/{structure_id}/contacts", response_model=list[ContactRead])
+def list_structure_contacts(
+    structure_id: int,
+    db: DbSession,
+    _: Annotated[User, Depends(get_current_user)],
+) -> list[ContactRead]:
+    _get_structure_or_404(db, structure_id)
+    contacts = (
+        db.execute(
+            select(Contact)
+            .where(Contact.structure_id == structure_id)
+            .order_by(Contact.is_primary.desc(), func.lower(Contact.name))
+        )
+        .scalars()
+        .all()
+    )
+    return [ContactRead.model_validate(contact) for contact in contacts]
+
+
+@router.post(
+    "/{structure_id}/contacts",
+    response_model=ContactRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_structure_contact(
+    structure_id: int,
+    contact_in: ContactCreate,
+    db: DbSession,
+    request: Request,
+    admin_user: Annotated[User, Depends(require_admin)],
+) -> ContactRead:
+    structure = _get_structure_or_404(db, structure_id)
+    payload = contact_in.model_dump()
+    if payload.get("is_primary"):
+        db.execute(
+            update(Contact)
+            .where(
+                Contact.structure_id == structure.id,
+                Contact.is_primary.is_(True),
+            )
+            .values(is_primary=False)
+        )
+
+    contact = Contact(structure_id=structure.id, **payload)
+    db.add(contact)
+    db.flush()
+    db.refresh(contact)
+
+    record_audit(
+        db,
+        actor=admin_user,
+        action="structure.contact.create",
+        entity_type="structure_contact",
+        entity_id=contact.id,
+        diff={
+            "structure_id": structure.id,
+            "after": ContactRead.model_validate(contact).model_dump(),
+        },
+        request=request,
+    )
+
+    db.commit()
+    db.refresh(contact)
+    return ContactRead.model_validate(contact)
+
+
+@router.patch(
+    "/{structure_id}/contacts/{contact_id}",
+    response_model=ContactRead,
+)
+def update_structure_contact(
+    structure_id: int,
+    contact_id: int,
+    contact_in: ContactUpdate,
+    db: DbSession,
+    request: Request,
+    admin_user: Annotated[User, Depends(require_admin)],
+) -> ContactRead:
+    structure = _get_structure_or_404(db, structure_id)
+    contact = _get_contact_or_404(db, structure.id, contact_id)
+
+    before_snapshot = ContactRead.model_validate(contact).model_dump()
+    data = contact_in.model_dump(exclude_unset=True)
+    if data.get("is_primary"):
+        db.execute(
+            update(Contact)
+            .where(
+                Contact.structure_id == structure.id,
+                Contact.id != contact.id,
+                Contact.is_primary.is_(True),
+            )
+            .values(is_primary=False)
+        )
+
+    for key, value in data.items():
+        setattr(contact, key, value)
+
+    db.add(contact)
+    db.flush()
+    db.refresh(contact)
+
+    record_audit(
+        db,
+        actor=admin_user,
+        action="structure.contact.update",
+        entity_type="structure_contact",
+        entity_id=contact.id,
+        diff={
+            "structure_id": structure.id,
+            "before": before_snapshot,
+            "after": ContactRead.model_validate(contact).model_dump(),
+        },
+        request=request,
+    )
+
+    db.commit()
+    return ContactRead.model_validate(contact)
+
+
+@router.delete("/{structure_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_structure_contact(
+    structure_id: int,
+    contact_id: int,
+    db: DbSession,
+    request: Request,
+    admin_user: Annotated[User, Depends(require_admin)],
+) -> Response:
+    structure = _get_structure_or_404(db, structure_id)
+    contact = _get_contact_or_404(db, structure.id, contact_id)
+    before_snapshot = ContactRead.model_validate(contact).model_dump()
+
+    db.delete(contact)
+    db.flush()
+
+    record_audit(
+        db,
+        actor=admin_user,
+        action="structure.contact.delete",
+        entity_type="structure_contact",
+        entity_id=contact_id,
+        diff={
+            "structure_id": structure.id,
+            "before": before_snapshot,
+        },
+        request=request,
+    )
+
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(

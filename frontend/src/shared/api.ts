@@ -21,6 +21,9 @@ import {
   QuoteCalcResponse,
   QuoteCreateDto,
   QuoteListItem,
+  Contact,
+  ContactCreateDto,
+  ContactUpdateDto,
   Structure,
   StructureSearchParams,
   StructureSearchResponse
@@ -152,6 +155,40 @@ export async function getStructureBySlug(
 ): Promise<Structure> {
   const query = options.include ? `?include=${encodeURIComponent(options.include)}` : "";
   return apiFetch<Structure>(`/api/v1/structures/by-slug/${slug}${query}`);
+}
+
+export async function getStructureContacts(structureId: number): Promise<Contact[]> {
+  return apiFetch<Contact[]>(`/api/v1/structures/${structureId}/contacts`, { auth: true });
+}
+
+export async function createStructureContact(
+  structureId: number,
+  dto: ContactCreateDto
+): Promise<Contact> {
+  return apiFetch<Contact>(`/api/v1/structures/${structureId}/contacts`, {
+    method: "POST",
+    body: JSON.stringify(dto),
+    auth: true
+  });
+}
+
+export async function updateStructureContact(
+  structureId: number,
+  contactId: number,
+  dto: ContactUpdateDto
+): Promise<Contact> {
+  return apiFetch<Contact>(`/api/v1/structures/${structureId}/contacts/${contactId}`, {
+    method: "PATCH",
+    body: JSON.stringify(dto),
+    auth: true
+  });
+}
+
+export async function deleteStructureContact(structureId: number, contactId: number): Promise<void> {
+  await apiFetch<void>(`/api/v1/structures/${structureId}/contacts/${contactId}`, {
+    method: "DELETE",
+    auth: true
+  });
 }
 
 

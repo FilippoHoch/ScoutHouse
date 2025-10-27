@@ -3,6 +3,7 @@ export type Season = "winter" | "spring" | "summer" | "autumn";
 export type Unit = "LC" | "EG" | "RS" | "ALL";
 export type CostModel = "per_person_day" | "per_person_night" | "forfait";
 export type CostBand = "cheap" | "medium" | "expensive";
+export type ContactPreferredChannel = "email" | "phone" | "other";
 
 export interface User {
   id: string;
@@ -31,6 +32,34 @@ export interface CostOption {
   age_rules?: Record<string, unknown> | null;
 }
 
+export interface Contact {
+  id: number;
+  structure_id: number;
+  name: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  preferred_channel: ContactPreferredChannel;
+  is_primary: boolean;
+  notes: string | null;
+  gdpr_consent_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactCreateDto {
+  name: string;
+  role?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  preferred_channel?: ContactPreferredChannel;
+  is_primary?: boolean;
+  notes?: string | null;
+  gdpr_consent_at?: string | null;
+}
+
+export type ContactUpdateDto = Partial<ContactCreateDto>;
+
 export interface Structure {
   id: number;
   name: string;
@@ -45,6 +74,7 @@ export interface Structure {
   cost_band?: CostBand | null;
   availabilities?: Availability[] | null;
   cost_options?: CostOption[] | null;
+  contacts?: Contact[] | null;
 }
 
 export interface StructureSearchItem {
@@ -124,6 +154,8 @@ export interface EventCandidate {
   assigned_user: string | null;
   assigned_user_id: string | null;
   assigned_user_name: string | null;
+  contact_id: number | null;
+  contact?: Contact | null;
   last_update: string;
   structure?: EventCandidateStructure | null;
 }
@@ -197,12 +229,14 @@ export interface EventCandidateCreateDto {
   structure_slug?: string;
   assigned_user?: string | null;
   assigned_user_id?: string | null;
+  contact_id?: number | null;
 }
 
 export interface EventCandidateUpdateDto {
   status?: EventCandidateStatus;
   assigned_user?: string | null;
   assigned_user_id?: string | null;
+  contact_id?: number | null;
 }
 
 export interface EventContactTaskCreateDto {
