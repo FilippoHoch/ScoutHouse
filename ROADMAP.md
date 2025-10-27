@@ -158,7 +158,7 @@
 * Rate limiting, CSRF dove serve, MFA opzionale.
   **DoD**: test autorizzazioni su 10 endpoint critici; OWASP ASVS checklist L1.
 
-## 7) Strategia di testing end-to-end
+### M6 · Strategia di testing end-to-end
 
 Per garantire copertura su tutti i casi d'uso, la roadmap include una batteria di test progressiva e multilivello:
 
@@ -192,21 +192,22 @@ Per garantire copertura su tutti i casi d'uso, la roadmap include una batteria d
    * Disaster recovery: restore backup DB e verifica integrità allegati.
    * Chaos test su code asincrone (task falliti, reti lente) con metriche di retry.
    * Verifica manuale checklist GDPR (diritto all'oblio, export dati) per release candidate.
+  **DoD**: pipeline CI/CD con coverage e2e ≥ obiettivi, suite Playwright nightly e report condiviso.
 
-### M6 · Rifiniture e release
+### M7 · Rifiniture e release
 
 * Performance (cache filtri, compressione, lazy immagini).
 * Localizzazione pronta; guide utenti; monitoraggio e backup automazione.
   **DoD**: staging pubblico; runbook; prova ripristino DB riuscita.
 
-### M7 · Rifinitura interfaccia e integrazione API
+### M8 · Rifinitura interfaccia e integrazione API
 
 * Revisione del design system e dei componenti UI rispetto a requisiti e concept.
 * Miglioramento UX per flussi chiave (catalogo, eventi, preventivi) valorizzando le API disponibili.
 * Audit accessibilità e performance con ottimizzazione di layout, stati e messaggi di feedback.
   **DoD**: scenari end-to-end documentati con verifiche UX/API e checklist accessibilità aggiornata.
 
-### M8 · Indicizzazione e ricerca avanzata
+### M9 · Indicizzazione e ricerca avanzata
 
 * Strategia di indicizzazione per strutture, eventi e preventivi con aggiornamenti incrementali.
 * Integrazione motore di ricerca (PostgreSQL full-text/Elastic) e ottimizzazione del ranking.
@@ -223,7 +224,8 @@ Per garantire copertura su tutti i casi d'uso, la roadmap include una batteria d
 * Sprint 8: M5
 * Sprint 9: M6
 * Sprint 10: M7
-* Sprint 11+: M8 e hardening continuo
+* Sprint 11: M8
+* Sprint 12+: M9 e hardening continuo
 
 ## 8) API principali (v1, estratto)
 
