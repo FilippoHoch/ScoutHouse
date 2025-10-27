@@ -29,6 +29,7 @@ import {
   EventSummary
 } from "../shared/types";
 import { useAuth } from "../shared/auth";
+import { useEventLive } from "../shared/live";
 import { EventQuotesTab } from "./EventQuotesTab";
 
 const candidateStatuses: EventCandidateStatus[] = [
@@ -227,6 +228,8 @@ export const EventDetailsPage = () => {
   const { eventId } = useParams();
   const auth = useAuth();
   const numericId = Number(eventId);
+  const isValidEventId = Number.isFinite(numericId);
+  const liveState = useEventLive(isValidEventId ? numericId : null);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"candidature" | "attivita" | "preventivi">("candidature");
   const [candidateSlug, setCandidateSlug] = useState("");
@@ -241,21 +244,19 @@ export const EventDetailsPage = () => {
   const eventQuery = useQuery({
     queryKey: ["event", numericId],
     queryFn: () => getEvent(numericId, { include: ["candidates", "tasks"] }),
-    enabled: Number.isFinite(numericId),
-    refetchInterval: 15000
+    enabled: isValidEventId
   });
 
   const summaryQuery = useQuery({
     queryKey: ["event-summary", numericId],
     queryFn: () => getEventSummary(numericId),
-    enabled: Number.isFinite(numericId),
-    refetchInterval: 15000
+    enabled: isValidEventId
   });
 
   const membersQuery = useQuery({
     queryKey: ["event-members", numericId],
     queryFn: () => getEventMembers(numericId),
-    enabled: Number.isFinite(numericId),
+    enabled: isValidEventId,
     refetchInterval: 30000
   });
 
@@ -397,7 +398,7 @@ export const EventDetailsPage = () => {
     return Object.values(event.participants).reduce((acc, value) => acc + value, 0);
   }, [event]);
 
-  if (!Number.isFinite(numericId)) {
+  if (!isValidEventId) {
     return (
       <section>
         <div className="card">
@@ -440,6 +441,9 @@ export const EventDetailsPage = () => {
               {event.start_date} → {event.end_date}
             </span>
             <span>{participantsTotal} partecipanti</span>
+            <span className="badge" aria-live="polite">
+              {liveState.mode === "sse" ? "Live" : "Polling"}
+            </span>
           </div>
         </header>
         <div className="team-section">

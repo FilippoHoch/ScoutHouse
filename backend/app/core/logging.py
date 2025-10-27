@@ -185,7 +185,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 duration_ms=duration_ms,
                 client_ip=request.client.host if request.client else None,
             )
-            self.logger.exception("Unhandled error during request", extra=asdict(context))
+            if not getattr(request.state, "skip_access_log", False):
+                self.logger.exception("Unhandled error during request", extra=asdict(context))
             raise
 
         duration_ms = round((time.perf_counter() - start) * 1000, 3)
@@ -196,7 +197,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             duration_ms=duration_ms,
             client_ip=request.client.host if request.client else None,
         )
-        self.logger.info("Request completed", extra=asdict(context))
+        if not getattr(request.state, "skip_access_log", False):
+            self.logger.info("Request completed", extra=asdict(context))
         return response
 
 

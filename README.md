@@ -147,6 +147,15 @@ a creation wizard (determine details, participants/budget, suggestions) and an
 event dashboard with candidate management, conflict indicators, and
 polling-powered summaries.
 
+### Live updates (SSE)
+
+The event dashboard now consumes `GET /api/v1/events/{id}/live`, a
+Server-Sent Events stream that invalidates TanStack Query caches whenever
+candidates, tasks, or the event summary change. The hook automatically falls
+back to the legacy 15 second polling if SSE is unavailable. See
+[`docs/REALTIME.md`](docs/REALTIME.md) for architecture notes and operational
+guidance.
+
 ### Calcolare e salvare un preventivo
 
 1. Apri la pagina di dettaglio di un evento e seleziona la scheda **Preventivi**.

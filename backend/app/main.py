@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -16,6 +18,7 @@ from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.core.logging import RequestIDMiddleware, RequestLoggingMiddleware, configure_logging
 from app.core.metrics import setup_metrics
+from app.core.pubsub import event_bus
 from app.core.sentry import init_sentry
 
 
@@ -53,6 +56,7 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def _on_startup() -> None:
+        event_bus.bind_to_loop(asyncio.get_running_loop())
         logger.info("Application startup complete")
 
     @app.on_event("shutdown")
