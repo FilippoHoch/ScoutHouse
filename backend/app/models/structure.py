@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import DateTime, Integer, Numeric, String, Text, func
+from sqlalchemy import DateTime, Integer, Numeric, String, Text, func, Index
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -58,5 +58,9 @@ class Structure(Base):
     def has_coords(self) -> bool:
         return self.latitude is not None and self.longitude is not None
 
+
+Index("ix_structures_lower_name", func.lower(Structure.name))
+Index("ix_structures_province", Structure.province)
+Index("ix_structures_type", Structure.type)
 
 __all__ = ["Structure", "StructureType"]

@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     log_json: bool = Field(True, alias="LOG_JSON")
     sentry_dsn: str | None = Field(None, alias="SENTRY_DSN")
     sentry_traces_sample_rate: float = Field(0.1, alias="SENTRY_TRACES_SAMPLE_RATE")
+    public_cache_max_age: int = Field(120, alias="PUBLIC_CACHE_MAX_AGE")
+    public_cache_stale_while_revalidate: int = Field(
+        600,
+        alias="PUBLIC_CACHE_SWR",
+    )
+    gzip_min_length: int = Field(1024, alias="GZIP_MIN_LENGTH")
 
     model_config = {
         "env_file": ".env",
