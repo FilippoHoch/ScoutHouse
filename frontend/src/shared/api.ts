@@ -26,7 +26,9 @@ import {
   ContactUpdateDto,
   Structure,
   StructureSearchParams,
-  StructureSearchResponse
+  StructureSearchResponse,
+  StructureImportDryRunResponse,
+  StructureImportResult
 } from "./types";
 import { clearSession, getAccessToken, refreshAccessToken } from "./auth";
 import { API_URL, ApiError } from "./http";
@@ -63,13 +65,16 @@ function mergeHeaders(base: Record<string, string>, extra?: HeadersInit): Record
 export interface ApiFetchOptions extends RequestInit {
   auth?: boolean;
   skipRefresh?: boolean;
+  contentType?: string | null;
 }
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
-  const { auth = false, skipRefresh = false, ...init } = options;
+  const { auth = false, skipRefresh = false, contentType = "application/json", ...init } = options;
+
+  const baseHeaders = contentType === null ? {} : { "Content-Type": contentType };
 
   const performRequest = async () => {
-    const headers = mergeHeaders({ "Content-Type": "application/json" }, init.headers);
+    const headers = mergeHeaders(baseHeaders, init.headers);
 
     if (auth) {
       const token = getAccessToken();
@@ -188,6 +193,29 @@ export async function deleteStructureContact(structureId: number, contactId: num
   await apiFetch<void>(`/api/v1/structures/${structureId}/contacts/${contactId}`, {
     method: "DELETE",
     auth: true
+  });
+}
+
+export async function importStructures(
+  file: File,
+  options: { dryRun?: true }
+): Promise<StructureImportDryRunResponse>;
+export async function importStructures(
+  file: File,
+  options: { dryRun: false }
+): Promise<StructureImportResult>;
+export async function importStructures(
+  file: File,
+  options: { dryRun?: boolean } = {}
+): Promise<StructureImportDryRunResponse | StructureImportResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const query = options.dryRun === undefined ? "" : `?dry_run=${options.dryRun}`;
+  return apiFetch(`/api/v1/import/structures${query}`, {
+    method: "POST",
+    body: formData,
+    auth: true,
+    contentType: null
   });
 }
 

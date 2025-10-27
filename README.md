@@ -104,6 +104,28 @@ The script is idempotent and updates existing rows by slug. Customize the input
 files via `--file`, `--availability-file`, `--cost-file`, `--events-file`,
 `--event-candidates-file`, and `--quotes-file` to seed other datasets.
 
+### Import strutture (CSV/XLSX)
+
+Gli amministratori possono caricare nuove strutture o aggiornare quelle esistenti
+tramite l'endpoint `POST /api/v1/import/structures`. Il flusso completo è:
+
+1. Scarica un template aggiornato dagli endpoint `GET /api/v1/templates/structures.xlsx`
+   o `GET /api/v1/templates/structures.csv`, oppure dalla pagina web `/import-export`.
+2. Compila le colonne richieste (`name`, `slug`, `province`, `address`,
+   `latitude`, `longitude`, `type`). Provincia deve essere un codice a due
+   lettere maiuscole; tipo ammesso: `house`, `land`, `mixed`.
+3. Carica il file dalla pagina `/import-export`: viene eseguita automaticamente
+   una validazione (`dry_run`) con anteprima di errori e azioni (`create`/`update`).
+4. Se l'anteprima non mostra errori, premi **Importa** per eseguire l'upsert.
+
+L'API accetta file XLSX o CSV (UTF-8, separatore `,`, decimali `.`) fino a 5 MB
+e 2 000 righe dati, controlla latitudine e longitudine nei range consentiti e
+registra un audit log `import_structures`
+con i conteggi dell'operazione.
+
+I template sono generati a runtime dal backend, così da evitare asset binari nel
+repository.
+
 The API exposes:
 
 - `GET /api/v1/health/live` → `{ "status": "ok" }` (liveness)
@@ -116,6 +138,8 @@ The API exposes:
 - `GET/POST/PATCH/DELETE /api/v1/structures/{id}/contacts` → gestisci i contatti
   di riferimento della struttura con canale preferito e flag “primario”
 - `POST /api/v1/structures/` → create a new structure record
+- `GET /api/v1/templates/structures.xlsx` e `GET /api/v1/templates/structures.csv` → scarica i template generati a runtime
+- `POST /api/v1/import/structures?dry_run=true|false` → import strutture da CSV o XLSX con anteprima errori e upsert per slug
 - `POST /api/v1/auth/login`, `/refresh`, `/logout` and `GET /api/v1/auth/me` →
   manage authenticated sessions with Argon2-hashed users, short-lived access
   tokens, and HttpOnly refresh cookies. `POST /api/v1/auth/register` is
