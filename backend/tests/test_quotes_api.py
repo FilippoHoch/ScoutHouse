@@ -10,6 +10,8 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 
+from tests.utils import auth_headers
+
 
 @pytest.fixture(autouse=True)
 def setup_database() -> Generator[None, None, None]:
@@ -19,8 +21,11 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
-def get_client() -> TestClient:
-    return TestClient(app)
+def get_client(*, authenticated: bool = False, is_admin: bool = False) -> TestClient:
+    client = TestClient(app)
+    if authenticated:
+        client.headers.update(auth_headers(client, is_admin=is_admin))
+    return client
 
 
 def create_structure_with_cost(client: TestClient) -> int:
@@ -64,7 +69,7 @@ def create_event(client: TestClient) -> int:
 
 
 def test_quote_flow() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
     structure_id = create_structure_with_cost(client)
     event_id = create_event(client)
 

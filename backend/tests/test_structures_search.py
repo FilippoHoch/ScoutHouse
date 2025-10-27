@@ -10,6 +10,8 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 
+from tests.utils import auth_headers
+
 
 @pytest.fixture(autouse=True)
 def setup_database() -> Generator[None, None, None]:
@@ -19,8 +21,11 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
-def get_client() -> TestClient:
-    return TestClient(app)
+def get_client(*, authenticated: bool = False, is_admin: bool = False) -> TestClient:
+    client = TestClient(app)
+    if authenticated:
+        client.headers.update(auth_headers(client, is_admin=is_admin))
+    return client
 
 
 def seed_sample_structures(client: TestClient) -> None:
@@ -66,7 +71,7 @@ def seed_sample_structures(client: TestClient) -> None:
 
 
 def test_search_pagination_and_sorting() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
     seed_sample_structures(client)
 
     resp = client.get(
@@ -93,7 +98,7 @@ def test_search_pagination_and_sorting() -> None:
 
 
 def test_distance_filter_and_sorting() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
     seed_sample_structures(client)
 
     distance_sorted = client.get(
@@ -128,7 +133,7 @@ def test_distance_filter_and_sorting() -> None:
 
 
 def test_search_filters_by_query_and_province() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
     seed_sample_structures(client)
 
     resp = client.get(
@@ -142,7 +147,7 @@ def test_search_filters_by_query_and_province() -> None:
 
 
 def test_invalid_sort_parameter() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
     seed_sample_structures(client)
 
     resp = client.get("/api/v1/structures/search", params={"sort": "unknown"})

@@ -38,15 +38,7 @@ from .quote import (
     QuoteTotals,
 )
 from .user import UserCreate, UserRead, UserUpdate
-from .auth import (
-    AuthResponse,
-    AuthWellKnownResponse,
-    ForgotPasswordRequest,
-    LoginRequest,
-    RefreshResponse,
-    RegisterRequest,
-    ResetPasswordRequest,
-)
+from .auth import AuthResponse, LoginRequest, RefreshResponse, RegisterRequest
 
 __all__ = [
     "StructureAvailabilityCreate",
@@ -88,7 +80,4 @@ __all__ = [
     "RegisterRequest",
     "LoginRequest",
     "RefreshResponse",
-    "ForgotPasswordRequest",
-    "ResetPasswordRequest",
-    "AuthWellKnownResponse",
 ]

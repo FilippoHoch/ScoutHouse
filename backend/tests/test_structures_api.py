@@ -10,6 +10,8 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 
+from tests.utils import auth_headers
+
 
 @pytest.fixture(autouse=True)
 def setup_database() -> Generator[None, None, None]:
@@ -19,12 +21,15 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
-def get_client() -> TestClient:
-    return TestClient(app)
+def get_client(*, authenticated: bool = False, is_admin: bool = False) -> TestClient:
+    client = TestClient(app)
+    if authenticated:
+        client.headers.update(auth_headers(client, is_admin=is_admin))
+    return client
 
 
 def test_structures_flow() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
 
     response = client.get("/api/v1/structures/")
     assert response.status_code == 200
@@ -59,7 +64,7 @@ def test_structures_flow() -> None:
 
 
 def test_unique_slug_validation() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
 
     payload = {
         "name": "Casa del Nord",
@@ -77,7 +82,7 @@ def test_unique_slug_validation() -> None:
 
 
 def test_field_validation_errors() -> None:
-    client = get_client()
+    client = get_client(authenticated=True, is_admin=True)
 
     invalid_payload = {
         "name": "Invalid Structure",

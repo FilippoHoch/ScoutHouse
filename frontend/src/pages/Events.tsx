@@ -10,14 +10,7 @@ import {
   getEvents,
   getSuggestions
 } from "../shared/api";
-import {
-  Event,
-  EventBranch,
-  EventCandidate,
-  EventSuggestion,
-  EventStatus,
-  EventCreateDto
-} from "../shared/types";
+import { Event, EventBranch, EventSuggestion, EventStatus, EventCreateDto } from "../shared/types";
 
 const branches: EventBranch[] = ["LC", "EG", "RS", "ALL"];
 const statuses: EventStatus[] = ["draft", "planning", "booked", "archived"];

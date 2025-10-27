@@ -22,75 +22,77 @@ import {
   StructureSearchParams,
   StructureSearchResponse
 } from "./types";
+import { clearSession, getAccessToken, refreshAccessToken } from "./auth";
+import { API_URL, ApiError } from "./http";
 
-const LOCALHOST_NAMES = new Set(["localhost", "127.0.0.1", "::1"]);
+export { ApiError } from "./http";
 
-function stripTrailingSlash(url: string): string {
-  return url.endsWith("/") ? url.slice(0, -1) : url;
-}
+function mergeHeaders(base: Record<string, string>, extra?: HeadersInit): Record<string, string> {
+  const headers = { ...base };
 
-function resolveApiBaseUrl(): string {
-  const envUrl = import.meta.env.VITE_API_URL;
-
-  if (envUrl) {
-    try {
-      const parsed = new URL(envUrl);
-
-      if (
-        typeof window !== "undefined" &&
-        LOCALHOST_NAMES.has(window.location.hostname) &&
-        parsed.hostname === "api"
-      ) {
-        parsed.hostname = window.location.hostname;
-        return stripTrailingSlash(parsed.toString());
-      }
-
-      return stripTrailingSlash(parsed.toString());
-    } catch (error) {
-      console.warn("Invalid VITE_API_URL provided, falling back to defaults", error);
-    }
+  if (!extra) {
+    return headers;
   }
 
-  if (typeof window !== "undefined") {
-    const { protocol, hostname, port } = window.location;
-    const base = `${protocol}//${hostname}${port ? `:${port}` : ""}`;
-    return stripTrailingSlash(base);
-  }
-
-  return "http://localhost:8000";
-}
-
-const API_URL = resolveApiBaseUrl();
-
-export class ApiError extends Error {
-  status: number;
-  body: unknown;
-  cause?: unknown;
-
-  constructor(status: number, body: unknown, message?: string, cause?: unknown) {
-    super(message ?? `API request failed with status ${status}`);
-    this.status = status;
-    this.body = body;
-    if (cause !== undefined) {
-      this.cause = cause;
-    }
-  }
-}
-
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${API_URL}${path}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers
-      },
-      ...options
+  if (extra instanceof Headers) {
+    extra.forEach((value, key) => {
+      headers[key] = value;
     });
-  } catch (error) {
-    const message = `Unable to reach the API at ${API_URL}. Please make sure the backend server is running.`;
-    throw new ApiError(0, null, message, error);
+    return headers;
+  }
+
+  if (Array.isArray(extra)) {
+    for (const [key, value] of extra) {
+      headers[key] = value;
+    }
+    return headers;
+  }
+
+  Object.entries(extra).forEach(([key, value]) => {
+    headers[key] = value as string;
+  });
+  return headers;
+}
+
+export interface ApiFetchOptions extends RequestInit {
+  auth?: boolean;
+  skipRefresh?: boolean;
+}
+
+export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+  const { auth = false, skipRefresh = false, ...init } = options;
+
+  const performRequest = async () => {
+    const headers = mergeHeaders({ "Content-Type": "application/json" }, init.headers);
+
+    if (auth) {
+      const token = getAccessToken();
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+    }
+
+    try {
+      return await fetch(`${API_URL}${path}`, {
+        ...init,
+        headers,
+        credentials: "include",
+      });
+    } catch (error) {
+      const message = `Unable to reach the API at ${API_URL}. Please make sure the backend server is running.`;
+      throw new ApiError(0, null, message, error);
+    }
+  };
+
+  let response = await performRequest();
+
+  if (auth && response.status === 401 && !skipRefresh) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      response = await performRequest();
+    } else {
+      clearSession();
+    }
   }
 
   if (!response.ok) {
@@ -101,6 +103,10 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
       body = await response.text();
     }
     throw new ApiError(response.status, body);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return (await response.json()) as T;
@@ -160,13 +166,14 @@ export async function getEvents(params: EventListParams = {}): Promise<EventList
     page: params.page,
     page_size: params.page_size
   });
-  return apiFetch<EventListResponse>(`/api/v1/events${query}`);
+  return apiFetch<EventListResponse>(`/api/v1/events${query}`, { auth: true });
 }
 
 export async function createEvent(dto: EventCreateDto): Promise<Event> {
   return apiFetch<Event>("/api/v1/events", {
     method: "POST",
-    body: JSON.stringify(dto)
+    body: JSON.stringify(dto),
+    auth: true
   });
 }
 
@@ -175,13 +182,14 @@ export async function getEvent(
   options: { include?: Array<"candidates" | "tasks"> } = {}
 ): Promise<Event> {
   const include = options.include?.length ? `?include=${options.include.join(",")}` : "";
-  return apiFetch<Event>(`/api/v1/events/${id}${include}`);
+  return apiFetch<Event>(`/api/v1/events/${id}${include}`, { auth: true });
 }
 
 export async function patchEvent(id: number, dto: EventUpdateDto): Promise<Event> {
   return apiFetch<Event>(`/api/v1/events/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(dto)
+    body: JSON.stringify(dto),
+    auth: true
   });
 }
 
@@ -191,7 +199,8 @@ export async function addCandidate(
 ): Promise<EventCandidate> {
   return apiFetch<EventCandidate>(`/api/v1/events/${eventId}/candidates`, {
     method: "POST",
-    body: JSON.stringify(dto)
+    body: JSON.stringify(dto),
+    auth: true
   });
 }
 
@@ -202,16 +211,17 @@ export async function patchCandidate(
 ): Promise<EventCandidate> {
   return apiFetch<EventCandidate>(`/api/v1/events/${eventId}/candidates/${candidateId}`, {
     method: "PATCH",
-    body: JSON.stringify(dto)
+    body: JSON.stringify(dto),
+    auth: true
   });
 }
 
 export async function getEventSummary(eventId: number): Promise<EventSummary> {
-  return apiFetch<EventSummary>(`/api/v1/events/${eventId}/summary`);
+  return apiFetch<EventSummary>(`/api/v1/events/${eventId}/summary`, { auth: true });
 }
 
 export async function getSuggestions(eventId: number): Promise<EventSuggestion[]> {
-  return apiFetch<EventSuggestion[]>(`/api/v1/events/${eventId}/suggest`);
+  return apiFetch<EventSuggestion[]>(`/api/v1/events/${eventId}/suggest`, { auth: true });
 }
 
 export async function addTask(
@@ -220,7 +230,8 @@ export async function addTask(
 ): Promise<EventContactTask> {
   return apiFetch<EventContactTask>(`/api/v1/events/${eventId}/tasks`, {
     method: "POST",
-    body: JSON.stringify(dto)
+    body: JSON.stringify(dto),
+    auth: true
   });
 }
 
@@ -231,44 +242,67 @@ export async function patchTask(
 ): Promise<EventContactTask> {
   return apiFetch<EventContactTask>(`/api/v1/events/${eventId}/tasks/${taskId}`, {
     method: "PATCH",
-    body: JSON.stringify(dto)
+    body: JSON.stringify(dto),
+    auth: true
   });
 }
 
 export async function calcQuote(dto: QuoteCalcRequestDto): Promise<QuoteCalcResponse> {
   return apiFetch<QuoteCalcResponse>("/api/v1/quotes/calc", {
     method: "POST",
-    body: JSON.stringify(dto)
+    body: JSON.stringify(dto),
+    auth: true
   });
 }
 
 export async function createQuote(eventId: number, dto: QuoteCreateDto): Promise<Quote> {
   return apiFetch<Quote>(`/api/v1/events/${eventId}/quotes`, {
     method: "POST",
-    body: JSON.stringify(dto)
+    body: JSON.stringify(dto),
+    auth: true
   });
 }
 
 export async function getQuotes(eventId: number): Promise<QuoteListItem[]> {
-  return apiFetch<QuoteListItem[]>(`/api/v1/events/${eventId}/quotes`);
+  return apiFetch<QuoteListItem[]>(`/api/v1/events/${eventId}/quotes`, { auth: true });
 }
 
 export async function getQuote(id: number): Promise<Quote> {
-  return apiFetch<Quote>(`/api/v1/quotes/${id}`);
+  return apiFetch<Quote>(`/api/v1/quotes/${id}`, { auth: true });
 }
 
 export async function exportQuote(
   id: number,
   format: "xlsx" | "html"
 ): Promise<Blob | string> {
-  const response = await fetch(`${API_URL}/api/v1/quotes/${id}/export?format=${format}`, {
-    headers: {
-      Accept:
-        format === "xlsx"
-          ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          : "text/html"
+  const acceptHeader =
+    format === "xlsx"
+      ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      : "text/html";
+
+  const performRequest = async () => {
+    const headers: Record<string, string> = { Accept: acceptHeader };
+    const token = getAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
-  });
+
+    return fetch(`${API_URL}/api/v1/quotes/${id}/export?format=${format}`, {
+      headers,
+      credentials: "include"
+    });
+  };
+
+  let response = await performRequest();
+
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      response = await performRequest();
+    } else {
+      clearSession();
+    }
+  }
 
   if (!response.ok) {
     let body: unknown;

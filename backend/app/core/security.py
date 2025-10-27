@@ -7,8 +7,10 @@ from typing import Tuple
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.models import RefreshToken
 
 _password_hasher = PasswordHasher()
 
@@ -58,3 +60,33 @@ def decode_token(token: str) -> dict:
 
 def hash_token(token: str) -> str:
     return sha256(token.encode("utf-8")).hexdigest()
+
+
+def issue_refresh_cookie(response: "Response", token: str, expires: datetime) -> None:
+    from fastapi import Response
+
+    settings = get_settings()
+    max_age = settings.refresh_ttl_days * 24 * 60 * 60
+    response.set_cookie(
+        key="refresh_token",
+        value=token,
+        httponly=True,
+        secure=settings.secure_cookies,
+        samesite="lax",
+        max_age=max_age,
+        expires=int(expires.timestamp()),
+        path="/",
+    )
+
+
+def rotate_refresh_token(db: Session, refresh_token: RefreshToken) -> Tuple[str, RefreshToken]:
+    refresh_token.revoked = True
+    token_value, expires_at, token_hash = generate_refresh_token()
+    new_refresh = RefreshToken(
+        user_id=refresh_token.user_id,
+        token_hash=token_hash,
+        expires_at=expires_at,
+    )
+    db.add(refresh_token)
+    db.add(new_refresh)
+    return token_value, new_refresh

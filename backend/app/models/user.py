@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -17,7 +17,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from sqlalchemy.types import JSON
 
 from app.core.db import Base
 
@@ -63,23 +62,6 @@ class RefreshToken(Base):
     user: Mapped[User] = relationship("User", back_populates="refresh_tokens")
 
 
-class PasswordResetToken(Base):
-    __tablename__ = "password_reset_tokens"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
-    token_hash: Mapped[str] = mapped_column(Text, nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-
-    user: Mapped[User] = relationship("User")
-
-
 class EventMemberRole(str, Enum):
     OWNER = "owner"
     COLLAB = "collab"
@@ -105,31 +87,9 @@ class EventMember(Base):
     user: Mapped[User] = relationship("User", back_populates="memberships")
 
 
-class AuditLog(Base):
-    __tablename__ = "audit_log"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    ts: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    actor_user_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
-    )
-    action: Mapped[str] = mapped_column(Text, nullable=False)
-    entity_type: Mapped[str] = mapped_column(String(255), nullable=False)
-    entity_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    diff: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
-    ip: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
-
-    actor: Mapped[User | None] = relationship("User")
-
-
 __all__ = [
-    "AuditLog",
     "EventMember",
     "EventMemberRole",
-    "PasswordResetToken",
     "RefreshToken",
     "User",
 ]

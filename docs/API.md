@@ -1,3 +1,48 @@
+# Authentication API
+
+The authentication flow issues short-lived JWT access tokens alongside rotating
+HttpOnly refresh cookies. Access tokens are sent via the `Authorization: Bearer`
+header, while refresh cookies stay in the browser and are rotated on every
+refresh call. Passwords are stored using Argon2.
+
+## POST `/api/v1/auth/login`
+
+Authenticate with an email and password. Successful responses return the user
+profile and an access token while also setting a `refresh_token` cookie.
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ada@example.com","password":"secret"}'
+```
+
+## POST `/api/v1/auth/refresh`
+
+Rotate the refresh cookie and obtain a new access token. Clients should call
+this when a request fails with `401` or during bootstrapping to resume a
+session.
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/auth/refresh \
+  --cookie "refresh_token=..."
+```
+
+## POST `/api/v1/auth/logout`
+
+Revoke the current refresh token and clear the cookie. Access tokens remain
+valid until they expire.
+
+## GET `/api/v1/auth/me`
+
+Return the profile of the authenticated user. Requires a valid access token in
+the `Authorization` header.
+
+## POST `/api/v1/auth/register`
+
+Create a new user when `ALLOW_REGISTRATION=true` in configuration. The endpoint
+mirrors the login response: the user is created, issued an access token, and a
+refresh cookie is set.
+
 # Structures API
 
 ## GET `/api/v1/structures/search`
