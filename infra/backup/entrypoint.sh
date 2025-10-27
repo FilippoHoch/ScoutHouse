@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 : "${BACKUP_CRON:=0 2 * * *}"
