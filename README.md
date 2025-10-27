@@ -102,7 +102,8 @@ files via `--file`, `--availability-file`, `--cost-file`, `--events-file`,
 
 The API exposes:
 
-- `GET /api/v1/health` → `{ "status": "ok" }`
+- `GET /api/v1/health/live` → `{ "status": "ok" }` (liveness)
+- `GET /api/v1/health/ready` → verifica connettività al DB e migrazioni
 - `GET /api/v1/structures/search` → filtered, paginated catalog with optional
   full-text and distance filters
 - `GET /api/v1/structures/by-slug/{slug}` → retrieve a single structure by its
@@ -191,6 +192,20 @@ The compose configuration wires the services as follows:
 Hot reload is enabled through bind mounts for both the frontend and backend
 services. The backend container automatically applies Alembic migrations before
 starting Uvicorn.
+
+### Observability and backups
+
+- Structured JSON logging with per-request `X-Request-ID` correlation is enabled
+  by default. Tweak `LOG_LEVEL`/`LOG_JSON` in `backend/.env` as needed.
+- Health probes: `GET /api/v1/health/live` for liveness and
+  `GET /api/v1/health/ready` for readiness (database connectivity + migrations).
+- Prometheus metrics are available at `GET /metrics` and include request
+  counters/latency histograms plus the `db_pool_connections_in_use` gauge.
+- Sentry integration activates automatically when `SENTRY_DSN` is provided and
+  respects `SENTRY_TRACES_SAMPLE_RATE` (default 0.1).
+- The `backup` service runs daily `pg_dump` jobs. Configure the schedule via
+  `BACKUP_CRON` and optionally set `AWS_*` variables to push dumps to S3/MinIO;
+  otherwise they are stored in the `backup_data` volume under `/backups`.
 
 ### Continuous integration
 

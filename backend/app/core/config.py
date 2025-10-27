@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     secure_cookies: bool = Field(False, alias="SECURE_COOKIES")
     frontend_base_url: str = Field("http://localhost:5173", alias="FRONTEND_BASE_URL")
     password_reset_ttl_minutes: int = Field(60, alias="PASSWORD_RESET_TTL_MINUTES")
+    log_level: str = Field("INFO", alias="LOG_LEVEL")
+    log_json: bool = Field(True, alias="LOG_JSON")
+    sentry_dsn: str | None = Field(None, alias="SENTRY_DSN")
+    sentry_traces_sample_rate: float = Field(0.1, alias="SENTRY_TRACES_SAMPLE_RATE")
 
     model_config = {
         "env_file": ".env",
@@ -39,6 +43,11 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
+
+    @field_validator("sentry_traces_sample_rate")
+    @classmethod
+    def _clamp_sample_rate(cls, value: float) -> float:
+        return max(0.0, min(1.0, value))
 
 
 @lru_cache
