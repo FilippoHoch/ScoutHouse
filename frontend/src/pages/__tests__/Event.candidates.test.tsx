@@ -59,6 +59,8 @@ const baseEvent: Event = {
       structure_id: 5,
       status: "to_contact",
       assigned_user: null,
+      assigned_user_id: null,
+      assigned_user_name: null,
       last_update: "2024-11-05T12:00:00Z",
       structure: {
         id: 5,
@@ -106,7 +108,7 @@ describe("EventDetailsPage candidates", () => {
     await user.click(screen.getByRole("button", { name: /Salva/i }));
 
     await waitFor(() =>
-      expect(patchCandidate).toHaveBeenCalledWith(1, 10, { status: "available", assigned_user: null })
+      expect(patchCandidate).toHaveBeenCalledWith(1, 10, { status: "available", assigned_user_id: null })
     );
   });
 

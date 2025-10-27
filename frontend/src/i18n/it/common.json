@@ -1,0 +1,174 @@
+{
+  "layout": {
+    "skipLink": "Salta al contenuto principale",
+    "navigationLabel": "Navigazione principale",
+    "nav": {
+      "home": "Home",
+      "structures": "Strutture",
+      "events": "Eventi",
+      "newStructure": "Nuova struttura",
+      "logout": "Esci ({{name}})",
+      "login": "Accedi"
+    }
+  },
+  "auth": {
+    "verifying": "Verifica della sessione in corso…"
+  },
+  "common": {
+    "loading": "Caricamento…"
+  },
+  "structures": {
+    "title": "Strutture",
+    "states": {
+      "loading": "Caricamento strutture…",
+      "error": "Impossibile caricare le strutture.",
+      "empty": "Nessuna struttura corrisponde ai filtri selezionati."
+    },
+    "filters": {
+      "search": {
+        "label": "Cerca",
+        "placeholder": "Nome o indirizzo"
+      },
+      "province": {
+        "label": "Provincia"
+      },
+      "type": {
+        "label": "Tipologia"
+      },
+      "season": {
+        "label": "Stagione"
+      },
+      "unit": {
+        "label": "Unità"
+      },
+      "maxDistance": {
+        "label": "Distanza massima (km)",
+        "placeholder": "es. 25"
+      },
+      "costBand": {
+        "label": "Fascia di costo"
+      },
+      "sort": {
+        "label": "Ordina per",
+        "distance": "Distanza",
+        "name": "Nome",
+        "created": "Data creazione"
+      },
+      "order": {
+        "label": "Direzione",
+        "asc": "Crescente",
+        "desc": "Decrescente"
+      },
+      "pageSize": {
+        "label": "Dimensione pagina"
+      },
+      "options": {
+        "all": "Tutte"
+      },
+      "actions": {
+        "apply": "Applica",
+        "reset": "Reimposta"
+      }
+    },
+    "meta": {
+      "summary": "Pagina {{page}} di {{totalPages}} — Coordinate base: {{lat}}, {{lon}}",
+      "updating": "(aggiornamento in corso…)"
+    },
+    "cards": {
+      "notAvailable": "N/D",
+      "seasonsLabel": "Stagioni",
+      "unitsLabel": "Unità",
+      "distance": "Distanza: {{value}} km",
+      "estimatedCost": "Costo stimato: €{{value}}",
+      "costBand": "· fascia {{value}}"
+    },
+    "pagination": {
+      "previous": "Precedente",
+      "next": "Successiva",
+      "page": "Pagina {{page}} / {{totalPages}}"
+    }
+  },
+  "events": {
+    "title": "Eventi",
+    "actions": {
+      "new": "Nuovo evento"
+    },
+    "filters": {
+      "search": {
+        "label": "Cerca",
+        "placeholder": "Titolo o slug"
+      },
+      "status": {
+        "label": "Stato",
+        "all": "Tutti"
+      },
+      "apply": "Filtra",
+      "reset": "Reimposta"
+    },
+    "states": {
+      "loading": "Caricamento eventi…",
+      "error": "Impossibile caricare gli eventi."
+    },
+    "table": {
+      "title": "Titolo",
+      "period": "Periodo",
+      "branch": "Branca",
+      "status": "Stato",
+      "participants": "Partecipanti"
+    },
+    "list": {
+      "summary": {
+        "empty": "Nessun evento trovato.",
+        "total_one": "{{count}} evento totale",
+        "total_other": "{{count}} eventi totali"
+      },
+      "period": "{{start}} → {{end}}"
+    },
+    "wizard": {
+      "title": "Nuovo evento",
+      "fields": {
+        "title": "Titolo",
+        "branch": "Branca",
+        "start": "Inizio",
+        "end": "Fine",
+        "budget": "Budget totale (€)",
+        "notes": "Note",
+        "status": "Stato iniziale"
+      },
+      "actions": {
+        "cancel": "Annulla",
+        "next": "Continua",
+        "back": "Indietro",
+        "creating": "Creazione…",
+        "create": "Crea evento",
+        "open": "Apri evento"
+      },
+      "errors": {
+        "required": "Compila tutti i campi obbligatori.",
+        "dates": "Seleziona le date dell'evento.",
+        "create": "Impossibile creare l'evento.",
+        "addStructure": "Impossibile aggiungere la struttura."
+      },
+      "participants": {
+        "title": "Partecipanti",
+        "labels": {
+          "lc": "Lupetti",
+          "eg": "Esploratori",
+          "rs": "Rover",
+          "leaders": "Capi"
+        }
+      },
+      "summary": {
+        "created": "Evento {{title}} creato con successo. Aggiungi una struttura candidata dalle proposte."
+      },
+      "suggestions": {
+        "loading": "Caricamento suggerimenti…",
+        "empty": "Nessun suggerimento disponibile per ora.",
+        "distance": "{{value}} km",
+        "distanceUnknown": "Distanza n/d",
+        "added": "Aggiunta",
+        "add": "Aggiungi candidato"
+      }
+    }
+  }
+}

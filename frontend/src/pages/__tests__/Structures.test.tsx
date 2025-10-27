@@ -83,9 +83,9 @@ describe("StructuresPage", () => {
     render(<StructuresPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
-    expect(screen.getByLabelText(/Search/i)).toBeInTheDocument();
-    expect(screen.getByText(/Distance: 12.4 km/)).toBeInTheDocument();
-    expect(screen.getByText(/Estimated cost: €11.75/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Cerca/i)).toBeInTheDocument();
+    expect(screen.getByText(/Distanza: 12.4 km/)).toBeInTheDocument();
+    expect(screen.getByText(/Costo stimato: €11.75/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Casa Alpina/i })).toHaveAttribute(
       "href",
       "/structures/casa-alpina"
@@ -99,17 +99,17 @@ describe("StructuresPage", () => {
 
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
     await waitFor(() =>
-      expect(screen.getByRole("combobox", { name: /^Season$/i })).toBeInTheDocument()
+      expect(screen.getByRole("combobox", { name: /^Stagione$/i })).toBeInTheDocument()
     );
 
-    await user.type(screen.getByLabelText(/Search/i), "alpina");
-    await user.selectOptions(screen.getByLabelText(/Province/i), "BS");
-    await user.selectOptions(screen.getByLabelText(/Type/i), "house");
-    await user.selectOptions(screen.getByRole("combobox", { name: /^Season$/i }), "summer");
-    await user.selectOptions(screen.getByRole("combobox", { name: /^Unit$/i }), "LC");
-    await user.selectOptions(screen.getByRole("combobox", { name: /Cost band/i }), "medium");
-    await user.type(screen.getByLabelText(/Max distance/i), "25");
-    await user.click(screen.getByRole("button", { name: /Apply/i }));
+    await user.type(screen.getByLabelText(/Cerca/i), "alpina");
+    await user.selectOptions(screen.getByLabelText(/Provincia/i), "BS");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.selectOptions(screen.getByRole("combobox", { name: /^Stagione$/i }), "summer");
+    await user.selectOptions(screen.getByRole("combobox", { name: /^Unità$/i }), "LC");
+    await user.selectOptions(screen.getByRole("combobox", { name: /Fascia di costo/i }), "medium");
+    await user.type(screen.getByLabelText(/Distanza massima/i), "25");
+    await user.click(screen.getByRole("button", { name: /Applica/i }));
 
     await waitFor(() =>
       expect(vi.mocked(getStructures)).toHaveBeenLastCalledWith(
@@ -136,6 +136,6 @@ describe("StructuresPage", () => {
 
     render(<StructuresPage />, { wrapper: Wrapper });
 
-    await waitFor(() => expect(screen.getByText(/Unable to load structures/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Impossibile caricare le strutture/i)).toBeInTheDocument());
   });
 });

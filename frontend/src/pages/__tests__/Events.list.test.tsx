@@ -66,7 +66,7 @@ describe("EventsPage", () => {
     render(<EventsPage />, { wrapper: Wrapper });
 
     await waitFor(() => expect(screen.getByText(/Camp Invernale/)).toBeInTheDocument());
-    expect(screen.getByText(/1 eventi totali/)).toBeInTheDocument();
+    expect(screen.getByText(/1 evento totale/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Camp Invernale/ })).toHaveAttribute("href", "/events/1");
   });
 

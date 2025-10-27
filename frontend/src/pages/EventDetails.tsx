@@ -481,6 +481,7 @@ export const EventDetailsPage = () => {
                                 role: event.target.value as EventMemberRole
                               })
                             }
+                            aria-label={`Ruolo per ${member.user.name}`}
                             disabled={updateMemberMutation.isPending || (member.user.id === auth.user?.id && member.role === "owner")}
                           >
                             {Object.entries(roleLabels).map(([role, label]) => (

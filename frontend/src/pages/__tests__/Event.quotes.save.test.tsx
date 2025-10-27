@@ -66,6 +66,8 @@ const eventWithCandidate: Event = {
       structure_id: 5,
       status: "available",
       assigned_user: null,
+      assigned_user_id: null,
+      assigned_user_name: null,
       last_update: "2024-05-02T00:00:00Z",
       structure: { id: 5, name: "Casa Alpina", slug: "casa-alpina", province: "BG" }
     }
