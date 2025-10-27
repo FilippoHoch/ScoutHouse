@@ -3,7 +3,7 @@ from __future__ import annotations
 import html
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -19,6 +19,7 @@ from app.schemas import (
     QuoteRead,
     QuoteScenarios,
 )
+from app.services.audit import record_audit
 from app.services.costs import apply_scenarios, calc_quote
 from app.services.export import quote_to_xlsx
 
@@ -111,6 +112,7 @@ def create_quote(
     event_id: int,
     payload: QuoteCreate,
     db: DbSession,
+    request: Request,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> QuoteRead:
     event = _get_event(db, event_id)
@@ -131,10 +133,9 @@ def create_quote(
         inputs=calculation["inputs"],
     )
     db.add(quote)
-    db.commit()
-    db.refresh(quote)
+    db.flush()
 
-    return QuoteRead(
+    response = QuoteRead(
         id=quote.id,
         event_id=quote.event_id,
         structure_id=quote.structure_id,
@@ -146,6 +147,21 @@ def create_quote(
         scenarios=scenarios,
         created_at=quote.created_at,
     )
+
+    record_audit(
+        db,
+        actor=_.user if _ is not None else None,
+        action="quote.create",
+        entity_type="quote",
+        entity_id=quote.id,
+        diff={"after": response.model_dump()},
+        request=request,
+    )
+
+    db.commit()
+    db.refresh(quote)
+
+    return response
 
 
 @router.get("/events/{event_id}/quotes", response_model=list[QuoteListItem])

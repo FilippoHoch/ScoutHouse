@@ -73,6 +73,16 @@ User registration is disabled unless you explicitly opt-in. For local testing,
 set `ALLOW_REGISTRATION=true` in `backend/.env`, restart the API, and use
 `POST /api/v1/auth/register` to create an account.
 
+#### Testing password reset in development
+
+1. Avvia il backend (`uvicorn app.main:app --reload`).
+2. Chiama `POST /api/v1/auth/forgot-password` indicando l'email dell'utente.
+3. Nel log del backend comparirà l'URL di reset contenente il token monouso.
+4. Apri l'URL nel browser o invia `POST /api/v1/auth/reset-password` con `token`
+   e la nuova password per completare l'operazione.
+5. I token scadono dopo `PASSWORD_RESET_TTL_MINUTES` (60 minuti per default) e
+   non possono essere riutilizzati.
+
 #### Seed data
 
 A CSV dataset with 20+ sample structures lives in `data/structures_seed.csv`.
@@ -103,9 +113,12 @@ The API exposes:
   manage authenticated sessions with Argon2-hashed users, short-lived access
   tokens, and HttpOnly refresh cookies. `POST /api/v1/auth/register` is
   available when registration is enabled in configuration.
+- `POST /api/v1/auth/forgot-password` / `POST /api/v1/auth/reset-password` →
+  workflow di reset con token monouso (link riportato nel log in sviluppo).
 - `GET /api/v1/events` → list events with pagination, search, and status filters
 - `POST /api/v1/events` → create an event with automatic slug generation
 - `GET /api/v1/events/{id}?include=candidates,tasks` → fetch details, candidates, and tasks
+- `GET/POST/PATCH/DELETE /api/v1/events/{id}/members` → gestisci il team e i ruoli dell'evento
 - `POST /api/v1/events/{id}/candidates` / `PATCH` → manage event candidates
 - `GET /api/v1/events/{id}/summary` and `/suggest` → status totals and structure suggestions
 - `POST /api/v1/quotes/calc` → calcola un preventivo deterministico senza salvarlo

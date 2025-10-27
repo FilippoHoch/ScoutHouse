@@ -57,5 +57,11 @@ class EventStructureCandidate(Base):
         "User", foreign_keys=[assigned_user_id]
     )
 
+    @property
+    def assigned_user_name(self) -> str | None:
+        if self.assigned_user_ref is not None:
+            return self.assigned_user_ref.name
+        return None
+
 
 __all__ = ["EventStructureCandidate", "EventStructureCandidateStatus"]

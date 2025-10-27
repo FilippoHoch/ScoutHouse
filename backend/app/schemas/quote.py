@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.quote import QuoteScenario
 
@@ -71,6 +71,13 @@ class QuoteCreate(BaseModel):
     structure_id: int
     scenario: QuoteScenario = QuoteScenario.REALISTIC
     overrides: QuoteOverrides | None = None
+
+    @field_validator("scenario", mode="before")
+    @classmethod
+    def normalize_scenario(cls, value: QuoteScenario | str) -> QuoteScenario | str:
+        if isinstance(value, str) and value.lower() == "base":
+            return QuoteScenario.REALISTIC
+        return value
 
 
 class QuoteRead(BaseModel):

@@ -5,12 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
   addCandidate,
+  addEventMember,
   addTask,
   getEvent,
+  getEventMembers,
   getEventSummary,
   getSuggestions,
   patchCandidate,
-  patchTask
+  patchTask,
+  removeEventMember,
+  updateEventMember
 } from "../shared/api";
 import {
   Event,
@@ -19,9 +23,12 @@ import {
   EventContactTask,
   EventContactTaskOutcome,
   EventContactTaskStatus,
+  EventMember,
+  EventMemberRole,
   EventSuggestion,
   EventSummary
 } from "../shared/types";
+import { useAuth } from "../shared/auth";
 import { EventQuotesTab } from "./EventQuotesTab";
 
 const candidateStatuses: EventCandidateStatus[] = [
@@ -37,18 +44,37 @@ const candidateStatuses: EventCandidateStatus[] = [
 const taskStatuses: EventContactTaskStatus[] = ["todo", "in_progress", "done", "n_a"];
 const taskOutcomes: EventContactTaskOutcome[] = ["pending", "positive", "negative"];
 
-type CandidateSaveHandler = (candidateId: number, payload: { status: EventCandidateStatus; assigned_user: string | null }) => Promise<void>;
+const roleLabels: Record<EventMemberRole, string> = {
+  owner: "Responsabile",
+  collab: "Collaboratore",
+  viewer: "Osservatore"
+};
 
-type TaskSaveHandler = (taskId: number, payload: { status: EventContactTaskStatus; outcome: EventContactTaskOutcome; assigned_user: string | null; notes: string | null }) => Promise<void>;
+type CandidateSavePayload = {
+  status: EventCandidateStatus;
+  assigned_user_id: string | null;
+};
+
+type CandidateSaveHandler = (candidateId: number, payload: CandidateSavePayload) => Promise<void>;
+
+type TaskSavePayload = {
+  status: EventContactTaskStatus;
+  outcome: EventContactTaskOutcome;
+  assigned_user_id: string | null;
+  notes: string | null;
+};
+
+type TaskSaveHandler = (taskId: number, payload: TaskSavePayload) => Promise<void>;
 
 interface CandidateRowProps {
   candidate: EventCandidate;
   hasConflict: boolean;
+  members: EventMember[];
   onSave: CandidateSaveHandler;
 }
 
-const CandidateRow = ({ candidate, hasConflict, onSave }: CandidateRowProps) => {
-  const [assignedUser, setAssignedUser] = useState(candidate.assigned_user ?? "");
+const CandidateRow = ({ candidate, hasConflict, members, onSave }: CandidateRowProps) => {
+  const [assignedUserId, setAssignedUserId] = useState(candidate.assigned_user_id ?? "");
   const [status, setStatus] = useState<EventCandidateStatus>(candidate.status);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -59,12 +85,14 @@ const CandidateRow = ({ candidate, hasConflict, onSave }: CandidateRowProps) => 
     try {
       await onSave(candidate.id, {
         status,
-        assigned_user: assignedUser.trim() ? assignedUser.trim() : null
+        assigned_user_id: assignedUserId ? assignedUserId : null
       });
     } catch (apiError) {
       const statusCode = apiError instanceof ApiError ? apiError.status : (apiError as { status?: number })?.status;
       if (statusCode === 409) {
         setError("Conflitto di disponibilità rilevato.");
+      } else if (statusCode === 403) {
+        setError("Non hai i permessi per modificare questa candidatura.");
       } else {
         setError("Impossibile aggiornare la candidatura.");
       }
@@ -84,20 +112,22 @@ const CandidateRow = ({ candidate, hasConflict, onSave }: CandidateRowProps) => 
         {candidate.status === "confirmed" && hasConflict && <span className="badge">Conflitto</span>}
       </td>
       <td>
-        <input
-          type="text"
-          value={assignedUser}
-          onChange={(event) => setAssignedUser(event.target.value)}
-          placeholder="Responsabile"
+        <select
+          value={assignedUserId}
+          onChange={(event) => setAssignedUserId(event.target.value)}
           aria-label="Assegnato a"
-        />
+        >
+          <option value="">Non assegnato</option>
+          {members.map((member) => (
+            <option key={member.id} value={member.user.id}>
+              {member.user.name} ({roleLabels[member.role]})
+            </option>
+          ))}
+        </select>
+        {candidate.assigned_user_name && <p className="muted">Attuale: {candidate.assigned_user_name}</p>}
       </td>
       <td>
-        <select
-          value={status}
-          onChange={(event) => setStatus(event.target.value as EventCandidateStatus)}
-          aria-label="Stato"
-        >
+        <select value={status} onChange={(event) => setStatus(event.target.value as EventCandidateStatus)} aria-label="Stato">
           {candidateStatuses.map((item) => (
             <option key={item} value={item}>
               {item}
@@ -118,13 +148,14 @@ const CandidateRow = ({ candidate, hasConflict, onSave }: CandidateRowProps) => 
 
 interface TaskRowProps {
   task: EventContactTask;
+  members: EventMember[];
   onSave: TaskSaveHandler;
 }
 
-const TaskRow = ({ task, onSave }: TaskRowProps) => {
+const TaskRow = ({ task, members, onSave }: TaskRowProps) => {
   const [status, setStatus] = useState<EventContactTaskStatus>(task.status);
   const [outcome, setOutcome] = useState<EventContactTaskOutcome>(task.outcome);
-  const [assignedUser, setAssignedUser] = useState(task.assigned_user ?? "");
+  const [assignedUserId, setAssignedUserId] = useState(task.assigned_user_id ?? "");
   const [notes, setNotes] = useState(task.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +167,7 @@ const TaskRow = ({ task, onSave }: TaskRowProps) => {
       await onSave(task.id, {
         status,
         outcome,
-        assigned_user: assignedUser.trim() ? assignedUser.trim() : null,
+        assigned_user_id: assignedUserId ? assignedUserId : null,
         notes: notes.trim() ? notes.trim() : null
       });
     } catch (apiError) {
@@ -150,12 +181,15 @@ const TaskRow = ({ task, onSave }: TaskRowProps) => {
     <tr>
       <td>{task.structure_id ?? "N/A"}</td>
       <td>
-        <input
-          type="text"
-          value={assignedUser}
-          placeholder="Incaricato"
-          onChange={(event) => setAssignedUser(event.target.value)}
-        />
+        <select value={assignedUserId} onChange={(event) => setAssignedUserId(event.target.value)} aria-label="Assegnato">
+          <option value="">Non assegnato</option>
+          {members.map((member) => (
+            <option key={member.id} value={member.user.id}>
+              {member.user.name} ({roleLabels[member.role]})
+            </option>
+          ))}
+        </select>
+        {task.assigned_user_name && <p className="muted">Attuale: {task.assigned_user_name}</p>}
       </td>
       <td>
         <select value={status} onChange={(event) => setStatus(event.target.value as EventContactTaskStatus)}>
@@ -191,14 +225,18 @@ const TaskRow = ({ task, onSave }: TaskRowProps) => {
 
 export const EventDetailsPage = () => {
   const { eventId } = useParams();
+  const auth = useAuth();
   const numericId = Number(eventId);
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"candidature" | "attivita" | "preventivi">(
-    "candidature"
-  );
+  const [activeTab, setActiveTab] = useState<"candidature" | "attivita" | "preventivi">("candidature");
   const [candidateSlug, setCandidateSlug] = useState("");
+  const [candidateAssignee, setCandidateAssignee] = useState("");
   const [candidateError, setCandidateError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<EventSuggestion[]>([]);
+  const [newTaskAssignee, setNewTaskAssignee] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<EventMemberRole>("viewer");
+  const [memberError, setMemberError] = useState<string | null>(null);
 
   const eventQuery = useQuery({
     queryKey: ["event", numericId],
@@ -214,12 +252,20 @@ export const EventDetailsPage = () => {
     refetchInterval: 15000
   });
 
+  const membersQuery = useQuery({
+    queryKey: ["event-members", numericId],
+    queryFn: () => getEventMembers(numericId),
+    enabled: Number.isFinite(numericId),
+    refetchInterval: 30000
+  });
+
   const addCandidateMutation = useMutation({
-    mutationFn: (slug: string) => addCandidate(numericId, { structure_slug: slug }),
+    mutationFn: (payload: Parameters<typeof addCandidate>[1]) => addCandidate(numericId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", numericId] });
       queryClient.invalidateQueries({ queryKey: ["event-summary", numericId] });
       setCandidateSlug("");
+      setCandidateAssignee("");
       setCandidateError(null);
     },
     onError: (error: unknown) => {
@@ -228,8 +274,8 @@ export const EventDetailsPage = () => {
   });
 
   const patchCandidateMutation = useMutation({
-    mutationFn: ({ candidateId, status, assigned_user }: { candidateId: number; status: EventCandidateStatus; assigned_user: string | null }) =>
-      patchCandidate(numericId, candidateId, { status, assigned_user }),
+    mutationFn: ({ candidateId, payload }: { candidateId: number; payload: Parameters<typeof patchCandidate>[2] }) =>
+      patchCandidate(numericId, candidateId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", numericId] });
       queryClient.invalidateQueries({ queryKey: ["event-summary", numericId] });
@@ -237,27 +283,71 @@ export const EventDetailsPage = () => {
   });
 
   const addTaskMutation = useMutation({
-    mutationFn: (payload: { assigned_user?: string | null; notes?: string | null }) =>
-      addTask(numericId, payload),
+    mutationFn: (payload: Parameters<typeof addTask>[1]) => addTask(numericId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", numericId] });
+      setNewTaskAssignee("");
     }
   });
 
   const patchTaskMutation = useMutation({
-    mutationFn: ({ taskId, status, outcome, assigned_user, notes }: { taskId: number; status: EventContactTaskStatus; outcome: EventContactTaskOutcome; assigned_user: string | null; notes: string | null }) =>
-      patchTask(numericId, taskId, { status, outcome, assigned_user, notes }),
+    mutationFn: ({ taskId, payload }: { taskId: number; payload: Parameters<typeof patchTask>[2] }) =>
+      patchTask(numericId, taskId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", numericId] });
     }
   });
 
+  const addMemberMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof addEventMember>[1]) => addEventMember(numericId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-members", numericId] });
+      setInviteEmail("");
+      setInviteRole("viewer");
+      setMemberError(null);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof ApiError && typeof error.body === "object" && error.body && "detail" in error.body
+          ? String((error.body as { detail?: unknown }).detail ?? "Impossibile aggiungere il membro")
+          : "Impossibile aggiungere il membro";
+      setMemberError(message);
+    }
+  });
+
+  const updateMemberMutation = useMutation({
+    mutationFn: ({ memberId, role }: { memberId: number; role: EventMemberRole }) =>
+      updateEventMember(numericId, memberId, { role }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-members", numericId] });
+      setMemberError(null);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof ApiError && typeof error.body === "object" && error.body && "detail" in error.body
+          ? String((error.body as { detail?: unknown }).detail ?? "Impossibile aggiornare il ruolo")
+          : "Impossibile aggiornare il ruolo";
+      setMemberError(message);
+    }
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: (memberId: number) => removeEventMember(numericId, memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-members", numericId] });
+      setMemberError(null);
+    },
+    onError: () => {
+      setMemberError("Impossibile rimuovere il membro.");
+    }
+  });
+
   const handleCandidateSave: CandidateSaveHandler = async (candidateId, payload) => {
-    await patchCandidateMutation.mutateAsync({ candidateId, ...payload });
+    await patchCandidateMutation.mutateAsync({ candidateId, payload });
   };
 
   const handleTaskSave: TaskSaveHandler = async (taskId, payload) => {
-    await patchTaskMutation.mutateAsync({ taskId, ...payload });
+    await patchTaskMutation.mutateAsync({ taskId, payload });
   };
 
   const handleAddCandidate = async (event: FormEvent<HTMLFormElement>) => {
@@ -266,7 +356,10 @@ export const EventDetailsPage = () => {
       setCandidateError("Indica lo slug della struttura.");
       return;
     }
-    await addCandidateMutation.mutateAsync(candidateSlug.trim());
+    await addCandidateMutation.mutateAsync({
+      structure_slug: candidateSlug.trim(),
+      assigned_user_id: candidateAssignee ? candidateAssignee : undefined
+    });
   };
 
   const handleLoadSuggestions = async () => {
@@ -280,6 +373,19 @@ export const EventDetailsPage = () => {
       setCandidateError("Impossibile caricare i suggerimenti.");
     }
   };
+
+  const handleInvite = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!inviteEmail.trim()) {
+      setMemberError("Indica un indirizzo email.");
+      return;
+    }
+    await addMemberMutation.mutateAsync({ email: inviteEmail.trim(), role: inviteRole });
+  };
+
+  const members = membersQuery.data ?? [];
+  const myMembership = members.find((member) => member.user.id === auth.user?.id);
+  const isOwner = myMembership?.role === "owner";
 
   const event = eventQuery.data as Event | undefined;
   const summary = summaryQuery.data as EventSummary | undefined;
@@ -312,10 +418,12 @@ export const EventDetailsPage = () => {
   }
 
   if (eventQuery.isError || !event) {
+    const error = eventQuery.error;
+    const isForbidden = error instanceof ApiError && error.status === 403;
     return (
       <section>
         <div className="card">
-          <p>Impossibile trovare l'evento richiesto.</p>
+          <p>{isForbidden ? "Non hai accesso a questo evento." : "Impossibile trovare l'evento richiesto."}</p>
         </div>
       </section>
     );
@@ -334,6 +442,102 @@ export const EventDetailsPage = () => {
             <span>{participantsTotal} partecipanti</span>
           </div>
         </header>
+        <div className="team-section">
+          <h3>Team</h3>
+          {memberError && <p className="error">{memberError}</p>}
+          {membersQuery.isLoading ? (
+            <p>Caricamento membri…</p>
+          ) : membersQuery.isError ? (
+            <p className="error">Impossibile caricare i membri.</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Ruolo</th>
+                  {isOwner && <th>Azioni</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {members.length === 0 ? (
+                  <tr>
+                    <td colSpan={isOwner ? 3 : 2}>Nessun membro registrato.</td>
+                  </tr>
+                ) : (
+                  members.map((member) => (
+                    <tr key={member.id}>
+                      <td>
+                        <strong>{member.user.name}</strong>
+                        <br />
+                        <span className="muted">{member.user.email}</span>
+                      </td>
+                      <td>
+                        {isOwner ? (
+                          <select
+                            value={member.role}
+                            onChange={(event) =>
+                              updateMemberMutation.mutate({
+                                memberId: member.id,
+                                role: event.target.value as EventMemberRole
+                              })
+                            }
+                            disabled={updateMemberMutation.isPending || (member.user.id === auth.user?.id && member.role === "owner")}
+                          >
+                            {Object.entries(roleLabels).map(([role, label]) => (
+                              <option key={role} value={role}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="badge">{roleLabels[member.role]}</span>
+                        )}
+                      </td>
+                      {isOwner && (
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => removeMemberMutation.mutate(member.id)}
+                            disabled={removeMemberMutation.isPending || member.user.id === auth.user?.id}
+                          >
+                            Rimuovi
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+          {isOwner && (
+            <form className="inline-form" onSubmit={handleInvite}>
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(event) => setInviteEmail(event.target.value)}
+                  placeholder="utente@example.com"
+                  required
+                />
+              </label>
+              <label>
+                Ruolo
+                <select value={inviteRole} onChange={(event) => setInviteRole(event.target.value as EventMemberRole)}>
+                  {Object.entries(roleLabels).map(([role, label]) => (
+                    <option key={role} value={role}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="submit" disabled={addMemberMutation.isPending}>
+                {addMemberMutation.isPending ? "Invio…" : "Invita"}
+              </button>
+            </form>
+          )}
+        </div>
         {summary && (
           <div className="summary">
             <strong>Stato candidature</strong>
@@ -348,25 +552,13 @@ export const EventDetailsPage = () => {
           </div>
         )}
         <nav className="tabs">
-          <button
-            type="button"
-            className={activeTab === "candidature" ? "active" : ""}
-            onClick={() => setActiveTab("candidature")}
-          >
+          <button type="button" className={activeTab === "candidature" ? "active" : ""} onClick={() => setActiveTab("candidature")}>
             Candidature
           </button>
-          <button
-            type="button"
-            className={activeTab === "attivita" ? "active" : ""}
-            onClick={() => setActiveTab("attivita")}
-          >
+          <button type="button" className={activeTab === "attivita" ? "active" : ""} onClick={() => setActiveTab("attivita")}>
             Attività
           </button>
-          <button
-            type="button"
-            className={activeTab === "preventivi" ? "active" : ""}
-            onClick={() => setActiveTab("preventivi")}
-          >
+          <button type="button" className={activeTab === "preventivi" ? "active" : ""} onClick={() => setActiveTab("preventivi")}>
             Preventivi
           </button>
         </nav>
@@ -381,6 +573,17 @@ export const EventDetailsPage = () => {
                   onChange={(event) => setCandidateSlug(event.target.value)}
                   placeholder="es. casa-inverno"
                 />
+              </label>
+              <label>
+                Assegna a
+                <select value={candidateAssignee} onChange={(event) => setCandidateAssignee(event.target.value)}>
+                  <option value="">Nessuno</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.user.id}>
+                      {member.user.name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <button type="submit" disabled={addCandidateMutation.isPending}>
                 {addCandidateMutation.isPending ? "Aggiunta…" : "Aggiungi"}
@@ -397,7 +600,12 @@ export const EventDetailsPage = () => {
                     <span>{suggestion.structure_name}</span>
                     <button
                       type="button"
-                      onClick={() => addCandidateMutation.mutate(suggestion.structure_slug)}
+                      onClick={() =>
+                        addCandidateMutation.mutate({
+                          structure_slug: suggestion.structure_slug,
+                          assigned_user_id: candidateAssignee ? candidateAssignee : undefined
+                        })
+                      }
                     >
                       Aggiungi
                     </button>
@@ -416,14 +624,17 @@ export const EventDetailsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {event.candidates?.map((candidate) => (
-                  <CandidateRow
-                    key={candidate.id}
-                    candidate={candidate}
-                    hasConflict={summary?.has_conflicts ?? false}
-                    onSave={handleCandidateSave}
-                  />
-                )) || (
+                {event.candidates?.length ? (
+                  event.candidates.map((candidate) => (
+                    <CandidateRow
+                      key={candidate.id}
+                      candidate={candidate}
+                      hasConflict={summary?.has_conflicts ?? false}
+                      members={members}
+                      onSave={handleCandidateSave}
+                    />
+                  ))
+                ) : (
                   <tr>
                     <td colSpan={5}>Nessuna candidatura inserita.</td>
                   </tr>
@@ -439,12 +650,21 @@ export const EventDetailsPage = () => {
               onSubmit={(event) => {
                 event.preventDefault();
                 addTaskMutation.mutate({
-                  assigned_user: null,
-                  notes: null
+                  assigned_user_id: newTaskAssignee ? newTaskAssignee : undefined
                 });
               }}
             >
-              <p>Registra una nuova attività rapida:</p>
+              <label>
+                Assegna a
+                <select value={newTaskAssignee} onChange={(event) => setNewTaskAssignee(event.target.value)}>
+                  <option value="">Nessuno</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.user.id}>
+                      {member.user.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button type="submit" disabled={addTaskMutation.isPending}>
                 {addTaskMutation.isPending ? "Creazione…" : "Nuova attività"}
               </button>
@@ -462,9 +682,11 @@ export const EventDetailsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {event.tasks?.map((task) => (
-                  <TaskRow key={task.id} task={task} onSave={handleTaskSave} />
-                )) || (
+                {event.tasks?.length ? (
+                  event.tasks.map((task) => (
+                    <TaskRow key={task.id} task={task} members={members} onSave={handleTaskSave} />
+                  ))
+                ) : (
                   <tr>
                     <td colSpan={7}>Nessuna attività registrata.</td>
                   </tr>

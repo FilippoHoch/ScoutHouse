@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -16,9 +18,24 @@ from app.core.security import (
 )
 from app.deps import get_current_user, get_refresh_token_from_cookie
 from app.models import RefreshToken, User
-from app.schemas import AuthResponse, LoginRequest, RefreshResponse, RegisterRequest, UserRead
+from app.schemas import (
+    AuthResponse,
+    ForgotPasswordRequest,
+    LoginRequest,
+    RefreshResponse,
+    RegisterRequest,
+    ResetPasswordRequest,
+    UserRead,
+)
+from app.services.password_reset import (
+    create_reset_token,
+    reset_user_password,
+    verify_reset_token,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+logger = logging.getLogger(__name__)
 
 
 def _mint_refresh_token(db: Session, user: User) -> tuple[str, RefreshToken]:
@@ -73,6 +90,46 @@ async def login(
     issue_refresh_cookie(response, token_value, refresh.expires_at)
     access_token = create_access_token(user.id)
     return AuthResponse(access_token=access_token, user=UserRead.model_validate(user))
+
+
+@router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("5/hour")
+async def forgot_password(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> None:
+    payload = ForgotPasswordRequest.model_validate(await request.json())
+
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user is None:
+        return None
+
+    token_value, _record = create_reset_token(db, user)
+    db.commit()
+
+    settings = get_settings()
+    base_url = settings.frontend_base_url.rstrip("/")
+    reset_url = f"{base_url}/reset-password?token={token_value}"
+    logger.info("Password reset link for %s: %s", user.email, reset_url)
+    return None
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+def reset_password(
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+) -> None:
+    try:
+        record = verify_reset_token(db, payload.token)
+        reset_user_password(db, record, payload.password)
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token",
+        ) from exc
+    return None
 
 
 @router.post("/refresh", response_model=RefreshResponse)

@@ -1,0 +1,128 @@
+"""event membership audit and reset tokens"""
+
+from __future__ import annotations
+
+from typing import Sequence
+
+import sqlalchemy as sa
+from alembic import op
+
+# revision identifiers, used by Alembic.
+revision: str = "20240320_0007_roles_audit"
+down_revision: str | None = "20240320_0006_auth_core"
+branch_labels: Sequence[str] | None = None
+depends_on: Sequence[str] | None = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "audit_log",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column(
+            "ts",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
+        sa.Column("actor_user_id", sa.String(length=36), nullable=True),
+        sa.Column("action", sa.String(length=64), nullable=False),
+        sa.Column("entity_type", sa.String(length=64), nullable=False),
+        sa.Column("entity_id", sa.String(length=64), nullable=False),
+        sa.Column("diff", sa.JSON(), nullable=True),
+        sa.Column("ip", sa.String(length=64), nullable=True),
+        sa.Column("user_agent", sa.Text(), nullable=True),
+        sa.ForeignKeyConstraint(["actor_user_id"], ["users.id"], ondelete="SET NULL"),
+    )
+
+    op.create_table(
+        "event_members",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("event_id", sa.Integer(), nullable=False),
+        sa.Column("user_id", sa.String(length=36), nullable=False),
+        sa.Column(
+            "role",
+            sa.Enum("owner", "collab", "viewer", name="event_member_role"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(["event_id"], ["events.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+        sa.UniqueConstraint("event_id", "user_id"),
+    )
+
+    op.add_column(
+        "event_structure_candidate",
+        sa.Column("assigned_user_id", sa.String(length=36), nullable=True),
+    )
+    op.create_foreign_key(
+        "fk_event_structure_candidate_assigned_user_id_users",
+        "event_structure_candidate",
+        "users",
+        ["assigned_user_id"],
+        ["id"],
+        ondelete="SET NULL",
+    )
+
+    op.add_column(
+        "event_contact_task",
+        sa.Column("assigned_user_id", sa.String(length=36), nullable=True),
+    )
+    op.create_foreign_key(
+        "fk_event_contact_task_assigned_user_id_users",
+        "event_contact_task",
+        "users",
+        ["assigned_user_id"],
+        ["id"],
+        ondelete="SET NULL",
+    )
+
+    op.create_table(
+        "password_reset_tokens",
+        sa.Column("id", sa.String(length=36), primary_key=True),
+        sa.Column("user_id", sa.String(length=36), nullable=False),
+        sa.Column("token_hash", sa.Text(), nullable=False),
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column(
+            "used",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.false(),
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+    )
+    op.create_index(
+        "ix_password_reset_tokens_user_id_used",
+        "password_reset_tokens",
+        ["user_id", "used"],
+    )
+
+
+def downgrade() -> None:
+    op.drop_constraint(
+        "fk_event_contact_task_assigned_user_id_users",
+        "event_contact_task",
+        type_="foreignkey",
+    )
+    op.drop_column("event_contact_task", "assigned_user_id")
+
+    op.drop_constraint(
+        "fk_event_structure_candidate_assigned_user_id_users",
+        "event_structure_candidate",
+        type_="foreignkey",
+    )
+    op.drop_column("event_structure_candidate", "assigned_user_id")
+
+    op.drop_table("event_members")
+    op.execute("DROP TYPE IF EXISTS event_member_role")
+
+    op.drop_index(
+        "ix_password_reset_tokens_user_id_used",
+        table_name="password_reset_tokens",
+    )
+    op.drop_table("password_reset_tokens")
+    op.drop_table("audit_log")

@@ -4,8 +4,10 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "rea
 import { Layout } from "../shared/ui/Layout";
 import { EventsPage } from "../pages/Events";
 import { EventDetailsPage } from "../pages/EventDetails";
+import { ForgotPasswordPage } from "../pages/ForgotPassword";
 import { LandingPage } from "../pages/Landing";
 import { LoginPage } from "../pages/Login";
+import { ResetPasswordPage } from "../pages/ResetPassword";
 import { StructureDetailsPage } from "../pages/StructureDetails";
 import { StructuresPage } from "../pages/Structures";
 import { StructureCreatePage } from "../pages/StructureCreate";
@@ -50,6 +52,8 @@ export const AppRouter = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/structures" element={<StructuresPage />} />
           <Route path="/structures/:slug" element={<StructureDetailsPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:eventId" element={<EventDetailsPage />} />

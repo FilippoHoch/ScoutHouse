@@ -122,6 +122,8 @@ export interface EventCandidate {
   structure_id: number;
   status: EventCandidateStatus;
   assigned_user: string | null;
+  assigned_user_id: string | null;
+  assigned_user_name: string | null;
   last_update: string;
   structure?: EventCandidateStructure | null;
 }
@@ -131,6 +133,8 @@ export interface EventContactTask {
   event_id: number;
   structure_id: number | null;
   assigned_user: string | null;
+  assigned_user_id: string | null;
+  assigned_user_name: string | null;
   status: EventContactTaskStatus;
   outcome: EventContactTaskOutcome;
   notes: string | null;
@@ -192,22 +196,49 @@ export interface EventCandidateCreateDto {
   structure_id?: number;
   structure_slug?: string;
   assigned_user?: string | null;
+  assigned_user_id?: string | null;
 }
 
 export interface EventCandidateUpdateDto {
   status?: EventCandidateStatus;
   assigned_user?: string | null;
+  assigned_user_id?: string | null;
 }
 
 export interface EventContactTaskCreateDto {
   structure_id?: number | null;
   assigned_user?: string | null;
+  assigned_user_id?: string | null;
   status?: EventContactTaskStatus;
   outcome?: EventContactTaskOutcome;
   notes?: string | null;
 }
 
 export type EventContactTaskUpdateDto = Partial<EventContactTaskCreateDto>;
+
+export type EventMemberRole = "owner" | "collab" | "viewer";
+
+export interface EventMemberUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export interface EventMember {
+  id: number;
+  event_id: number;
+  role: EventMemberRole;
+  user: EventMemberUser;
+}
+
+export interface EventMemberCreateDto {
+  email: string;
+  role: EventMemberRole;
+}
+
+export interface EventMemberUpdateDto {
+  role: EventMemberRole;
+}
 
 export type QuoteScenario = "best" | "realistic" | "worst";
 

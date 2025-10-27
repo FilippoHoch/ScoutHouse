@@ -27,9 +27,20 @@ class RefreshResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=8)
+
+
 __all__ = [
     "AuthResponse",
     "LoginRequest",
     "RefreshResponse",
     "RegisterRequest",
+    "ForgotPasswordRequest",
+    "ResetPasswordRequest",
 ]
