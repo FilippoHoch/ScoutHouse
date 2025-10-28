@@ -6,7 +6,6 @@ from typing import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 
 # revision identifiers, used by Alembic.
 revision: str = "20240320_0007"
@@ -35,29 +34,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["actor_user_id"], ["users.id"], ondelete="SET NULL"),
     )
 
-    event_member_role = PG_ENUM(
-        "owner",
-        "collab",
-        "viewer",
-        name="event_member_role",
-        create_type=False,
-        native_enum=True,
-    )
-
-    op.create_table(
-        "event_members",
-        sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("event_id", sa.Integer(), nullable=False),
-        sa.Column("user_id", sa.String(length=36), nullable=False),
-        sa.Column(
-            "role",
-            event_member_role,
-            nullable=False,
-        ),
-        sa.ForeignKeyConstraint(["event_id"], ["events.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
-        sa.UniqueConstraint("event_id", "user_id"),
-    )
+    # La tabella event_members è stata creata in 20240320_0006.
+    # Non ricrearla qui. Se servono modifiche:
+    # - nuove colonne: op.add_column("event_members", sa.Column(...))
+    # - nuovi indici: op.create_index(..., "event_members", [...])
 
     op.add_column(
         "event_structure_candidate",
@@ -126,8 +106,6 @@ def downgrade() -> None:
         type_="foreignkey",
     )
     op.drop_column("event_structure_candidate", "assigned_user_id")
-
-    op.drop_table("event_members")
 
     op.drop_index(
         "ix_password_reset_tokens_user_id_used",
