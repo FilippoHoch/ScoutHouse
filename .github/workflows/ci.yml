@@ -40,6 +40,10 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: pip install .[dev]
+      - name: Validate Alembic history
+        run: |
+          alembic history --verbose
+          alembic check
       - run: ruff check .
       - run: mypy app
       - run: bandit -r app -ll
