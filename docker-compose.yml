@@ -77,7 +77,7 @@ services:
       start_period: 30s
 
   worker:
-    image: scouthouse-api
+    image: scouthouse-worker
     build:
       context: ./backend
     environment:
