@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Blocco invii esterni in dev; mascheramento email nei log; nessun token in chiaro nei log.
 
+## [0.15.2] - 2025-10-28
+### Fixed
+- Entrypoint API: aggiunto `docker-entrypoint.sh`, normalizzati EOL, permessi e copia in immagine; rimosso override relativo in Compose.
+
+## [0.15.1] - 2025-10-28
+### Fixed
+- Ripristinata catena Alembic: aggiunta migrazione ponte `20240320_0009_contacts` e allineato `down_revision` di `0010`.
+
 ## [0.15.0] - 2025-10-27
 ### Added
 - Presigned upload/download S3 per allegati di strutture ed eventi.

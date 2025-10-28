@@ -12,9 +12,16 @@ RUN apt-get update \
 COPY pyproject.toml README.md alembic.ini ./
 COPY migrations ./migrations
 COPY app ./app
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends dos2unix \
+ && rm -rf /var/lib/apt/lists/* \
+ && dos2unix /app/docker-entrypoint.sh \
+ && chmod +x /app/docker-entrypoint.sh
 
 RUN pip install --upgrade pip && pip install --no-cache-dir .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
