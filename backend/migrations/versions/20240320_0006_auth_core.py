@@ -53,7 +53,7 @@ def upgrade() -> None:
 
     op.execute(
         """
-DO $$
+DO $do$
 BEGIN
     IF NOT EXISTS (
         SELECT 1
@@ -64,7 +64,8 @@ BEGIN
     ) THEN
         CREATE TYPE event_member_role AS ENUM ('owner', 'collab', 'viewer');
     END IF;
-END$$;
+END
+$do$;
 """
     )
 
@@ -73,8 +74,8 @@ END$$;
         "collab",
         "viewer",
         name="event_member_role",
-        create_type=False,
         native_enum=True,
+        create_type=False,
     )
 
     op.create_table(
@@ -141,12 +142,4 @@ def downgrade() -> None:
 
     op.drop_table("users")
 
-    event_member_role = sa.Enum(
-        "owner",
-        "collab",
-        "viewer",
-        name="event_member_role",
-        create_type=False,
-        native_enum=True,
-    )
-    event_member_role.drop(op.get_bind(), checkfirst=True)
+    op.execute("DROP TYPE IF EXISTS event_member_role")
