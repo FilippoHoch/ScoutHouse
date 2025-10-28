@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2025-10-28
+### Added
+- Sottosistema notifiche email con provider `console|smtp|sendgrid`, template Jinja e invio asincrono.
+- Hook automatici: reset password, assegnazione task, cambio stato candidatura.
+- API admin per anteprima (`GET /mail/preview`) e invio test (`POST /mail/test`).
+### Security
+- Blocco invii esterni in dev; mascheramento email nei log; nessun token in chiaro nei log.
+
 ## [0.15.2] - 2025-10-28
 ### Fixed
 - Entrypoint API: aggiunto `docker-entrypoint.sh`, normalizzati EOL, permessi e copia in immagine; rimosso override relativo in Compose.
@@ -139,6 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Argon2 hashing; cookie HttpOnly per refresh; CORS con credenziali.
 
+[0.16.0]: https://github.com/<org>/<repo>/compare/0.15.0...0.16.0
 [0.12.1]: https://github.com/<org>/<repo>/compare/0.12.0...0.12.1
 [0.12.0]: https://github.com/<org>/<repo>/compare/0.11.0...0.12.0
 [0.13.0]: https://github.com/<org>/<repo>/compare/0.12.0...0.13.0

@@ -6,6 +6,7 @@
       "home": "Home",
       "structures": "Strutture",
       "events": "Eventi",
+      "admin": "Amministrazione",
       "importExport": "Import/Export",
       "newStructure": "Nuova struttura",
       "logout": "Esci ({{name}})",
@@ -14,6 +15,24 @@
   },
   "auth": {
     "verifying": "Verifica della sessione in corso…"
+  },
+  "admin": {
+    "forbidden": "Solo gli amministratori possono accedere a questa pagina.",
+    "notifications": {
+      "title": "Notifiche",
+      "description": "Visualizza i template email e invia prove rapide.",
+      "templateLabel": "Template",
+      "preview": "Anteprima template",
+      "previewError": "Impossibile caricare l'anteprima email.",
+      "test": "Invia test a me",
+      "testSuccess": "Email di test inviata (provider: {{provider}}).",
+      "testError": "Invio di test non riuscito.",
+      "templates": {
+        "reset_password": "Reset password",
+        "task_assigned": "Task assegnato",
+        "candidate_status_changed": "Cambio stato candidatura"
+      }
+    }
   },
   "importExport": {
     "pageTitle": "Import/Export strutture ed eventi",
@@ -254,7 +273,9 @@
     },
     "details": {
       "downloadIcal": "Scarica iCal",
-      "icalError": "Impossibile scaricare il file iCal."
+      "icalError": "Impossibile scaricare il file iCal.",
+      "mailPreviewButton": "Anteprima mail stato candidatura",
+      "mailPreviewError": "Impossibile mostrare l'anteprima email."
     },
     "candidates": {
       "conflict": "Conflitto",

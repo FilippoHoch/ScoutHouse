@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="it">
+  <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
+    <p>Ciao {{ recipient_name }},</p>
+    <p>
+      La struttura <strong>{{ structure_name }}</strong> per l'evento
+      <strong>{{ event_title }}</strong> è ora <strong>{{ new_status_label }}</strong>.
+    </p>
+    {% if assigned_user_name %}
+    <p>Referente assegnato: {{ assigned_user_name }}.</p>
+    {% endif %}
+    {% if notes %}
+    <p><strong>Note aggiornate:</strong> {{ notes }}</p>
+    {% endif %}
+    <p>
+      Puoi consultare i dettagli dalla pagina evento:
+      <a href="{{ event_url }}" style="color: #2563eb;">{{ event_url }}</a>
+    </p>
+    <p>Grazie per tenere aggiornato lo stato della candidatura.</p>
+    <p>— Il team {{ brand_name }}</p>
+  </body>
+</html>

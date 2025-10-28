@@ -7,7 +7,16 @@ from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
@@ -47,6 +56,10 @@ from app.schemas import (
     EventWithRelations,
 )
 from app.services.events import is_structure_occupied, suggest_structures
+from app.services.mail import (
+    schedule_candidate_status_email,
+    schedule_task_assigned_email,
+)
 from app.services.audit import record_audit
 
 router = APIRouter()
@@ -571,6 +584,7 @@ def update_candidate(
     candidate_in: EventCandidateUpdate,
     db: DbSession,
     request: Request,
+    background_tasks: BackgroundTasks,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventCandidateRead:
     event = _load_event(db, event_id)
@@ -593,6 +607,7 @@ def update_candidate(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
 
     data = candidate_in.model_dump(exclude_unset=True)
+    previous_status = candidate.status
     before_snapshot = EventCandidateRead.model_validate(candidate).model_dump()
     if "contact_id" in data:
         contact_id_value = data.pop("contact_id")
@@ -645,6 +660,49 @@ def update_candidate(
     db.commit()
     db.refresh(candidate)
     db.refresh(candidate, attribute_names=["contact"])
+    status_changed = previous_status != candidate.status
+    if status_changed:
+        recipients: dict[str, str] = {}
+        memberships = (
+            db.execute(
+                select(EventMember)
+                .options(selectinload(EventMember.user))
+                .where(EventMember.event_id == event.id)
+                .where(EventMember.role == EventMemberRole.OWNER)
+            )
+            .scalars()
+            .all()
+        )
+        for membership in memberships:
+            user = membership.user
+            if user is None or not user.is_active or not user.email:
+                continue
+            recipients[user.email] = user.name
+
+        assigned_user = (
+            db.get(User, candidate.assigned_user_id) if candidate.assigned_user_id else None
+        )
+        if assigned_user is not None and assigned_user.email and assigned_user.is_active:
+            recipients.setdefault(assigned_user.email, assigned_user.name)
+
+        if recipients:
+            structure_name = (
+                candidate.structure.name if candidate.structure is not None else ""
+            )
+            assigned_name = assigned_user.name if assigned_user is not None else None
+            notes = candidate.assigned_user or None
+            for email, name in recipients.items():
+                schedule_candidate_status_email(
+                    background_tasks,
+                    recipient_email=email,
+                    recipient_name=name,
+                    event_id=event.id,
+                    event_title=event.title,
+                    structure_name=structure_name,
+                    new_status=candidate.status.value,
+                    notes=notes,
+                    assigned_user_name=assigned_name,
+                )
     event_bus.publish("candidate_updated", {"event_id": event.id})
     event_bus.publish("summary_updated", {"event_id": event.id})
     return EventCandidateRead.model_validate(candidate)
@@ -682,9 +740,10 @@ def create_task(
     event_id: int,
     task_in: EventContactTaskCreate,
     db: DbSession,
+    background_tasks: BackgroundTasks,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventContactTaskRead:
-    _ = _load_event(db, event_id)
+    event = _load_event(db, event_id)
     structure_id = task_in.structure_id
     if structure_id is not None:
         _get_structure(db, structure_id=structure_id)
@@ -703,6 +762,20 @@ def create_task(
     db.add(task)
     db.commit()
     db.refresh(task)
+    db.refresh(task, attribute_names=["structure"])
+    assignee = db.get(User, assigned_user_id) if assigned_user_id else None
+    if assignee is not None and assignee.email and assignee.is_active:
+        schedule_task_assigned_email(
+            background_tasks,
+            recipient_email=assignee.email,
+            recipient_name=assignee.name,
+            event_id=event.id,
+            event_title=event.title,
+            event_start=str(event.start_date),
+            event_end=str(event.end_date),
+            structure_name=task.structure.name if task.structure is not None else None,
+            notes=task.notes,
+        )
     event_bus.publish("task_updated", {"event_id": event_id})
     event_bus.publish("summary_updated", {"event_id": event_id})
     return EventContactTaskRead.model_validate(task)
@@ -714,8 +787,10 @@ def update_task(
     task_id: int,
     task_in: EventContactTaskUpdate,
     db: DbSession,
+    background_tasks: BackgroundTasks,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventContactTaskRead:
+    event = _load_event(db, event_id)
     task = (
         db.execute(
             select(EventContactTask).where(
@@ -729,6 +804,7 @@ def update_task(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
     data = task_in.model_dump(exclude_unset=True)
+    previous_assignee_id = task.assigned_user_id
     if "structure_id" in data and data["structure_id"] is not None:
         _get_structure(db, structure_id=data["structure_id"])
     if "assigned_user_id" in data:
@@ -740,6 +816,21 @@ def update_task(
     db.add(task)
     db.commit()
     db.refresh(task)
+    db.refresh(task, attribute_names=["structure"])
+    if task.assigned_user_id and task.assigned_user_id != previous_assignee_id:
+        assignee = db.get(User, task.assigned_user_id)
+        if assignee is not None and assignee.email and assignee.is_active:
+            schedule_task_assigned_email(
+                background_tasks,
+                recipient_email=assignee.email,
+                recipient_name=assignee.name,
+                event_id=event.id,
+                event_title=event.title,
+                event_start=str(event.start_date),
+                event_end=str(event.end_date),
+                structure_name=task.structure.name if task.structure is not None else None,
+                notes=task.notes,
+            )
     event_bus.publish("task_updated", {"event_id": event_id})
     event_bus.publish("summary_updated", {"event_id": event_id})
     return EventContactTaskRead.model_validate(task)

@@ -34,6 +34,7 @@ export const Layout = () => {
           <Link to="/">{t("layout.nav.home")}</Link>
           <Link to="/structures">{t("layout.nav.structures")}</Link>
           <Link to="/events">{t("layout.nav.events")}</Link>
+          {auth.user?.is_admin && <Link to="/admin">{t("layout.nav.admin")}</Link>}
           {auth.user?.is_admin && (
             <Link to="/import-export">{t("layout.nav.importExport")}</Link>
           )}
