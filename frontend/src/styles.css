@@ -348,3 +348,47 @@ ul {
   justify-content: space-between;
   gap: 1rem;
 }
+
+.attachments-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.attachments-section .dropzone {
+  border: 2px dashed #c3c7cc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  background-color: #fafbfc;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.attachments-section .dropzone.active {
+  border-color: #2f80ed;
+  background-color: #f0f6ff;
+}
+
+.attachments-section .dropzone button {
+  margin-top: 0.5rem;
+}
+
+.attachments-section table.attachments {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.attachments-section table.attachments th,
+.attachments-section table.attachments td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e0e3e6;
+}
+
+.attachments-section table.attachments tbody tr:hover {
+  background-color: #f6f8fa;
+}
+
+.attachments-section table.attachments td.actions {
+  display: flex;
+  gap: 0.5rem;
+}

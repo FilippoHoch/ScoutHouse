@@ -50,6 +50,13 @@ from .auth import (
     RegisterRequest,
     ResetPasswordRequest,
 )
+from .attachment import (
+    AttachmentConfirmRequest,
+    AttachmentDownloadSignature,
+    AttachmentRead,
+    AttachmentSignRequest,
+    AttachmentUploadSignature,
+)
 
 __all__ = [
     "StructureAvailabilityCreate",
@@ -90,6 +97,11 @@ __all__ = [
     "QuoteTotals",
     "QuoteBreakdownEntry",
     "QuoteScenarios",
+    "AttachmentRead",
+    "AttachmentSignRequest",
+    "AttachmentUploadSignature",
+    "AttachmentConfirmRequest",
+    "AttachmentDownloadSignature",
     "UserRead",
     "UserCreate",
     "UserUpdate",

@@ -19,6 +19,8 @@ import type {
   CostBand,
   Structure
 } from "../shared/types";
+import { useAuth } from "../shared/auth";
+import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 
 const formatCurrency = (value: number, currency: string) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency }).format(value);
@@ -57,7 +59,10 @@ const sortContacts = (items: Contact[]): Contact[] =>
 export const StructureDetailsPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<"overview" | "availability" | "costs" | "contacts">(
+  const auth = useAuth();
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "availability" | "costs" | "contacts" | "attachments"
+  >(
     "overview"
   );
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -346,6 +351,13 @@ export const StructureDetailsPage = () => {
           >
             {t("structures.contacts.tab")}
           </button>
+          <button
+            type="button"
+            className={activeTab === "attachments" ? "active" : ""}
+            onClick={() => setActiveTab("attachments")}
+          >
+            {t("structures.details.tabs.attachments")}
+          </button>
         </div>
 
         {activeTab === "overview" && (
@@ -590,6 +602,20 @@ export const StructureDetailsPage = () => {
                   </button>
                 </div>
               </form>
+            )}
+          </div>
+        )}
+        {activeTab === "attachments" && (
+          <div className="detail-panel">
+            {!auth.user ? (
+              <p>{t("attachments.state.authRequired")}</p>
+            ) : (
+              <AttachmentsSection
+                ownerType="structure"
+                ownerId={structure.id}
+                canUpload={auth.user.is_admin}
+                canDelete={auth.user.is_admin}
+              />
             )}
           </div>
         )}

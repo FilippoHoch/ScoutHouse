@@ -147,6 +147,11 @@
       },
       "confirmDelete": "Eliminare il contatto {{name}}?"
     },
+    "details": {
+      "tabs": {
+        "attachments": "Allegati"
+      }
+    },
     "filters": {
       "search": {
         "label": "Cerca",
@@ -209,6 +214,37 @@
       "previous": "Precedente",
       "next": "Successiva",
       "page": "Pagina {{page}} / {{totalPages}}"
+    }
+  },
+  "attachments": {
+    "upload": {
+      "prompt": "Trascina qui i file o clicca per caricarli (PDF o immagini, max 5 MB).",
+      "button": "Seleziona file",
+      "progress": "Caricamento in corso…"
+    },
+    "state": {
+      "loading": "Caricamento allegati…",
+      "error": "Impossibile caricare gli allegati.",
+      "empty": "Nessun allegato disponibile.",
+      "authRequired": "Accedi per visualizzare gli allegati.",
+      "forbidden": "Non hai i permessi per visualizzare questi allegati."
+    },
+    "columns": {
+      "name": "Nome",
+      "size": "Dimensione",
+      "author": "Caricato da",
+      "createdAt": "Data",
+      "actions": "Azioni"
+    },
+    "actions": {
+      "download": "Scarica",
+      "delete": "Elimina"
+    },
+    "errors": {
+      "invalidOwner": "Identificativo struttura/evento non valido.",
+      "uploadFailed": "Caricamento su storage fallito.",
+      "invalidKey": "Chiave di caricamento non valida.",
+      "generic": "Impossibile completare l'operazione."
     }
   },
   "events": {

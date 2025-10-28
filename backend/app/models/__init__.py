@@ -13,6 +13,7 @@ from .quote import Quote, QuoteScenario
 from .audit_log import AuditLog
 from .user import EventMember, EventMemberRole, PasswordResetToken, RefreshToken, User
 from .structure import Structure, StructureType
+from .attachment import Attachment, AttachmentOwnerType
 
 __all__ = [
     "Structure",
@@ -34,6 +35,8 @@ __all__ = [
     "EventContactTaskOutcome",
     "Quote",
     "QuoteScenario",
+    "Attachment",
+    "AttachmentOwnerType",
     "User",
     "RefreshToken",
     "PasswordResetToken",

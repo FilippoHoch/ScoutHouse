@@ -38,6 +38,12 @@ class Settings(BaseSettings):
         alias="PUBLIC_CACHE_SWR",
     )
     gzip_min_length: int = Field(1024, alias="GZIP_MIN_LENGTH")
+    s3_endpoint: str | None = Field(default=None, alias="S3_ENDPOINT")
+    s3_bucket: str | None = Field(default=None, alias="S3_BUCKET")
+    s3_access_key: str | None = Field(default=None, alias="S3_ACCESS_KEY")
+    s3_secret_key: str | None = Field(default=None, alias="S3_SECRET_KEY")
+    s3_region: str | None = Field(default=None, alias="S3_REGION")
+    s3_use_path_style: bool = Field(False, alias="S3_USE_PATH_STYLE")
 
     model_config = {
         "env_file": ".env",
@@ -72,6 +78,23 @@ class Settings(BaseSettings):
     @classmethod
     def _clamp_sample_rate(cls, value: float) -> float:
         return max(0.0, min(1.0, value))
+
+    @field_validator(
+        "s3_endpoint",
+        "s3_bucket",
+        "s3_access_key",
+        "s3_secret_key",
+        "s3_region",
+        mode="before",
+    )
+    @classmethod
+    def _empty_to_none(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
 
 
 @lru_cache
