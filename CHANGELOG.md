@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2025-10-28
+### Added
+- Job queue RQ su Redis e servizio `worker` in Compose.
+- Endpoint `GET /ops/queue` con metriche di coda.
+### Changed
+- Invio email eseguito asincrono via RQ.
+### Security
+- Nessun dato sensibile nei metadata dei job; masking email nei log invariato.
+
 ## [0.16.0] - 2025-10-28
 ### Added
 - Sottosistema notifiche email con provider `console|smtp|sendgrid`, template Jinja e invio asincrono.

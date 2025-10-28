@@ -5,6 +5,8 @@ from typing import Generator
 import os
 
 import pytest
+from types import SimpleNamespace
+from uuid import uuid4
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
@@ -19,9 +21,9 @@ from app.models import EventMemberRole, Structure, StructureType  # noqa: E402
 from tests.utils import (  # noqa: E402
     TEST_RATE_LIMIT_HEADER,
     TEST_USER_EMAIL,
+    auth_headers,
     create_user,
     ensure_user,
-    auth_headers,
 )
 
 
@@ -53,6 +55,17 @@ def mail_stub() -> Generator[StubMailProvider, None, None]:
     override_mail_provider(stub)
     yield stub
     override_mail_provider(None)
+
+
+@pytest.fixture(autouse=True)
+def run_jobs_immediately(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    def _enqueue(func, *args, **kwargs):
+        kwargs = {key: value for key, value in kwargs.items() if key != "job_timeout"}
+        func(*args, **kwargs)
+        return SimpleNamespace(id=str(uuid4()))
+
+    monkeypatch.setattr("app.tasks.queue.queue.enqueue", _enqueue)
+    yield
 
 
 def get_client(*, authenticated: bool = False, is_admin: bool = False) -> TestClient:

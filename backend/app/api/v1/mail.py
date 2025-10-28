@@ -6,13 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, Field
 
 from app.core.config import get_settings
-from app.core.mail import get_mail_provider, send_mail
+from app.core.mail import get_mail_provider
 from app.deps import require_admin
 from app.services.mail import (
     MailTemplateName,
     get_sample_context,
     render_mail_template,
 )
+from app.tasks.email_jobs import send_email_job
+from app.tasks.queue import queue
 
 router = APIRouter(prefix="/mail", tags=["mail"])
 
@@ -36,6 +38,7 @@ class MailTestResponse(BaseModel):
     subject: str
     html: str
     text: str
+    job_id: str
 
 
 @router.get("/preview", response_model=MailPreviewResponse)
@@ -59,7 +62,7 @@ def preview_mail_template(
     )
 
 
-@router.post("/test", response_model=MailTestResponse)
+@router.post("/test", response_model=MailTestResponse, status_code=status.HTTP_202_ACCEPTED)
 def send_test_mail(
     payload: MailTestRequest,
     _: None = Depends(require_admin),
@@ -70,7 +73,16 @@ def send_test_mail(
 
     message = render_mail_template(payload.template, context)
     provider = get_mail_provider()
-    send_mail(payload.to, message)
+    job = queue.enqueue(
+        send_email_job,
+        {
+            "to": payload.to,
+            "subject": message.subject,
+            "html": message.html,
+            "text": message.text,
+        },
+        job_timeout=120,
+    )
 
     settings = get_settings()
     blocked = settings.dev_mail_block_external and settings.mail_driver != "console"
@@ -80,6 +92,7 @@ def send_test_mail(
         subject=message.subject,
         html=message.html,
         text=message.text,
+        job_id=job.id,
     )
 
 

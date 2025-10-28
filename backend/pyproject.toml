@@ -33,6 +33,8 @@ dependencies = [
   "sentry-sdk[fastapi]>=2.0",
   "boto3>=1.34",
   "jinja2>=3.1",
+  "redis>=5.0",
+  "rq>=1.16",
 ]
 
 [project.optional-dependencies]
