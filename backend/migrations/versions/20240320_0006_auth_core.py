@@ -51,8 +51,31 @@ def upgrade() -> None:
         ["user_id", "revoked"],
     )
 
-    event_member_role = sa.Enum("owner", "collab", "viewer", name="event_member_role")
-    event_member_role.create(op.get_bind(), checkfirst=True)
+    op.execute(
+        """
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'event_member_role'
+          AND n.nspname = current_schema()
+    ) THEN
+        CREATE TYPE event_member_role AS ENUM ('owner', 'collab', 'viewer');
+    END IF;
+END$$;
+"""
+    )
+
+    event_member_role = sa.Enum(
+        "owner",
+        "collab",
+        "viewer",
+        name="event_member_role",
+        create_type=False,
+        native_enum=True,
+    )
 
     op.create_table(
         "event_members",
@@ -118,5 +141,12 @@ def downgrade() -> None:
 
     op.drop_table("users")
 
-    event_member_role = sa.Enum("owner", "collab", "viewer", name="event_member_role")
+    event_member_role = sa.Enum(
+        "owner",
+        "collab",
+        "viewer",
+        name="event_member_role",
+        create_type=False,
+        native_enum=True,
+    )
     event_member_role.drop(op.get_bind(), checkfirst=True)
