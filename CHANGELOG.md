@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Export strutture solo admin; export eventi limitato a visibilità utente.
 
+## [0.13.2] - 2025-10-27
+### Changed
+- Init Postgres: rimosso `CREATE DATABASE` dagli script `.sql`; affidamento a `POSTGRES_DB` e guardia condizionale in `10-init.sh`.
+### Security
+- Nessuna.
+
 ## [0.13.1] - 2025-10-27
 ### Changed
 - Rimosso asset binario del template dal repository; template generati a runtime via API.
