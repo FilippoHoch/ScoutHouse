@@ -8,8 +8,8 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "20240320_0009_contacts"
-down_revision: str | None = "20240320_0008_perf_indexes"
+revision: str = "20240320_0009"
+down_revision: str | None = "20240320_0008"
 branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
 

@@ -8,8 +8,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "20240320_0007_roles_audit"
-down_revision: str | None = "20240320_0006_auth_core"
+revision: str = "20240320_0007"
+down_revision: str | None = "20240320_0006"
 branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
 

@@ -6,8 +6,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "20240320_0003_structure_availability_costs"
-down_revision = "20240320_0002_structure_geo"
+revision = "20240320_0003"
+down_revision = "20240320_0002"
 branch_labels = None
 depends_on = None
 
