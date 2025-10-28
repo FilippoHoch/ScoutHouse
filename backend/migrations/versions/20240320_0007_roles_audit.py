@@ -39,32 +39,6 @@ def upgrade() -> None:
     # - nuove colonne: op.add_column("event_members", sa.Column(...))
     # - nuovi indici: op.create_index(..., "event_members", [...])
 
-    op.add_column(
-        "event_structure_candidate",
-        sa.Column("assigned_user_id", sa.String(length=36), nullable=True),
-    )
-    op.create_foreign_key(
-        "fk_event_structure_candidate_assigned_user_id_users",
-        "event_structure_candidate",
-        "users",
-        ["assigned_user_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
-
-    op.add_column(
-        "event_contact_task",
-        sa.Column("assigned_user_id", sa.String(length=36), nullable=True),
-    )
-    op.create_foreign_key(
-        "fk_event_contact_task_assigned_user_id_users",
-        "event_contact_task",
-        "users",
-        ["assigned_user_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
-
     op.create_table(
         "password_reset_tokens",
         sa.Column("id", sa.String(length=36), primary_key=True),
@@ -93,20 +67,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "fk_event_contact_task_assigned_user_id_users",
-        "event_contact_task",
-        type_="foreignkey",
-    )
-    op.drop_column("event_contact_task", "assigned_user_id")
-
-    op.drop_constraint(
-        "fk_event_structure_candidate_assigned_user_id_users",
-        "event_structure_candidate",
-        type_="foreignkey",
-    )
-    op.drop_column("event_structure_candidate", "assigned_user_id")
-
     op.drop_index(
         "ix_password_reset_tokens_user_id_used",
         table_name="password_reset_tokens",
