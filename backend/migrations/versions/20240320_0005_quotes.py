@@ -12,12 +12,51 @@ down_revision = "20240320_0004"
 branch_labels = None
 depends_on = None
 
-scenario_enum = sa.Enum("best", "realistic", "worst", name="quote_scenario")
+# NOTE:
+# The PostgreSQL ENUM type is created separately with an idempotent DO block to
+# avoid race conditions where the type exists from a prior partially-applied
+# migration (for example when the worker restarts mid-run). Using
+# ``postgresql.ENUM`` with ``create_type=False`` on the column prevents
+# SQLAlchemy from attempting to recreate the type for each table creation.
+scenario_enum_name = "quote_scenario"
+scenario_enum_values = ("best", "realistic", "worst")
+scenario_enum = postgresql.ENUM(
+    *scenario_enum_values,
+    name=scenario_enum_name,
+    create_type=False,
+)
 json_type = sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql")
 
 
+def _create_enum_type_if_not_exists() -> None:
+    op.execute(
+        sa.text(
+            """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_type WHERE typname = :enum_name
+                ) THEN
+                    EXECUTE 'CREATE TYPE ' || quote_ident(:enum_name) ||
+                        ' AS ENUM (' ||
+                        (
+                            SELECT string_agg(quote_literal(val), ', ')
+                            FROM unnest(:enum_values) AS value(val)
+                        ) ||
+                        ')';
+                END IF;
+            END;
+            $$;
+            """
+        ).bindparams(
+            sa.bindparam("enum_name", value=scenario_enum_name),
+            sa.bindparam("enum_values", value=list(scenario_enum_values), type_=postgresql.ARRAY(sa.Text())),
+        )
+    )
+
+
 def upgrade() -> None:
-    scenario_enum.create(op.get_bind(), checkfirst=True)
+    _create_enum_type_if_not_exists()
 
     op.create_table(
         "quotes",
@@ -54,4 +93,18 @@ def downgrade() -> None:
     op.drop_index("ix_quotes_structure_id", table_name="quotes")
     op.drop_index("ix_quotes_event_id", table_name="quotes")
     op.drop_table("quotes")
-    scenario_enum.drop(op.get_bind(), checkfirst=True)
+    op.execute(
+        sa.text(
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM pg_type WHERE typname = :enum_name
+                ) THEN
+                    EXECUTE 'DROP TYPE ' || quote_ident(:enum_name);
+                END IF;
+            END;
+            $$;
+            """
+        ).bindparams(sa.bindparam("enum_name", value=scenario_enum_name))
+    )
