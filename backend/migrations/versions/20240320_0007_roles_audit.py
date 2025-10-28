@@ -6,6 +6,7 @@ from typing import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 
 # revision identifiers, used by Alembic.
 revision: str = "20240320_0007"
@@ -34,6 +35,15 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["actor_user_id"], ["users.id"], ondelete="SET NULL"),
     )
 
+    event_member_role = PG_ENUM(
+        "owner",
+        "collab",
+        "viewer",
+        name="event_member_role",
+        create_type=False,
+        native_enum=True,
+    )
+
     op.create_table(
         "event_members",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -41,7 +51,7 @@ def upgrade() -> None:
         sa.Column("user_id", sa.String(length=36), nullable=False),
         sa.Column(
             "role",
-            sa.Enum("owner", "collab", "viewer", name="event_member_role"),
+            event_member_role,
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["event_id"], ["events.id"], ondelete="CASCADE"),
@@ -118,7 +128,6 @@ def downgrade() -> None:
     op.drop_column("event_structure_candidate", "assigned_user_id")
 
     op.drop_table("event_members")
-    op.execute("DROP TYPE IF EXISTS event_member_role")
 
     op.drop_index(
         "ix_password_reset_tokens_user_id_used",

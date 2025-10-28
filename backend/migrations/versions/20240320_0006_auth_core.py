@@ -6,7 +6,7 @@ from typing import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 
 # revision identifiers, used by Alembic.
 revision: str = "20240320_0006"
@@ -70,7 +70,7 @@ $do$;
 """
     )
 
-    event_member_role = ENUM(
+    event_member_role = PG_ENUM(
         "owner",
         "collab",
         "viewer",
@@ -143,7 +143,7 @@ def downgrade() -> None:
 
     op.drop_table("users")
 
-    event_member_role = ENUM(
+    event_member_role = PG_ENUM(
         "owner",
         "collab",
         "viewer",
