@@ -17,9 +17,11 @@ down_revision = "20240320_0003"
 branch_labels = None
 depends_on = None
 
-branch_enum = sa.Enum("LC", "EG", "RS", "ALL", name="event_branch")
-status_enum = sa.Enum("draft", "planning", "booked", "archived", name="event_status")
-candidate_status_enum = sa.Enum(
+branch_enum_type = postgresql.ENUM("LC", "EG", "RS", "ALL", name="event_branch")
+status_enum_type = postgresql.ENUM(
+    "draft", "planning", "booked", "archived", name="event_status"
+)
+candidate_status_enum_type = postgresql.ENUM(
     "to_contact",
     "contacting",
     "available",
@@ -29,22 +31,37 @@ candidate_status_enum = sa.Enum(
     "option",
     name="event_candidate_status",
 )
-contact_status_enum = sa.Enum(
+contact_status_enum_type = postgresql.ENUM(
     "todo", "in_progress", "done", "n_a", name="event_contact_task_status"
 )
-contact_outcome_enum = sa.Enum(
+contact_outcome_enum_type = postgresql.ENUM(
     "pending", "positive", "negative", name="event_contact_task_outcome"
 )
+
+
+def _enum_for_column(enum_type: postgresql.ENUM) -> postgresql.ENUM:
+    enum_copy = enum_type.copy()
+    enum_copy.create_type = False
+    return enum_copy
+
+
+branch_enum = _enum_for_column(branch_enum_type)
+status_enum = _enum_for_column(status_enum_type)
+candidate_status_enum = _enum_for_column(candidate_status_enum_type)
+contact_status_enum = _enum_for_column(contact_status_enum_type)
+contact_outcome_enum = _enum_for_column(contact_outcome_enum_type)
 
 json_type = sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql")
 
 
 def upgrade() -> None:
-    branch_enum.create(op.get_bind(), checkfirst=True)
-    status_enum.create(op.get_bind(), checkfirst=True)
-    candidate_status_enum.create(op.get_bind(), checkfirst=True)
-    contact_status_enum.create(op.get_bind(), checkfirst=True)
-    contact_outcome_enum.create(op.get_bind(), checkfirst=True)
+    bind = op.get_bind()
+
+    branch_enum_type.create(bind, checkfirst=True)
+    status_enum_type.create(bind, checkfirst=True)
+    candidate_status_enum_type.create(bind, checkfirst=True)
+    contact_status_enum_type.create(bind, checkfirst=True)
+    contact_outcome_enum_type.create(bind, checkfirst=True)
 
     op.create_table(
         "events",
@@ -154,8 +171,9 @@ def downgrade() -> None:
     op.drop_table("event_structure_candidate")
     op.drop_table("events")
 
-    contact_outcome_enum.drop(op.get_bind(), checkfirst=True)
-    contact_status_enum.drop(op.get_bind(), checkfirst=True)
-    candidate_status_enum.drop(op.get_bind(), checkfirst=True)
-    status_enum.drop(op.get_bind(), checkfirst=True)
-    branch_enum.drop(op.get_bind(), checkfirst=True)
+    bind = op.get_bind()
+    contact_outcome_enum_type.drop(bind, checkfirst=True)
+    contact_status_enum_type.drop(bind, checkfirst=True)
+    candidate_status_enum_type.drop(bind, checkfirst=True)
+    status_enum_type.drop(bind, checkfirst=True)
+    branch_enum_type.drop(bind, checkfirst=True)
