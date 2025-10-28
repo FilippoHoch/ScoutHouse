@@ -28,33 +28,36 @@ scenario_enum = postgresql.ENUM(
 json_type = sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql")
 
 
+def _quote_literal(value: str) -> str:
+    """Return a PostgreSQL-safe literal representation of *value*.
+
+    The migration only uses static strings, but guarding against stray single
+    quotes keeps the helper safe if the enum values are ever adjusted.
+    """
+
+    return value.replace("'", "''")
+
+
 def _create_enum_type_if_not_exists() -> None:
+    enum_name_literal = _quote_literal(scenario_enum_name)
+    enum_values_literal = ", ".join(
+        f"'{_quote_literal(value)}'" for value in scenario_enum_values
+    )
+
     op.execute(
         sa.text(
-            """
+            f"""
             DO $$
             BEGIN
                 IF NOT EXISTS (
-                    SELECT 1 FROM pg_type WHERE typname = CAST(:enum_name AS TEXT)
+                    SELECT 1 FROM pg_type WHERE typname = '{enum_name_literal}'
                 ) THEN
-                    EXECUTE 'CREATE TYPE ' || quote_ident(CAST(:enum_name AS TEXT)) ||
-                        ' AS ENUM (' ||
-                        (
-                            SELECT string_agg(quote_literal(val), ', ')
-                            FROM unnest(CAST(:enum_values AS TEXT[])) AS value(val)
-                        ) ||
-                        ')';
+                    EXECUTE 'CREATE TYPE ' || quote_ident('{enum_name_literal}') ||
+                        ' AS ENUM ({enum_values_literal})';
                 END IF;
             END;
             $$;
             """
-        ).bindparams(
-            sa.bindparam("enum_name", value=scenario_enum_name, type_=sa.Text()),
-            sa.bindparam(
-                "enum_values",
-                value=list(scenario_enum_values),
-                type_=postgresql.ARRAY(sa.Text()),
-            ),
         )
     )
 
@@ -97,18 +100,19 @@ def downgrade() -> None:
     op.drop_index("ix_quotes_structure_id", table_name="quotes")
     op.drop_index("ix_quotes_event_id", table_name="quotes")
     op.drop_table("quotes")
+    enum_name_literal = _quote_literal(scenario_enum_name)
     op.execute(
         sa.text(
-            """
+            f"""
             DO $$
             BEGIN
                 IF EXISTS (
-                    SELECT 1 FROM pg_type WHERE typname = CAST(:enum_name AS TEXT)
+                    SELECT 1 FROM pg_type WHERE typname = '{enum_name_literal}'
                 ) THEN
-                    EXECUTE 'DROP TYPE ' || quote_ident(CAST(:enum_name AS TEXT));
+                    EXECUTE 'DROP TYPE ' || quote_ident('{enum_name_literal}');
                 END IF;
             END;
             $$;
             """
-        ).bindparams(sa.bindparam("enum_name", value=scenario_enum_name, type_=sa.Text()))
+        )
     )
