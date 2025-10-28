@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import textwrap
+
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.engine import Connection
 
 # revision identifiers, used by Alembic.
 revision = "20240320_0005"
@@ -13,10 +16,10 @@ branch_labels = None
 depends_on = None
 
 # NOTE:
-# The PostgreSQL ENUM type is created separately with an idempotent DO block to
-# avoid race conditions where the type exists from a prior partially-applied
-# migration (for example when the worker restarts mid-run). Using
-# ``postgresql.ENUM`` with ``create_type=False`` on the column prevents
+# The PostgreSQL ENUM type is created separately with an explicit existence
+# check to avoid race conditions where the type exists from a prior
+# partially-applied migration (for example when the worker restarts mid-run).
+# Using ``postgresql.ENUM`` with ``create_type=False`` on the column prevents
 # SQLAlchemy from attempting to recreate the type for each table creation.
 scenario_enum_name = "quote_scenario"
 scenario_enum_values = ("best", "realistic", "worst")
@@ -25,42 +28,41 @@ scenario_enum = postgresql.ENUM(
     name=scenario_enum_name,
     create_type=False,
 )
+scenario_enum_type = postgresql.ENUM(
+    *scenario_enum_values,
+    name=scenario_enum_name,
+)
 json_type = sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql")
 
 
-def _quote_literal(value: str) -> str:
-    """Return a PostgreSQL-safe literal representation of *value*.
-
-    The migration only uses static strings, but guarding against stray single
-    quotes keeps the helper safe if the enum values are ever adjusted.
-    """
-
-    return value.replace("'", "''")
-
-
 def _create_enum_type_if_not_exists() -> None:
-    enum_name_literal = _quote_literal(scenario_enum_name)
-    enum_name_literal_sql = f"''{enum_name_literal}''"
-    enum_values_literal = ", ".join(
-        f"''{_quote_literal(value)}''" for value in scenario_enum_values
-    )
+    bind = op.get_bind()
+    if not _enum_type_exists(bind):
+        scenario_enum_type.create(bind, checkfirst=False)
 
-    op.execute(
+
+def _drop_enum_type_if_exists() -> None:
+    bind = op.get_bind()
+    if _enum_type_exists(bind):
+        scenario_enum_type.drop(bind, checkfirst=False)
+
+
+def _enum_type_exists(bind: Connection) -> bool:
+    result = bind.execute(
         sa.text(
-            f"""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_type WHERE typname = {enum_name_literal_sql}
-                ) THEN
-                    EXECUTE 'CREATE TYPE ' || quote_ident({enum_name_literal_sql}) ||
-                        ' AS ENUM ({enum_values_literal})';
-                END IF;
-            END;
-            $$;
-            """
-        )
-    )
+            textwrap.dedent(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM pg_type
+                    WHERE typname = :enum_name
+                )
+                """
+            )
+        ),
+        {"enum_name": scenario_enum_name},
+    ).scalar_one()
+    return bool(result)
 
 
 def upgrade() -> None:
@@ -101,20 +103,4 @@ def downgrade() -> None:
     op.drop_index("ix_quotes_structure_id", table_name="quotes")
     op.drop_index("ix_quotes_event_id", table_name="quotes")
     op.drop_table("quotes")
-    enum_name_literal = _quote_literal(scenario_enum_name)
-    enum_name_literal_sql = f"''{enum_name_literal}''"
-    op.execute(
-        sa.text(
-            f"""
-            DO $$
-            BEGIN
-                IF EXISTS (
-                    SELECT 1 FROM pg_type WHERE typname = {enum_name_literal_sql}
-                ) THEN
-                    EXECUTE 'DROP TYPE ' || quote_ident({enum_name_literal_sql});
-                END IF;
-            END;
-            $$;
-            """
-        )
-    )
+    _drop_enum_type_if_exists()
