@@ -38,6 +38,8 @@ class Settings(BaseSettings):
         alias="PUBLIC_CACHE_SWR",
     )
     gzip_min_length: int = Field(1024, alias="GZIP_MIN_LENGTH")
+    redis_url: str = Field("redis://cache:6379/0", alias="REDIS_URL")
+    rq_queue_name: str = Field("scouthouse", alias="RQ_QUEUE_NAME")
     s3_endpoint: str | None = Field(default=None, alias="S3_ENDPOINT")
     s3_bucket: str | None = Field(default=None, alias="S3_BUCKET")
     s3_access_key: str | None = Field(default=None, alias="S3_ACCESS_KEY")
@@ -141,3 +143,7 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()  # type: ignore[call-arg]
+
+
+REDIS_URL: str = get_settings().redis_url
+RQ_QUEUE_NAME: str = get_settings().rq_queue_name

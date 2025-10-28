@@ -607,6 +607,7 @@ export interface MailTestResponse {
   subject: string;
   html: string;
   text: string;
+  job_id: string;
 }
 
 export async function previewMailTemplate(template: MailTemplate): Promise<MailPreview> {

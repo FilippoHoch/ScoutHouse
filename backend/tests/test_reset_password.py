@@ -1,6 +1,7 @@
 import os
-from uuid import uuid4
+from types import SimpleNamespace
 from typing import Generator
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,6 +28,17 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def run_jobs_immediately(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    def _enqueue(func, *args, **kwargs):
+        kwargs = {key: value for key, value in kwargs.items() if key != "job_timeout"}
+        func(*args, **kwargs)
+        return SimpleNamespace(id=str(uuid4()))
+
+    monkeypatch.setattr("app.tasks.queue.queue.enqueue", _enqueue)
+    yield
 
 
 def get_client(*, authenticated: bool = False) -> TestClient:

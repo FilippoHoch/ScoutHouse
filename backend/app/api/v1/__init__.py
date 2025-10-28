@@ -8,6 +8,7 @@ from . import (
     health,
     imports,
     mail,
+    ops,
     quotes,
     structures,
     templates,
@@ -24,5 +25,6 @@ api_router.include_router(events.router, prefix="/events", tags=["events"])
 api_router.include_router(quotes.router, tags=["quotes"])
 api_router.include_router(export.router, prefix="/export", tags=["export"])
 api_router.include_router(mail.router)
+api_router.include_router(ops.router)
 
 __all__ = ["api_router"]

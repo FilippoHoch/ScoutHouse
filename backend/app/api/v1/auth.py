@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -104,14 +104,12 @@ async def forgot_password(
     token_value, _record = create_reset_token(db, user)
     db.commit()
 
-    background_tasks = BackgroundTasks()
     schedule_password_reset_email(
-        background_tasks,
         recipient_email=user.email,
         recipient_name=user.name,
         token=token_value,
     )
-    return Response(status_code=status.HTTP_202_ACCEPTED, background=background_tasks)
+    return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)

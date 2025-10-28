@@ -3,6 +3,8 @@ from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
+from types import SimpleNamespace
+from uuid import uuid4
 
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
@@ -45,6 +47,17 @@ def stub_provider() -> Generator[PreviewStub, None, None]:
     override_mail_provider(None)
 
 
+@pytest.fixture(autouse=True)
+def run_jobs_immediately(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    def _enqueue(func, *args, **kwargs):
+        kwargs = {key: value for key, value in kwargs.items() if key != "job_timeout"}
+        func(*args, **kwargs)
+        return SimpleNamespace(id=str(uuid4()))
+
+    monkeypatch.setattr("app.tasks.queue.queue.enqueue", _enqueue)
+    yield
+
+
 def get_admin_client() -> TestClient:
     client = TestClient(app)
     client.headers.update(auth_headers(client, is_admin=True))
@@ -67,7 +80,9 @@ def test_admin_can_send_test_mail(stub_provider: PreviewStub) -> None:
     client = get_admin_client()
     payload = {"to": "admin@example.com", "template": "task_assigned"}
     response = client.post("/api/v1/mail/test", json=payload)
-    assert response.status_code == 200
-    assert response.json()["provider"] == "console"
+    assert response.status_code == 202
+    body = response.json()
+    assert body["provider"] == "console"
+    assert body["job_id"]
     assert len(stub_provider.messages) == 1
     assert stub_provider.messages[0]["to"] == "admin@example.com"

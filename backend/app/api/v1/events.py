@@ -7,16 +7,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
-from fastapi import (
-    APIRouter,
-    BackgroundTasks,
-    Depends,
-    HTTPException,
-    Query,
-    Request,
-    Response,
-    status,
-)
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
@@ -584,7 +575,6 @@ def update_candidate(
     candidate_in: EventCandidateUpdate,
     db: DbSession,
     request: Request,
-    background_tasks: BackgroundTasks,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventCandidateRead:
     event = _load_event(db, event_id)
@@ -693,7 +683,6 @@ def update_candidate(
             notes = candidate.assigned_user or None
             for email, name in recipients.items():
                 schedule_candidate_status_email(
-                    background_tasks,
                     recipient_email=email,
                     recipient_name=name,
                     event_id=event.id,
@@ -740,7 +729,6 @@ def create_task(
     event_id: int,
     task_in: EventContactTaskCreate,
     db: DbSession,
-    background_tasks: BackgroundTasks,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventContactTaskRead:
     event = _load_event(db, event_id)
@@ -766,7 +754,6 @@ def create_task(
     assignee = db.get(User, assigned_user_id) if assigned_user_id else None
     if assignee is not None and assignee.email and assignee.is_active:
         schedule_task_assigned_email(
-            background_tasks,
             recipient_email=assignee.email,
             recipient_name=assignee.name,
             event_id=event.id,
@@ -787,7 +774,6 @@ def update_task(
     task_id: int,
     task_in: EventContactTaskUpdate,
     db: DbSession,
-    background_tasks: BackgroundTasks,
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventContactTaskRead:
     event = _load_event(db, event_id)
@@ -821,7 +807,6 @@ def update_task(
         assignee = db.get(User, task.assigned_user_id)
         if assignee is not None and assignee.email and assignee.is_active:
             schedule_task_assigned_email(
-                background_tasks,
                 recipient_email=assignee.email,
                 recipient_name=assignee.name,
                 event_id=event.id,
