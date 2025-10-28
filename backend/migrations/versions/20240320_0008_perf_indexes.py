@@ -6,8 +6,8 @@ from typing import Sequence
 
 from alembic import op
 
-revision: str = "20240320_0008_perf_indexes"
-down_revision: str | None = "20240320_0007_roles_audit"
+revision: str = "20240320_0008"
+down_revision: str | None = "20240320_0007"
 branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
 
