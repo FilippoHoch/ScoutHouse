@@ -1,13 +1,12 @@
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import inspect
 
 revision = "20240320_0009_contacts"
 down_revision = "20240320_0008"
 branch_labels = None
 depends_on = None
 
-preferred_channel_enum = sa.Enum(
+contact_channel = sa.Enum(
     "email",
     "phone",
     "other",
@@ -18,10 +17,10 @@ preferred_channel_enum = sa.Enum(
 
 
 def upgrade():
-    conn = op.get_bind()
-    insp = inspect(conn)
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
 
-    preferred_channel_enum.create(conn, checkfirst=True)
+    contact_channel.create(bind, checkfirst=True)
 
     if not insp.has_table("contacts"):
         op.create_table(
@@ -39,7 +38,7 @@ def upgrade():
             sa.Column("phone", sa.Text, nullable=True),
             sa.Column(
                 "preferred_channel",
-                preferred_channel_enum,
+                contact_channel,
                 nullable=False,
                 server_default=sa.text("'email'"),
             ),
@@ -64,7 +63,7 @@ def upgrade():
             ),
         )
 
-    insp = inspect(conn)
+    insp = sa.inspect(bind)
 
     if insp.has_table("contacts"):
         existing_indexes = {idx["name"] for idx in insp.get_indexes("contacts")}
@@ -120,8 +119,8 @@ def upgrade():
 
 
 def downgrade():
-    conn = op.get_bind()
-    insp = inspect(conn)
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
 
     if insp.has_table("event_structure_candidate"):
         candidate_columns = {
@@ -138,7 +137,7 @@ def downgrade():
                 )
             op.drop_column("event_structure_candidate", "contact_id")
 
-    insp = inspect(conn)
+    insp = sa.inspect(bind)
 
     if insp.has_table("contacts"):
         existing_indexes = {idx["name"] for idx in insp.get_indexes("contacts")}
@@ -162,4 +161,4 @@ def downgrade():
 
         op.drop_table("contacts")
 
-    preferred_channel_enum.drop(conn, checkfirst=True)
+    contact_channel.drop(bind, checkfirst=True)
