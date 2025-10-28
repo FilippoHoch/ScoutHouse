@@ -1,5 +1,7 @@
 
 import {
+  Attachment,
+  AttachmentOwnerType,
   Event,
   EventCandidate,
   EventCandidateCreateDto,
@@ -36,6 +38,27 @@ import { API_URL, ApiError } from "./http";
 export { ApiError } from "./http";
 
 export type ExportFormat = "csv" | "xlsx" | "json";
+
+export interface AttachmentUploadSignature {
+  url: string;
+  fields: Record<string, string>;
+}
+
+export interface AttachmentUploadRequest {
+  owner_type: AttachmentOwnerType;
+  owner_id: number;
+  filename: string;
+  mime: string;
+}
+
+export interface AttachmentConfirmRequest extends AttachmentUploadRequest {
+  size: number;
+  key: string;
+}
+
+export interface AttachmentDownloadSignature {
+  url: string;
+}
 
 function acceptHeaderForFormat(format: ExportFormat): string {
   if (format === "xlsx") {
@@ -133,6 +156,52 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   }
 
   return (await response.json()) as T;
+}
+
+export async function getAttachments(
+  ownerType: AttachmentOwnerType,
+  ownerId: number
+): Promise<Attachment[]> {
+  return apiFetch<Attachment[]>(
+    `/api/v1/attachments?owner_type=${ownerType}&owner_id=${ownerId}`,
+    { auth: true }
+  );
+}
+
+export async function signAttachmentUpload(
+  payload: AttachmentUploadRequest
+): Promise<AttachmentUploadSignature> {
+  return apiFetch<AttachmentUploadSignature>("/api/v1/attachments/sign-put", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function confirmAttachmentUpload(
+  payload: AttachmentConfirmRequest
+): Promise<Attachment> {
+  return apiFetch<Attachment>("/api/v1/attachments/confirm", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function signAttachmentDownload(
+  attachmentId: number
+): Promise<AttachmentDownloadSignature> {
+  return apiFetch<AttachmentDownloadSignature>(
+    `/api/v1/attachments/${attachmentId}/sign-get`,
+    { auth: true }
+  );
+}
+
+export async function deleteAttachment(attachmentId: number): Promise<void> {
+  await apiFetch<void>(`/api/v1/attachments/${attachmentId}`, {
+    method: "DELETE",
+    auth: true,
+  });
 }
 
 async function authenticatedDownload(path: string, accept: string): Promise<Response> {

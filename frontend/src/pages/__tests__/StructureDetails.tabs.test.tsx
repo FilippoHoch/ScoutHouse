@@ -81,5 +81,8 @@ describe("StructureDetailsPage tabs", () => {
     await user.click(screen.getByRole("button", { name: /Costs/i }));
     expect(screen.getByText(/per_person_day/i)).toBeInTheDocument();
     expect(screen.getByText(/Deposit:/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Allegati/i }));
+    expect(screen.getByText(/Accedi per visualizzare gli allegati/)).toBeInTheDocument();
   });
 });

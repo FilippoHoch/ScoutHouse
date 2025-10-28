@@ -35,6 +35,7 @@ import {
 import { useAuth } from "../shared/auth";
 import { useEventLive } from "../shared/live";
 import { EventQuotesTab } from "./EventQuotesTab";
+import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 
 const candidateStatuses: EventCandidateStatus[] = [
   "to_contact",
@@ -350,7 +351,9 @@ export const EventDetailsPage = () => {
   const isValidEventId = Number.isFinite(numericId);
   const liveState = useEventLive(isValidEventId ? numericId : null);
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"candidature" | "attivita" | "preventivi">("candidature");
+  const [activeTab, setActiveTab] = useState<
+    "candidature" | "attivita" | "preventivi" | "allegati"
+  >("candidature");
   const [candidateSlug, setCandidateSlug] = useState("");
   const [candidateAssignee, setCandidateAssignee] = useState("");
   const [candidateError, setCandidateError] = useState<string | null>(null);
@@ -508,6 +511,10 @@ export const EventDetailsPage = () => {
   const members = membersQuery.data ?? [];
   const myMembership = members.find((member) => member.user.id === auth.user?.id);
   const isOwner = myMembership?.role === "owner";
+  const canManageAttachments = Boolean(
+    auth.user?.is_admin || myMembership?.role === "owner" || myMembership?.role === "collab"
+  );
+  const canViewAttachments = Boolean(auth.user?.is_admin || myMembership);
 
   const event = eventQuery.data as Event | undefined;
   const summary = summaryQuery.data as EventSummary | undefined;
@@ -717,8 +724,11 @@ export const EventDetailsPage = () => {
           <button type="button" className={activeTab === "attivita" ? "active" : ""} onClick={() => setActiveTab("attivita")}>
             Attività
           </button>
-          <button type="button" className={activeTab === "preventivi" ? "active" : ""} onClick={() => setActiveTab("preventivi")}>
+          <button type="button" className={activeTab === "preventivi" ? "active" : ""} onClick={() => setActiveTab("preventivi")}> 
             Preventivi
+          </button>
+          <button type="button" className={activeTab === "allegati" ? "active" : ""} onClick={() => setActiveTab("allegati")}>
+            Allegati
           </button>
         </nav>
         {activeTab === "candidature" && (
@@ -862,6 +872,20 @@ export const EventDetailsPage = () => {
         {activeTab === "preventivi" && (
           <div className="tab-panel">
             <EventQuotesTab event={event} />
+          </div>
+        )}
+        {activeTab === "allegati" && (
+          <div className="tab-panel">
+            {!canViewAttachments ? (
+              <p>{t("attachments.state.forbidden")}</p>
+            ) : (
+              <AttachmentsSection
+                ownerType="event"
+                ownerId={event.id}
+                canUpload={canManageAttachments}
+                canDelete={canManageAttachments}
+              />
+            )}
           </div>
         )}
       </div>

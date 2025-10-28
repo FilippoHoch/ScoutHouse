@@ -5,6 +5,20 @@ export type CostModel = "per_person_day" | "per_person_night" | "forfait";
 export type CostBand = "cheap" | "medium" | "expensive";
 export type ContactPreferredChannel = "email" | "phone" | "other";
 
+export type AttachmentOwnerType = "structure" | "event";
+
+export interface Attachment {
+  id: number;
+  owner_type: AttachmentOwnerType;
+  owner_id: number;
+  filename: string;
+  mime: string;
+  size: number;
+  created_by: string | null;
+  created_by_name: string | null;
+  created_at: string;
+}
+
 export interface User {
   id: string;
   email: string;
