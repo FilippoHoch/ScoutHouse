@@ -139,6 +139,18 @@ class Settings(BaseSettings):
             raise ValueError("Mail sender fields cannot be empty")
         return stripped
 
+    @field_validator("smtp_port", mode="before")
+    @classmethod
+    def _coerce_smtp_port(cls, value: int | str | None) -> int | str:
+        if value is None:
+            return 587
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                return 587
+            return stripped
+        return value
+
 
 @lru_cache
 def get_settings() -> Settings:
