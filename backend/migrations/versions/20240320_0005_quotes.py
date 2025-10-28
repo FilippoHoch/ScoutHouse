@@ -40,8 +40,9 @@ def _quote_literal(value: str) -> str:
 
 def _create_enum_type_if_not_exists() -> None:
     enum_name_literal = _quote_literal(scenario_enum_name)
+    enum_name_literal_sql = f"''{enum_name_literal}''"
     enum_values_literal = ", ".join(
-        f"'{_quote_literal(value)}'" for value in scenario_enum_values
+        f"''{_quote_literal(value)}''" for value in scenario_enum_values
     )
 
     op.execute(
@@ -50,9 +51,9 @@ def _create_enum_type_if_not_exists() -> None:
             DO $$
             BEGIN
                 IF NOT EXISTS (
-                    SELECT 1 FROM pg_type WHERE typname = '{enum_name_literal}'
+                    SELECT 1 FROM pg_type WHERE typname = {enum_name_literal_sql}
                 ) THEN
-                    EXECUTE 'CREATE TYPE ' || quote_ident('{enum_name_literal}') ||
+                    EXECUTE 'CREATE TYPE ' || quote_ident({enum_name_literal_sql}) ||
                         ' AS ENUM ({enum_values_literal})';
                 END IF;
             END;
@@ -101,15 +102,16 @@ def downgrade() -> None:
     op.drop_index("ix_quotes_event_id", table_name="quotes")
     op.drop_table("quotes")
     enum_name_literal = _quote_literal(scenario_enum_name)
+    enum_name_literal_sql = f"''{enum_name_literal}''"
     op.execute(
         sa.text(
             f"""
             DO $$
             BEGIN
                 IF EXISTS (
-                    SELECT 1 FROM pg_type WHERE typname = '{enum_name_literal}'
+                    SELECT 1 FROM pg_type WHERE typname = {enum_name_literal_sql}
                 ) THEN
-                    EXECUTE 'DROP TYPE ' || quote_ident('{enum_name_literal}');
+                    EXECUTE 'DROP TYPE ' || quote_ident({enum_name_literal_sql});
                 END IF;
             END;
             $$;
