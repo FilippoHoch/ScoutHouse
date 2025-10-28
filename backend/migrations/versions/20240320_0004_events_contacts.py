@@ -75,7 +75,9 @@ def upgrade() -> None:
             "participants",
             json_type,
             nullable=False,
-            server_default=sa.text("'{""lc"":0,""eg"":0,""rs"":0,""leaders"":0}'"),
+            server_default=sa.text(
+                "jsonb_build_object('lc', 0, 'eg', 0, 'rs', 0, 'leaders', 0)"
+            ),
         ),
         sa.Column("budget_total", sa.Numeric(10, 2), nullable=True),
         sa.Column("status", status_enum, nullable=False, server_default="draft"),
