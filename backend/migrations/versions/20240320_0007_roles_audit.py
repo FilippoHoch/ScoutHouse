@@ -65,6 +65,16 @@ def upgrade() -> None:
         ["user_id", "used"],
     )
 
+    # Ensure the assigned_user_id column exists without failing if it was added
+    # by a previous migration. This keeps the upgrade idempotent when it runs on
+    # databases that already include the column (for example after 20240320_0006).
+    op.execute(
+        sa.text(
+            "ALTER TABLE event_structure_candidate "
+            "ADD COLUMN IF NOT EXISTS assigned_user_id VARCHAR(36)"
+        )
+    )
+
 
 def downgrade() -> None:
     op.drop_index(
