@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import {
   ApiError,
@@ -17,6 +18,17 @@ import type {
   QuoteOverrides,
   QuoteScenario
 } from "../shared/types";
+import {
+  Button,
+  EmptyState,
+  InlineActions,
+  InlineMessage,
+  Metric,
+  SectionHeader,
+  Surface,
+  TableWrapper,
+  ToolbarSection,
+} from "../shared/ui/designSystem";
 
 interface EventQuotesTabProps {
   event: Event;
@@ -45,6 +57,7 @@ function getCandidateStructures(candidates: EventCandidate[] | null | undefined)
 }
 
 export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const structures = useMemo(() => getCandidateStructures(event.candidates), [event.candidates]);
   const [selectedStructureId, setSelectedStructureId] = useState<number | null>(
@@ -208,105 +221,144 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
 
   return (
     <div className="quotes-tab">
-      <section className="card">
-        <h3>Struttura candidata</h3>
+      <Surface>
+        <SectionHeader>
+          <h3>{t("events.quotes.structureTitle")}</h3>
+        </SectionHeader>
         {structures.length === 0 ? (
-          <p>Nessuna struttura candidata disponibile.</p>
+          <EmptyState
+            title={t("events.quotes.structureEmpty")}
+            description={t("events.quotes.structureHint")}
+          />
         ) : (
-          <select
-            value={selectedStructureId ?? ""}
-            onChange={(event) => setSelectedStructureId(Number(event.target.value))}
-          >
-            {structures.map((structure) => (
-              <option key={structure.id} value={structure.id}>
-                {structure.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </section>
-
-      <section className="card">
-        <h3>Parametri</h3>
-        <div className="grid overrides">
-          {Object.entries(event.participants).map(([key, value]) => (
-            <label key={key}>
-              {key.toUpperCase()}
-              <input
-                type="number"
-                min={0}
-                value={participantOverrides[key as keyof EventParticipants] ?? ""}
-                placeholder={String(value)}
-                onChange={(event) => handleOverrideChange(key as keyof EventParticipants, event.target.value)}
-              />
+          <>
+            <label>
+              <span className="helper-text">{t("events.quotes.structureSelect")}</span>
+              <select
+                value={selectedStructureId ?? ""}
+                onChange={(event) => setSelectedStructureId(Number(event.target.value))}
+              >
+                {structures.map((structure) => (
+                  <option key={structure.id} value={structure.id}>
+                    {structure.name}
+                  </option>
+                ))}
+              </select>
             </label>
-          ))}
-          <label>
-            Giorni (default {baseDays})
-            <input
-              type="number"
-              min={1}
-              value={daysOverride}
-              placeholder={String(baseDays)}
-              onChange={(event) => setDaysOverride(event.target.value)}
-            />
-          </label>
-          <label>
-            Notti (default {baseNights})
-            <input
-              type="number"
-              min={1}
-              value={nightsOverride}
-              placeholder={String(baseNights)}
-              onChange={(event) => setNightsOverride(event.target.value)}
-            />
-          </label>
-        </div>
-        <button type="button" onClick={handleCalculate} disabled={calcMutation.isPending}>
-          {calcMutation.isPending ? "Calcolo…" : "Calcola"}
-        </button>
-        {error && <p className="error">{error}</p>}
-      </section>
+            <form
+              className="toolbar"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleCalculate();
+              }}
+            >
+              <ToolbarSection>
+                {Object.entries(event.participants).map(([key, value]) => (
+                  <label key={key}>
+                    {key.toUpperCase()}
+                    <input
+                      type="number"
+                      min={0}
+                      value={participantOverrides[key as keyof EventParticipants] ?? ""}
+                      placeholder={String(value)}
+                      onChange={(event) =>
+                        handleOverrideChange(key as keyof EventParticipants, event.target.value)
+                      }
+                    />
+                  </label>
+                ))}
+                <label>
+                  {t("events.quotes.daysOverride", { value: baseDays })}
+                  <input
+                    type="number"
+                    min={1}
+                    value={daysOverride}
+                    placeholder={String(baseDays)}
+                    onChange={(event) => setDaysOverride(event.target.value)}
+                  />
+                </label>
+                <label>
+                  {t("events.quotes.nightsOverride", { value: baseNights })}
+                  <input
+                    type="number"
+                    min={1}
+                    value={nightsOverride}
+                    placeholder={String(baseNights)}
+                    onChange={(event) => setNightsOverride(event.target.value)}
+                  />
+                </label>
+              </ToolbarSection>
+              <InlineActions>
+                <Button type="submit" disabled={calcMutation.isPending}>
+                  {calcMutation.isPending
+                    ? t("events.quotes.actions.calculating")
+                    : t("events.quotes.actions.calculate")}
+                </Button>
+              </InlineActions>
+            </form>
+            {error && <InlineMessage tone="danger">{error}</InlineMessage>}
+          </>
+        )}
+      </Surface>
 
       {calcResult && (
-        <section className="card">
-          <h3>Risultato preventivo</h3>
-          <table className="breakdown">
-            <thead>
-              <tr>
-                <th>Voce</th>
-                <th>Quantità</th>
-                <th>Unitario</th>
-                <th>Totale</th>
-              </tr>
-            </thead>
-            <tbody>
-              {calcResult.breakdown.map((entry, index) => (
-                <tr key={`${entry.type}-${entry.option_id ?? index}`}>
-                  <td>{entry.description}</td>
-                  <td>{entry.quantity ?? "-"}</td>
-                  <td>{entry.unit_amount ?? "-"}</td>
-                  <td>{entry.total}</td>
+        <Surface>
+          <SectionHeader>
+            <h3>{t("events.quotes.resultTitle")}</h3>
+          </SectionHeader>
+          <TableWrapper>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{t("events.quotes.breakdown.item")}</th>
+                  <th>{t("events.quotes.breakdown.quantity")}</th>
+                  <th>{t("events.quotes.breakdown.unit")}</th>
+                  <th>{t("events.quotes.breakdown.total")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="totals">
-            <p>Subtotale: {calcResult.totals.subtotal.toFixed(2)}</p>
-            <p>Utenze: {calcResult.totals.utilities.toFixed(2)}</p>
-            <p>Tassa di soggiorno: {calcResult.totals.city_tax.toFixed(2)}</p>
-            <p>Totale: {calcResult.totals.total.toFixed(2)}</p>
-            <p>Caparre: {calcResult.totals.deposit.toFixed(2)}</p>
+              </thead>
+              <tbody>
+                {calcResult.breakdown.map((entry, index) => (
+                  <tr key={`${entry.type}-${entry.option_id ?? index}`}>
+                    <td>{entry.description}</td>
+                    <td>{entry.quantity ?? "-"}</td>
+                    <td>{entry.unit_amount ?? "-"}</td>
+                    <td>{entry.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableWrapper>
+          <div className="inline-metrics">
+            <Metric
+              label={t("events.quotes.totals.subtotal")}
+              value={calcResult.totals.subtotal.toFixed(2)}
+            />
+            <Metric
+              label={t("events.quotes.totals.utilities")}
+              value={calcResult.totals.utilities.toFixed(2)}
+            />
+            <Metric
+              label={t("events.quotes.totals.cityTax")}
+              value={calcResult.totals.city_tax.toFixed(2)}
+            />
+            <Metric
+              label={t("events.quotes.totals.deposit")}
+              value={calcResult.totals.deposit.toFixed(2)}
+            />
+            <Metric
+              label={t("events.quotes.totals.total")}
+              value={calcResult.totals.total.toFixed(2)}
+            />
           </div>
-          <div className="scenarios">
+          <div className="quote-grid">
             {scenarioOrder.map((scenario) => (
               <div
                 key={scenario}
-                className={`scenario-card ${selectedScenario === scenario ? "selected" : ""}`}
+                className={`quote-card${selectedScenario === scenario ? " selected" : ""}`}
               >
-                <h4>{scenario}</h4>
-                <p>{calcResult.scenarios[scenario].toFixed(2)}</p>
-                <label>
+                <h3>{t(`events.quotes.scenarios.${scenario}`)}</h3>
+                <p className="quote-value">€{calcResult.scenarios[scenario].toFixed(2)}</p>
+                <label className="helper-text">
                   <input
                     type="radio"
                     name="scenario"
@@ -314,90 +366,107 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
                     checked={selectedScenario === scenario}
                     onChange={() => setSelectedScenario(scenario)}
                   />
-                  Scenario da salvare
+                  {t("events.quotes.scenarios.saveLabel")}
                 </label>
               </div>
             ))}
           </div>
-          <button type="button" onClick={handleSave} disabled={saveMutation.isPending}>
-            {saveMutation.isPending ? "Salvataggio…" : "Salva versione"}
-          </button>
-        </section>
+          <InlineActions>
+            <Button type="button" onClick={() => void handleSave()} disabled={saveMutation.isPending}>
+              {saveMutation.isPending
+                ? t("events.quotes.actions.saving")
+                : t("events.quotes.actions.save")}
+            </Button>
+          </InlineActions>
+        </Surface>
       )}
 
-      <section className="card">
-        <h3>Preventivi salvati</h3>
+      <Surface>
+        <SectionHeader>
+          <h3>{t("events.quotes.savedTitle")}</h3>
+        </SectionHeader>
         {quotes.length === 0 ? (
-          <p>Nessun preventivo salvato.</p>
+          <EmptyState
+            title={t("events.quotes.savedEmpty")}
+            description={t("events.quotes.savedHint")}
+          />
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th>Data</th>
-                <th>Struttura</th>
-                <th>Scenario</th>
-                <th>Totale</th>
-                <th>Confronto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quotes.map((quote) => (
-                <tr key={quote.id}>
-                  <td>
-                    <input
-                      type="radio"
-                      name="selectedQuote"
-                      checked={selectedQuoteId === quote.id}
-                      onChange={() => setSelectedQuoteId(quote.id)}
-                    />
-                  </td>
-                  <td>{new Date(quote.created_at).toLocaleString()}</td>
-                  <td>{quote.structure_name ?? quote.structure_id}</td>
-                  <td>{quote.scenario}</td>
-                  <td>{quote.total.toFixed(2)}</td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={comparisonIds.includes(quote.id)}
-                      onChange={() => handleToggleComparison(quote.id)}
-                    />
-                  </td>
+          <TableWrapper>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th aria-label={t("events.quotes.table.selectLabel")} />
+                  <th>{t("events.quotes.table.date")}</th>
+                  <th>{t("events.quotes.table.structure")}</th>
+                  <th>{t("events.quotes.table.scenario")}</th>
+                  <th>{t("events.quotes.table.total")}</th>
+                  <th>{t("events.quotes.table.compare")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {quotes.map((quote) => (
+                  <tr key={quote.id}>
+                    <td>
+                      <input
+                        type="radio"
+                        name="selectedQuote"
+                        checked={selectedQuoteId === quote.id}
+                        onChange={() => setSelectedQuoteId(quote.id)}
+                      />
+                    </td>
+                    <td>{new Date(quote.created_at).toLocaleString()}</td>
+                    <td>{quote.structure_name ?? quote.structure_id}</td>
+                    <td>{quote.scenario}</td>
+                    <td>{quote.total.toFixed(2)}</td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={comparisonIds.includes(quote.id)}
+                        onChange={() => handleToggleComparison(quote.id)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableWrapper>
         )}
-        <div className="actions">
-          <button type="button" onClick={() => handleExport("xlsx")}>Esporta XLSX</button>
-          <button type="button" onClick={() => handleExport("html")}>Stampa (HTML)</button>
-        </div>
-      </section>
+        <InlineActions>
+          <Button type="button" variant="ghost" onClick={() => void handleExport("xlsx")}>
+            {t("events.quotes.actions.exportXlsx")}
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => void handleExport("html")}>
+            {t("events.quotes.actions.exportHtml")}
+          </Button>
+        </InlineActions>
+      </Surface>
 
       {comparisonQuotes.length === 2 && (
-        <section className="card">
-          <h3>Confronto</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Scenario</th>
-                <th>{comparisonQuotes[0].scenario}</th>
-                <th>{comparisonQuotes[1].scenario}</th>
-                <th>Delta</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Totale</td>
-                <td>{comparisonQuotes[0].total.toFixed(2)}</td>
-                <td>{comparisonQuotes[1].total.toFixed(2)}</td>
-                <td>
-                  {(comparisonQuotes[1].total - comparisonQuotes[0].total).toFixed(2)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
+        <Surface>
+          <SectionHeader>
+            <h3>{t("events.quotes.compareTitle")}</h3>
+          </SectionHeader>
+          <TableWrapper>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{t("events.quotes.compareScenario")}</th>
+                  <th>{comparisonQuotes[0].scenario}</th>
+                  <th>{comparisonQuotes[1].scenario}</th>
+                  <th>{t("events.quotes.compareDelta")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{t("events.quotes.table.total")}</td>
+                  <td>{comparisonQuotes[0].total.toFixed(2)}</td>
+                  <td>{comparisonQuotes[1].total.toFixed(2)}</td>
+                  <td>{(comparisonQuotes[1].total - comparisonQuotes[0].total).toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </TableWrapper>
+        </Surface>
       )}
     </div>
   );
