@@ -14,7 +14,7 @@ services:
       - scouthouse_db_data:/var/lib/postgresql/data
       - ./infra/db/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
       - ./infra/db/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
-      healthcheck:
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d scouthouse"]
       interval: 5s
       timeout: 3s
