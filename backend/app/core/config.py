@@ -8,8 +8,11 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
+DEFAULT_DATABASE_URL = "postgresql+psycopg://scout:scout@db:5432/scouthouse"
+
+
 class Settings(BaseSettings):
-    database_url: str = Field(..., alias="DATABASE_URL")
+    database_url: str = Field(DEFAULT_DATABASE_URL, alias="DATABASE_URL")
     app_env: str = Field("development", alias="APP_ENV")
     default_base_lat: float = Field(45.5966, alias="DEFAULT_BASE_LAT")
     default_base_lon: float = Field(10.1655, alias="DEFAULT_BASE_LON")
@@ -148,6 +151,18 @@ class Settings(BaseSettings):
             stripped = value.strip()
             if not stripped:
                 return 587
+            return stripped
+        return value
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _ensure_database_url(cls, value: str | None) -> str:
+        if value is None:
+            return DEFAULT_DATABASE_URL
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                return DEFAULT_DATABASE_URL
             return stripped
         return value
 
