@@ -47,7 +47,9 @@ def upgrade() -> None:
         "structures",
         sa.Column("longitude", sa.Numeric(9, 6), nullable=True),
     )
-    op.drop_constraint("uq_structures_slug", "structures", type_="unique")
+    op.execute(
+        "ALTER TABLE structures DROP CONSTRAINT IF EXISTS uq_structures_slug"
+    )
     op.create_index(
         "idx_structures_slug_unique",
         "structures",
