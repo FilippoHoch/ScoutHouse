@@ -215,10 +215,22 @@
       "actions": {
         "apply": "Applica",
         "reset": "Reimposta"
+      },
+      "emptyHint": "Prova a rimuovere o modificare i filtri per ampliare la ricerca.",
+      "active": {
+        "title": "Filtri attivi",
+        "remove": "Rimuovi filtro {{label}}",
+        "search": "Ricerca: {{value}}",
+        "province": "Provincia: {{value}}",
+        "type": "Tipologia: {{value}}",
+        "season": "Stagione: {{value}}",
+        "unit": "Unità: {{value}}",
+        "costBand": "Fascia di costo: {{value}}",
+        "maxDistance": "Entro {{value}} km"
       }
     },
     "meta": {
-      "summary": "Pagina {{page}} di {{totalPages}} — Coordinate base: {{lat}}, {{lon}}",
+      "summary": "{{count}} strutture · Pagina {{page}} di {{totalPages}} — Coordinate base: {{lat}}, {{lon}}",
       "updating": "(aggiornamento in corso…)"
     },
     "cards": {
@@ -226,13 +238,26 @@
       "seasonsLabel": "Stagioni",
       "unitsLabel": "Unità",
       "distance": "Distanza: {{value}} km",
-      "estimatedCost": "Costo stimato: €{{value}}",
-      "costBand": "· fascia {{value}}"
+      "estimatedCost": "Costo stimato: {{value}}",
+      "costBand": "· fascia {{value}}",
+      "viewDetails": "Dettagli",
+      "openMap": "Apri mappa"
     },
     "pagination": {
+      "label": "Paginazione strutture",
       "previous": "Precedente",
       "next": "Successiva",
       "page": "Pagina {{page}} / {{totalPages}}"
+    },
+    "types": {
+      "house": "Casa",
+      "land": "Terreno",
+      "mixed": "Mista"
+    },
+    "costBands": {
+      "cheap": "economica",
+      "medium": "media",
+      "expensive": "alta"
     }
   },
   "attachments": {
@@ -335,7 +360,14 @@
       "status": "Stato",
       "participants": "Partecipanti"
     },
+    "status": {
+      "draft": "Bozza",
+      "planning": "In pianificazione",
+      "booked": "Prenotato",
+      "archived": "Archiviato"
+    },
     "list": {
+      "updating": "Aggiornamento in corso…",
       "summary": {
         "empty": "Nessun evento trovato.",
         "total_one": "{{count}} evento totale",
@@ -343,6 +375,7 @@
       },
       "period": "{{start}} → {{end}}"
     },
+    "emptyHint": "Crea un nuovo evento o modifica i filtri per visualizzare risultati.",
     "wizard": {
       "title": "Nuovo evento",
       "fields": {
@@ -353,6 +386,12 @@
         "budget": "Budget totale (€)",
         "notes": "Note",
         "status": "Stato iniziale"
+      },
+      "steps": {
+        "label": "Passaggi creazione evento",
+        "details": "Dettagli",
+        "participants": "Partecipanti",
+        "review": "Suggerimenti"
       },
       "actions": {
         "cancel": "Annulla",
@@ -388,6 +427,56 @@
         "added": "Aggiunta",
         "add": "Aggiungi candidato"
       }
+    },
+    "quotes": {
+      "structureTitle": "Struttura candidata",
+      "structureEmpty": "Nessuna struttura candidata disponibile.",
+      "structureHint": "Aggiungi almeno una struttura candidata per generare preventivi.",
+      "structureSelect": "Seleziona una struttura",
+      "daysOverride": "Giorni (default {{value}})",
+      "nightsOverride": "Notti (default {{value}})",
+      "actions": {
+        "calculate": "Calcola",
+        "calculating": "Calcolo…",
+        "save": "Salva versione",
+        "saving": "Salvataggio…",
+        "exportXlsx": "Esporta XLSX",
+        "exportHtml": "Stampa (HTML)"
+      },
+      "resultTitle": "Risultato preventivo",
+      "breakdown": {
+        "item": "Voce",
+        "quantity": "Quantità",
+        "unit": "Unitario",
+        "total": "Totale"
+      },
+      "totals": {
+        "subtotal": "Subtotale",
+        "utilities": "Utenze",
+        "cityTax": "Tassa di soggiorno",
+        "deposit": "Caparre",
+        "total": "Totale"
+      },
+      "scenarios": {
+        "best": "Scenario ottimistico",
+        "realistic": "Scenario realistico",
+        "worst": "Scenario prudente",
+        "saveLabel": "Imposta come scenario da salvare"
+      },
+      "savedTitle": "Preventivi salvati",
+      "savedEmpty": "Nessun preventivo salvato.",
+      "savedHint": "Calcola un preventivo e salvalo per costruire uno storico.",
+      "table": {
+        "selectLabel": "Seleziona preventivo",
+        "date": "Data",
+        "structure": "Struttura",
+        "scenario": "Scenario",
+        "total": "Totale",
+        "compare": "Confronto"
+      },
+      "compareTitle": "Confronto scenari",
+      "compareScenario": "Scenario",
+      "compareDelta": "Differenza"
     }
   }
 }

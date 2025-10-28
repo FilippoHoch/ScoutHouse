@@ -22,6 +22,18 @@ import {
   EventParticipants
 } from "../shared/types";
 import { FocusTrap } from "../shared/ui/FocusTrap";
+import {
+  Button,
+  EmptyState,
+  InlineActions,
+  InlineFields,
+  InlineMessage,
+  SectionHeader,
+  StatusBadge,
+  Surface,
+  TableWrapper,
+  ToolbarSection,
+} from "../shared/ui/designSystem";
 
 const branches: EventBranch[] = ["LC", "EG", "RS", "ALL"];
 const statuses: EventStatus[] = ["draft", "planning", "booked", "archived"];
@@ -77,6 +89,11 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [addedStructures, setAddedStructures] = useState<Set<number>>(new Set());
   const queryClient = useQueryClient();
+  const wizardSteps: Array<{ id: WizardStep; label: string }> = [
+    { id: 1, label: t("events.wizard.steps.details") },
+    { id: 2, label: t("events.wizard.steps.participants") },
+    { id: 3, label: t("events.wizard.steps.review") },
+  ];
 
   const createMutation = useMutation({
     mutationFn: (dto: EventCreateDto) => createEvent(dto),
@@ -169,7 +186,18 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
             <h3 id="event-wizard-title">{t("events.wizard.title")}</h3>
           </header>
           <div className="modal-body">
-            {error && <p className="error">{error}</p>}
+            <div className="wizard-steps" role="list" aria-label={t("events.wizard.steps.label")}>
+              {wizardSteps.map((wizardStep) => (
+                <span
+                  key={wizardStep.id}
+                  className="wizard-step-pill"
+                  data-active={(wizardStep.id === step).toString()}
+                >
+                  {wizardStep.id}. {wizardStep.label}
+                </span>
+              ))}
+            </div>
+            {error && <InlineMessage tone="danger">{error}</InlineMessage>}
             {step === 1 && (
               <form
                 onSubmit={(event) => {
@@ -202,7 +230,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                     ))}
                   </select>
                 </label>
-                <div className="inline-fields">
+                <InlineFields>
                   <label>
                     {t("events.wizard.fields.start")}
                     <input
@@ -225,13 +253,13 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                       required
                     />
                   </label>
-                </div>
-                <div className="modal-actions">
-                  <button type="button" onClick={onClose}>
+                </InlineFields>
+                <InlineActions>
+                  <Button type="button" variant="ghost" onClick={onClose}>
                     {t("events.wizard.actions.cancel")}
-                  </button>
-                  <button type="submit">{t("events.wizard.actions.next")}</button>
-                </div>
+                  </Button>
+                  <Button type="submit">{t("events.wizard.actions.next")}</Button>
+                </InlineActions>
               </form>
             )}
             {step === 2 && (
@@ -258,8 +286,8 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                               ...prev,
                               participants: {
                                 ...prev.participants,
-                                [participantKey]: Number.parseInt(event.target.value || "0", 10)
-                              }
+                                [participantKey]: Number.parseInt(event.target.value || "0", 10),
+                              },
                             }))
                           }
                         />
@@ -300,26 +328,24 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                     ))}
                   </select>
                 </label>
-                <div className="modal-actions">
-                  <button type="button" onClick={() => setStep(1)}>
+                <InlineActions>
+                  <Button type="button" variant="ghost" onClick={() => setStep(1)}>
                     {t("events.wizard.actions.back")}
-                  </button>
-                  <button type="submit" disabled={createMutation.isPending}>
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending}>
                     {createMutation.isPending
                       ? t("events.wizard.actions.creating")
                       : t("events.wizard.actions.create")}
-                  </button>
-                </div>
+                  </Button>
+                </InlineActions>
               </form>
             )}
             {step === 3 && createdEvent && (
-              <div className="wizard-step">
-                <p aria-live="polite">
-                  {t("events.wizard.summary.created", { title: createdEvent.title })}
-                </p>
-                {isLoadingSuggestions && <p>{t("events.wizard.suggestions.loading")}</p>}
+              <div className="wizard-step" aria-live="polite">
+                <p>{t("events.wizard.summary.created", { title: createdEvent.title })}</p>
+                {isLoadingSuggestions && <InlineMessage>{t("events.wizard.suggestions.loading")}</InlineMessage>}
                 {!isLoadingSuggestions && suggestions.length === 0 && (
-                  <p>{t("events.wizard.suggestions.empty")}</p>
+                  <InlineMessage>{t("events.wizard.suggestions.empty")}</InlineMessage>
                 )}
                 <ul className="suggestions">
                   {suggestions.map((suggestion) => {
@@ -334,24 +360,26 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                               : t("events.wizard.suggestions.distanceUnknown")}
                           </p>
                         </div>
-                        <button
+                        <Button
                           type="button"
+                          variant={disabled ? "subtle" : "secondary"}
+                          size="sm"
                           onClick={() => handleAddSuggestion(suggestion.structure_id)}
                           disabled={disabled || addCandidateMutation.isPending}
                         >
                           {disabled
                             ? t("events.wizard.suggestions.added")
                             : t("events.wizard.suggestions.add")}
-                        </button>
+                        </Button>
                       </li>
                     );
                   })}
                 </ul>
-                <div className="modal-actions">
-                  <button type="button" onClick={handleFinish}>
+                <InlineActions>
+                  <Button type="button" onClick={handleFinish}>
                     {t("events.wizard.actions.open")}
-                  </button>
-                </div>
+                  </Button>
+                </InlineActions>
               </div>
             )}
           </div>
@@ -416,56 +444,80 @@ export const EventsPage = () => {
 
   return (
     <section>
-      <div className="card">
-        <header className="card-header">
+      <Surface>
+        <SectionHeader>
           <h2>{t("events.title")}</h2>
-          <button type="button" onClick={() => setIsWizardOpen(true)}>
+          <Button type="button" onClick={() => setIsWizardOpen(true)}>
             {t("events.actions.new")}
-          </button>
-        </header>
-        <form className="filters" onSubmit={handleSubmit}>
-          <label>
-            {t("events.filters.search.label")}
-            <input
-              type="search"
-              value={filters.q}
-              onChange={(event) => setFilters((prev) => ({ ...prev, q: event.target.value }))}
-              placeholder={t("events.filters.search.placeholder")}
-            />
-          </label>
-          <label>
-            {t("events.filters.status.label")}
-            <select
-              value={filters.status}
-              onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}
-            >
-              <option value="">{t("events.filters.status.all")}</option>
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="filters-actions">
-            <button type="submit">{t("events.filters.apply")}</button>
-            <button
-              type="button"
-              onClick={() => {
-                setFilters({ q: "", status: "" });
-                setSubmittedFilters({});
-              }}
-            >
-              {t("events.filters.reset")}
-            </button>
-          </div>
+          </Button>
+        </SectionHeader>
+        <form className="toolbar" onSubmit={handleSubmit}>
+          <ToolbarSection>
+            <label>
+              {t("events.filters.search.label")}
+              <input
+                type="search"
+                value={filters.q}
+                onChange={(event) => setFilters((prev) => ({ ...prev, q: event.target.value }))}
+                placeholder={t("events.filters.search.placeholder")}
+              />
+            </label>
+            <label>
+              {t("events.filters.status.label")}
+              <select
+                value={filters.status}
+                onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}
+              >
+                <option value="">{t("events.filters.status.all")}</option>
+                {statuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="toolbar-actions">
+              <Button type="submit" size="sm">
+                {t("events.filters.apply")}
+              </Button>
+              <Button
+                type="button"
+                variant="subtle"
+                size="sm"
+                onClick={() => {
+                  setFilters({ q: "", status: "" });
+                  setSubmittedFilters({});
+                }}
+              >
+                {t("events.filters.reset")}
+              </Button>
+            </div>
+          </ToolbarSection>
         </form>
-        {eventsQuery.isLoading && <p>{t("events.states.loading")}</p>}
-        {hasError && <p>{t("events.states.error")}</p>}
-        {!eventsQuery.isLoading && !hasError && (
-          <div className="event-list">
-            <p className="summary">{summaryMessage}</p>
-            <table>
+        <p className="summary" aria-live="polite">
+          {summaryMessage}
+          {eventsQuery.isFetching && <span> · {t("events.list.updating")}</span>}
+        </p>
+        {eventsQuery.isLoading ? (
+          <div aria-busy="true" aria-live="polite">
+            <div className="loading-skeleton" style={{ width: "45%" }} />
+            <div className="loading-skeleton" style={{ height: "140px", marginTop: "1.5rem" }} />
+          </div>
+        ) : hasError ? (
+          <InlineMessage tone="danger">{t("events.states.error")}</InlineMessage>
+        ) : events.length === 0 ? (
+          <EmptyState
+            title={t("events.list.summary.empty")}
+            description={t("events.emptyHint")}
+            action={
+              <Button type="button" variant="secondary" onClick={() => setIsWizardOpen(true)}>
+                {t("events.actions.new")}
+              </Button>
+            }
+          />
+        ) : (
+          <TableWrapper>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>{t("events.table.title")}</th>
@@ -476,11 +528,12 @@ export const EventsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                  {events.map((event) => {
-                    const participantValues = Object.values(event.participants) as Array<
-                      EventParticipants[keyof EventParticipants]
-                    >;
-                    const participantsTotal = participantValues.reduce((acc, value) => acc + value, 0);
+                {events.map((event) => {
+                  const participantValues = Object.values(event.participants) as Array<
+                    EventParticipants[keyof EventParticipants]
+                  >;
+                  const participantsTotal = participantValues.reduce((acc, value) => acc + value, 0);
+                  const statusLabel = t(`events.status.${event.status}`, event.status);
                   return (
                     <tr key={event.id}>
                       <td>
@@ -492,20 +545,22 @@ export const EventsPage = () => {
                           {event.title}
                         </Link>
                       </td>
+                      <td>{t("events.list.period", { start: event.start_date, end: event.end_date })}</td>
                       <td>
-                        {t("events.list.period", { start: event.start_date, end: event.end_date })}
+                        <span className="tag">{event.branch}</span>
                       </td>
-                      <td>{event.branch}</td>
-                      <td>{event.status}</td>
+                      <td>
+                        <StatusBadge status={event.status}>{statusLabel}</StatusBadge>
+                      </td>
                       <td>{participantsTotal}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-          </div>
+          </TableWrapper>
         )}
-      </div>
+      </Surface>
       {isWizardOpen && <EventWizard onClose={() => setIsWizardOpen(false)} onCreated={handleEventCreated} />}
     </section>
   );
