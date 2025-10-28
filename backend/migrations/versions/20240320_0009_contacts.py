@@ -8,7 +8,12 @@ branch_labels = None
 depends_on = None
 
 preferred_channel_enum = sa.Enum(
-    "email", "phone", "other", name="contact_preferred_channel"
+    "email",
+    "phone",
+    "other",
+    name="contact_preferred_channel",
+    create_type=False,
+    validate_strings=True,
 )
 
 
