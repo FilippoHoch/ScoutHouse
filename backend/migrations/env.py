@@ -5,7 +5,8 @@ from logging.config import fileConfig
 
 from alembic import context
 from dotenv import load_dotenv
-from sqlalchemy import engine_from_config, pool, text
+from sqlalchemy import create_engine, pool, text
+from sqlalchemy.engine import Connection
 
 config = context.config
 
@@ -37,22 +38,22 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-        url=get_url(),
-    )
+    database_url = context.config.get_main_option("sqlalchemy.url") or get_url()
+    connectable = create_engine(database_url, poolclass=pool.NullPool)
 
-    with connectable.connect() as connection:
-        connection.execute(text("SELECT pg_advisory_lock(72726001)"))
-        try:
+    lock_conn: Connection = connectable.connect().execution_options(
+        isolation_level="AUTOCOMMIT"
+    )
+    lock_conn.execute(text("SELECT pg_advisory_lock(72726001)"))
+    try:
+        with connectable.connect() as connection:
             context.configure(connection=connection, target_metadata=target_metadata)
 
             with context.begin_transaction():
                 context.run_migrations()
-        finally:
-            connection.execute(text("SELECT pg_advisory_unlock(72726001)"))
+    finally:
+        lock_conn.execute(text("SELECT pg_advisory_unlock(72726001)"))
+        lock_conn.close()
 
 
 if context.is_offline_mode():
