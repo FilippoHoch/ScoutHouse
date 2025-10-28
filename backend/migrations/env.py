@@ -1,24 +1,26 @@
 from __future__ import annotations
 
+import os
 from logging.config import fileConfig
 
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool, text
-
-from app import models  # noqa: F401
-from app.core.config import get_settings
-from app.core.db import Base
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+load_dotenv()
+
+target_metadata = None
 
 
 def get_url() -> str:
-    return get_settings().database_url
+    return os.getenv(
+        "DATABASE_URL", "postgresql+psycopg://scout:scout@db:5432/scouthouse"
+    )
 
 
 def run_migrations_offline() -> None:

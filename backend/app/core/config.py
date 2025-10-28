@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+import json
 from decimal import Decimal
 
 from typing import List, Literal, Sequence
@@ -26,7 +27,7 @@ class Settings(BaseSettings):
     refresh_ttl_days: int = Field(14, alias="REFRESH_TTL_DAYS")
     allow_registration: bool = Field(False, alias="ALLOW_REGISTRATION")
     cors_allowed_origins: List[str] = Field(
-        default_factory=lambda: ["http://localhost:5173"], alias="CORS_ALLOWED_ORIGINS"
+        default_factory=list, alias="CORS_ALLOWED_ORIGINS"
     )
     secure_cookies: bool = Field(False, alias="SECURE_COOKIES")
     frontend_base_url: str = Field("http://localhost:5173", alias="FRONTEND_BASE_URL")
@@ -74,24 +75,28 @@ class Settings(BaseSettings):
     @classmethod
     def _split_origins(cls, value: Sequence[str] | str | None) -> Sequence[str]:
         if value is None:
-            return ["http://localhost:5173"]
+            return []
         if isinstance(value, str):
             cleaned = value.strip()
             if not cleaned:
-                return ["http://localhost:5173"]
-            import json
+                return []
 
-            try:
-                parsed = json.loads(cleaned)
-            except Exception:
-                return [origin.strip() for origin in cleaned.split(",") if origin.strip()]
+            if cleaned.startswith("["):
+                try:
+                    parsed = json.loads(cleaned)
+                except json.JSONDecodeError as exc:  # pragma: no cover - defensive
+                    raise ValueError("CORS_ALLOWED_ORIGINS must be valid JSON or CSV") from exc
 
-            if isinstance(parsed, list):
-                return [str(origin).strip() for origin in parsed if str(origin).strip()]
-            if isinstance(parsed, str):
-                return [parsed.strip()] if parsed.strip() else ["http://localhost:5173"]
-            raise ValueError("CORS_ALLOWED_ORIGINS must be a list or CSV string")
-        return list(value)
+                if isinstance(parsed, list):
+                    return [str(origin).strip() for origin in parsed if str(origin).strip()]
+                if isinstance(parsed, str):
+                    parsed = parsed.strip()
+                    return [parsed] if parsed else []
+                raise ValueError("CORS_ALLOWED_ORIGINS must decode to a list or string")
+
+            return [origin.strip() for origin in cleaned.split(",") if origin.strip()]
+
+        return [str(origin).strip() for origin in value if str(origin).strip()]
 
     @field_validator("sentry_traces_sample_rate")
     @classmethod
