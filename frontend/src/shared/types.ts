@@ -392,3 +392,15 @@ export interface Quote {
   scenarios: QuoteScenarios;
   created_at: string;
 }
+
+export type MailTemplate =
+  | "reset_password"
+  | "task_assigned"
+  | "candidate_status_changed";
+
+export interface MailPreview {
+  template: MailTemplate;
+  subject: string;
+  html: string;
+  text: string;
+}

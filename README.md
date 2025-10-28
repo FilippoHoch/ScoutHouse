@@ -87,6 +87,18 @@ set `ALLOW_REGISTRATION=true` in `backend/.env`, restart the API, and use
 5. I token scadono dopo `PASSWORD_RESET_TTL_MINUTES` (60 minuti per default) e
    non possono essere riutilizzati.
 
+### Notifiche email (dev/prod)
+
+- In sviluppo e test `DEV_MAIL_BLOCK_EXTERNAL=true` forza il driver `console`:
+  nessuna email lascia l'ambiente e il contenuto viene loggato in JSON con
+  indirizzi e token mascherati.
+- Per l'invio reale impostare `MAIL_DRIVER=smtp` oppure `MAIL_DRIVER=sendgrid`
+  in produzione e valorizzare le variabili `MAIL_FROM_*` insieme alle credenziali
+  del provider scelto (`SMTP_*` o `SENDGRID_API_KEY`).
+- Gli amministratori possono validare i contenuti senza modificare la
+  configurazione usando `GET /api/v1/mail/preview?template=…&sample=true` oppure
+  `POST /api/v1/mail/test` dalla dashboard `/admin`.
+
 #### Seed data
 
 A CSV dataset with 20+ sample structures lives in `data/structures_seed.csv`.

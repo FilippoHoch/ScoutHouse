@@ -17,6 +17,7 @@ const StructureDetailsPage = lazy(() =>
   import("../pages/StructureDetails").then((module) => ({ default: module.StructureDetailsPage }))
 );
 const LoginPage = lazy(() => import("../pages/Login").then((module) => ({ default: module.LoginPage })));
+const AdminPage = lazy(() => import("../pages/Admin").then((module) => ({ default: module.AdminPage })));
 
 const ProtectedRoute = () => {
   const auth = useAuth();
@@ -76,6 +77,7 @@ export const AppRouter = () => {
               <Route path="/events/:eventId" element={<EventDetailsPage />} />
               <Route path="/structures/new" element={<StructureCreatePage />} />
               <Route path="/import-export" element={<ImportExportPage />} />
+              <Route path="/admin" element={<AdminPage />} />
             </Route>
             <Route path="/login" element={<LoginPage />} />
           </Route>

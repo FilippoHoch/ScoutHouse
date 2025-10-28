@@ -18,6 +18,8 @@ import {
   EventSuggestion,
   EventSummary,
   EventUpdateDto,
+  MailPreview,
+  MailTemplate,
   Quote,
   QuoteCalcRequestDto,
   QuoteCalcResponse,
@@ -596,5 +598,36 @@ export async function resetPassword(token: string, password: string): Promise<vo
   await apiFetch<void>("/api/v1/auth/reset-password", {
     method: "POST",
     body: JSON.stringify({ token, password })
+  });
+}
+
+export interface MailTestResponse {
+  provider: string;
+  blocked: boolean;
+  subject: string;
+  html: string;
+  text: string;
+}
+
+export async function previewMailTemplate(template: MailTemplate): Promise<MailPreview> {
+  const params = new URLSearchParams({ template, sample: "true" });
+  return apiFetch<MailPreview>(`/api/v1/mail/preview?${params.toString()}`, {
+    auth: true
+  });
+}
+
+export async function sendTestMail(
+  to: string,
+  template: MailTemplate,
+  sampleData?: Record<string, unknown>
+): Promise<MailTestResponse> {
+  const payload: Record<string, unknown> = { to, template };
+  if (sampleData && Object.keys(sampleData).length > 0) {
+    payload.sample_data = sampleData;
+  }
+  return apiFetch<MailTestResponse>("/api/v1/mail/test", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload)
   });
 }

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="it">
+  <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
+    <p>Ciao {{ recipient_name }},</p>
+    <p>
+      Ti è stato assegnato un nuovo task per l'evento
+      <strong>{{ event_title }}</strong>.
+    </p>
+    <ul style="padding-left: 1.2rem;">
+      <li><strong>Periodo:</strong> {{ event_start }} → {{ event_end }}</li>
+      {% if structure_name %}
+      <li><strong>Struttura:</strong> {{ structure_name }}</li>
+      {% endif %}
+    </ul>
+    {% if task_notes %}
+    <p><strong>Note:</strong> {{ task_notes }}</p>
+    {% endif %}
+    <p>
+      Puoi gestire il task dalla pagina evento:
+      <a href="{{ event_url }}" style="color: #2563eb;">{{ event_url }}</a>
+    </p>
+    <p>Grazie per il tuo supporto.</p>
+    <p>— Il team {{ brand_name }}</p>
+  </body>
+</html>

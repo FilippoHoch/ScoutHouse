@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import logging
-
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -27,6 +25,7 @@ from app.schemas import (
     ResetPasswordRequest,
     UserRead,
 )
+from app.services.mail import schedule_password_reset_email
 from app.services.password_reset import (
     create_reset_token,
     reset_user_password,
@@ -34,8 +33,6 @@ from app.services.password_reset import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-logger = logging.getLogger(__name__)
 
 
 def _mint_refresh_token(db: Session, user: User) -> tuple[str, RefreshToken]:
@@ -97,21 +94,24 @@ async def login(
 async def forgot_password(
     request: Request,
     db: Session = Depends(get_db),
-) -> None:
+) -> Response:
     payload = ForgotPasswordRequest.model_validate(await request.json())
 
     user = db.query(User).filter(User.email == payload.email).first()
     if user is None:
-        return None
+        return Response(status_code=status.HTTP_202_ACCEPTED)
 
     token_value, _record = create_reset_token(db, user)
     db.commit()
 
-    settings = get_settings()
-    base_url = settings.frontend_base_url.rstrip("/")
-    reset_url = f"{base_url}/reset-password?token={token_value}"
-    logger.info("Password reset link for %s: %s", user.email, reset_url)
-    return None
+    background_tasks = BackgroundTasks()
+    schedule_password_reset_email(
+        background_tasks,
+        recipient_email=user.email,
+        recipient_name=user.name,
+        token=token_value,
+    )
+    return Response(status_code=status.HTTP_202_ACCEPTED, background=background_tasks)
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)

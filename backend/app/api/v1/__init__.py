@@ -1,6 +1,17 @@
 from fastapi import APIRouter
 
-from . import attachments, auth, events, export, health, imports, quotes, structures, templates
+from . import (
+    attachments,
+    auth,
+    events,
+    export,
+    health,
+    imports,
+    mail,
+    quotes,
+    structures,
+    templates,
+)
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health.router, tags=["health"])
@@ -12,5 +23,6 @@ api_router.include_router(structures.router, prefix="/structures", tags=["struct
 api_router.include_router(events.router, prefix="/events", tags=["events"])
 api_router.include_router(quotes.router, tags=["quotes"])
 api_router.include_router(export.router, prefix="/export", tags=["export"])
+api_router.include_router(mail.router)
 
 __all__ = ["api_router"]

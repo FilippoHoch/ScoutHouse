@@ -1,0 +1,9 @@
+Ciao {{ recipient_name }},
+
+La struttura "{{ structure_name }}" per l'evento "{{ event_title }}" è ora {{ new_status_label }}.
+{% if assigned_user_name %}Referente assegnato: {{ assigned_user_name }}.
+{% endif %}{% if notes %}Note aggiornate: {{ notes }}
+{% endif %}Dettagli evento: {{ event_url }}
+
+Grazie per tenere aggiornato lo stato della candidatura.
+— Il team {{ brand_name }}

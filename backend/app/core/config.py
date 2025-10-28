@@ -2,7 +2,7 @@ from functools import lru_cache
 
 from decimal import Decimal
 
-from typing import List, Sequence
+from typing import List, Literal, Sequence
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
@@ -44,6 +44,20 @@ class Settings(BaseSettings):
     s3_secret_key: str | None = Field(default=None, alias="S3_SECRET_KEY")
     s3_region: str | None = Field(default=None, alias="S3_REGION")
     s3_use_path_style: bool = Field(False, alias="S3_USE_PATH_STYLE")
+    mail_driver: Literal["console", "smtp", "sendgrid"] = Field(
+        "console", alias="MAIL_DRIVER"
+    )
+    mail_from_name: str = Field("ScoutHouse", alias="MAIL_FROM_NAME")
+    mail_from_address: str = Field(
+        "no-reply@scouthouse.local", alias="MAIL_FROM_ADDRESS"
+    )
+    smtp_host: str | None = Field(default=None, alias="SMTP_HOST")
+    smtp_port: int = Field(587, alias="SMTP_PORT")
+    smtp_username: str | None = Field(default=None, alias="SMTP_USERNAME")
+    smtp_password: str | None = Field(default=None, alias="SMTP_PASSWORD")
+    smtp_tls: bool = Field(True, alias="SMTP_TLS")
+    sendgrid_api_key: str | None = Field(default=None, alias="SENDGRID_API_KEY")
+    dev_mail_block_external: bool = Field(True, alias="DEV_MAIL_BLOCK_EXTERNAL")
 
     model_config = {
         "env_file": ".env",
@@ -85,6 +99,10 @@ class Settings(BaseSettings):
         "s3_access_key",
         "s3_secret_key",
         "s3_region",
+        "smtp_host",
+        "smtp_username",
+        "smtp_password",
+        "sendgrid_api_key",
         mode="before",
     )
     @classmethod
@@ -95,6 +113,29 @@ class Settings(BaseSettings):
             stripped = value.strip()
             return stripped or None
         return value
+
+    @field_validator("mail_driver", mode="before")
+    @classmethod
+    def _validate_mail_driver(cls, value: str | None) -> str:
+        if value is None:
+            return "console"
+        normalized = value.strip().lower()
+        allowed = {"console", "smtp", "sendgrid"}
+        if normalized not in allowed:
+            raise ValueError(
+                "MAIL_DRIVER must be one of 'console', 'smtp' or 'sendgrid'"
+            )
+        return normalized
+
+    @field_validator("mail_from_name", "mail_from_address", mode="before")
+    @classmethod
+    def _strip_mail_strings(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Mail sender fields cannot be empty")
+        return stripped
 
 
 @lru_cache

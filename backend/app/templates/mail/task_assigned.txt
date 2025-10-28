@@ -1,0 +1,10 @@
+Ciao {{ recipient_name }},
+
+Ti è stato assegnato un nuovo task per l'evento "{{ event_title }}".
+Periodo: {{ event_start }} → {{ event_end }}
+{% if structure_name %}Struttura: {{ structure_name }}
+{% endif %}{% if task_notes %}Note: {{ task_notes }}
+{% endif %}Gestisci il task dalla pagina evento: {{ event_url }}
+
+Grazie per il tuo supporto.
+— Il team {{ brand_name }}

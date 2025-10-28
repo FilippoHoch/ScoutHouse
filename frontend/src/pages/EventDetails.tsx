@@ -14,6 +14,7 @@ import {
   getEventMembers,
   getEventSummary,
   getSuggestions,
+  previewMailTemplate,
   patchCandidate,
   patchTask,
   removeEventMember,
@@ -364,6 +365,7 @@ export const EventDetailsPage = () => {
   const [memberError, setMemberError] = useState<string | null>(null);
   const [icalError, setIcalError] = useState<string | null>(null);
   const [icalDownloading, setIcalDownloading] = useState(false);
+  const [mailPreviewError, setMailPreviewError] = useState<string | null>(null);
 
   const eventQuery = useQuery({
     queryKey: ["event", numericId],
@@ -582,6 +584,26 @@ export const EventDetailsPage = () => {
     }
   };
 
+  const handleMailPreview = async () => {
+    setMailPreviewError(null);
+    try {
+      const preview = await previewMailTemplate("candidate_status_changed");
+      const blob = new Blob([JSON.stringify(preview, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const newWindow = window.open(url, "_blank", "noopener");
+      if (!newWindow) {
+        setMailPreviewError(t("events.details.mailPreviewError"));
+      }
+      window.setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60_000);
+    } catch (error) {
+      setMailPreviewError(t("events.details.mailPreviewError"));
+    }
+  };
+
   return (
     <section>
       <div className="card">
@@ -604,9 +626,19 @@ export const EventDetailsPage = () => {
             >
               {icalDownloading ? t("common.loading") : t("events.details.downloadIcal")}
             </button>
+            {auth.user?.is_admin && (
+              <button
+                type="button"
+                className="button secondary"
+                onClick={handleMailPreview}
+              >
+                {t("events.details.mailPreviewButton")}
+              </button>
+            )}
           </div>
         </header>
         {icalError && <p className="error">{icalError}</p>}
+        {mailPreviewError && <p className="error">{mailPreviewError}</p>}
         <div className="team-section">
           <h3>Team</h3>
           {memberError && <p className="error">{memberError}</p>}

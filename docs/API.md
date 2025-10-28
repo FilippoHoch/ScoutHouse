@@ -689,3 +689,71 @@ Export a stored quote. Supported formats:
 
 Use `format=html` together with the browser “Print to PDF” feature to obtain a
 PDF copy.
+
+# Mail API
+
+Administrative endpoints for rendering email templates and triggering test
+deliveries. All routes require an authenticated admin user.
+
+## GET `/api/v1/mail/preview`
+
+Render one of the built-in templates with sample data. Only the `sample=true`
+mode is supported at the moment.
+
+### Query parameters
+
+| Name | Description |
+| --- | --- |
+| `template` | Template identifier: `reset_password`, `task_assigned`, `candidate_status_changed`. |
+| `sample` | Must be `true` to request the default preview payload. |
+
+```bash
+curl "http://localhost:8000/api/v1/mail/preview?template=reset_password&sample=true" \
+  -H "Authorization: Bearer <access-token>"
+```
+
+### Response
+
+```json
+{
+  "template": "reset_password",
+  "subject": "Reset della password ScoutHouse",
+  "html": "<p>…</p>",
+  "text": "..."
+}
+```
+
+## POST `/api/v1/mail/test`
+
+Send a test email using the active provider. In development, the console driver
+logs the payload instead of performing any external call. When
+`DEV_MAIL_BLOCK_EXTERNAL=true` the response is marked with `"blocked": true`.
+
+### Body
+
+```json
+{
+  "to": "admin@example.com",
+  "template": "task_assigned",
+  "sample_data": {"event_title": "Evento Demo"}
+}
+```
+
+```bash
+curl -X POST http://localhost:8000/api/v1/mail/test \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access-token>" \
+  -d '{"to":"admin@example.com","template":"task_assigned"}'
+```
+
+### Response
+
+```json
+{
+  "provider": "console",
+  "blocked": false,
+  "subject": "Nuovo task assegnato per Evento Demo",
+  "html": "<p>…</p>",
+  "text": "..."
+}
+```

@@ -72,6 +72,28 @@ Aggiornare il path al file desiderato. In scenari S3 scaricare il dump con
 | `BACKUP_CRON`               | Programmazione cron del job di backup.                        |
 | `AWS_*`                     | Credenziali e configurazione per upload su S3/MinIO.          |
 | `DATABASE_URL`              | Connessione al database (usata anche dal job di backup).      |
+| `MAIL_DRIVER`               | Driver email (`console`, `smtp`, `sendgrid`).                 |
+| `MAIL_FROM_NAME`            | Nome mittente visualizzato nelle email.                       |
+| `MAIL_FROM_ADDRESS`         | Indirizzo mittente.                                            |
+| `SMTP_HOST` / `PORT`        | Endpoint SMTP quando `MAIL_DRIVER=smtp`.                       |
+| `SMTP_USERNAME` / `PASSWORD`| Credenziali SMTP opzionali.                                    |
+| `SMTP_TLS`                  | Avvia `STARTTLS` sul canale SMTP (default `true`).             |
+| `SENDGRID_API_KEY`          | Token API SendGrid quando `MAIL_DRIVER=sendgrid`.             |
+| `DEV_MAIL_BLOCK_EXTERNAL`   | Se `true` forza sempre il driver `console` (default).          |
+
+## Notifiche email
+
+Il backend dispone di tre provider:
+
+| Driver    | Dev/Test (default)         | Produzione                         | Note |
+|-----------|----------------------------|------------------------------------|------|
+| console   | ✅ (log JSON con mascheramento) | Utilizzabile per ambienti sandbox    | Nessun invio reale, contenuto sanificato nei log. |
+| smtp      | ↩︎ forzato su console se `DEV_MAIL_BLOCK_EXTERNAL=true` | Consegna via server SMTP configurato | Richiede `SMTP_HOST` e (se necessari) credenziali. |
+| sendgrid  | ↩︎ forzato su console se `DEV_MAIL_BLOCK_EXTERNAL=true` | HTTP `POST` su API SendGrid          | Richiede `SENDGRID_API_KEY`. |
+
+- In sviluppo e test mantenere `DEV_MAIL_BLOCK_EXTERNAL=true` per evitare invii accidentali.
+- Gli admin possono usare `GET /api/v1/mail/preview` e `POST /api/v1/mail/test` per verificare i template senza toccare la configurazione globale.
+- Le email sono inviate in background tramite FastAPI `BackgroundTasks`; in caso di backend esterno (es. Celery) sostituire l'implementazione mantenendo la funzione di scheduling.
 
 ## Verifiche rapide
 
