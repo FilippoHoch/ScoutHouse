@@ -346,6 +346,26 @@ curl -X POST http://localhost:8000/api/v1/structures/1/cost-options \
 `PUT /api/v1/structures/{id}/cost-options` replaces all existing cost options
 with the provided array, making it easy to keep CSV imports idempotent.
 
+## GET `/api/v1/export/structures`
+
+Stream the structures catalog as `csv`, `xlsx`, or `json`. The endpoint is
+restricted to administrators and reuses the filters available in the search
+endpoint.
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `format` | string | Required output format: `csv`, `xlsx`, or `json`. |
+| `filters` | string | Optional JSON payload with keys `q`, `province`, `type`, `season`, `unit`, and `cost_band`. |
+
+The response uses `Transfer-Encoding: chunked` and caps exports at 10 000 rows or
+10 seconds of processing time. Example:
+
+```bash
+curl "http://localhost:8000/api/v1/export/structures?format=csv&filters=%7B%22province%22%3A%20%22MI%22%2C%20%22type%22%3A%20%22house%22%7D" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o structures.csv
+```
+
 # Events API
 
 ### Access control
@@ -403,6 +423,26 @@ Example:
 curl "http://localhost:8000/api/v1/events?page=1&page_size=10&status=planning"
 ```
 
+## GET `/api/v1/export/events`
+
+Download the events visible to the authenticated user (based on membership)
+as `csv`, `xlsx`, or `json`. Query parameters:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `format` | string | Required format: `csv`, `xlsx`, or `json`. |
+| `from` | date | Optional ISO date to include events starting on/after the value. |
+| `to` | date | Optional ISO date to include events ending on/before the value. |
+
+Exports stream in chunks and are limited to 10 000 rows and 10 seconds per
+request. Example:
+
+```bash
+curl "http://localhost:8000/api/v1/export/events?format=xlsx&from=2025-01-01&to=2025-03-31" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o events.xlsx
+```
+
 ## POST `/api/v1/events`
 
 Create a new event. The slug is generated automatically from the title. Payload:
@@ -434,6 +474,13 @@ candidates (including linked structure contacts) and contact tasks.
 ```bash
 curl "http://localhost:8000/api/v1/events/1?include=candidates,tasks"
 ```
+
+## GET `/api/v1/events/{id}/ical`
+
+Download a calendar entry for the event. The response returns an `.ics` payload
+with all-day start and end dates, summary, branch, status, and total
+participants. The endpoint enforces the same membership checks as the JSON
+detail API.
 
 ### Event membership management
 

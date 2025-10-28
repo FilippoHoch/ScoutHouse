@@ -124,7 +124,9 @@ registra un audit log `import_structures`
 con i conteggi dell'operazione.
 
 I template sono generati a runtime dal backend, così da evitare asset binari nel
-repository.
+repository. La pagina `/import-export` espone anche una sezione **Export** che
+permette di scaricare strutture (con gli stessi filtri della ricerca) ed eventi
+nei formati CSV, XLSX o JSON.
 
 The API exposes:
 
@@ -140,6 +142,7 @@ The API exposes:
 - `POST /api/v1/structures/` → create a new structure record
 - `GET /api/v1/templates/structures.xlsx` e `GET /api/v1/templates/structures.csv` → scarica i template generati a runtime
 - `POST /api/v1/import/structures?dry_run=true|false` → import strutture da CSV o XLSX con anteprima errori e upsert per slug
+- `GET /api/v1/export/structures?format=csv|xlsx|json` → export strutture in streaming con filtri opzionali
 - `POST /api/v1/auth/login`, `/refresh`, `/logout` and `GET /api/v1/auth/me` →
   manage authenticated sessions with Argon2-hashed users, short-lived access
   tokens, and HttpOnly refresh cookies. `POST /api/v1/auth/register` is
@@ -149,6 +152,8 @@ The API exposes:
 - `GET /api/v1/events` → list events with pagination, search, and status filters
 - `POST /api/v1/events` → create an event with automatic slug generation
 - `GET /api/v1/events/{id}?include=candidates,tasks` → fetch details, candidates, and tasks
+- `GET /api/v1/export/events?format=csv|xlsx|json` → export eventi visibili all'utente autenticato
+- `GET /api/v1/events/{id}/ical` → scarica il calendario dell'evento in formato iCal
 - `GET/POST/PATCH/DELETE /api/v1/events/{id}/members` → gestisci il team e i ruoli dell'evento
 - `POST /api/v1/events/{id}/candidates` / `PATCH` → manage event candidates
 - `GET /api/v1/events/{id}/summary` and `/suggest` → status totals and structure suggestions

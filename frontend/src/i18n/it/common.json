@@ -6,7 +6,7 @@
       "home": "Home",
       "structures": "Strutture",
       "events": "Eventi",
-      "importExport": "Import strutture",
+      "importExport": "Import/Export",
       "newStructure": "Nuova struttura",
       "logout": "Esci ({{name}})",
       "login": "Accedi"
@@ -16,6 +16,7 @@
     "verifying": "Verifica della sessione in corso…"
   },
   "importExport": {
+    "pageTitle": "Import/Export strutture ed eventi",
     "title": "Import strutture (CSV/XLSX)",
     "description": "Carica il file CSV o XLSX con le strutture per validare i dati prima dell'import definitivo.",
     "downloadTemplateXlsx": "Scarica template XLSX",
@@ -23,6 +24,45 @@
     "fileLabel": "File CSV o XLSX",
     "loading": "Elaborazione in corso…",
     "summary": "Righe valide: {{valid}}, righe con errori: {{invalid}}",
+    "export": {
+      "title": "Export",
+      "structures": {
+        "title": "Strutture",
+        "description": "Scarica l'elenco applicando filtri opzionali.",
+        "filters": {
+          "q": "Ricerca",
+          "province": "Provincia",
+          "type": "Tipologia",
+          "season": "Stagione",
+          "unit": "Unità",
+          "costBand": "Fascia di costo",
+          "any": "Tutte"
+        },
+        "actions": {
+          "csv": "Esporta CSV",
+          "xlsx": "Esporta XLSX",
+          "json": "Esporta JSON"
+        }
+      },
+      "events": {
+        "title": "Eventi",
+        "description": "Esporta gli eventi a cui partecipi.",
+        "filters": {
+          "from": "Dal",
+          "to": "Al"
+        },
+        "actions": {
+          "csv": "Esporta CSV",
+          "xlsx": "Esporta XLSX",
+          "json": "Esporta JSON"
+        }
+      },
+      "status": {
+        "success": "Download avviato ({{format}}).",
+        "error": "Impossibile completare l'export."
+      }
+    },
+    "importOnlyAdmin": "Solo gli amministratori possono importare strutture.",
     "actions": {
       "import": "Importa"
     },
@@ -175,6 +215,10 @@
     "title": "Eventi",
     "actions": {
       "new": "Nuovo evento"
+    },
+    "details": {
+      "downloadIcal": "Scarica iCal",
+      "icalError": "Impossibile scaricare il file iCal."
     },
     "candidates": {
       "conflict": "Conflitto",
