@@ -4,9 +4,10 @@ import asyncio
 import json
 import re
 from contextlib import suppress
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
@@ -53,6 +54,59 @@ router = APIRouter()
 DbSession = Annotated[Session, Depends(get_db)]
 
 SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _escape_ical_text(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace("\n", "\\n")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+    )
+
+
+def _format_utc_timestamp(moment: datetime | None = None) -> str:
+    timestamp = moment or datetime.now(timezone.utc)
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=timezone.utc)
+    else:
+        timestamp = timestamp.astimezone(timezone.utc)
+    return timestamp.strftime("%Y%m%dT%H%M%SZ")
+
+
+def _build_event_ical(event: Event) -> str:
+    start_date = event.start_date.strftime("%Y%m%d")
+    end_date_exclusive = (event.end_date + timedelta(days=1)).strftime("%Y%m%d")
+    participants = event.participants or {}
+    total_participants = 0
+    if isinstance(participants, dict):
+        total_participants = int(sum(int(value) for value in participants.values()))
+
+    description_lines = [
+        f"Branch: {event.branch.value}",
+        f"Status: {event.status.value}",
+        f"Partecipanti: {total_participants}",
+    ]
+    description = "\n".join(description_lines)
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//ScoutHouse//Event//EN",
+        "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT",
+        f"UID:event-{event.id}@scouthouse",
+        f"DTSTAMP:{_format_utc_timestamp()}",
+        f"DTSTART;VALUE=DATE:{start_date}",
+        f"DTEND;VALUE=DATE:{end_date_exclusive}",
+        f"SUMMARY:{_escape_ical_text(event.title)}",
+        f"DESCRIPTION:{_escape_ical_text(description)}",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+    return "\r\n".join(lines) + "\r\n"
+
+
 def _participants_to_dict(participants: Any) -> dict[str, int]:
     if hasattr(participants, "model_dump"):
         return participants.model_dump()  # type: ignore[no-any-return]
@@ -365,6 +419,36 @@ def get_event(
     if with_candidates or with_tasks:
         return EventWithRelations.model_validate(event)
     return EventRead.model_validate(event)
+
+
+@router.get("/{event_id}/ical")
+def download_event_ical(
+    event_id: int,
+    db: DbSession,
+    request: Request,
+    membership: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))],
+) -> Response:
+    event = db.get(Event, event_id)
+    if event is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    content = _build_event_ical(event)
+    filename = event.slug or f"event-{event.id}"
+    response = Response(content=content, media_type="text/calendar; charset=utf-8")
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}.ics"'
+
+    record_audit(
+        db,
+        actor=getattr(membership, "user", None),
+        action="export_event_ical",
+        entity_type="event",
+        entity_id=event.id,
+        diff={"format": "ics"},
+        request=request,
+    )
+    db.commit()
+
+    return response
 
 
 @router.patch("/{event_id}", response_model=EventRead)

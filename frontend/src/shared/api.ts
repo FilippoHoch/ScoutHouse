@@ -35,6 +35,18 @@ import { API_URL, ApiError } from "./http";
 
 export { ApiError } from "./http";
 
+export type ExportFormat = "csv" | "xlsx" | "json";
+
+function acceptHeaderForFormat(format: ExportFormat): string {
+  if (format === "xlsx") {
+    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  }
+  if (format === "csv") {
+    return "text/csv";
+  }
+  return "application/json";
+}
+
 function mergeHeaders(base: Record<string, string>, extra?: HeadersInit): Record<string, string> {
   const headers = { ...base };
 
@@ -121,6 +133,48 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   }
 
   return (await response.json()) as T;
+}
+
+async function authenticatedDownload(path: string, accept: string): Promise<Response> {
+  const performRequest = async () => {
+    const headers: Record<string, string> = { Accept: accept };
+    const token = getAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    try {
+      return await fetch(`${API_URL}${path}`, {
+        headers,
+        credentials: "include"
+      });
+    } catch (error) {
+      const message = `Unable to reach the API at ${API_URL}. Please make sure the backend server is running.`;
+      throw new ApiError(0, null, message, error);
+    }
+  };
+
+  let response = await performRequest();
+
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      response = await performRequest();
+    } else {
+      clearSession();
+    }
+  }
+
+  if (!response.ok) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch (error) {
+      body = await response.text();
+    }
+    throw new ApiError(response.status, body);
+  }
+
+  return response;
 }
 
 function buildQuery(params: Record<string, string | number | undefined>): string {
@@ -420,6 +474,46 @@ export async function exportQuote(
     return response.blob();
   }
   return response.text();
+}
+
+export async function exportStructures(
+  format: ExportFormat,
+  filters: Record<string, unknown> = {}
+): Promise<Blob> {
+  const params = new URLSearchParams({ format });
+  if (Object.keys(filters).length > 0) {
+    params.set("filters", JSON.stringify(filters));
+  }
+  const response = await authenticatedDownload(
+    `/api/v1/export/structures?${params.toString()}`,
+    acceptHeaderForFormat(format)
+  );
+  return response.blob();
+}
+
+export async function exportEvents(
+  format: ExportFormat,
+  filters: Record<string, string | undefined> = {}
+): Promise<Blob> {
+  const params = new URLSearchParams({ format });
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) {
+      params.set(key, value);
+    }
+  });
+  const response = await authenticatedDownload(
+    `/api/v1/export/events?${params.toString()}`,
+    acceptHeaderForFormat(format)
+  );
+  return response.blob();
+}
+
+export async function downloadEventIcal(eventId: number): Promise<Blob> {
+  const response = await authenticatedDownload(
+    `/api/v1/events/${eventId}/ical`,
+    "text/calendar"
+  );
+  return response.blob();
 }
 
 export async function forgotPassword(email: string): Promise<void> {

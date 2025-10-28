@@ -8,6 +8,7 @@ import {
   addCandidate,
   addEventMember,
   addTask,
+  downloadEventIcal,
   getStructureContacts,
   getEvent,
   getEventMembers,
@@ -342,6 +343,7 @@ const TaskRow = ({ task, members, onSave }: TaskRowProps) => {
 };
 
 export const EventDetailsPage = () => {
+  const { t } = useTranslation();
   const { eventId } = useParams();
   const auth = useAuth();
   const numericId = Number(eventId);
@@ -357,6 +359,8 @@ export const EventDetailsPage = () => {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<EventMemberRole>("viewer");
   const [memberError, setMemberError] = useState<string | null>(null);
+  const [icalError, setIcalError] = useState<string | null>(null);
+  const [icalDownloading, setIcalDownloading] = useState(false);
 
   const eventQuery = useQuery({
     queryKey: ["event", numericId],
@@ -550,6 +554,27 @@ export const EventDetailsPage = () => {
   const eventStartLabel = new Date(event.start_date).toLocaleDateString("it-IT");
   const eventEndLabel = new Date(event.end_date).toLocaleDateString("it-IT");
 
+  const handleDownloadIcal = async () => {
+    setIcalError(null);
+    setIcalDownloading(true);
+    try {
+      const blob = await downloadEventIcal(event.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const filename = event.slug ? `${event.slug}.ics` : `event-${event.id}.ics`;
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setIcalError(t("events.details.icalError"));
+    } finally {
+      setIcalDownloading(false);
+    }
+  };
+
   return (
     <section>
       <div className="card">
@@ -564,8 +589,17 @@ export const EventDetailsPage = () => {
             <span className="badge" aria-live="polite">
               {liveState.mode === "sse" ? "Live" : "Polling"}
             </span>
+            <button
+              type="button"
+              className="button"
+              onClick={handleDownloadIcal}
+              disabled={icalDownloading}
+            >
+              {icalDownloading ? t("common.loading") : t("events.details.downloadIcal")}
+            </button>
           </div>
         </header>
+        {icalError && <p className="error">{icalError}</p>}
         <div className="team-section">
           <h3>Team</h3>
           {memberError && <p className="error">{memberError}</p>}
