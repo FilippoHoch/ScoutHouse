@@ -83,6 +83,13 @@ export interface Structure {
   latitude: number | null;
   longitude: number | null;
   type: StructureType;
+  beds: number | null;
+  bathrooms: number | null;
+  showers: number | null;
+  dining_capacity: number | null;
+  has_kitchen: boolean;
+  website_url: string | null;
+  notes: string | null;
   created_at: string;
   estimated_cost?: number | null;
   cost_band?: CostBand | null;
@@ -99,6 +106,13 @@ export interface StructureCreateDto {
   latitude?: number;
   longitude?: number;
   type: StructureType;
+  beds?: number | null;
+  bathrooms?: number | null;
+  showers?: number | null;
+  dining_capacity?: number | null;
+  has_kitchen?: boolean;
+  website_url?: string | null;
+  notes?: string | null;
 }
 
 export interface StructureSearchItem {

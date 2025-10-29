@@ -37,15 +37,7 @@ def build_workbook(rows: list[dict[str, object]]) -> bytes:
     sheet = workbook.active
     sheet.append(HEADERS)
     for row in rows:
-        sheet.append([
-            row.get("name"),
-            row.get("slug"),
-            row.get("province"),
-            row.get("address"),
-            row.get("latitude"),
-            row.get("longitude"),
-            row.get("type"),
-        ])
+        sheet.append([row.get(header) for header in HEADERS])
     buffer = BytesIO()
     workbook.save(buffer)
     return buffer.getvalue()

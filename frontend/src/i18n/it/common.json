@@ -136,6 +136,19 @@
         "latitude": "Latitudine",
         "longitude": "Longitudine",
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
+        "beds": "Posti letto",
+        "bedsHint": "Indica quanti posti letto interni sono disponibili.",
+        "bathrooms": "Bagni",
+        "bathroomsHint": "Inserisci il numero totale di bagni utilizzabili.",
+        "showers": "Docce",
+        "showersHint": "Specificare le docce disponibili, se presenti.",
+        "diningCapacity": "Posti a tavola",
+        "diningCapacityHint": "Capienza indicativa della sala da pranzo o refettorio.",
+        "hasKitchen": "Cucina attrezzata disponibile",
+        "hasKitchenHint": "Spunta se la struttura mette a disposizione una cucina utilizzabile.",
+        "website": "Sito o link di riferimento",
+        "websiteHint": "Inserisci un URL utile per approfondimenti o contatti.",
+        "notes": "Note aggiuntive",
         "sections": {
           "general": {
             "title": "Informazioni principali",
@@ -144,6 +157,10 @@
           "location": {
             "title": "Posizione e indirizzo",
             "description": "Aiuta i volontari a raggiungere facilmente la struttura."
+          },
+          "logistics": {
+            "title": "Dettagli logistici",
+            "description": "Raccogli informazioni pratiche su spazi interni e servizi disponibili."
           },
           "coordinates": {
             "title": "Coordinate geografiche",
@@ -160,6 +177,8 @@
         "provinceInvalid": "La provincia deve contenere esattamente due lettere.",
         "latitudeInvalid": "La latitudine deve essere compresa tra -90 e 90.",
         "longitudeInvalid": "La longitudine deve essere compresa tra -180 e 180.",
+        "numberInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
+        "websiteInvalid": "Inserisci un URL valido che inizi con http o https.",
         "saveFailed": "Impossibile creare la struttura."
       },
       "sidebar": {
@@ -167,6 +186,7 @@
         "items": {
           "fields": "Compila i campi obbligatori contrassegnati con * per procedere.",
           "details": "Aggiungi più dettagli possibili nell'indirizzo per aiutare chi deve arrivare.",
+          "logistics": "Annota capienza, servizi interni e note utili: saranno fondamentali in fase di scelta.",
           "coordinates": "Se conosci le coordinate inseriscile: saranno utili per la pianificazione degli spostamenti."
         }
       },
@@ -235,7 +255,27 @@
       "confirmDelete": "Eliminare il contatto {{name}}?"
     },
     "details": {
+      "overview": {
+        "title": "Panoramica",
+        "logistics": "Dettagli logistici",
+        "beds": "Posti letto",
+        "bathrooms": "Bagni",
+        "showers": "Docce",
+        "diningCapacity": "Posti a tavola",
+        "website": "Sito di riferimento",
+        "websiteFallback": "Non disponibile",
+        "notes": "Note",
+        "hasKitchen": {
+          "label": "Cucina",
+          "yes": "Cucina attrezzata disponibile",
+          "no": "Cucina attrezzata non disponibile"
+        }
+      },
       "tabs": {
+        "overview": "Panoramica",
+        "availability": "Disponibilità",
+        "costs": "Costi",
+        "contacts": "Contatti",
         "attachments": "Allegati"
       }
     },

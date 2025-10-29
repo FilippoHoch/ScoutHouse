@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Any
 import re
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_validator
 
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.cost_option import StructureCostModel
@@ -25,6 +25,13 @@ class StructureBase(BaseModel):
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
     type: StructureType
+    beds: int | None = Field(default=None, ge=0)
+    bathrooms: int | None = Field(default=None, ge=0)
+    showers: int | None = Field(default=None, ge=0)
+    dining_capacity: int | None = Field(default=None, ge=0)
+    has_kitchen: bool = False
+    website_url: AnyHttpUrl | None = None
+    notes: str | None = None
 
     @field_validator("slug")
     @classmethod

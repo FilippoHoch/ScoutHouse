@@ -1,45 +1,70 @@
-L'idea è quella di creare un sito comodo ed accesibile per il mio gruppo scout facendo in modo che le persone possano navigare e utilizzare il sito in maniera semplice e intuitiva.
+# ScoutHouse – Visione e requisiti di prodotto
 
-Questo sito deve contenere un elenco di case che deve aiutare i vari capi del gurppo a trovare posti per uscite e campi estivi e inverali
+## Obiettivo
+Realizzare una piattaforma web accessibile per il gruppo scout che centralizzi le
+informazioni sulle strutture ricettive e supporti la pianificazione di uscite,
+campi e attività. L'interfaccia deve essere intuitiva così che ogni capo possa
+consultare rapidamente i dati, collaborare con il resto della comunità e tenere
+traccia delle verifiche fatte con le strutture.
 
-Questo viene fatto tramite una pagina che deve permettere di visualizzare tutte le case / terreni registrati
+## Catalogo delle strutture
+### Esperienza utente
+- Pagina indice con elenco e card delle strutture registrate.
+- Filtri per testo libero, provincia, tipologia (`house`, `land`, `mixed`),
+  stagione, unità, fascia di costo e distanza dalla base di riferimento.
+- Accesso rapido alla scheda dettagliata con contatti, disponibilità stagionali
+  e documenti allegati.
+- Possibilità di aggiungere nuove strutture per tutti gli utenti autenticati
+  (non è richiesto il ruolo admin).
 
-Qui ci devono essere i vari filtri oltre che le card di tutte le case e terreni che poi si possono aprire per vedere nello specifico ciascun elemento presente
+### Dati anagrafici richiesti
+Ogni struttura deve poter memorizzare le informazioni chiave elencate di seguito.
+Molti campi sono opzionali, ma è importante supportarli tutti per descrivere al
+meglio le diverse casistiche:
 
-Dopodiche nella pagina deve esserci anche la possibilità di aggiungere nuove case e terreni
+- **Identità:** nome, slug univoco, tipologia, data di creazione.
+- **Posizionamento:** provincia (sigla a due lettere), indirizzo completo,
+  coordinate geografiche per mappa e calcolo distanze.
+- **Logistica:** posti letto interni, numero di bagni e docce, capienza della
+  sala da pranzo, presenza di cucina attrezzata, eventuali note descrittive.
+- **Riferimenti esterni:** URL del sito o della fonte informativa.
+- **Disponibilità stagionali:** unità ammesse (`LC`, `EG`, `RS`, `ALL`) con
+  capacità minima/massima per stagione.
+- **Costi:** modelli tariffari (a persona/notte/giorno o forfait) con valuta,
+  deposito, eventuali imposte di soggiorno o utenze forfettarie.
+- **Contatti:** elenco ordinato con canale preferito, ruolo, note e consenso
+  GDPR.
+- **Documentazione:** allegati caricati dagli utenti con tracciamento di chi ha
+  eseguito l'upload.
 
+## Pianificazione eventi
+- Gestione attività (uscite, campi, riunioni) con informazioni su branche,
+  partecipanti, periodo e stato.
+- Possibilità di associare più strutture candidate, assegnare responsabilità di
+  contatto ai capi e segnare gli esiti.
+- Sistema di quote per stimare costi totali basati sulle informazioni dei
+  candidati (trasporti, numero ragazzi e capi, ecc.).
 
-Dopodiche deve esserci anche una pagina di login dove il capo accede alla propria pagina, qui può creare un campo / uscita candidate ovvero un attività che permetterà di aggiungere anche altri capi al evento questo evento, andrà a richdere diverse infromazioni che servono per aiutare i capi che lo stanno organizzando a chiamare le case che rispettano i filtri ma sopratutto segnarsi quali sono occupate e quali dovrsnnao essere contatta da quale capo facente parte del evento in modo da suddividersi le chiamate da fare, ovviamente poi si potrà sengare dopo che si è contattato il posto se la casa è disponibile o meno o fare altre operazioni cosi che poi si riesca a tenere monitorato come va la ricerca delle case, i candidati si posdsono aggoiungere al eelenoc di aquelli da senitre e se un'altro evento va a segnalare che per il medesimo posto, è occuapto anche per l'evento risultera occupata
+## Operazioni e automazione
+- Import massivo da CSV/XLSX con intestazioni estese (`beds`, `bathrooms`,
+  `showers`, `dining_capacity`, `has_kitchen`, ecc.) e validazioni puntuali.
+- Esportazione dei dati delle strutture in CSV, JSON e XLSX con i nuovi campi
+  logistici inclusi.
+- Allegati gestiti via storage S3-compatibile con controllo di dimensione e mime
+  type.
 
-Falla bene questa parte
+## Piattaforma tecnica
+- Frontend React con traduzioni italiane, componenti accessibili e test di
+  regressione.
+- Backend FastAPI con autenticazione JWT, audit trail per le modifiche e rate
+  limiting sugli endpoint sensibili.
+- Script di seed e dataset d'esempio aggiornati ai nuovi campi logistici.
+- Possibilità di esporre il progetto localmente (Docker/`uvicorn`) per facilitare
+  test e demo interne.
 
-
-Le case dovranno avere queste infrmazoni, la magigor parte opzionali o che dipsendono dal tipo
-
-Qui alcuni esempi
-Nome del posto	Indirizzo	Provincia	Responsabile / Contatto	Contatto (Tel, Mail)	Link sito/fonte	Costi 	Note
-
-Distanza in km calcolata (di default settato dal parametro del utetne di base è gussago piazza)
-				
-Luogo:	Casa,  Terreno, casa con terrento
-unità per cui è usabile L/C = Lupetti/Coccinelle	 E/G = Eploratori/Guide	R/S = Rover/Scolte	o Tutti
-periodolo per cui è usabile	
-Estivo, invernale, privamerile, tutte le stagioni
-
-alcune vuotle può essere anche che ad esempio la casa in inverno sia disponibile solo per un unità, mentre per altre stagioni sia dispnibile a tutti ripeto esempi
-
-sulla parte dei costi tante opzioni
-Costi
-
-che possono essere in molti modi, per persona al giorno, a notte a forfait
-possono poi essserci acconto iniziale + altra cifre, o altre cose utenze fisse o altre cose
-Una tassa di soggiorno magari e in caso da che età o cose simili
-
-
-voglio poi una casa che fa preventivi in base alle informaizoni inserite dal evento quindi anche le perosne, la branca quanti capi quanti ragazzi di che età sono i ragazzi, i trasporti più o meno
-
-
-Voglio che crei anche un python che va a esporre il sito in localhost per ora
-
-
-Voglio anche un importazione ed esposrtaizione in excel e altri formati
+## Evoluzioni future
+- Integrazione di mappe reali al posto del placeholder.
+- Notifiche e-mail o push per cambio stato dei candidati struttura.
+- Modalità offline/PWA per consultare contatti e documenti sul campo.
+- Reportistiche dedicate (es. disponibilità per periodo, storico contatti
+  effettuati) per migliorare il coordinamento tra i capi.
