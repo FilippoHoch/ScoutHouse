@@ -26,7 +26,7 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-scouthouse}
       DB_APP_USER: ${DB_APP_USER:-scout}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:-changeme}
     volumes:
