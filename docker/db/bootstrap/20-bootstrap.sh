@@ -1,43 +1,65 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOST="${POSTGRES_HOST:-db}"
-PORT="${POSTGRES_PORT:-5432}"
-CONNECT_DB="${POSTGRES_DB:-postgres}"
-SUPERUSER="${POSTGRES_USER:?POSTGRES_USER is required}"
-SUPERPASS="${POSTGRES_PASSWORD:-${PGPASSWORD:-}}"
-ROLE_NAME="${DB_APP_USER:-${APP_DB_USER:-scout}}"
-TARGET_DB="${DB_APP_NAME:-${APP_DB_NAME:-${CONNECT_DB}}}"
+: "${POSTGRES_HOST:=db}"
+: "${POSTGRES_PORT:=5432}"
+: "${POSTGRES_USER:=postgres}"
+: "${POSTGRES_PASSWORD:=postgres}"
+: "${POSTGRES_DB:=scouthouse}"
+: "${DB_APP_USER:=scout}"
+: "${DB_APP_PASSWORD:=changeme}"
 
-if [[ -z "${SUPERPASS}" ]]; then
-  echo "POSTGRES_PASSWORD or PGPASSWORD must be provided for db-bootstrap" >&2
-  exit 1
-fi
+export PGPASSWORD="$POSTGRES_PASSWORD"
 
-export PGPASSWORD="$SUPERPASS"
-
-until pg_isready -h "$HOST" -p "$PORT" -U "$SUPERUSER" -d "$CONNECT_DB" >/dev/null 2>&1; do
-  sleep 1
-done
-
-# Role provisioning is handled during initdb (docker/db/init/10-init.sh).
-# This bootstrap script only needs to ensure the application database exists
-# and is owned by the expected role.
-psql -v ON_ERROR_STOP=1 -h "$HOST" -p "$PORT" -U "$SUPERUSER" -d "$CONNECT_DB" <<SQL
-DO \$\$
+psql -v ON_ERROR_STOP=1 \
+  -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres \
+  -v db_name="$POSTGRES_DB" \
+  -v app_user="$DB_APP_USER" \
+  -v app_pass="$DB_APP_PASSWORD" <<'SQL'
+DO $$
 DECLARE
-  target_db text := '${TARGET_DB}';
-  target_owner text := '${ROLE_NAME}';
+  db_name text := :'db_name';
+  app_user text := :'app_user';
+  app_pass text := :'app_pass';
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = target_db) THEN
-    EXECUTE format('CREATE DATABASE %I OWNER %I', target_db, target_owner);
+  -- Crea o aggiorna ruolo applicativo
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = app_user) THEN
+    EXECUTE format('CREATE ROLE %I WITH LOGIN PASSWORD %L', app_user, app_pass);
   ELSE
-    EXECUTE format('ALTER DATABASE %I OWNER TO %I', target_db, target_owner);
+    EXECUTE format('ALTER ROLE %I WITH LOGIN PASSWORD %L', app_user, app_pass);
   END IF;
-END
-\$\$;
+
+  -- Crea DB se manca e imposta owner all'app user
+  IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = db_name) THEN
+    EXECUTE format('CREATE DATABASE %I OWNER %I', db_name, app_user);
+  ELSE
+    EXECUTE format('ALTER DATABASE %I OWNER TO %I', db_name, app_user);
+  END IF;
+END$$;
 SQL
 
-psql -v ON_ERROR_STOP=1 -h "$HOST" -p "$PORT" -U "$SUPERUSER" -d "$TARGET_DB" \
-  -c "GRANT ALL PRIVILEGES ON DATABASE \"${TARGET_DB}\" TO \"${ROLE_NAME}\";"
+# Permessi schema public nel DB applicativo
+psql -v ON_ERROR_STOP=1 \
+  -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -v app_user="$DB_APP_USER" <<'SQL'
+DO $$
+DECLARE
+  app_user text := :'app_user';
+BEGIN
+  -- Riduci PUBLIC e assegna permessi allo user app
+  EXECUTE 'REVOKE ALL ON SCHEMA public FROM PUBLIC';
+  EXECUTE format('GRANT USAGE, CREATE ON SCHEMA public TO %I', app_user);
+  -- Rendi lo schema di proprietà dell'app user (idempotente)
+  EXECUTE format('ALTER SCHEMA public OWNER TO %I', app_user);
+END$$;
+SQL
 
+# Facoltativo: consenti CONNECT al DB se revocato altrove
+psql -v ON_ERROR_STOP=1 \
+  -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres \
+  -v db_name="$POSTGRES_DB" -v app_user="$DB_APP_USER" <<'SQL'
+REVOKE ALL ON DATABASE :"db_name" FROM PUBLIC;
+GRANT CONNECT ON DATABASE :"db_name" TO :"app_user";
+SQL
+
+echo "Bootstrap DB completato."
