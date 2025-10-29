@@ -219,8 +219,9 @@ export const StructureCreatePage = () => {
   };
 
   const slugHintId = "structure-slug-hint";
+  const slugPreviewId = "structure-slug-preview";
   const slugErrorId = fieldErrors.slug ? "structure-slug-error" : undefined;
-  const slugDescribedBy = [slugHintId, slugErrorId].filter(Boolean).join(" ") || undefined;
+  const slugDescribedBy = [slugHintId, slugErrorId, slugPreviewId].filter(Boolean).join(" ") || undefined;
 
   const provinceErrorId = fieldErrors.province ? "structure-province-error" : undefined;
   const latitudeErrorId = fieldErrors.latitude ? "structure-latitude-error" : undefined;
@@ -228,169 +229,284 @@ export const StructureCreatePage = () => {
   const nameErrorId = fieldErrors.name ? "structure-name-error" : undefined;
   const typeErrorId = fieldErrors.type ? "structure-type-error" : undefined;
 
+  const typeHintId = "structure-type-hint";
+  const typeDescribedBy = [typeHintId, typeErrorId].filter(Boolean).join(" ") || undefined;
+  const provinceHintId = "structure-province-hint";
+  const provinceDescribedBy = [provinceHintId, provinceErrorId].filter(Boolean).join(" ") || undefined;
+  const addressHintId = "structure-address-hint";
+  const latitudeHintId = "structure-latitude-hint";
+  const latitudeDescribedBy = [latitudeHintId, latitudeErrorId].filter(Boolean).join(" ") || undefined;
+  const longitudeHintId = "structure-longitude-hint";
+  const longitudeDescribedBy = [longitudeHintId, longitudeErrorId].filter(Boolean).join(" ") || undefined;
+
+  const trimmedName = name.trim();
+  const trimmedSlug = slug.trim();
+  const trimmedProvince = province.trim();
+  const trimmedAddress = address.trim();
+  const trimmedLatitude = latitude.trim();
+  const trimmedLongitude = longitude.trim();
+
+  const slugPreviewMessage = trimmedSlug
+    ? t("structures.create.form.slugPreviewLabel", { url: `/structures/${trimmedSlug}` })
+    : t("structures.create.form.slugPreviewPlaceholder");
+
+  const previewName = trimmedName || t("structures.create.preview.namePlaceholder");
+  const previewTypeLabel = type
+    ? t(`structures.types.${type}`)
+    : t("structures.create.preview.typeFallback");
+  const previewProvince = trimmedProvince || t("structures.create.preview.provinceFallback");
+  const previewAddress = trimmedAddress || t("structures.create.preview.addressFallback");
+  const previewUrlLabel = trimmedSlug
+    ? t("structures.create.preview.urlLabel", { url: `/structures/${trimmedSlug}` })
+    : t("structures.create.preview.urlPlaceholder");
+  const previewCoordinatesLabel =
+    trimmedLatitude && trimmedLongitude
+      ? t("structures.create.preview.coordinatesLabel", {
+          lat: trimmedLatitude,
+          lon: trimmedLongitude
+        })
+      : t("structures.create.preview.coordinatesPlaceholder");
+
+  const sidebarTips = [
+    t("structures.create.sidebar.items.fields"),
+    t("structures.create.sidebar.items.details"),
+    t("structures.create.sidebar.items.coordinates")
+  ];
+
   return (
-    <section aria-labelledby="structure-create-title">
-      <Surface>
-        <SectionHeader>
-          <h2 id="structure-create-title">{t("structures.create.title")}</h2>
-          <p className="helper-text">{t("structures.create.description")}</p>
-        </SectionHeader>
-        <form className="form-grid" onSubmit={handleSubmit} noValidate>
-          <div>
-            <label htmlFor="structure-name">
-              {t("structures.create.form.name")}
-              <input
-                id="structure-name"
-                value={name}
-                onChange={handleNameChange}
-                autoComplete="off"
-                required
-                aria-invalid={fieldErrors.name ? "true" : undefined}
-                aria-describedby={nameErrorId || undefined}
-              />
-            </label>
-            {fieldErrors.name && (
-              <p className="error-text" id={nameErrorId!}>
-                {fieldErrors.name}
+    <section aria-labelledby="structure-create-title" className="structure-create">
+      <div className="structure-create-grid">
+        <Surface className="structure-create-card">
+          <SectionHeader className="structure-create-header">
+            <h2 id="structure-create-title">{t("structures.create.title")}</h2>
+            <p className="helper-text">{t("structures.create.description")}</p>
+          </SectionHeader>
+          <form className="structure-form" onSubmit={handleSubmit} noValidate>
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.general.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.general.description")}
               </p>
-            )}
-          </div>
+              <div className="structure-field-grid">
+                <div className="structure-form-field">
+                  <label htmlFor="structure-name">
+                    {t("structures.create.form.name")}
+                    <input
+                      id="structure-name"
+                      value={name}
+                      onChange={handleNameChange}
+                      autoComplete="off"
+                      placeholder={t("structures.create.form.namePlaceholder")}
+                      required
+                      aria-invalid={fieldErrors.name ? "true" : undefined}
+                      aria-describedby={nameErrorId || undefined}
+                    />
+                  </label>
+                  {fieldErrors.name && (
+                    <p className="error-text" id={nameErrorId!}>
+                      {fieldErrors.name}
+                    </p>
+                  )}
+                </div>
 
-          <div>
-            <label htmlFor="structure-slug">
-              {t("structures.create.form.slug")}
-              <input
-                id="structure-slug"
-                value={slug}
-                onChange={handleSlugChange}
-                autoComplete="off"
-                required
-                aria-invalid={fieldErrors.slug ? "true" : undefined}
-                aria-describedby={slugDescribedBy}
-              />
-            </label>
-            <span className="helper-text" id={slugHintId}>
-              {t("structures.create.form.slugHint")}
-            </span>
-            {fieldErrors.slug && (
-              <p className="error-text" id={slugErrorId}>
-                {fieldErrors.slug}
+                <div className="structure-form-field">
+                  <label htmlFor="structure-slug">
+                    {t("structures.create.form.slug")}
+                    <input
+                      id="structure-slug"
+                      value={slug}
+                      onChange={handleSlugChange}
+                      autoComplete="off"
+                      required
+                      aria-invalid={fieldErrors.slug ? "true" : undefined}
+                      aria-describedby={slugDescribedBy}
+                    />
+                  </label>
+                  <div className="structure-form-footnote">
+                    <span className="helper-text" id={slugHintId}>
+                      {t("structures.create.form.slugHint")}
+                    </span>
+                    <span className="helper-text slug-preview" id={slugPreviewId}>
+                      {slugPreviewMessage}
+                    </span>
+                  </div>
+                  {fieldErrors.slug && (
+                    <p className="error-text" id={slugErrorId}>
+                      {fieldErrors.slug}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-type">
+                    {t("structures.create.form.type")}
+                    <select
+                      id="structure-type"
+                      value={type}
+                      onChange={handleTypeChange}
+                      aria-invalid={fieldErrors.type ? "true" : undefined}
+                      aria-describedby={typeDescribedBy}
+                    >
+                      <option value="">{t("structures.create.form.typePlaceholder")}</option>
+                      {structureTypes.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.types.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={typeHintId}>
+                    {t("structures.create.form.typeHint")}
+                  </span>
+                  {fieldErrors.type && (
+                    <p className="error-text" id={typeErrorId!}>
+                      {fieldErrors.type}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.location.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.location.description")}
               </p>
-            )}
-          </div>
+              <div className="structure-field-grid">
+                <div className="structure-form-field">
+                  <label htmlFor="structure-province">
+                    {t("structures.create.form.province")}
+                    <input
+                      id="structure-province"
+                      value={province}
+                      onChange={handleProvinceChange}
+                      autoComplete="off"
+                      maxLength={2}
+                      placeholder={t("structures.create.form.provincePlaceholder")}
+                      aria-invalid={fieldErrors.province ? "true" : undefined}
+                      aria-describedby={provinceDescribedBy}
+                    />
+                  </label>
+                  <span className="helper-text" id={provinceHintId}>
+                    {t("structures.create.form.provinceHint")}
+                  </span>
+                  {fieldErrors.province && (
+                    <p className="error-text" id={provinceErrorId}>
+                      {fieldErrors.province}
+                    </p>
+                  )}
+                </div>
 
-          <div>
-            <label htmlFor="structure-type">
-              {t("structures.create.form.type")}
-              <select
-                id="structure-type"
-                value={type}
-                onChange={handleTypeChange}
-                aria-invalid={fieldErrors.type ? "true" : undefined}
-                aria-describedby={typeErrorId || undefined}
-              >
-                <option value="">{t("structures.create.form.typePlaceholder")}</option>
-                {structureTypes.map((option) => (
-                  <option key={option} value={option}>
-                    {t(`structures.types.${option}`)}
-                  </option>
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-address">
+                    {t("structures.create.form.address")}
+                    <textarea
+                      id="structure-address"
+                      value={address}
+                      onChange={handleAddressChange}
+                      rows={3}
+                      placeholder={t("structures.create.form.addressPlaceholder")}
+                      aria-describedby={addressHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={addressHintId}>
+                    {t("structures.create.form.addressHint")}
+                  </span>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.coordinates.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.coordinates.description")}
+              </p>
+              <div className="structure-field-grid">
+                <div className="structure-form-field">
+                  <label htmlFor="structure-latitude">
+                    {t("structures.create.form.latitude")}
+                    <input
+                      id="structure-latitude"
+                      value={latitude}
+                      onChange={handleLatitudeChange}
+                      inputMode="decimal"
+                      step="any"
+                      aria-invalid={fieldErrors.latitude ? "true" : undefined}
+                      aria-describedby={latitudeDescribedBy}
+                    />
+                  </label>
+                  <span className="helper-text" id={latitudeHintId}>
+                    {t("structures.create.form.coordinatesHint")}
+                  </span>
+                  {fieldErrors.latitude && (
+                    <p className="error-text" id={latitudeErrorId}>
+                      {fieldErrors.latitude}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-longitude">
+                    {t("structures.create.form.longitude")}
+                    <input
+                      id="structure-longitude"
+                      value={longitude}
+                      onChange={handleLongitudeChange}
+                      inputMode="decimal"
+                      step="any"
+                      aria-invalid={fieldErrors.longitude ? "true" : undefined}
+                      aria-describedby={longitudeDescribedBy}
+                    />
+                  </label>
+                  <span className="helper-text" id={longitudeHintId}>
+                    {t("structures.create.form.coordinatesHint")}
+                  </span>
+                  {fieldErrors.longitude && (
+                    <p className="error-text" id={longitudeErrorId}>
+                      {fieldErrors.longitude}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </fieldset>
+
+            {apiError && <InlineMessage tone="danger">{apiError}</InlineMessage>}
+
+            <div className="structure-form-actions">
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending
+                  ? t("structures.create.form.submitting")
+                  : t("structures.create.form.submit")}
+              </Button>
+            </div>
+          </form>
+        </Surface>
+
+        <aside className="structure-create-sidebar">
+          <Surface className="structure-create-sidebar-card">
+            <div>
+              <h3>{t("structures.create.sidebar.title")}</h3>
+              <ul className="structure-create-sidebar-list">
+                {sidebarTips.map((tip, index) => (
+                  <li key={index}>{tip}</li>
                 ))}
-              </select>
-            </label>
-            {fieldErrors.type && (
-              <p className="error-text" id={typeErrorId!}>
-                {fieldErrors.type}
-              </p>
-            )}
-          </div>
+              </ul>
+            </div>
+          </Surface>
 
-          <div>
-            <label htmlFor="structure-province">
-              {t("structures.create.form.province")}
-              <input
-                id="structure-province"
-                value={province}
-                onChange={handleProvinceChange}
-                autoComplete="off"
-                maxLength={2}
-                aria-invalid={fieldErrors.province ? "true" : undefined}
-                aria-describedby={provinceErrorId || undefined}
-              />
-            </label>
-            <span className="helper-text">{t("structures.create.form.provinceHint")}</span>
-            {fieldErrors.province && (
-              <p className="error-text" id={provinceErrorId}>
-                {fieldErrors.province}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="structure-address">
-              {t("structures.create.form.address")}
-              <textarea
-                id="structure-address"
-                value={address}
-                onChange={handleAddressChange}
-                rows={3}
-              />
-            </label>
-            <span className="helper-text">{t("structures.create.form.addressHint")}</span>
-          </div>
-
-          <div>
-            <label htmlFor="structure-latitude">
-              {t("structures.create.form.latitude")}
-              <input
-                id="structure-latitude"
-                value={latitude}
-                onChange={handleLatitudeChange}
-                inputMode="decimal"
-                step="any"
-                aria-invalid={fieldErrors.latitude ? "true" : undefined}
-                aria-describedby={latitudeErrorId || undefined}
-              />
-            </label>
-            <span className="helper-text">{t("structures.create.form.coordinatesHint")}</span>
-            {fieldErrors.latitude && (
-              <p className="error-text" id={latitudeErrorId}>
-                {fieldErrors.latitude}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="structure-longitude">
-              {t("structures.create.form.longitude")}
-              <input
-                id="structure-longitude"
-                value={longitude}
-                onChange={handleLongitudeChange}
-                inputMode="decimal"
-                step="any"
-                aria-invalid={fieldErrors.longitude ? "true" : undefined}
-                aria-describedby={longitudeErrorId || undefined}
-              />
-            </label>
-            <span className="helper-text">{t("structures.create.form.coordinatesHint")}</span>
-            {fieldErrors.longitude && (
-              <p className="error-text" id={longitudeErrorId}>
-                {fieldErrors.longitude}
-              </p>
-            )}
-          </div>
-
-          {apiError && (
-            <InlineMessage tone="danger">{apiError}</InlineMessage>
-          )}
-
-          <Button type="submit" disabled={createMutation.isPending}>
-            {createMutation.isPending
-              ? t("structures.create.form.submitting")
-              : t("structures.create.form.submit")}
-          </Button>
-        </form>
-      </Surface>
+          <Surface className="structure-create-sidebar-card">
+            <h3>{t("structures.create.preview.title")}</h3>
+            <div className="structure-preview-card">
+              <span className="structure-preview-badge">{previewTypeLabel}</span>
+              <h4>{previewName}</h4>
+              <p className="structure-preview-subtitle">{previewProvince}</p>
+              <p className="structure-preview-address">{previewAddress}</p>
+              <p className="structure-preview-url">{previewUrlLabel}</p>
+              <p className="structure-preview-hint">{previewCoordinatesLabel}</p>
+            </div>
+          </Surface>
+        </aside>
+      </div>
     </section>
   );
 };
