@@ -22,7 +22,7 @@ target_metadata = Base.metadata
 
 def get_url() -> str:
     return os.getenv(
-        "DATABASE_URL", "postgresql+psycopg://scout:scout@db:5432/scouthouse"
+        "DATABASE_URL", "postgresql+psycopg://scout:changeme@db:5432/scouthouse"
     )
 
 
