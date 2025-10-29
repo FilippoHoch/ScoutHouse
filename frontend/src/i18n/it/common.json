@@ -114,6 +114,35 @@
       "error": "Impossibile caricare le strutture.",
       "empty": "Nessuna struttura corrisponde ai filtri selezionati."
     },
+    "create": {
+      "title": "Nuova struttura",
+      "description": "Compila il modulo per aggiungere una nuova struttura al catalogo.",
+      "form": {
+        "name": "Nome",
+        "slug": "Slug",
+        "slugHint": "Lo slug verrà usato nell'URL della struttura e deve essere univoco.",
+        "type": "Tipologia",
+        "typePlaceholder": "Seleziona tipologia",
+        "province": "Provincia",
+        "provinceHint": "Usa il codice a due lettere (es. MI).",
+        "address": "Indirizzo",
+        "addressHint": "Indica via, numero civico e località se disponibili.",
+        "latitude": "Latitudine",
+        "longitude": "Longitudine",
+        "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
+        "submit": "Crea struttura",
+        "submitting": "Creazione in corso…"
+      },
+      "errors": {
+        "nameRequired": "Inserisci un nome per la struttura.",
+        "slugInvalid": "Inserisci uno slug valido (solo lettere, numeri e trattini).",
+        "typeRequired": "Seleziona una tipologia.",
+        "provinceInvalid": "La provincia deve contenere esattamente due lettere.",
+        "latitudeInvalid": "La latitudine deve essere compresa tra -90 e 90.",
+        "longitudeInvalid": "La longitudine deve essere compresa tra -180 e 180.",
+        "saveFailed": "Impossibile creare la struttura."
+      }
+    },
     "contacts": {
       "tab": "Contatti",
       "new": "Nuovo contatto",
