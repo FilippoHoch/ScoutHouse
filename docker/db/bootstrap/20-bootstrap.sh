@@ -7,7 +7,6 @@ CONNECT_DB="${POSTGRES_DB:-postgres}"
 SUPERUSER="${POSTGRES_USER:?POSTGRES_USER is required}"
 SUPERPASS="${POSTGRES_PASSWORD:-${PGPASSWORD:-}}"
 ROLE_NAME="${DB_APP_USER:-${APP_DB_USER:-scout}}"
-ROLE_PASSWORD="${DB_APP_PASSWORD:-${APP_DB_PASSWORD:-changeme}}"
 TARGET_DB="${DB_APP_NAME:-${APP_DB_NAME:-${CONNECT_DB}}}"
 
 if [[ -z "${SUPERPASS}" ]]; then
@@ -21,28 +20,14 @@ until pg_isready -h "$HOST" -p "$PORT" -U "$SUPERUSER" -d "$CONNECT_DB" >/dev/nu
   sleep 1
 done
 
-psql -v ON_ERROR_STOP=1 -h "$HOST" -p "$PORT" -U "$SUPERUSER" -d "$CONNECT_DB" \
-  -v role_name="$ROLE_NAME" -v role_password="$ROLE_PASSWORD" <<'SQL'
-DO $do$
+# Role provisioning is handled during initdb (docker/db/init/10-init.sh).
+# This bootstrap script only needs to ensure the application database exists
+# and is owned by the expected role.
+psql -v ON_ERROR_STOP=1 -h "$HOST" -p "$PORT" -U "$SUPERUSER" -d "$CONNECT_DB" <<SQL
+DO \$\$
 DECLARE
-  role_name text := :'role_name';
-  role_password text := :'role_password';
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name) THEN
-    EXECUTE format('CREATE ROLE %I WITH LOGIN PASSWORD %L', role_name, role_password);
-  ELSE
-    EXECUTE format('ALTER ROLE %I WITH LOGIN PASSWORD %L', role_name, role_password);
-  END IF;
-END
-$do$;
-SQL
-
-psql -v ON_ERROR_STOP=1 -h "$HOST" -p "$PORT" -U "$SUPERUSER" -d "$CONNECT_DB" \
-  -v db_name="$TARGET_DB" -v owner="$ROLE_NAME" <<'SQL'
-DO $do$
-DECLARE
-  target_db text := :'db_name';
-  target_owner text := :'owner';
+  target_db text := '${TARGET_DB}';
+  target_owner text := '${ROLE_NAME}';
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = target_db) THEN
     EXECUTE format('CREATE DATABASE %I OWNER %I', target_db, target_owner);
@@ -50,7 +35,7 @@ BEGIN
     EXECUTE format('ALTER DATABASE %I OWNER TO %I', target_db, target_owner);
   END IF;
 END
-$do$;
+\$\$;
 SQL
 
 psql -v ON_ERROR_STOP=1 -h "$HOST" -p "$PORT" -U "$SUPERUSER" -d "$TARGET_DB" \
