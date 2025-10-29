@@ -91,6 +91,16 @@ export interface Structure {
   contacts?: Contact[] | null;
 }
 
+export interface StructureCreateDto {
+  name: string;
+  slug: string;
+  province?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  type: StructureType;
+}
+
 export interface StructureSearchItem {
   id: number;
   slug: string;

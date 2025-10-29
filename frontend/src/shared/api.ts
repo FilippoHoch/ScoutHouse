@@ -29,6 +29,7 @@ import {
   ContactCreateDto,
   ContactUpdateDto,
   Structure,
+  StructureCreateDto,
   StructureSearchParams,
   StructureSearchResponse,
   StructureImportDryRunResponse,
@@ -285,6 +286,14 @@ export async function getStructureBySlug(
 ): Promise<Structure> {
   const query = options.include ? `?include=${encodeURIComponent(options.include)}` : "";
   return apiFetch<Structure>(`/api/v1/structures/by-slug/${slug}${query}`);
+}
+
+export async function createStructure(dto: StructureCreateDto): Promise<Structure> {
+  return apiFetch<Structure>("/api/v1/structures", {
+    method: "POST",
+    body: JSON.stringify(dto),
+    auth: true
+  });
 }
 
 export async function getStructureContacts(structureId: number): Promise<Contact[]> {
