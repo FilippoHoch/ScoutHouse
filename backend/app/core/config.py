@@ -9,7 +9,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
-DEFAULT_DATABASE_URL = "postgresql+psycopg://scout:scout@db:5432/scouthouse"
+DEFAULT_DATABASE_URL = "postgresql+psycopg://scout:changeme@db:5432/scouthouse"
 
 
 class Settings(BaseSettings):
