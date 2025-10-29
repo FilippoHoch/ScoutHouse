@@ -54,44 +54,59 @@ export const LoginPage = () => {
   };
 
   return (
-    <section>
-      <div className="card">
-        <h2>Login</h2>
-        <p>Use your ScoutHouse credentials to continue.</p>
-        <form onSubmit={handleSubmit} className="form-grid">
-          <label>
-            Email
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </label>
+    <section className="auth-layout">
+      <div className="auth-card">
+        <div className="auth-card__intro">
+          <span className="auth-badge">Bentornato 👋</span>
+          <h2>Accedi a ScoutHouse</h2>
+          <p>
+            Gestisci eventi, strutture e comunicazioni con un&apos;esperienza pensata per i team
+            scout.
+          </p>
+          <ul className="auth-highlights" aria-label="Cosa puoi fare con ScoutHouse">
+            <li>📆 Agenda integrata e sempre aggiornata</li>
+            <li>🔔 Notifiche in tempo reale per il tuo staff</li>
+            <li>🛡️ Accesso sicuro con credenziali dedicate</li>
+          </ul>
+        </div>
+        <form onSubmit={handleSubmit} className="form-grid auth-form">
+          <div>
+            <label>
+              Email
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Password
+              <input
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+          </div>
           {error && <p className="error-text">{error}</p>}
           <button className="button" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in…" : "Sign in"}
+            {isSubmitting ? "Accesso in corso…" : "Accedi"}
           </button>
+          <p className="auth-links">
+            <Link to="/forgot-password">Password dimenticata?</Link>
+            <span>
+              Non hai un account? <Link to="/register" state={location.state}>Registrati</Link>
+            </span>
+          </p>
         </form>
-        <p>
-          <Link to="/forgot-password">Password dimenticata?</Link>
-        </p>
-        <p>
-          Non hai un account? <Link to="/register" state={location.state}>Registrati</Link>
-        </p>
       </div>
     </section>
   );

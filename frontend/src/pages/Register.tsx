@@ -55,52 +55,69 @@ export const RegisterPage = () => {
   };
 
   return (
-    <section>
-      <div className="card">
-        <h2>Create your account</h2>
-        <p>Register to start managing ScoutHouse events and structures.</p>
-        <form onSubmit={handleSubmit} className="form-grid">
-          <label>
-            Name
-            <input
-              type="text"
-              name="name"
-              autoComplete="name"
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-          <label>
-            Email
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              name="password"
-              autoComplete="new-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </label>
+    <section className="auth-layout">
+      <div className="auth-card">
+        <div className="auth-card__intro">
+          <span className="auth-badge">Nuovo su ScoutHouse?</span>
+          <h2>Crea il tuo account</h2>
+          <p>
+            Collabora con il tuo staff, pianifica attività e monitora le prenotazioni con uno
+            spazio condiviso e intuitivo.
+          </p>
+          <ul className="auth-highlights" aria-label="Vantaggi di ScoutHouse">
+            <li>🤝 Coordinamento immediato con il tuo team</li>
+            <li>🧭 Panoramica chiara sulle attività programmate</li>
+            <li>⚙️ Strumenti pronti per la gestione quotidiana</li>
+          </ul>
+        </div>
+        <form onSubmit={handleSubmit} className="form-grid auth-form">
+          <div>
+            <label>
+              Nome e cognome
+              <input
+                type="text"
+                name="name"
+                autoComplete="name"
+                required
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Email
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Password
+              <input
+                type="password"
+                name="password"
+                autoComplete="new-password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+          </div>
           {error && <p className="error-text">{error}</p>}
           <button className="button" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating account…" : "Create account"}
+            {isSubmitting ? "Creazione in corso…" : "Crea account"}
           </button>
+          <p className="auth-links">
+            Hai già un account? <Link to="/login" state={location.state}>Accedi</Link>
+          </p>
         </form>
-        <p>
-          Already have an account? <Link to="/login" state={location.state}>Sign in</Link>
-        </p>
       </div>
     </section>
   );
