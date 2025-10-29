@@ -99,11 +99,8 @@ services:
   migrate:
     build:
       context: ./backend
-    env_file:
-      - ./backend/.env
     environment:
       DATABASE_URL: postgresql+psycopg://${DB_APP_USER:-scout}:${DB_APP_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-scouthouse}
-      RUN_DB_MIGRATIONS: "false"
     depends_on:
       db:
         condition: service_healthy
