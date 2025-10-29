@@ -22,18 +22,17 @@ services:
 
   db-bootstrap:
     image: postgres:16
-    entrypoint: ["bash", "/bootstrap.sh"]
+    entrypoint: ["/bin/bash", "-lc", "/bootstrap/20-bootstrap.sh"]
     environment:
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-      APP_DB_USER: scout
-      APP_DB_PASSWORD: scout
-      APP_DB_NAME: scouthouse
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      DB_APP_USER: ${DB_APP_USER:-scout}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-scout}
     volumes:
-      - ./infra/db/bootstrap.sh:/bootstrap.sh:ro
+      - ./docker/db/bootstrap:/bootstrap:ro
     depends_on:
       db:
         condition: service_healthy
