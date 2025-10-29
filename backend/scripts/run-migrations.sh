@@ -1,28 +1,39 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
-if [[ -z "${DATABASE_URL:-}" ]]; then
-  echo "DATABASE_URL environment variable is required" >&2
-  exit 1
-fi
+log() { printf '[%s] %s\n' "$(date -Iseconds)" "$*"; }
 
-max_attempts=${DB_MAX_ATTEMPTS:-30}
-base_sleep=${DB_RETRY_SLEEP:-2}
-attempt=1
+: "${DATABASE_URL:?DATABASE_URL non impostata}"
 
-while (( attempt <= max_attempts )); do
-  if pg_isready -d "$DATABASE_URL" >/dev/null 2>&1; then
+# Attesa DB con errore mostrato
+for i in $(seq 1 30); do
+  if python - <<'PY'
+import os, sys
+from sqlalchemy import create_engine, text
+url=os.environ['DATABASE_URL']
+try:
+    eng=create_engine(url, pool_pre_ping=True)
+    with eng.connect() as c:
+        c.execute(text("select 1")).scalar()
+    sys.exit(0)
+except Exception as e:
+    print("probe_error:", repr(e))
+    sys.exit(1)
+PY
+  then
+    log "database raggiungibile"
     break
+  else
+    delay=$(( i*2 ))
+    log "database non pronto (tentativo $i/30). Riprovo tra ${delay}s..."
+    sleep "${delay}"
   fi
-  sleep_duration=$(( base_sleep * attempt ))
-  echo "[$(date --iso-8601=seconds)] database not ready yet (attempt ${attempt}/${max_attempts}), retrying in ${sleep_duration}s..."
-  sleep "$sleep_duration"
-  attempt=$(( attempt + 1 ))
-  if (( attempt > max_attempts )); then
-    echo "Database did not become ready after ${max_attempts} attempts" >&2
-    exit 1
+  if [ "$i" -eq 30 ]; then
+     log "database mai pronto. Abort."
+     exit 1
   fi
 done
 
-echo "[$(date --iso-8601=seconds)] running alembic upgrade head"
+log "eseguo alembic upgrade head"
 alembic upgrade head
+log "migrazioni completate"

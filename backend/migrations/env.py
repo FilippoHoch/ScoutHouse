@@ -17,17 +17,13 @@ if config.config_file_name is not None:
 
 load_dotenv()
 
+config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
+
 target_metadata = Base.metadata
 
 
-def get_url() -> str:
-    return os.getenv(
-        "DATABASE_URL", "postgresql+psycopg://scout:changeme@db:5432/scouthouse"
-    )
-
-
 def run_migrations_offline() -> None:
-    url = get_url()
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -42,7 +38,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    database_url = context.config.get_main_option("sqlalchemy.url") or get_url()
+    database_url = config.get_main_option("sqlalchemy.url")
     connectable = create_engine(database_url, poolclass=pool.NullPool)
 
     lock_conn: Connection = connectable.connect().execution_options(
