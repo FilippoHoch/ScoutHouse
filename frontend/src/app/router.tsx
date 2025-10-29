@@ -17,6 +17,7 @@ const StructureDetailsPage = lazy(() =>
   import("../pages/StructureDetails").then((module) => ({ default: module.StructureDetailsPage }))
 );
 const LoginPage = lazy(() => import("../pages/Login").then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import("../pages/Register").then((module) => ({ default: module.RegisterPage })));
 const AdminPage = lazy(() => import("../pages/Admin").then((module) => ({ default: module.AdminPage })));
 
 const ProtectedRoute = () => {
@@ -80,6 +81,7 @@ export const AppRouter = () => {
               <Route path="/admin" element={<AdminPage />} />
             </Route>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
           </Route>
         </Routes>
       </Suspense>
