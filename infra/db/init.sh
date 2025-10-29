@@ -6,19 +6,39 @@ DB_USER="${APP_DB_USER:-scout}"
 DB_PASSWORD="${APP_DB_PASSWORD:-scout}"
 SUPERUSER="${POSTGRES_USER:-postgres}"
 
-# Create application role if it does not exist
-if ! psql -U "$SUPERUSER" -d postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" | grep -q 1; then
-  psql -U "$SUPERUSER" -d postgres -c "CREATE ROLE \"${DB_USER}\" WITH LOGIN PASSWORD '${DB_PASSWORD}';"
-else
-  psql -U "$SUPERUSER" -d postgres -c "ALTER ROLE \"${DB_USER}\" WITH LOGIN PASSWORD '${DB_PASSWORD}';"
-fi
+psql -v ON_ERROR_STOP=1 -U "$SUPERUSER" -d postgres \
+  -v role_name="$DB_USER" \
+  -v role_password="$DB_PASSWORD" <<'SQL'
+DO $$
+DECLARE
+  role_name text := :'role_name';
+  role_password text := :'role_password';
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name) THEN
+    EXECUTE format('CREATE ROLE %I WITH LOGIN PASSWORD %L', role_name, role_password);
+  ELSE
+    EXECUTE format('ALTER ROLE %I WITH LOGIN PASSWORD %L', role_name, role_password);
+  END IF;
+END;
+$$;
+SQL
 
-# Create database if it does not exist and ensure ownership
-if ! psql -U "$SUPERUSER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${DB}'" | grep -q 1; then
-  psql -U "$SUPERUSER" -d postgres -c "CREATE DATABASE \"${DB}\" OWNER \"${DB_USER}\";"
-else
-  psql -U "$SUPERUSER" -d postgres -c "ALTER DATABASE \"${DB}\" OWNER TO \"${DB_USER}\";"
-fi
+psql -v ON_ERROR_STOP=1 -U "$SUPERUSER" -d postgres \
+  -v db_name="$DB" \
+  -v owner="$DB_USER" <<'SQL'
+DO $$
+DECLARE
+  target_db text := :'db_name';
+  target_owner text := :'owner';
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = target_db) THEN
+    EXECUTE format('CREATE DATABASE %I OWNER %I', target_db, target_owner);
+  ELSE
+    EXECUTE format('ALTER DATABASE %I OWNER TO %I', target_db, target_owner);
+  END IF;
+END;
+$$;
+SQL
 
-# Ensure privileges on the database
-psql -U "$SUPERUSER" -d "$DB" -c "GRANT ALL PRIVILEGES ON DATABASE \"${DB}\" TO \"${DB_USER}\";"
+psql -v ON_ERROR_STOP=1 -U "$SUPERUSER" -d "$DB" \
+  -c "GRANT ALL PRIVILEGES ON DATABASE \"${DB}\" TO \"${DB_USER}\";"
