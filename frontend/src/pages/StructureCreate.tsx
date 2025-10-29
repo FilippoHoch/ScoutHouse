@@ -10,7 +10,18 @@ import { Button, InlineMessage, SectionHeader, Surface } from "../shared/ui/desi
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
 
-type FieldErrorKey = "name" | "slug" | "province" | "latitude" | "longitude" | "type";
+type FieldErrorKey =
+  | "name"
+  | "slug"
+  | "province"
+  | "latitude"
+  | "longitude"
+  | "type"
+  | "beds"
+  | "bathrooms"
+  | "showers"
+  | "dining_capacity"
+  | "website_url";
 
 type FieldErrors = Partial<Record<FieldErrorKey, string>>;
 
@@ -37,6 +48,13 @@ export const StructureCreatePage = () => {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [type, setType] = useState<StructureType | "">("");
+  const [beds, setBeds] = useState("");
+  const [bathrooms, setBathrooms] = useState("");
+  const [showers, setShowers] = useState("");
+  const [diningCapacity, setDiningCapacity] = useState("");
+  const [hasKitchen, setHasKitchen] = useState(false);
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [notes, setNotes] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [slugDirty, setSlugDirty] = useState(false);
@@ -96,6 +114,46 @@ export const StructureCreatePage = () => {
     clearFieldError("longitude");
   };
 
+  const handleBedsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setBeds(event.target.value);
+    setApiError(null);
+    clearFieldError("beds");
+  };
+
+  const handleBathroomsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setBathrooms(event.target.value);
+    setApiError(null);
+    clearFieldError("bathrooms");
+  };
+
+  const handleShowersChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setShowers(event.target.value);
+    setApiError(null);
+    clearFieldError("showers");
+  };
+
+  const handleDiningCapacityChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setDiningCapacity(event.target.value);
+    setApiError(null);
+    clearFieldError("dining_capacity");
+  };
+
+  const handleHasKitchenChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setHasKitchen(event.target.checked);
+    setApiError(null);
+  };
+
+  const handleWebsiteUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setWebsiteUrl(event.target.value);
+    setApiError(null);
+    clearFieldError("website_url");
+  };
+
+  const handleNotesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setNotes(event.target.value);
+    setApiError(null);
+  };
+
   const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setType(event.target.value as StructureType | "");
     setApiError(null);
@@ -119,6 +177,11 @@ export const StructureCreatePage = () => {
     const trimmedProvince = province.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
+    const trimmedBeds = beds.trim();
+    const trimmedBathrooms = bathrooms.trim();
+    const trimmedShowers = showers.trim();
+    const trimmedDiningCapacity = diningCapacity.trim();
+    const trimmedWebsiteUrl = websiteUrl.trim();
 
     const errors: FieldErrors = {};
 
@@ -152,6 +215,44 @@ export const StructureCreatePage = () => {
       }
     }
 
+    const validatePositiveInteger = (
+      value: string,
+      field: FieldErrorKey,
+      message: string
+    ) => {
+      if (!value) {
+        return;
+      }
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        errors[field] = message;
+      }
+    };
+
+    validatePositiveInteger(trimmedBeds, "beds", t("structures.create.errors.numberInvalid"));
+    validatePositiveInteger(
+      trimmedBathrooms,
+      "bathrooms",
+      t("structures.create.errors.numberInvalid")
+    );
+    validatePositiveInteger(trimmedShowers, "showers", t("structures.create.errors.numberInvalid"));
+    validatePositiveInteger(
+      trimmedDiningCapacity,
+      "dining_capacity",
+      t("structures.create.errors.numberInvalid")
+    );
+
+    if (trimmedWebsiteUrl) {
+      try {
+        const url = new URL(trimmedWebsiteUrl);
+        if (!url.protocol.startsWith("http")) {
+          throw new Error("invalid protocol");
+        }
+      } catch {
+        errors.website_url = t("structures.create.errors.websiteInvalid");
+      }
+    }
+
     setFieldErrors(errors);
 
     if (Object.keys(errors).length > 0) {
@@ -174,6 +275,12 @@ export const StructureCreatePage = () => {
     const trimmedAddress = address.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
+    const trimmedBeds = beds.trim();
+    const trimmedBathrooms = bathrooms.trim();
+    const trimmedShowers = showers.trim();
+    const trimmedDiningCapacity = diningCapacity.trim();
+    const trimmedWebsiteUrl = websiteUrl.trim();
+    const trimmedNotes = notes.trim();
 
     const payload: StructureCreateDto = {
       name: name.trim(),
@@ -195,6 +302,32 @@ export const StructureCreatePage = () => {
 
     if (trimmedLongitude) {
       payload.longitude = Number.parseFloat(trimmedLongitude);
+    }
+
+    if (trimmedBeds) {
+      payload.beds = Number.parseInt(trimmedBeds, 10);
+    }
+
+    if (trimmedBathrooms) {
+      payload.bathrooms = Number.parseInt(trimmedBathrooms, 10);
+    }
+
+    if (trimmedShowers) {
+      payload.showers = Number.parseInt(trimmedShowers, 10);
+    }
+
+    if (trimmedDiningCapacity) {
+      payload.dining_capacity = Number.parseInt(trimmedDiningCapacity, 10);
+    }
+
+    payload.has_kitchen = hasKitchen;
+
+    if (trimmedWebsiteUrl) {
+      payload.website_url = trimmedWebsiteUrl;
+    }
+
+    if (trimmedNotes) {
+      payload.notes = trimmedNotes;
     }
 
     try {
@@ -228,6 +361,13 @@ export const StructureCreatePage = () => {
   const longitudeErrorId = fieldErrors.longitude ? "structure-longitude-error" : undefined;
   const nameErrorId = fieldErrors.name ? "structure-name-error" : undefined;
   const typeErrorId = fieldErrors.type ? "structure-type-error" : undefined;
+  const bedsErrorId = fieldErrors.beds ? "structure-beds-error" : undefined;
+  const bathroomsErrorId = fieldErrors.bathrooms ? "structure-bathrooms-error" : undefined;
+  const showersErrorId = fieldErrors.showers ? "structure-showers-error" : undefined;
+  const diningCapacityErrorId = fieldErrors.dining_capacity
+    ? "structure-dining-capacity-error"
+    : undefined;
+  const websiteErrorId = fieldErrors.website_url ? "structure-website-url-error" : undefined;
 
   const typeHintId = "structure-type-hint";
   const typeDescribedBy = [typeHintId, typeErrorId].filter(Boolean).join(" ") || undefined;
@@ -238,6 +378,17 @@ export const StructureCreatePage = () => {
   const latitudeDescribedBy = [latitudeHintId, latitudeErrorId].filter(Boolean).join(" ") || undefined;
   const longitudeHintId = "structure-longitude-hint";
   const longitudeDescribedBy = [longitudeHintId, longitudeErrorId].filter(Boolean).join(" ") || undefined;
+  const bedsHintId = "structure-beds-hint";
+  const bedsDescribedBy = [bedsHintId, bedsErrorId].filter(Boolean).join(" ") || undefined;
+  const bathroomsHintId = "structure-bathrooms-hint";
+  const bathroomsDescribedBy = [bathroomsHintId, bathroomsErrorId].filter(Boolean).join(" ") || undefined;
+  const showersHintId = "structure-showers-hint";
+  const showersDescribedBy = [showersHintId, showersErrorId].filter(Boolean).join(" ") || undefined;
+  const diningCapacityHintId = "structure-dining-capacity-hint";
+  const diningCapacityDescribedBy =
+    [diningCapacityHintId, diningCapacityErrorId].filter(Boolean).join(" ") || undefined;
+  const websiteHintId = "structure-website-hint";
+  const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
 
   const trimmedName = name.trim();
   const trimmedSlug = slug.trim();
@@ -270,6 +421,7 @@ export const StructureCreatePage = () => {
   const sidebarTips = [
     t("structures.create.sidebar.items.fields"),
     t("structures.create.sidebar.items.details"),
+    t("structures.create.sidebar.items.logistics"),
     t("structures.create.sidebar.items.coordinates")
   ];
 
@@ -412,6 +564,156 @@ export const StructureCreatePage = () => {
                   <span className="helper-text" id={addressHintId}>
                     {t("structures.create.form.addressHint")}
                   </span>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.logistics.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.logistics.description")}
+              </p>
+              <div className="structure-field-grid">
+                <div className="structure-form-field">
+                  <label htmlFor="structure-beds">
+                    {t("structures.create.form.beds")}
+                    <input
+                      id="structure-beds"
+                      value={beds}
+                      onChange={handleBedsChange}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      aria-describedby={bedsDescribedBy}
+                      aria-invalid={fieldErrors.beds ? "true" : undefined}
+                    />
+                  </label>
+                  <span className="helper-text" id={bedsHintId}>
+                    {t("structures.create.form.bedsHint")}
+                  </span>
+                  {fieldErrors.beds && (
+                    <p className="error-text" id={bedsErrorId!}>
+                      {fieldErrors.beds}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-bathrooms">
+                    {t("structures.create.form.bathrooms")}
+                    <input
+                      id="structure-bathrooms"
+                      value={bathrooms}
+                      onChange={handleBathroomsChange}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      aria-describedby={bathroomsDescribedBy}
+                      aria-invalid={fieldErrors.bathrooms ? "true" : undefined}
+                    />
+                  </label>
+                  <span className="helper-text" id={bathroomsHintId}>
+                    {t("structures.create.form.bathroomsHint")}
+                  </span>
+                  {fieldErrors.bathrooms && (
+                    <p className="error-text" id={bathroomsErrorId!}>
+                      {fieldErrors.bathrooms}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-showers">
+                    {t("structures.create.form.showers")}
+                    <input
+                      id="structure-showers"
+                      value={showers}
+                      onChange={handleShowersChange}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      aria-describedby={showersDescribedBy}
+                      aria-invalid={fieldErrors.showers ? "true" : undefined}
+                    />
+                  </label>
+                  <span className="helper-text" id={showersHintId}>
+                    {t("structures.create.form.showersHint")}
+                  </span>
+                  {fieldErrors.showers && (
+                    <p className="error-text" id={showersErrorId!}>
+                      {fieldErrors.showers}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-dining-capacity">
+                    {t("structures.create.form.diningCapacity")}
+                    <input
+                      id="structure-dining-capacity"
+                      value={diningCapacity}
+                      onChange={handleDiningCapacityChange}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      aria-describedby={diningCapacityDescribedBy}
+                      aria-invalid={fieldErrors.dining_capacity ? "true" : undefined}
+                    />
+                  </label>
+                  <span className="helper-text" id={diningCapacityHintId}>
+                    {t("structures.create.form.diningCapacityHint")}
+                  </span>
+                  {fieldErrors.dining_capacity && (
+                    <p className="error-text" id={diningCapacityErrorId!}>
+                      {fieldErrors.dining_capacity}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field checkbox-field">
+                  <label htmlFor="structure-has-kitchen">
+                    <input
+                      id="structure-has-kitchen"
+                      type="checkbox"
+                      checked={hasKitchen}
+                      onChange={handleHasKitchenChange}
+                    />
+                    {t("structures.create.form.hasKitchen")}
+                  </label>
+                  <span className="helper-text">
+                    {t("structures.create.form.hasKitchenHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-website">
+                    {t("structures.create.form.website")}
+                    <input
+                      id="structure-website"
+                      value={websiteUrl}
+                      onChange={handleWebsiteUrlChange}
+                      type="url"
+                      placeholder="https://"
+                      aria-describedby={websiteDescribedBy}
+                      aria-invalid={fieldErrors.website_url ? "true" : undefined}
+                    />
+                  </label>
+                  <span className="helper-text" id={websiteHintId}>
+                    {t("structures.create.form.websiteHint")}
+                  </span>
+                  {fieldErrors.website_url && (
+                    <p className="error-text" id={websiteErrorId!}>
+                      {fieldErrors.website_url}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-notes">
+                    {t("structures.create.form.notes")}
+                    <textarea
+                      id="structure-notes"
+                      value={notes}
+                      onChange={handleNotesChange}
+                      rows={3}
+                    />
+                  </label>
                 </div>
               </div>
             </fieldset>

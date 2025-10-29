@@ -62,6 +62,15 @@ def parse_decimal(value: str | None) -> Decimal | None:
     return Decimal(value)
 
 
+def parse_bool(value: str | None) -> bool:
+    if value is None:
+        return False
+    text = value.strip().lower()
+    if not text:
+        return False
+    return text in {"true", "1", "yes", "y", "si", "sì"}
+
+
 def parse_participants(value: str | None) -> dict[str, int]:
     if not value:
         return {"lc": 0, "eg": 0, "rs": 0, "leaders": 0}
@@ -111,6 +120,13 @@ def seed_structures(dataset: Path) -> None:
                 "latitude": parse_float((row.get("latitude") or "").strip()),
                 "longitude": parse_float((row.get("longitude") or "").strip()),
                 "type": structure_type,
+                "beds": parse_int((row.get("beds") or "").strip()),
+                "bathrooms": parse_int((row.get("bathrooms") or "").strip()),
+                "showers": parse_int((row.get("showers") or "").strip()),
+                "dining_capacity": parse_int((row.get("dining_capacity") or "").strip()),
+                "has_kitchen": parse_bool(row.get("has_kitchen")),
+                "website_url": row.get("website_url", "").strip() or None,
+                "notes": row.get("notes", "").strip() or None,
             }
 
             existing = session.execute(

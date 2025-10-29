@@ -147,6 +147,13 @@ async def import_structures(
                 latitude=row.latitude,
                 longitude=row.longitude,
                 type=row.type,
+                beds=row.beds,
+                bathrooms=row.bathrooms,
+                showers=row.showers,
+                dining_capacity=row.dining_capacity,
+                has_kitchen=row.has_kitchen if row.has_kitchen is not None else False,
+                website_url=row.website_url,
+                notes=row.notes,
             )
             db.add(structure)
             created += 1
@@ -157,6 +164,14 @@ async def import_structures(
             structure.latitude = row.latitude
             structure.longitude = row.longitude
             structure.type = row.type
+            structure.beds = row.beds
+            structure.bathrooms = row.bathrooms
+            structure.showers = row.showers
+            structure.dining_capacity = row.dining_capacity
+            if row.has_kitchen is not None:
+                structure.has_kitchen = row.has_kitchen
+            structure.website_url = row.website_url
+            structure.notes = row.notes
             updated += 1
 
     record_audit(

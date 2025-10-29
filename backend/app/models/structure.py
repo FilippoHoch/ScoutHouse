@@ -4,7 +4,8 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import DateTime, Integer, Numeric, String, Text, func, Index
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, Text, func, Index
+from sqlalchemy.sql import expression
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,6 +35,18 @@ class Structure(Base):
         SQLEnum(StructureType, name="structure_type"),
         nullable=False,
     )
+    beds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    bathrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    showers: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dining_capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    has_kitchen: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        default=False,
+    )
+    website_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

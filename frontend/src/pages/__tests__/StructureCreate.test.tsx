@@ -36,6 +36,13 @@ const createdStructure: Structure = {
   latitude: 45.12,
   longitude: 9.12,
   type: "house",
+  beds: 30,
+  bathrooms: 4,
+  showers: 4,
+  dining_capacity: 40,
+  has_kitchen: true,
+  website_url: "https://example.org/base-bosco",
+  notes: null,
   created_at: "2024-05-01T10:00:00Z",
   estimated_cost: null,
   cost_band: null,
@@ -86,7 +93,8 @@ describe("StructureCreatePage", () => {
       name: "Base Bosco",
       slug: "base-bosco",
       type: "house",
-      province: "BS"
+      province: "BS",
+      has_kitchen: false
     });
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));

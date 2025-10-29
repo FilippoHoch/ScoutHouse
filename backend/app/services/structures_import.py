@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from io import BytesIO, StringIO
 from typing import Iterator, Literal, Sequence
+from urllib.parse import urlparse
 
 from openpyxl import Workbook, load_workbook
 
@@ -18,6 +19,13 @@ HEADERS = [
     "latitude",
     "longitude",
     "type",
+    "beds",
+    "bathrooms",
+    "showers",
+    "dining_capacity",
+    "has_kitchen",
+    "website_url",
+    "notes",
 ]
 
 
@@ -33,6 +41,13 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "latitude": Decimal("46.123"),
         "longitude": Decimal("11.456"),
         "type": "house",
+        "beds": 48,
+        "bathrooms": 6,
+        "showers": 10,
+        "dining_capacity": 60,
+        "has_kitchen": True,
+        "website_url": "https://example.org/casa-alpina",
+        "notes": "Spazi esterni ampi",
     },
     {
         "name": "Terreno Pianura",
@@ -42,6 +57,13 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "latitude": Decimal("45.45"),
         "longitude": Decimal("9.12"),
         "type": "land",
+        "beds": None,
+        "bathrooms": 2,
+        "showers": None,
+        "dining_capacity": 40,
+        "has_kitchen": False,
+        "website_url": "https://example.org/terreno",
+        "notes": "Ideale per campi estivi",
     },
 ]
 
@@ -64,6 +86,13 @@ class StructureImportRow:
     latitude: Decimal | None
     longitude: Decimal | None
     type: StructureType
+    beds: int | None
+    bathrooms: int | None
+    showers: int | None
+    dining_capacity: int | None
+    has_kitchen: bool | None
+    website_url: str | None
+    notes: str | None
 
 
 @dataclass(slots=True)
@@ -110,6 +139,43 @@ def _validate_type(value: str) -> StructureType:
         return StructureType(value.lower())
     except ValueError as exc:
         raise ValueError("must be one of house, land, mixed") from exc
+
+
+def _validate_positive_int(value: object, *, allow_empty: bool = True) -> int | None:
+    text = _normalise_text(value)
+    if not text:
+        return None if allow_empty else 0
+    try:
+        number = int(text)
+    except ValueError as exc:
+        raise ValueError("must be an integer") from exc
+    if number < 0:
+        raise ValueError("must be zero or greater")
+    return number
+
+
+def _validate_bool(value: object) -> bool | None:
+    text = _normalise_text(value)
+    if not text:
+        return None
+    lowered = text.lower()
+    truthy = {"true", "1", "yes", "y", "si", "sì"}
+    falsy = {"false", "0", "no", "n"}
+    if lowered in truthy:
+        return True
+    if lowered in falsy:
+        return False
+    raise ValueError("must be true or false")
+
+
+def _validate_url(value: object) -> str | None:
+    text = _normalise_text(value)
+    if not text:
+        return None
+    parsed = urlparse(text)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("must be a valid http or https URL")
+    return text
 
 
 def _validate_latitude(value: Decimal | None) -> Decimal | None:
@@ -170,6 +236,13 @@ def _process_rows(
         latitude_raw = values[4]
         longitude_raw = values[5]
         type_raw = values[6]
+        beds_raw = values[7]
+        bathrooms_raw = values[8]
+        showers_raw = values[9]
+        dining_capacity_raw = values[10]
+        has_kitchen_raw = values[11]
+        website_url_raw = values[12]
+        notes_raw = values[13]
 
         row_errors: list[RowError] = []
 
@@ -222,6 +295,56 @@ def _process_rows(
             )
             structure_type = StructureType.HOUSE
 
+        try:
+            beds = _validate_positive_int(beds_raw)
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="beds", message=str(exc), source_format=source_format)
+            )
+            beds = None
+
+        try:
+            bathrooms = _validate_positive_int(bathrooms_raw)
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="bathrooms", message=str(exc), source_format=source_format)
+            )
+            bathrooms = None
+
+        try:
+            showers = _validate_positive_int(showers_raw)
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="showers", message=str(exc), source_format=source_format)
+            )
+            showers = None
+
+        try:
+            dining_capacity = _validate_positive_int(dining_capacity_raw)
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="dining_capacity", message=str(exc), source_format=source_format)
+            )
+            dining_capacity = None
+
+        try:
+            has_kitchen = _validate_bool(has_kitchen_raw)
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="has_kitchen", message=str(exc), source_format=source_format)
+            )
+            has_kitchen = None
+
+        try:
+            website_url = _validate_url(website_url_raw)
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="website_url", message=str(exc), source_format=source_format)
+            )
+            website_url = None
+
+        notes = _normalise_text(notes_raw) or None
+
         if slug and slug in seen_slugs:
             row_errors.append(
                 RowError(
@@ -248,6 +371,13 @@ def _process_rows(
                 latitude=latitude,
                 longitude=longitude,
                 type=structure_type,
+                beds=beds,
+                bathrooms=bathrooms,
+                showers=showers,
+                dining_capacity=dining_capacity,
+                has_kitchen=has_kitchen,
+                website_url=website_url,
+                notes=notes,
             )
         )
 
@@ -340,6 +470,13 @@ def build_structures_template_workbook() -> bytes:
                 row["latitude"],
                 row["longitude"],
                 row["type"],
+                row["beds"],
+                row["bathrooms"],
+                row["showers"],
+                row["dining_capacity"],
+                row["has_kitchen"],
+                row["website_url"],
+                row["notes"],
             ]
         )
     output = BytesIO()
@@ -361,6 +498,13 @@ def build_structures_template_csv() -> str:
                 row["latitude"],
                 row["longitude"],
                 row["type"],
+                row["beds"],
+                row["bathrooms"],
+                row["showers"],
+                row["dining_capacity"],
+                row["has_kitchen"],
+                row["website_url"],
+                row["notes"],
             ]
         )
     return output.getvalue()

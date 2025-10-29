@@ -37,6 +37,13 @@ const structureWithDetails: Structure = {
   latitude: null,
   longitude: null,
   type: "mixed",
+  beds: null,
+  bathrooms: null,
+  showers: null,
+  dining_capacity: null,
+  has_kitchen: false,
+  website_url: null,
+  notes: null,
   created_at: new Date("2024-05-01T00:00:00Z").toISOString(),
   estimated_cost: 9.5,
   cost_band: "cheap",
@@ -73,12 +80,12 @@ describe("StructureDetailsPage tabs", () => {
 
     await waitFor(() => expect(screen.getByText(/Test Base/)).toBeInTheDocument());
 
-    await user.click(screen.getByRole("button", { name: /Availability/i }));
+    await user.click(screen.getByRole("button", { name: /Disponibilità/i }));
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByText(/summer/i)).toBeInTheDocument();
     expect(screen.getByText(/LC/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Costs/i }));
+    await user.click(screen.getByRole("button", { name: /Costi/i }));
     expect(screen.getByText(/per_person_day/i)).toBeInTheDocument();
     expect(screen.getByText(/Deposit:/i)).toBeInTheDocument();
 

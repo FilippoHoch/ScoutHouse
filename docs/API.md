@@ -156,6 +156,8 @@ The detailed payload contains:
   `deposit`, `city_tax_per_night`, and `utilities_flat`
 - `estimated_cost` and `cost_band`: the average daily rate calculated from the
   configured cost options
+- Logistic metadata such as `beds`, `bathrooms`, `showers`,
+  `dining_capacity`, `has_kitchen`, `website_url`, and free-form `notes`
 - `contacts`: when requested, each contact with `name`, `role`, `email`, `phone`,
   `preferred_channel`, `is_primary`, and timestamps
 
@@ -228,7 +230,8 @@ Accepted MIME types are `application/vnd.openxmlformats-officedocument.spreadshe
 `application/csv`, and `text/csv`, up to 5 MB in size and 2 000 data rows. CSV
 files must be UTF-8 encoded, comma-separated, and use `.` for decimals. The
 file must contain the following headers as the first row: `name`, `slug`,
-`province`, `address`, `latitude`, `longitude`, `type`.
+`province`, `address`, `latitude`, `longitude`, `type`, `beds`, `bathrooms`,
+`showers`, `dining_capacity`, `has_kitchen`, `website_url`, `notes`.
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/import/structures?dry_run=true" \
@@ -271,6 +274,11 @@ Validation rules:
 - `type` must be one of `house`, `land`, `mixed`.
 - `latitude`/`longitude`, when provided, must fall within the [-90, 90] and
   [-180, 180] ranges respectively.
+- `beds`, `bathrooms`, `showers`, and `dining_capacity` must be integers greater
+  than or equal to zero when provided.
+- `has_kitchen` accepts boolean-like values (`true`, `false`, `1`, `0`, `yes`,
+  `no`).
+- `website_url`, when present, must be a valid HTTP or HTTPS URL.
 
 Validation errors include the `source_format` attribute so clients can surface
 whether the payload originated from a CSV or XLSX file.
@@ -280,8 +288,11 @@ the response.
 
 ## POST `/api/v1/structures/`
 
-Create a new structure. Payload must include `name`, `slug`, `type`, and (optionally)
-`province`, `address`, `latitude`, and `longitude`.
+Create a new structure. Payload must include `name`, `slug`, `type` and may
+optionally include `province`, `address`, geographic coordinates, and logistic
+metadata such as `beds`, `bathrooms`, `showers`, `dining_capacity`,
+`has_kitchen`, `website_url`, and `notes`. Any authenticated user can create a
+structure; admin privileges are not required.
 
 Validation rules:
 
@@ -289,6 +300,11 @@ Validation rules:
 - `province`, when provided, must be a two-letter code.
 - Latitude and longitude must fall within valid coordinate ranges.
 - `type` must be one of `house`, `land`, `mixed`.
+- `beds`, `bathrooms`, `showers`, and `dining_capacity`, when provided, must be
+  integers greater than or equal to zero.
+- `has_kitchen` accepts truthy values (`true`, `false`, `1`, `0`) and defaults to
+  `false`.
+- `website_url`, when provided, must be a valid HTTP or HTTPS URL.
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/structures/ \
@@ -300,11 +316,20 @@ curl -X POST http://localhost:8000/api/v1/structures/ \
         "type": "mixed",
         "address": "Via dei Colli 22, Bardolino",
         "latitude": 45.5603,
-        "longitude": 10.7218
+        "longitude": 10.7218,
+        "beds": 80,
+        "bathrooms": 8,
+        "dining_capacity": 110,
+        "has_kitchen": true,
+        "website_url": "https://example.org/centro-garda"
       }'
 ```
 
 ## Availability and cost management
+
+Authenticated users can manage seasonal availability and cost options; admin
+privileges are not required. Requests must include a bearer token obtained via
+the standard login flow.
 
 ### POST `/api/v1/structures/{id}/availabilities`
 

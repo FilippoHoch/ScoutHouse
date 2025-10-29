@@ -152,6 +152,9 @@ export const StructureDetailsPage = () => {
   const googleMapsUrl = hasCoordinates
     ? `https://www.google.com/maps?q=${structure.latitude},${structure.longitude}`
     : null;
+  const kitchenLabel = structure.has_kitchen
+    ? t("structures.details.overview.hasKitchen.yes")
+    : t("structures.details.overview.hasKitchen.no");
 
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
@@ -298,6 +301,54 @@ export const StructureDetailsPage = () => {
           </p>
         )}
 
+        <div className="structure-logistics">
+          <h3>{t("structures.details.overview.logistics")}</h3>
+          <dl className="structure-logistics-grid">
+            <dt>{t("structures.details.overview.hasKitchen.label")}</dt>
+            <dd>{kitchenLabel}</dd>
+            {structure.beds !== null && (
+              <>
+                <dt>{t("structures.details.overview.beds")}</dt>
+                <dd>{structure.beds}</dd>
+              </>
+            )}
+            {structure.bathrooms !== null && (
+              <>
+                <dt>{t("structures.details.overview.bathrooms")}</dt>
+                <dd>{structure.bathrooms}</dd>
+              </>
+            )}
+            {structure.showers !== null && (
+              <>
+                <dt>{t("structures.details.overview.showers")}</dt>
+                <dd>{structure.showers}</dd>
+              </>
+            )}
+            {structure.dining_capacity !== null && (
+              <>
+                <dt>{t("structures.details.overview.diningCapacity")}</dt>
+                <dd>{structure.dining_capacity}</dd>
+              </>
+            )}
+            <dt>{t("structures.details.overview.website")}</dt>
+            <dd>
+              {structure.website_url ? (
+                <a href={structure.website_url} target="_blank" rel="noopener noreferrer">
+                  {structure.website_url}
+                </a>
+              ) : (
+                t("structures.details.overview.websiteFallback")
+              )}
+            </dd>
+            {structure.notes && (
+              <>
+                <dt>{t("structures.details.overview.notes")}</dt>
+                <dd>{structure.notes}</dd>
+              </>
+            )}
+          </dl>
+        </div>
+
         <div
           className="map-placeholder"
           style={{ marginTop: "1rem", padding: "1rem", backgroundColor: "#f3f4f6" }}
@@ -328,28 +379,28 @@ export const StructureDetailsPage = () => {
             className={activeTab === "overview" ? "active" : ""}
             onClick={() => setActiveTab("overview")}
           >
-            Overview
+            {t("structures.details.tabs.overview")}
           </button>
           <button
             type="button"
             className={activeTab === "availability" ? "active" : ""}
             onClick={() => setActiveTab("availability")}
           >
-            Availability
+            {t("structures.details.tabs.availability")}
           </button>
           <button
             type="button"
             className={activeTab === "costs" ? "active" : ""}
             onClick={() => setActiveTab("costs")}
           >
-            Costs
+            {t("structures.details.tabs.costs")}
           </button>
           <button
             type="button"
             className={activeTab === "contacts" ? "active" : ""}
             onClick={() => setActiveTab("contacts")}
           >
-            {t("structures.contacts.tab")}
+            {t("structures.details.tabs.contacts")}
           </button>
           <button
             type="button"

@@ -930,6 +930,44 @@ table tbody tr:hover {
   resize: vertical;
 }
 
+.structure-form-field.checkbox-field label {
+  flex-direction: row;
+  align-items: center;
+}
+
+.structure-form-field.checkbox-field input[type="checkbox"] {
+  width: auto;
+  height: auto;
+}
+
+.structure-logistics {
+  margin-top: var(--space-xl);
+}
+
+.structure-logistics h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-muted-strong);
+  margin-bottom: var(--space-md);
+}
+
+.structure-logistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+}
+
+.structure-logistics-grid dt {
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.structure-logistics-grid dd {
+  margin: 0;
+  color: var(--color-muted);
+  word-break: break-word;
+}
+
 .structure-form-footnote {
   display: flex;
   flex-direction: column;

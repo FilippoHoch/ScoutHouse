@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.config import get_settings
 from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
-from app.deps import get_current_user, require_admin
+from app.deps import get_current_user
 from app.models import (
     Contact,
     Structure,
@@ -401,7 +401,7 @@ def create_structure(
     structure_in: StructureCreate,
     db: DbSession,
     request: Request,
-    admin_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Structure:
     existing = db.execute(
         select(Structure).where(Structure.slug == structure_in.slug)
@@ -412,13 +412,14 @@ def create_structure(
             detail="Slug already exists",
         )
 
-    structure = Structure(**structure_in.model_dump())
+    payload = structure_in.model_dump(mode="json")
+    structure = Structure(**payload)
     db.add(structure)
     db.flush()
 
     record_audit(
         db,
-        actor=admin_user,
+        actor=current_user,
         action="structure.create",
         entity_type="structure",
         entity_id=structure.id,
@@ -460,7 +461,7 @@ def create_structure_contact(
     contact_in: ContactCreate,
     db: DbSession,
     request: Request,
-    admin_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> ContactRead:
     structure = _get_structure_or_404(db, structure_id)
     payload = contact_in.model_dump()
@@ -481,7 +482,7 @@ def create_structure_contact(
 
     record_audit(
         db,
-        actor=admin_user,
+        actor=current_user,
         action="structure.contact.create",
         entity_type="structure_contact",
         entity_id=contact.id,
@@ -507,7 +508,7 @@ def update_structure_contact(
     contact_in: ContactUpdate,
     db: DbSession,
     request: Request,
-    admin_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> ContactRead:
     structure = _get_structure_or_404(db, structure_id)
     contact = _get_contact_or_404(db, structure.id, contact_id)
@@ -534,7 +535,7 @@ def update_structure_contact(
 
     record_audit(
         db,
-        actor=admin_user,
+        actor=current_user,
         action="structure.contact.update",
         entity_type="structure_contact",
         entity_id=contact.id,
@@ -556,7 +557,7 @@ def delete_structure_contact(
     contact_id: int,
     db: DbSession,
     request: Request,
-    admin_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     structure = _get_structure_or_404(db, structure_id)
     contact = _get_contact_or_404(db, structure.id, contact_id)
@@ -567,7 +568,7 @@ def delete_structure_contact(
 
     record_audit(
         db,
-        actor=admin_user,
+        actor=current_user,
         action="structure.contact.delete",
         entity_type="structure_contact",
         entity_id=contact_id,
@@ -592,7 +593,7 @@ def create_structure_availability(
     availability_in: StructureAvailabilityCreate,
     db: DbSession,
     request: Request,
-    admin_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> StructureAvailabilityRead:
     structure = _get_structure_or_404(db, structure_id)
 
@@ -608,7 +609,7 @@ def create_structure_availability(
 
     record_audit(
         db,
-        actor=admin_user,
+        actor=current_user,
         action="structure.availability.create",
         entity_type="structure_availability",
         entity_id=availability.id,
@@ -633,7 +634,7 @@ def upsert_structure_availabilities(
     availabilities_in: list[StructureAvailabilityUpdate],
     db: DbSession,
     request: Request,
-    admin_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[StructureAvailabilityRead]:
     structure = _get_structure_or_404(db, structure_id, with_details=True)
 
@@ -678,7 +679,7 @@ def upsert_structure_availabilities(
 
     record_audit(
         db,
-        actor=admin_user,
+        actor=current_user,
         action="structure.availability.upsert",
         entity_type="structure_availability",
         entity_id=structure_id,
@@ -709,7 +710,7 @@ def create_structure_cost_option(
     cost_option_in: StructureCostOptionCreate,
     db: DbSession,
     request: Request,
-    admin_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> StructureCostOptionRead:
     structure = _get_structure_or_404(db, structure_id)
 
@@ -728,7 +729,7 @@ def create_structure_cost_option(
 
     record_audit(
         db,
-        actor=admin_user,
+        actor=current_user,
         action="structure.cost_option.create",
         entity_type="structure_cost_option",
         entity_id=cost_option.id,
@@ -753,7 +754,7 @@ def upsert_structure_cost_options(
     cost_options_in: list[StructureCostOptionUpdate],
     db: DbSession,
     request: Request,
-    admin_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[StructureCostOptionRead]:
     structure = _get_structure_or_404(db, structure_id, with_details=True)
 
@@ -803,7 +804,7 @@ def upsert_structure_cost_options(
 
     record_audit(
         db,
-        actor=admin_user,
+        actor=current_user,
         action="structure.cost_option.upsert",
         entity_type="structure_cost_option",
         entity_id=structure_id,
