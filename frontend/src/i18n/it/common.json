@@ -119,17 +119,37 @@
       "description": "Compila il modulo per aggiungere una nuova struttura al catalogo.",
       "form": {
         "name": "Nome",
+        "namePlaceholder": "Es. Base scout Pian delle Betulle",
         "slug": "Slug",
         "slugHint": "Lo slug verrà usato nell'URL della struttura e deve essere univoco.",
+        "slugPreviewLabel": "L'URL pubblico sarà {{url}}",
+        "slugPreviewPlaceholder": "L'URL verrà generato automaticamente dal nome.",
         "type": "Tipologia",
         "typePlaceholder": "Seleziona tipologia",
+        "typeHint": "Scegli il tipo di struttura più rappresentativo.",
         "province": "Provincia",
+        "provincePlaceholder": "Es. MI",
         "provinceHint": "Usa il codice a due lettere (es. MI).",
         "address": "Indirizzo",
+        "addressPlaceholder": "Via e numero civico, comune, eventuali indicazioni…",
         "addressHint": "Indica via, numero civico e località se disponibili.",
         "latitude": "Latitudine",
         "longitude": "Longitudine",
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
+        "sections": {
+          "general": {
+            "title": "Informazioni principali",
+            "description": "Definisci i dati essenziali della struttura."
+          },
+          "location": {
+            "title": "Posizione e indirizzo",
+            "description": "Aiuta i volontari a raggiungere facilmente la struttura."
+          },
+          "coordinates": {
+            "title": "Coordinate geografiche",
+            "description": "Inserisci le coordinate se vuoi mostrare la struttura su una mappa."
+          }
+        },
         "submit": "Crea struttura",
         "submitting": "Creazione in corso…"
       },
@@ -141,6 +161,25 @@
         "latitudeInvalid": "La latitudine deve essere compresa tra -90 e 90.",
         "longitudeInvalid": "La longitudine deve essere compresa tra -180 e 180.",
         "saveFailed": "Impossibile creare la struttura."
+      },
+      "sidebar": {
+        "title": "Suggerimenti rapidi",
+        "items": {
+          "fields": "Compila i campi obbligatori contrassegnati con * per procedere.",
+          "details": "Aggiungi più dettagli possibili nell'indirizzo per aiutare chi deve arrivare.",
+          "coordinates": "Se conosci le coordinate inseriscile: saranno utili per la pianificazione degli spostamenti."
+        }
+      },
+      "preview": {
+        "title": "Anteprima scheda",
+        "namePlaceholder": "Nome struttura",
+        "typeFallback": "Tipologia da definire",
+        "provinceFallback": "Provincia non impostata",
+        "addressFallback": "Indirizzo non specificato",
+        "urlLabel": "URL: {{url}}",
+        "urlPlaceholder": "L'URL verrà mostrato qui appena inserisci lo slug.",
+        "coordinatesLabel": "Coordinate: {{lat}}, {{lon}}",
+        "coordinatesPlaceholder": "Inserisci latitudine e longitudine per completare l'anteprima."
       }
     },
     "contacts": {
@@ -281,7 +320,7 @@
     "types": {
       "house": "Casa",
       "land": "Terreno",
-      "mixed": "Mista"
+      "mixed": "Casa + terreno"
     },
     "costBands": {
       "cheap": "economica",

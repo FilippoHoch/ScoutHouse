@@ -820,6 +820,223 @@ table tbody tr:hover {
   gap: var(--space-lg);
 }
 
+.structure-create {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.structure-create-grid {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+@media (min-width: 1024px) {
+  .structure-create-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: flex-start;
+  }
+}
+
+.structure-create-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.structure-create-header {
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.structure-create-header h2 {
+  font-size: clamp(1.75rem, 1.5rem + 0.8vw, 2.25rem);
+}
+
+.structure-create-header p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.structure-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.structure-form-section {
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  background: var(--color-surface-muted);
+}
+
+.structure-form-section legend {
+  font-weight: 700;
+  color: var(--color-muted-strong);
+  padding: 0 var(--space-xs);
+}
+
+.structure-form-section > .helper-text {
+  margin-top: var(--space-sm);
+}
+
+.structure-field-grid {
+  display: grid;
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.structure-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.structure-form-field[data-span="full"] {
+  grid-column: 1 / -1;
+}
+
+.structure-form-field label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.structure-form-field input,
+.structure-form-field select,
+.structure-form-field textarea {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.65rem 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.structure-form-field input:focus,
+.structure-form-field select:focus,
+.structure-form-field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.structure-form-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.structure-form-footnote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.slug-preview {
+  color: var(--color-primary-strong);
+  font-weight: 600;
+}
+
+.structure-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.structure-create-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.structure-create-sidebar-card {
+  padding: var(--space-lg);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.08), transparent 70%);
+}
+
+.structure-create-sidebar-card h3 {
+  margin: 0 0 var(--space-sm);
+  font-size: 1.1rem;
+}
+
+.structure-create-sidebar-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: var(--space-sm);
+  color: var(--color-muted-strong);
+  font-size: 0.95rem;
+}
+
+.structure-preview-card {
+  display: grid;
+  gap: var(--space-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.structure-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  width: fit-content;
+}
+
+.structure-preview-card h4 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.structure-preview-subtitle {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.structure-preview-address {
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--color-muted);
+}
+
+.structure-preview-url {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, SFMono, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.structure-preview-hint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 1023px) {
+  .structure-form-section {
+    padding: var(--space-md);
+  }
+
+  .structure-preview-card {
+    padding: var(--space-md);
+  }
+}
+
 .attachments-section .dropzone {
   border: 2px dashed #cbd5f5;
   border-radius: var(--radius-md);
