@@ -6,12 +6,11 @@ down_revision = "20240320_0008"
 branch_labels = None
 depends_on = None
 
-contact_channel = sa.Enum(
+channel_enum = sa.Enum(
     "email",
     "phone",
     "other",
     name="contact_preferred_channel",
-    create_type=False,
     validate_strings=True,
 )
 
@@ -20,7 +19,7 @@ def upgrade():
     bind = op.get_bind()
     insp = sa.inspect(bind)
 
-    contact_channel.create(bind, checkfirst=True)
+    channel_enum.create(bind, checkfirst=True)
 
     if not insp.has_table("contacts"):
         op.create_table(
@@ -38,7 +37,14 @@ def upgrade():
             sa.Column("phone", sa.Text, nullable=True),
             sa.Column(
                 "preferred_channel",
-                contact_channel,
+                sa.Enum(
+                    "email",
+                    "phone",
+                    "other",
+                    name="contact_preferred_channel",
+                    create_type=False,
+                    validate_strings=True,
+                ),
                 nullable=False,
                 server_default=sa.text("'email'"),
             ),
@@ -161,4 +167,4 @@ def downgrade():
 
         op.drop_table("contacts")
 
-    contact_channel.drop(bind, checkfirst=True)
+    sa.Enum(name="contact_preferred_channel").drop(bind, checkfirst=True)
