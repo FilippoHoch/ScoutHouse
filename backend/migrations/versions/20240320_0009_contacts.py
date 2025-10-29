@@ -1,25 +1,28 @@
 from alembic import op
 import sqlalchemy as sa
 
+from migrations.utils.postgres import create_enum_if_not_exists, drop_enum_if_exists
+from sqlalchemy.dialects import postgresql
+
 revision = "20240320_0009_contacts"
 down_revision = "20240320_0008"
 branch_labels = None
 depends_on = None
 
-channel_enum = sa.Enum(
-    "email",
-    "phone",
-    "other",
-    name="contact_preferred_channel",
-    validate_strings=True,
-)
+CHANNEL_VALUES = ("email", "phone", "other")
 
 
 def upgrade():
     bind = op.get_bind()
     insp = sa.inspect(bind)
 
-    channel_enum.create(bind, checkfirst=True)
+    create_enum_if_not_exists("contact_preferred_channel", CHANNEL_VALUES)
+    preferred_channel = postgresql.ENUM(
+        *CHANNEL_VALUES,
+        name="contact_preferred_channel",
+        create_type=False,
+        validate_strings=True,
+    )
 
     if not insp.has_table("contacts"):
         op.create_table(
@@ -37,14 +40,7 @@ def upgrade():
             sa.Column("phone", sa.Text, nullable=True),
             sa.Column(
                 "preferred_channel",
-                sa.Enum(
-                    "email",
-                    "phone",
-                    "other",
-                    name="contact_preferred_channel",
-                    create_type=False,
-                    validate_strings=True,
-                ),
+                preferred_channel,
                 nullable=False,
                 server_default=sa.text("'email'"),
             ),
@@ -167,4 +163,4 @@ def downgrade():
 
         op.drop_table("contacts")
 
-    sa.Enum(name="contact_preferred_channel").drop(bind, checkfirst=True)
+    drop_enum_if_exists("contact_preferred_channel")

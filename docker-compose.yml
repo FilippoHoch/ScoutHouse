@@ -112,7 +112,7 @@ services:
         condition: service_healthy
       db-bootstrap:
         condition: service_completed_successfully
-    command: ["alembic", "upgrade", "head"]
+    command: ["/app/scripts/run-migrations.sh"]
     restart: "no"
 
   backup:
