@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DB="${APP_DB_NAME:-${POSTGRES_DB:-scouthouse}}"
-DB_USER="${APP_DB_USER:-scout}"
-DB_PASSWORD="${APP_DB_PASSWORD:-scout}"
+DB="${APP_DB_NAME:-${DB_APP_NAME:-${POSTGRES_DB:-scouthouse}}}"
+DB_USER="${APP_DB_USER:-${DB_APP_USER:-scout}}"
+DB_PASSWORD="${APP_DB_PASSWORD:-${DB_APP_PASSWORD:-scout}}"
 SUPERUSER="${POSTGRES_USER:-postgres}"
 
 psql -v ON_ERROR_STOP=1 -U "$SUPERUSER" -d postgres \
