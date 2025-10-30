@@ -235,6 +235,20 @@ header nav {
   flex-wrap: wrap;
 }
 
+.nav-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+}
+
+.nav-logo {
+  display: block;
+  width: 40px;
+  height: auto;
+}
+
 .nav-links a,
 .nav-links button {
   color: #111827;

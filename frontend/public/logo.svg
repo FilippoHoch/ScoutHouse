@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">ScoutHouse</title>
+  <defs>
+    <linearGradient id="roof" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#0ea5e9" />
+    </linearGradient>
+  </defs>
+  <g fill="none" fill-rule="evenodd">
+    <path d="M8 30L32 10l24 20" fill="url(#roof)" />
+    <rect x="14" y="28" width="36" height="24" rx="4" fill="#ffffff" />
+    <rect x="20" y="34" width="12" height="18" rx="2" fill="#bfdbfe" />
+    <rect x="34" y="34" width="12" height="12" rx="2" fill="#dbeafe" />
+    <path d="M14 52h36" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" />
+  </g>
+</svg>
