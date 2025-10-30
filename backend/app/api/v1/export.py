@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import csv
 import json
 import time
 from datetime import date
+from io import BytesIO, StringIO
 from typing import Annotated, Any
+from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
@@ -12,11 +15,23 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
 from app.deps import get_current_user, require_admin
-from app.models import Event, EventMember, Structure, StructureType, User, FirePolicy
+from app.models import (
+    Event,
+    EventMember,
+    FirePolicy,
+    Structure,
+    StructureOpenPeriod,
+    StructureOpenPeriodKind,
+    StructureOpenPeriodSeason,
+    StructureType,
+    User,
+)
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.user import EventMemberRole
 from app.services.audit import record_audit
 from app.services.costs import CostBand
+from openpyxl import Workbook
+
 from app.services.export import (
     rows_to_csv_stream,
     rows_to_json_stream,
@@ -46,13 +61,11 @@ CSV_HEADERS_STRUCTURES = (
     "indoor_beds",
     "indoor_bathrooms",
     "indoor_showers",
-    "dining_capacity",
+    "indoor_activity_rooms",
     "has_kitchen",
     "hot_water",
     "land_area_m2",
-    "max_tents",
     "shelter_on_field",
-    "toilets_on_field",
     "water_source",
     "electricity_available",
     "fire_policy",
@@ -60,17 +73,26 @@ CSV_HEADERS_STRUCTURES = (
     "access_by_coach",
     "access_by_public_transport",
     "coach_turning_area",
-    "max_vehicle_height_m",
     "nearest_bus_stop",
-    "winter_open",
     "weekend_only",
     "has_field_poles",
+    "pit_latrine_allowed",
     "website_url",
     "notes_logistics",
     "notes",
     "estimated_cost",
     "cost_band",
     "created_at",
+)
+
+CSV_HEADERS_OPEN_PERIODS = (
+    "structure_id",
+    "structure_slug",
+    "kind",
+    "season",
+    "date_start",
+    "date_end",
+    "notes",
 )
 
 CSV_HEADERS_EVENTS = (
@@ -127,10 +149,10 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
     CostBand | None,
     str | None,
     FirePolicy | None,
-    int | None,
     float | None,
     bool | None,
-    bool | None,
+    StructureOpenPeriodSeason | None,
+    date | None,
 ]:
     q = payload.get("q")
     province = payload.get("province")
@@ -140,10 +162,10 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
     cost_band_value = payload.get("cost_band")
     access_value = payload.get("access")
     fire_value = payload.get("fire")
-    min_tents_value = payload.get("min_tents")
     min_land_area_value = payload.get("min_land_area")
     hot_water_value = payload.get("hot_water")
-    winter_open_value = payload.get("winter_open")
+    open_in_season_value = payload.get("open_in_season")
+    open_on_date_value = payload.get("open_on_date")
 
     structure_type = None
     if type_value is not None:
@@ -180,15 +202,6 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
         except ValueError as exc:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid fire filter") from exc
 
-    min_tents = None
-    if min_tents_value is not None and min_tents_value != "":
-        try:
-            min_tents = int(min_tents_value)
-        except (ValueError, TypeError) as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_tents filter") from exc
-        if min_tents < 0:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_tents filter")
-
     min_land_area = None
     if min_land_area_value is not None and min_land_area_value != "":
         try:
@@ -199,7 +212,19 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_land_area filter")
 
     hot_water = _parse_bool(hot_water_value)
-    winter_open = _parse_bool(winter_open_value)
+    open_in_season = None
+    if open_in_season_value is not None and open_in_season_value != "":
+        try:
+            open_in_season = StructureOpenPeriodSeason(open_in_season_value)
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid open_in_season filter") from exc
+
+    open_on_date = None
+    if open_on_date_value is not None and str(open_on_date_value).strip():
+        try:
+            open_on_date = date.fromisoformat(str(open_on_date_value).strip())
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid open_on_date filter") from exc
 
     return (
         q,
@@ -210,10 +235,10 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
         cost_band,
         access_value,
         fire_policy,
-        min_tents,
         min_land_area,
         hot_water,
-        winter_open,
+        open_in_season,
+        open_on_date,
     )
 
 
@@ -223,6 +248,20 @@ def _build_structure_row(
     estimated_cost: float | None,
     cost_band: CostBand | None,
 ) -> dict[str, Any]:
+    open_periods_data = [
+        {
+            "id": period.id,
+            "kind": period.kind.value,
+            "season": period.season.value if period.season else None,
+            "date_start": period.date_start.isoformat() if period.date_start else None,
+            "date_end": period.date_end.isoformat() if period.date_end else None,
+            "notes": period.notes,
+        }
+        for period in sorted(
+            structure.open_periods,
+            key=lambda item: (item.kind.value, item.season.value if item.season else "", item.date_start or date.min),
+        )
+    ]
     return {
         "id": structure.id,
         "slug": structure.slug,
@@ -235,13 +274,11 @@ def _build_structure_row(
         "indoor_beds": structure.indoor_beds,
         "indoor_bathrooms": structure.indoor_bathrooms,
         "indoor_showers": structure.indoor_showers,
-        "dining_capacity": structure.dining_capacity,
+        "indoor_activity_rooms": structure.indoor_activity_rooms,
         "has_kitchen": structure.has_kitchen,
         "hot_water": structure.hot_water,
         "land_area_m2": float(structure.land_area_m2) if structure.land_area_m2 is not None else None,
-        "max_tents": structure.max_tents,
         "shelter_on_field": structure.shelter_on_field,
-        "toilets_on_field": structure.toilets_on_field,
         "water_source": structure.water_source.value if structure.water_source else None,
         "electricity_available": structure.electricity_available,
         "fire_policy": structure.fire_policy.value if structure.fire_policy else None,
@@ -249,19 +286,32 @@ def _build_structure_row(
         "access_by_coach": structure.access_by_coach,
         "access_by_public_transport": structure.access_by_public_transport,
         "coach_turning_area": structure.coach_turning_area,
-        "max_vehicle_height_m": float(structure.max_vehicle_height_m)
-        if structure.max_vehicle_height_m is not None
-        else None,
         "nearest_bus_stop": structure.nearest_bus_stop,
-        "winter_open": structure.winter_open,
         "weekend_only": structure.weekend_only,
         "has_field_poles": structure.has_field_poles,
+        "pit_latrine_allowed": structure.pit_latrine_allowed,
         "website_url": structure.website_url,
         "notes_logistics": structure.notes_logistics,
         "notes": structure.notes,
         "estimated_cost": estimated_cost,
         "cost_band": cost_band.value if cost_band else None,
         "created_at": structure.created_at.isoformat(),
+        "open_periods": open_periods_data,
+    }
+
+
+def _build_open_period_export_row(
+    structure: Structure,
+    period: StructureOpenPeriod,
+) -> dict[str, Any]:
+    return {
+        "structure_id": structure.id,
+        "structure_slug": structure.slug,
+        "kind": period.kind.value,
+        "season": period.season.value if period.season else None,
+        "date_start": period.date_start.isoformat() if period.date_start else None,
+        "date_end": period.date_end.isoformat() if period.date_end else None,
+        "notes": period.notes,
     }
 
 
@@ -298,6 +348,73 @@ def _render_rows(
     return StreamingResponse(rows_to_xlsx_stream(rows, headers), media_type=media_type)
 
 
+def _rows_to_csv_bytes(rows: list[dict[str, Any]], headers: tuple[str, ...]) -> bytes:
+    buffer = StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=list(headers))
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(row)
+    return buffer.getvalue().encode("utf-8")
+
+
+def _render_structures_csv(
+    rows: list[dict[str, Any]],
+    open_period_rows: list[dict[str, Any]],
+) -> StreamingResponse:
+    buffer = BytesIO()
+    with ZipFile(buffer, "w") as archive:
+        archive.writestr("structures.csv", _rows_to_csv_bytes(rows, CSV_HEADERS_STRUCTURES))
+        archive.writestr(
+            "structure_open_periods.csv",
+            _rows_to_csv_bytes(open_period_rows, CSV_HEADERS_OPEN_PERIODS),
+        )
+    buffer.seek(0)
+    return StreamingResponse(iter([buffer.getvalue()]), media_type="application/zip")
+
+
+def _render_structures_xlsx(
+    rows: list[dict[str, Any]],
+    open_period_rows: list[dict[str, Any]],
+) -> StreamingResponse:
+    workbook = Workbook()
+    main_sheet = workbook.active
+    main_sheet.title = "structures"
+    main_sheet.append(list(CSV_HEADERS_STRUCTURES))
+    for row in rows:
+        main_sheet.append([row.get(header) for header in CSV_HEADERS_STRUCTURES])
+
+    period_sheet = workbook.create_sheet("structure_open_periods")
+    period_sheet.append(list(CSV_HEADERS_OPEN_PERIODS))
+    for row in open_period_rows:
+        period_sheet.append([row.get(header) for header in CSV_HEADERS_OPEN_PERIODS])
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return StreamingResponse(iter([buffer.getvalue()]), media_type=MEDIA_TYPES["xlsx"])
+
+
+def _render_structures_export(
+    rows: list[dict[str, Any]],
+    open_period_rows: list[dict[str, Any]],
+    *,
+    export_format: str,
+) -> StreamingResponse:
+    if export_format == "json":
+        response = _render_rows(rows, export_format=export_format, headers=CSV_HEADERS_STRUCTURES)
+        response.headers["Content-Disposition"] = 'attachment; filename="structures.json"'
+        return response
+    if export_format == "csv":
+        response = _render_structures_csv(rows, open_period_rows)
+        response.headers["Content-Disposition"] = 'attachment; filename="structures.zip"'
+        return response
+    if export_format == "xlsx":
+        response = _render_structures_xlsx(rows, open_period_rows)
+        response.headers["Content-Disposition"] = 'attachment; filename="structures.xlsx"'
+        return response
+    raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unsupported export format")
+
+
 @router.get("/structures")
 def export_structures(
     format: str = Query(alias="format"),
@@ -321,10 +438,10 @@ def export_structures(
         cost_band,
         access_value,
         fire_policy,
-        min_tents,
         min_land_area,
         hot_water,
-        winter_open,
+        open_in_season,
+        open_on_date,
     ) = _normalise_structure_filters(payload)
 
     start_time = time.monotonic()
@@ -333,6 +450,7 @@ def export_structures(
         .options(
             selectinload(Structure.availabilities),
             selectinload(Structure.cost_options),
+            selectinload(Structure.open_periods),
         )
     )
 
@@ -367,17 +485,34 @@ def export_structures(
     if fire_policy is not None:
         conditions.append(Structure.fire_policy == fire_policy)
 
-    if min_tents is not None:
-        conditions.append(Structure.max_tents >= min_tents)
-
     if min_land_area is not None:
         conditions.append(Structure.land_area_m2 >= min_land_area)
 
     if hot_water is not None:
         conditions.append(Structure.hot_water.is_(hot_water))
 
-    if winter_open is not None:
-        conditions.append(Structure.winter_open.is_(winter_open))
+    if open_in_season is not None:
+        conditions.append(
+            select(StructureOpenPeriod.id)
+            .where(
+                StructureOpenPeriod.structure_id == Structure.id,
+                StructureOpenPeriod.kind == StructureOpenPeriodKind.SEASON,
+                StructureOpenPeriod.season == open_in_season,
+            )
+            .exists()
+        )
+
+    if open_on_date is not None:
+        conditions.append(
+            select(StructureOpenPeriod.id)
+            .where(
+                StructureOpenPeriod.structure_id == Structure.id,
+                StructureOpenPeriod.kind == StructureOpenPeriodKind.RANGE,
+                StructureOpenPeriod.date_start <= open_on_date,
+                StructureOpenPeriod.date_end >= open_on_date,
+            )
+            .exists()
+        )
 
     if conditions:
         query = query.where(and_(*conditions))
@@ -387,6 +522,7 @@ def export_structures(
     results = db.execute(query).unique().scalars().all()
 
     rows: list[dict[str, Any]] = []
+    open_period_rows: list[dict[str, Any]] = []
     for structure in results:
         matches, computed_band, estimated_cost = structure_matches_filters(
             structure,
@@ -404,14 +540,19 @@ def export_structures(
                 cost_band=computed_band,
             )
         )
+        for period in structure.open_periods:
+            open_period_rows.append(_build_open_period_export_row(structure, period))
 
         if len(rows) > MAX_EXPORT_ROWS:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Export limit exceeded")
         if time.monotonic() - start_time > EXPORT_TIMEOUT_SECONDS:
             raise HTTPException(status.HTTP_504_GATEWAY_TIMEOUT, detail="Export timed out")
 
-    response = _render_rows(rows, export_format=export_format, headers=CSV_HEADERS_STRUCTURES)
-    response.headers["Content-Disposition"] = f'attachment; filename="structures.{export_format}"'
+    response = _render_structures_export(
+        rows,
+        open_period_rows,
+        export_format=export_format,
+    )
 
     record_audit(
         db,

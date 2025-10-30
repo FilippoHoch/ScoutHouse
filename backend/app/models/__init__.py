@@ -12,7 +12,15 @@ from .event_contact_task import (
 from .quote import Quote, QuoteScenario
 from .audit_log import AuditLog
 from .user import EventMember, EventMemberRole, PasswordResetToken, RefreshToken, User
-from .structure import Structure, StructureType, FirePolicy, WaterSource
+from .structure import (
+    Structure,
+    StructureType,
+    FirePolicy,
+    WaterSource,
+    StructureOpenPeriod,
+    StructureOpenPeriodKind,
+    StructureOpenPeriodSeason,
+)
 from .attachment import Attachment, AttachmentOwnerType
 
 __all__ = [
@@ -45,4 +53,7 @@ __all__ = [
     "AuditLog",
     "FirePolicy",
     "WaterSource",
+    "StructureOpenPeriod",
+    "StructureOpenPeriodKind",
+    "StructureOpenPeriodSeason",
 ]

@@ -1,22 +1,24 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
+    Enum as SQLEnum,
+    ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
     Text,
     func,
-    Index,
 )
-from sqlalchemy.sql import expression
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import expression
 
 from app.core.db import Base
 from app.models.availability import StructureSeasonAvailability
@@ -43,6 +45,18 @@ class WaterSource(str, Enum):
     RIVER = "river"
 
 
+class StructureOpenPeriodKind(str, Enum):
+    SEASON = "season"
+    RANGE = "range"
+
+
+class StructureOpenPeriodSeason(str, Enum):
+    SPRING = "spring"
+    SUMMER = "summer"
+    AUTUMN = "autumn"
+    WINTER = "winter"
+
+
 class Structure(Base):
     __tablename__ = "structures"
 
@@ -60,7 +74,7 @@ class Structure(Base):
     indoor_beds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     indoor_bathrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     indoor_showers: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    dining_capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    indoor_activity_rooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     has_kitchen: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -74,14 +88,12 @@ class Structure(Base):
         default=False,
     )
     land_area_m2: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
-    max_tents: Mapped[int | None] = mapped_column(Integer, nullable=True)
     shelter_on_field: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         server_default=expression.false(),
         default=False,
     )
-    toilets_on_field: Mapped[int | None] = mapped_column(Integer, nullable=True)
     water_source: Mapped[WaterSource | None] = mapped_column(
         SQLEnum(WaterSource, name="water_source"),
         nullable=True,
@@ -120,14 +132,7 @@ class Structure(Base):
         server_default=expression.false(),
         default=False,
     )
-    max_vehicle_height_m: Mapped[Decimal | None] = mapped_column(Numeric(4, 2), nullable=True)
     nearest_bus_stop: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    winter_open: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
-    )
     weekend_only: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -135,6 +140,12 @@ class Structure(Base):
         default=False,
     )
     has_field_poles: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        default=False,
+    )
+    pit_latrine_allowed: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         server_default=expression.false(),
@@ -170,10 +181,44 @@ class Structure(Base):
         lazy="selectin",
         order_by="Contact.name",
     )
+    open_periods: Mapped[list["StructureOpenPeriod"]] = relationship(
+        "StructureOpenPeriod",
+        back_populates="structure",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="StructureOpenPeriod.id",
+    )
 
     @property
     def has_coords(self) -> bool:
         return self.latitude is not None and self.longitude is not None
+
+
+class StructureOpenPeriod(Base):
+    __tablename__ = "structure_open_periods"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    structure_id: Mapped[int] = mapped_column(
+        ForeignKey("structures.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    kind: Mapped[StructureOpenPeriodKind] = mapped_column(
+        SQLEnum(StructureOpenPeriodKind, name="structure_open_period_kind"),
+        nullable=False,
+    )
+    season: Mapped[StructureOpenPeriodSeason | None] = mapped_column(
+        SQLEnum(StructureOpenPeriodSeason, name="structure_open_period_season"),
+        nullable=True,
+    )
+    date_start: Mapped[date | None] = mapped_column(Date, nullable=True)
+    date_end: Mapped[date | None] = mapped_column(Date, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    structure: Mapped[Structure] = relationship(
+        Structure,
+        back_populates="open_periods",
+    )
 
 
 Index("ix_structures_lower_name", func.lower(Structure.name))
@@ -203,9 +248,29 @@ Index(
     postgresql_where=Structure.access_by_public_transport.is_(True),
 )
 
+Index(
+    "ix_structure_open_periods_structure_kind",
+    StructureOpenPeriod.structure_id,
+    StructureOpenPeriod.kind,
+)
+Index(
+    "ix_structure_open_periods_structure_season",
+    StructureOpenPeriod.structure_id,
+    StructureOpenPeriod.season,
+)
+Index(
+    "ix_structure_open_periods_structure_dates",
+    StructureOpenPeriod.structure_id,
+    StructureOpenPeriod.date_start,
+    StructureOpenPeriod.date_end,
+)
+
 __all__ = [
     "Structure",
     "StructureType",
     "FirePolicy",
     "WaterSource",
+    "StructureOpenPeriod",
+    "StructureOpenPeriodKind",
+    "StructureOpenPeriodSeason",
 ]

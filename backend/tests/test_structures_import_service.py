@@ -24,8 +24,8 @@ def test_house_row_ignores_outdoor_fields_with_warnings() -> None:
                 "indoor_beds": "18",
                 "shelter_on_field": "yes",
                 "land_area_m2": "450",
-                "max_tents": "12",
                 "fire_policy": "allowed",
+                "pit_latrine_allowed": "true",
             }
         ]
     )
@@ -45,9 +45,9 @@ def test_house_row_ignores_outdoor_fields_with_warnings() -> None:
     row = result.rows[0]
     assert row.indoor_beds == 18
     assert row.land_area_m2 is None
-    assert row.max_tents is None
     assert row.fire_policy is None
     assert row.shelter_on_field is False
+    assert row.pit_latrine_allowed is False
 
 
 def test_land_row_clears_indoor_fields_and_normalises_booleans() -> None:
@@ -60,12 +60,12 @@ def test_land_row_clears_indoor_fields_and_normalises_booleans() -> None:
                 "type": "land",
                 "indoor_beds": "20",
                 "indoor_showers": "4",
+                "indoor_activity_rooms": "2",
                 "has_kitchen": "YES",
                 "hot_water": "true",
                 "shelter_on_field": "si",
                 "electricity_available": "1",
-                "winter_open": "0",
-                "max_tents": "40",
+                "pit_latrine_allowed": "0",
             }
         ]
     )
@@ -85,9 +85,9 @@ def test_land_row_clears_indoor_fields_and_normalises_booleans() -> None:
     row = result.rows[0]
     assert row.indoor_beds is None
     assert row.indoor_showers is None
+    assert row.indoor_activity_rooms is None
     assert row.has_kitchen is False
     assert row.hot_water is False
     assert row.shelter_on_field is True
     assert row.electricity_available is True
-    assert row.winter_open is False
-    assert row.max_tents == 40
+    assert row.pit_latrine_allowed is False

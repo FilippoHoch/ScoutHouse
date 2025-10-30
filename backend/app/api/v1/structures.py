@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import date
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -13,29 +14,36 @@ from app.core.db import get_db
 from app.deps import get_current_user
 from app.models import (
     Contact,
+    FirePolicy,
     Structure,
     StructureCostOption,
+    StructureOpenPeriod,
+    StructureOpenPeriodKind,
+    StructureOpenPeriodSeason,
     StructureSeason,
     StructureSeasonAvailability,
     StructureType,
     StructureUnit,
     User,
-    FirePolicy,
 )
 from app.schemas import (
     ContactCreate,
     ContactRead,
     ContactUpdate,
-    StructureCreate,
     StructureAvailabilityCreate,
     StructureAvailabilityRead,
     StructureAvailabilityUpdate,
     StructureCostOptionCreate,
     StructureCostOptionRead,
     StructureCostOptionUpdate,
+    StructureCreate,
+    StructureOpenPeriodCreate,
+    StructureOpenPeriodRead,
+    StructureOpenPeriodUpdate,
     StructureRead,
     StructureSearchItem,
     StructureSearchResponse,
+    StructureUpdate,
 )
 from app.services.audit import record_audit
 from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
@@ -89,6 +97,53 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
     )
 
 
+def _serialize_open_period(period: StructureOpenPeriod) -> StructureOpenPeriodRead:
+    return StructureOpenPeriodRead(
+        id=period.id,
+        kind=period.kind,
+        season=period.season,
+        date_start=period.date_start,
+        date_end=period.date_end,
+        notes=period.notes,
+    )
+
+
+def _sync_open_periods(
+    structure: Structure,
+    payloads: Sequence[StructureOpenPeriodUpdate | StructureOpenPeriodCreate],
+    db: Session,
+) -> None:
+    existing = {period.id: period for period in structure.open_periods}
+    seen_ids: set[int] = set()
+
+    for item in payloads:
+        item_dict = item.model_dump()
+        period_id = item_dict.get("id")
+        if period_id is not None and period_id in existing:
+            period = existing[period_id]
+            period.kind = item_dict["kind"]
+            period.season = item_dict.get("season")
+            period.date_start = item_dict.get("date_start")
+            period.date_end = item_dict.get("date_end")
+            period.notes = item_dict.get("notes")
+            seen_ids.add(period_id)
+            continue
+
+        new_period = StructureOpenPeriod(
+            kind=item_dict["kind"],
+            season=item_dict.get("season"),
+            date_start=item_dict.get("date_start"),
+            date_end=item_dict.get("date_end"),
+            notes=item_dict.get("notes"),
+        )
+        structure.open_periods.append(new_period)
+
+    for period_id, period in list(existing.items()):
+        if period_id not in seen_ids:
+            structure.open_periods.remove(period)
+            db.delete(period)
+
+
 def _build_structure_read(
     structure: Structure,
     *,
@@ -113,6 +168,11 @@ def _build_structure_read(
             for option in structure.cost_options
         ]
 
+    update["open_periods"] = [
+        _serialize_open_period(period)
+        for period in structure.open_periods
+    ]
+
     if include_contacts:
         contacts = sorted(
             structure.contacts,
@@ -132,7 +192,7 @@ def _get_structure_or_404(
     with_details: bool = False,
     with_contacts: bool = False,
 ) -> Structure:
-    options = []
+    options = [selectinload(Structure.open_periods)]
     if with_details:
         options.extend(
             [
@@ -143,16 +203,13 @@ def _get_structure_or_404(
     if with_contacts:
         options.append(selectinload(Structure.contacts))
 
-    if options:
-        structure = (
-            db.execute(
-                select(Structure).options(*options).where(Structure.id == structure_id)
-            )
-            .unique()
-            .scalar_one_or_none()
+    structure = (
+        db.execute(
+            select(Structure).options(*options).where(Structure.id == structure_id)
         )
-    else:
-        structure = db.get(Structure, structure_id)
+        .unique()
+        .scalar_one_or_none()
+    )
     if structure is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -180,7 +237,11 @@ def _get_contact_or_404(db: Session, structure_id: int, contact_id: int) -> Cont
 
 @router.get("/", response_model=list[StructureRead])
 def list_structures(db: DbSession) -> Sequence[Structure]:
-    result = db.execute(select(Structure).order_by(Structure.created_at.desc()))
+    result = db.execute(
+        select(Structure)
+        .options(selectinload(Structure.open_periods))
+        .order_by(Structure.created_at.desc())
+    )
     return list(result.scalars().all())
 
 
@@ -197,7 +258,7 @@ def get_structure_by_slug(
     include_details = "details" in include_parts
     include_contacts = include_details or "contacts" in include_parts
 
-    query = select(Structure)
+    query = select(Structure).options(selectinload(Structure.open_periods))
     if include_details:
         query = query.options(
             selectinload(Structure.availabilities),
@@ -237,10 +298,10 @@ def search_structures(
     max_km: float | None = Query(default=None, gt=0),
     access: str | None = Query(default=None),
     fire_policy: FirePolicy | None = Query(default=None, alias="fire"),
-    min_tents: int | None = Query(default=None, ge=0),
     min_land_area: float | None = Query(default=None, ge=0),
     hot_water: bool | None = Query(default=None),
-    winter_open: bool | None = Query(default=None),
+    open_in_season: StructureOpenPeriodSeason | None = Query(default=None),
+    open_on_date: date | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     sort: str = Query(default=DEFAULT_SORT_FIELD),
@@ -260,6 +321,7 @@ def search_structures(
     query = select(Structure).options(
         selectinload(Structure.availabilities),
         selectinload(Structure.cost_options),
+        selectinload(Structure.open_periods),
     )
     filters = []
 
@@ -298,17 +360,34 @@ def search_structures(
     if fire_policy is not None:
         filters.append(Structure.fire_policy == fire_policy)
 
-    if min_tents is not None:
-        filters.append(Structure.max_tents >= min_tents)
-
     if min_land_area is not None:
         filters.append(Structure.land_area_m2 >= min_land_area)
 
     if hot_water is not None:
         filters.append(Structure.hot_water.is_(hot_water))
 
-    if winter_open is not None:
-        filters.append(Structure.winter_open.is_(winter_open))
+    if open_in_season is not None:
+        filters.append(
+            select(StructureOpenPeriod.id)
+            .where(
+                StructureOpenPeriod.structure_id == Structure.id,
+                StructureOpenPeriod.kind == StructureOpenPeriodKind.SEASON,
+                StructureOpenPeriod.season == open_in_season,
+            )
+            .exists()
+        )
+
+    if open_on_date is not None:
+        filters.append(
+            select(StructureOpenPeriod.id)
+            .where(
+                StructureOpenPeriod.structure_id == Structure.id,
+                StructureOpenPeriod.kind == StructureOpenPeriodKind.RANGE,
+                StructureOpenPeriod.date_start <= open_on_date,
+                StructureOpenPeriod.date_end >= open_on_date,
+            )
+            .exists()
+        )
 
     if filters or access_conditions:
         query = query.where(*filters)
@@ -459,8 +538,18 @@ def create_structure(
             detail="Slug already exists",
         )
 
-    payload = structure_in.model_dump(mode="json")
+    payload = structure_in.model_dump(mode="json", exclude={"open_periods"})
     structure = Structure(**payload)
+    structure.open_periods = [
+        StructureOpenPeriod(
+            kind=period.kind,
+            season=period.season,
+            date_start=period.date_start,
+            date_end=period.date_end,
+            notes=period.notes,
+        )
+        for period in structure_in.open_periods
+    ]
     db.add(structure)
     db.flush()
 
@@ -471,6 +560,65 @@ def create_structure(
         entity_type="structure",
         entity_id=structure.id,
         diff={"after": StructureRead.model_validate(structure).model_dump()},
+        request=request,
+    )
+
+    db.commit()
+    db.refresh(structure)
+    return structure
+
+
+@router.put("/{structure_id}", response_model=StructureRead)
+def update_structure(
+    structure_id: int,
+    structure_in: StructureUpdate,
+    db: DbSession,
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> Structure:
+    structure = _get_structure_or_404(
+        db,
+        structure_id,
+        with_details=True,
+        with_contacts=True,
+    )
+
+    if structure.slug != structure_in.slug:
+        conflict = db.execute(
+            select(Structure.id)
+            .where(Structure.slug == structure_in.slug, Structure.id != structure_id)
+            .limit(1)
+        ).scalar_one_or_none()
+        if conflict is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Slug already exists",
+            )
+
+    before_snapshot = StructureRead.model_validate(structure).model_dump()
+
+    payload = structure_in.model_dump(mode="json", exclude={"open_periods"})
+    for key, value in payload.items():
+        setattr(structure, key, value)
+
+    _sync_open_periods(structure, structure_in.open_periods, db)
+
+    db.flush()
+    db.refresh(structure)
+
+    after_snapshot = StructureRead.model_validate(structure).model_dump()
+
+    record_audit(
+        db,
+        actor=current_user,
+        action="structure.update",
+        entity_type="structure",
+        entity_id=structure.id,
+        diff={
+            "before": before_snapshot,
+            "after": after_snapshot,
+            "payload": structure_in.model_dump(),
+        },
         request=request,
     )
 
