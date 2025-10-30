@@ -46,15 +46,23 @@ def test_structures_flow() -> None:
         "indoor_beds": 48,
         "indoor_bathrooms": 6,
         "indoor_showers": 10,
-        "dining_capacity": 60,
+        "indoor_activity_rooms": 4,
         "has_kitchen": True,
         "hot_water": True,
         "access_by_car": True,
         "access_by_public_transport": True,
-        "winter_open": True,
         "website_url": "https://example.org/scout-center",
         "notes_logistics": "Ingresso pullman",
         "notes": "Struttura con ampi spazi verdi.",
+        "open_periods": [
+            {"kind": "season", "season": "summer", "notes": "Aperta in estate"},
+            {
+                "kind": "range",
+                "date_start": "2025-08-01",
+                "date_end": "2025-08-31",
+                "notes": "Chiusura straordinaria",
+            },
+        ],
     }
 
     create_resp = client.post("/api/v1/structures/", json=payload)
@@ -66,15 +74,15 @@ def test_structures_flow() -> None:
     assert created["indoor_beds"] == payload["indoor_beds"]
     assert created["indoor_bathrooms"] == payload["indoor_bathrooms"]
     assert created["indoor_showers"] == payload["indoor_showers"]
-    assert created["dining_capacity"] == payload["dining_capacity"]
+    assert created["indoor_activity_rooms"] == payload["indoor_activity_rooms"]
     assert created["has_kitchen"] is True
     assert created["hot_water"] is True
     assert created["access_by_car"] is True
     assert created["access_by_public_transport"] is True
-    assert created["winter_open"] is True
     assert created["website_url"] == payload["website_url"]
     assert created["notes_logistics"] == payload["notes_logistics"]
     assert created["notes"] == payload["notes"]
+    assert len(created["open_periods"]) == 2
 
     list_resp = client.get("/api/v1/structures/")
     assert list_resp.status_code == 200
@@ -84,7 +92,9 @@ def test_structures_flow() -> None:
 
     slug_resp = client.get("/api/v1/structures/by-slug/scout-training-center")
     assert slug_resp.status_code == 200
-    assert slug_resp.json()["id"] == created["id"]
+    slug_data = slug_resp.json()
+    assert slug_data["id"] == created["id"]
+    assert len(slug_data["open_periods"]) == 2
 
 
 def test_unique_slug_validation() -> None:
@@ -223,14 +233,14 @@ def test_search_supports_extended_filters() -> None:
         "indoor_beds": 24,
         "indoor_bathrooms": 4,
         "indoor_showers": 6,
-        "dining_capacity": 40,
+        "indoor_activity_rooms": 3,
         "has_kitchen": True,
         "hot_water": True,
         "access_by_car": True,
         "access_by_coach": True,
         "access_by_public_transport": True,
         "coach_turning_area": True,
-        "winter_open": True,
+        "open_periods": [{"kind": "season", "season": "summer"}],
     }
 
     land_payload = {
@@ -239,9 +249,7 @@ def test_search_supports_extended_filters() -> None:
         "province": "BG",
         "type": "land",
         "land_area_m2": 5000,
-        "max_tents": 60,
         "shelter_on_field": True,
-        "toilets_on_field": 6,
         "water_source": "tap",
         "electricity_available": False,
         "fire_policy": "allowed",
@@ -249,7 +257,14 @@ def test_search_supports_extended_filters() -> None:
         "access_by_coach": False,
         "access_by_public_transport": False,
         "has_field_poles": True,
-        "winter_open": False,
+        "pit_latrine_allowed": True,
+        "open_periods": [
+            {
+                "kind": "range",
+                "date_start": "2025-07-01",
+                "date_end": "2025-07-31",
+            }
+        ],
     }
 
     mixed_payload = {
@@ -259,17 +274,16 @@ def test_search_supports_extended_filters() -> None:
         "type": "mixed",
         "indoor_beds": 12,
         "indoor_bathrooms": 2,
-        "dining_capacity": 20,
+        "indoor_activity_rooms": 2,
         "has_kitchen": True,
         "hot_water": True,
         "land_area_m2": 2000,
-        "max_tents": 20,
         "shelter_on_field": False,
         "fire_policy": "with_permit",
         "access_by_car": True,
         "access_by_coach": True,
         "access_by_public_transport": False,
-        "winter_open": False,
+        "open_periods": [{"kind": "season", "season": "autumn"}],
     }
 
     for payload in (house_payload, land_payload, mixed_payload):
@@ -290,11 +304,6 @@ def test_search_supports_extended_filters() -> None:
     assert fire_allowed.status_code == 200
     assert [item["slug"] for item in fire_allowed.json()["items"]] == ["campo-pianura"]
 
-    tents_response = client.get("/api/v1/structures/search", params={"min_tents": 40})
-    assert tents_response.status_code == 200
-    tents_slugs = {item["slug"] for item in tents_response.json()["items"]}
-    assert tents_slugs == {"campo-pianura"}
-
     land_area_response = client.get("/api/v1/structures/search", params={"min_land_area": 3000})
     assert land_area_response.status_code == 200
     land_area_slugs = {item["slug"] for item in land_area_response.json()["items"]}
@@ -305,7 +314,12 @@ def test_search_supports_extended_filters() -> None:
     hot_water_slugs = {item["slug"] for item in hot_water_response.json()["items"]}
     assert hot_water_slugs == {"casa-bosco", "base-mista"}
 
-    winter_response = client.get("/api/v1/structures/search", params={"winter_open": 1})
-    assert winter_response.status_code == 200
-    winter_slugs = {item["slug"] for item in winter_response.json()["items"]}
-    assert winter_slugs == {"casa-bosco"}
+    season_response = client.get("/api/v1/structures/search", params={"open_in_season": "summer"})
+    assert season_response.status_code == 200
+    season_slugs = {item["slug"] for item in season_response.json()["items"]}
+    assert season_slugs == {"casa-bosco"}
+
+    date_response = client.get("/api/v1/structures/search", params={"open_on_date": "2025-07-15"})
+    assert date_response.status_code == 200
+    date_slugs = {item["slug"] for item in date_response.json()["items"]}
+    assert date_slugs == {"campo-pianura"}

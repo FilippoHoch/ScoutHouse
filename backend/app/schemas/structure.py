@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 import re
@@ -9,12 +9,62 @@ from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_valida
 
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.cost_option import StructureCostModel
-from app.models.structure import FirePolicy, StructureType, WaterSource
+from app.models.structure import (
+    FirePolicy,
+    StructureOpenPeriodKind,
+    StructureOpenPeriodSeason,
+    StructureType,
+    WaterSource,
+)
 from .contact import ContactRead
 from app.services.costs import CostBand
 
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+
+class StructureOpenPeriodBase(BaseModel):
+    kind: StructureOpenPeriodKind
+    season: StructureOpenPeriodSeason | None = None
+    date_start: date | None = None
+    date_end: date | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def validate_period(self) -> "StructureOpenPeriodBase":
+        if self.kind is StructureOpenPeriodKind.SEASON:
+            if self.season is None:
+                raise ValueError("Per i periodi stagionali è richiesta la stagione")
+            if self.date_start is not None or self.date_end is not None:
+                raise ValueError(
+                    "I periodi stagionali non devono includere date di inizio o fine"
+                )
+        elif self.kind is StructureOpenPeriodKind.RANGE:
+            if self.season is not None:
+                raise ValueError(
+                    "I periodi a data libera non possono avere una stagione"
+                )
+            if self.date_start is None or self.date_end is None:
+                raise ValueError(
+                    "I periodi a data libera richiedono sia data di inizio che di fine"
+                )
+            if self.date_start > self.date_end:
+                raise ValueError("date_start non può essere successiva a date_end")
+        return self
+
+
+class StructureOpenPeriodCreate(StructureOpenPeriodBase):
+    pass
+
+
+class StructureOpenPeriodUpdate(StructureOpenPeriodBase):
+    id: int | None = None
+
+
+class StructureOpenPeriodRead(StructureOpenPeriodBase):
+    id: int
+
+    model_config = {"from_attributes": True}
 
 
 class StructureBase(BaseModel):
@@ -28,13 +78,11 @@ class StructureBase(BaseModel):
     indoor_beds: int | None = Field(default=None, ge=0)
     indoor_bathrooms: int | None = Field(default=None, ge=0)
     indoor_showers: int | None = Field(default=None, ge=0)
-    dining_capacity: int | None = Field(default=None, ge=0)
+    indoor_activity_rooms: int | None = Field(default=None, ge=0)
     has_kitchen: bool = False
     hot_water: bool = False
     land_area_m2: float | None = Field(default=None, ge=0)
-    max_tents: int | None = Field(default=None, ge=0)
     shelter_on_field: bool = False
-    toilets_on_field: int | None = Field(default=None, ge=0)
     water_source: WaterSource | None = None
     electricity_available: bool = False
     fire_policy: FirePolicy | None = None
@@ -42,11 +90,10 @@ class StructureBase(BaseModel):
     access_by_coach: bool = False
     access_by_public_transport: bool = False
     coach_turning_area: bool = False
-    max_vehicle_height_m: float | None = Field(default=None, ge=0)
     nearest_bus_stop: str | None = Field(default=None, max_length=255)
-    winter_open: bool = False
     weekend_only: bool = False
     has_field_poles: bool = False
+    pit_latrine_allowed: bool = False
     website_url: AnyHttpUrl | None = None
     notes_logistics: str | None = None
     notes: str | None = None
@@ -88,44 +135,64 @@ class StructureBase(BaseModel):
     @model_validator(mode="after")
     def validate_by_type(self) -> "StructureBase":
         structure_type = self.type
-        indoor_values = [
-            self.indoor_beds,
-            self.indoor_bathrooms,
-            self.indoor_showers,
-            self.dining_capacity,
-        ]
-        indoor_flags = [self.has_kitchen, self.hot_water]
-        outdoor_values = [
-            self.land_area_m2,
-            self.max_tents,
-            self.toilets_on_field,
-        ]
-        outdoor_flags = [
-            self.shelter_on_field,
-            self.water_source,
-            self.electricity_available,
-            self.fire_policy,
-            self.has_field_poles,
-        ]
+        indoor_fields = {
+            "indoor_beds": self.indoor_beds,
+            "indoor_bathrooms": self.indoor_bathrooms,
+            "indoor_showers": self.indoor_showers,
+            "indoor_activity_rooms": self.indoor_activity_rooms,
+        }
+        indoor_flags = {
+            "has_kitchen": self.has_kitchen,
+            "hot_water": self.hot_water,
+        }
+        outdoor_values = {
+            "land_area_m2": self.land_area_m2,
+        }
+        outdoor_flags = {
+            "shelter_on_field": self.shelter_on_field,
+            "water_source": self.water_source,
+            "electricity_available": self.electricity_available,
+            "fire_policy": self.fire_policy,
+            "has_field_poles": self.has_field_poles,
+            "pit_latrine_allowed": self.pit_latrine_allowed,
+        }
 
-        has_indoor_data = any(value not in (None, 0) for value in indoor_values) or any(flag is True for flag in indoor_flags)
-        has_outdoor_data = any(value not in (None, 0) for value in outdoor_values) or any(
-            flag not in (None, False) for flag in outdoor_flags
-        )
+        has_indoor_data = any(
+            value not in (None, 0) for value in indoor_fields.values()
+        ) or any(flag is True for flag in indoor_flags.values())
+        has_outdoor_data = any(
+            value not in (None, 0) for value in outdoor_values.values()
+        ) or any(flag not in (None, False) for flag in outdoor_flags.values())
 
         if structure_type == StructureType.HOUSE and has_outdoor_data:
-            raise ValueError("Campi outdoor non ammessi per type=house")
+            offending = [
+                name
+                for name, value in {**outdoor_values, **outdoor_flags}.items()
+                if value not in (None, False) and value != 0
+            ]
+            detail = ", ".join(sorted(offending)) if offending else "campi outdoor"
+            raise ValueError(
+                f"Campi outdoor non ammessi per type=house: {detail}"
+            )
         if structure_type == StructureType.LAND and has_indoor_data:
-            raise ValueError("Campi indoor non ammessi per type=land")
+            offending = [
+                name
+                for name, value in {**indoor_fields, **indoor_flags}.items()
+                if value not in (None, False) and value != 0
+            ]
+            detail = ", ".join(sorted(offending)) if offending else "campi indoor"
+            raise ValueError(
+                f"Campi indoor non ammessi per type=land: {detail}"
+            )
         return self
 
 
 class StructureCreate(StructureBase):
-    pass
+    open_periods: list[StructureOpenPeriodCreate] = Field(default_factory=list)
 
 
 class StructureUpdate(StructureBase):
-    pass
+    open_periods: list[StructureOpenPeriodUpdate] = Field(default_factory=list)
 
 
 class StructureAvailabilityBase(BaseModel):
@@ -202,6 +269,7 @@ class StructureRead(StructureBase):
     availabilities: list[StructureAvailabilityRead] | None = None
     cost_options: list[StructureCostOptionRead] | None = None
     contacts: list[ContactRead] | None = None
+    open_periods: list[StructureOpenPeriodRead] | None = None
 
     model_config = {
         "from_attributes": True,
@@ -259,4 +327,7 @@ __all__ = [
     "StructureCostOptionRead",
     "StructureCostOptionCreate",
     "StructureCostOptionUpdate",
+    "StructureOpenPeriodRead",
+    "StructureOpenPeriodCreate",
+    "StructureOpenPeriodUpdate",
 ]

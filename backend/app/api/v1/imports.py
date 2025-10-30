@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import date
 from functools import partial
 from pathlib import Path
 from typing import Annotated
@@ -11,9 +12,22 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.deps import require_admin
-from app.models import Structure, User
+from app.models import (
+    Structure,
+    StructureOpenPeriod,
+    StructureOpenPeriodKind,
+    StructureOpenPeriodSeason,
+    User,
+)
 from app.services.audit import record_audit
-from app.services.structures_import import ParsedWorkbook, TemplateFormat, parse_structures_file
+from app.services.structures_import import (
+    ParsedOpenPeriods,
+    ParsedWorkbook,
+    RowError,
+    TemplateFormat,
+    parse_structure_open_periods_file,
+    parse_structures_file,
+)
 
 router = APIRouter()
 
@@ -150,13 +164,11 @@ async def import_structures(
                 indoor_beds=row.indoor_beds,
                 indoor_bathrooms=row.indoor_bathrooms,
                 indoor_showers=row.indoor_showers,
-                dining_capacity=row.dining_capacity,
+                indoor_activity_rooms=row.indoor_activity_rooms,
                 has_kitchen=row.has_kitchen if row.has_kitchen is not None else False,
                 hot_water=row.hot_water if row.hot_water is not None else False,
                 land_area_m2=row.land_area_m2,
-                max_tents=row.max_tents,
                 shelter_on_field=row.shelter_on_field if row.shelter_on_field is not None else False,
-                toilets_on_field=row.toilets_on_field,
                 water_source=row.water_source,
                 electricity_available=(
                     row.electricity_available if row.electricity_available is not None else False
@@ -168,11 +180,12 @@ async def import_structures(
                     row.access_by_public_transport if row.access_by_public_transport is not None else False
                 ),
                 coach_turning_area=row.coach_turning_area if row.coach_turning_area is not None else False,
-                max_vehicle_height_m=row.max_vehicle_height_m,
                 nearest_bus_stop=row.nearest_bus_stop,
-                winter_open=row.winter_open if row.winter_open is not None else False,
                 weekend_only=row.weekend_only if row.weekend_only is not None else False,
                 has_field_poles=row.has_field_poles if row.has_field_poles is not None else False,
+                pit_latrine_allowed=(
+                    row.pit_latrine_allowed if row.pit_latrine_allowed is not None else False
+                ),
                 website_url=row.website_url,
                 notes_logistics=row.notes_logistics,
                 notes=row.notes,
@@ -189,16 +202,14 @@ async def import_structures(
             structure.indoor_beds = row.indoor_beds
             structure.indoor_bathrooms = row.indoor_bathrooms
             structure.indoor_showers = row.indoor_showers
-            structure.dining_capacity = row.dining_capacity
+            structure.indoor_activity_rooms = row.indoor_activity_rooms
             if row.has_kitchen is not None:
                 structure.has_kitchen = row.has_kitchen
             if row.hot_water is not None:
                 structure.hot_water = row.hot_water
             structure.land_area_m2 = row.land_area_m2
-            structure.max_tents = row.max_tents
             if row.shelter_on_field is not None:
                 structure.shelter_on_field = row.shelter_on_field
-            structure.toilets_on_field = row.toilets_on_field
             structure.water_source = row.water_source
             if row.electricity_available is not None:
                 structure.electricity_available = row.electricity_available
@@ -211,14 +222,13 @@ async def import_structures(
                 structure.access_by_public_transport = row.access_by_public_transport
             if row.coach_turning_area is not None:
                 structure.coach_turning_area = row.coach_turning_area
-            structure.max_vehicle_height_m = row.max_vehicle_height_m
             structure.nearest_bus_stop = row.nearest_bus_stop
-            if row.winter_open is not None:
-                structure.winter_open = row.winter_open
             if row.weekend_only is not None:
                 structure.weekend_only = row.weekend_only
             if row.has_field_poles is not None:
                 structure.has_field_poles = row.has_field_poles
+            if row.pit_latrine_allowed is not None:
+                structure.pit_latrine_allowed = row.pit_latrine_allowed
             structure.website_url = row.website_url
             structure.notes_logistics = row.notes_logistics
             structure.notes = row.notes
@@ -240,7 +250,179 @@ async def import_structures(
     )
     db.commit()
 
-    return {"created": created, "updated": updated, "skipped": parsed.blank_rows}
+    return {
+        "created": created,
+        "updated": updated,
+        "skipped": parsed.blank_rows,
+        "errors": errors_payload,
+        "source_format": parsed.source_format,
+    }
+
+
+@router.post("/structure-open-periods")
+async def import_structure_open_periods(
+    *,
+    request: Request,
+    db: DbSession,
+    admin: CurrentAdmin,
+    file: UploadFile = File(...),
+    dry_run: bool = Query(True, alias="dry_run"),
+) -> dict[str, object]:
+    source_format = _detect_source_format(file)
+    contents = await file.read()
+    await file.close()
+
+    if len(contents) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File too large. Maximum allowed size is 5 MB.",
+        )
+
+    loop = asyncio.get_running_loop()
+    try:
+        parsed = await asyncio.wait_for(
+            loop.run_in_executor(
+                None,
+                partial(
+                    parse_structure_open_periods_file,
+                    contents,
+                    source_format=source_format,
+                ),
+            ),
+            timeout=PARSE_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_408_REQUEST_TIMEOUT,
+            detail="Parsing timed out. Please try again with a smaller file.",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    errors_payload = _build_error_payload(parsed)
+    slugs = [row.structure_slug for row in parsed.rows]
+    structures = _lookup_existing_structures(db, slugs)
+
+    missing_errors = [
+        RowError(
+            row=row.row,
+            field="structure_slug",
+            message="Structure not found",
+            source_format=parsed.source_format,
+        )
+        for row in parsed.rows
+        if row.structure_slug not in structures
+    ]
+    if missing_errors:
+        parsed.errors.extend(missing_errors)
+        errors_payload.extend(
+            {
+                "row": item.row,
+                "field": item.field,
+                "msg": item.message,
+                "source_format": item.source_format,
+            }
+            for item in missing_errors
+        )
+
+    structure_ids = [structure.id for structure in structures.values()]
+    existing_periods = []
+    if structure_ids:
+        existing_periods = db.execute(
+            select(StructureOpenPeriod).where(StructureOpenPeriod.structure_id.in_(structure_ids))
+        ).scalars()
+
+    existing_keys: set[tuple[int, StructureOpenPeriodKind, StructureOpenPeriodSeason | None, date | None, date | None]] = {
+        (
+            period.structure_id,
+            period.kind,
+            period.season,
+            period.date_start,
+            period.date_end,
+        )
+        for period in existing_periods
+    }
+
+    duplicate_keys: set[tuple[int, StructureOpenPeriodKind, StructureOpenPeriodSeason | None, date | None, date | None]] = set()
+    for row in parsed.rows:
+        structure = structures.get(row.structure_slug)
+        if structure is None:
+            continue
+        key = (structure.id, row.kind, row.season, row.date_start, row.date_end)
+        if key in existing_keys:
+            duplicate_keys.add(key)
+        else:
+            existing_keys.add(key)
+
+    if dry_run:
+        preview: list[dict[str, object]] = []
+        for row in parsed.rows:
+            structure = structures.get(row.structure_slug)
+            if structure is None:
+                action = "missing_structure"
+            else:
+                key = (structure.id, row.kind, row.season, row.date_start, row.date_end)
+                action = "skip" if key in duplicate_keys else "create"
+            preview.append({"slug": row.structure_slug, "action": action})
+        return {
+            "valid_rows": len(parsed.rows),
+            "invalid_rows": len({error.row for error in parsed.errors}),
+            "errors": errors_payload,
+            "preview": preview,
+            "source_format": parsed.source_format,
+        }
+
+    if parsed.errors:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "Import blocked due to validation errors.", "errors": errors_payload},
+        )
+
+    created = 0
+    skipped = parsed.blank_rows + len(duplicate_keys)
+
+    seen_keys = set(existing_keys)
+    for row in parsed.rows:
+        structure = structures.get(row.structure_slug)
+        if structure is None:
+            continue
+        key = (structure.id, row.kind, row.season, row.date_start, row.date_end)
+        if key in seen_keys:
+            continue
+        period = StructureOpenPeriod(
+            structure_id=structure.id,
+            kind=row.kind,
+            season=row.season,
+            date_start=row.date_start,
+            date_end=row.date_end,
+            notes=row.notes,
+        )
+        db.add(period)
+        seen_keys.add(key)
+        created += 1
+
+    record_audit(
+        db,
+        actor=admin,
+        action="import_structure_open_periods",
+        entity_type="structure_open_period",
+        entity_id="import",
+        diff={
+            "created": created,
+            "skipped": skipped,
+            "total_rows": len(parsed.rows),
+        },
+        request=request,
+    )
+
+    db.commit()
+
+    return {
+        "created": created,
+        "skipped": skipped,
+        "errors": errors_payload,
+        "source_format": parsed.source_format,
+    }
 
 
 __all__ = ["router"]

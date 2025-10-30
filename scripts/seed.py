@@ -5,6 +5,7 @@ import csv
 import json
 from datetime import date
 from collections import defaultdict
+from datetime import date
 from decimal import Decimal
 import sys
 from pathlib import Path
@@ -31,6 +32,9 @@ from app.models import (  # noqa: E402
     StructureCostOption,
     StructureSeason,
     StructureSeasonAvailability,
+    StructureOpenPeriod,
+    StructureOpenPeriodKind,
+    StructureOpenPeriodSeason,
     StructureType,
     StructureUnit,
 )
@@ -42,6 +46,32 @@ DEFAULT_COST_DATASET = ROOT_DIR / "data" / "structures_costs_seed.csv"
 DEFAULT_EVENTS_DATASET = ROOT_DIR / "data" / "events_seed.csv"
 DEFAULT_EVENT_CANDIDATES_DATASET = ROOT_DIR / "data" / "event_candidates_seed.csv"
 DEFAULT_QUOTES_DATASET = ROOT_DIR / "data" / "quotes_seed.csv"
+
+OPEN_PERIOD_SEED: dict[str, list[dict[str, Any]]] = {
+    "casa-bosco": [
+        {
+            "kind": StructureOpenPeriodKind.SEASON,
+            "season": StructureOpenPeriodSeason.SUMMER,
+            "notes": "Disponibile in estate",
+        },
+        {
+            "kind": StructureOpenPeriodKind.RANGE,
+            "date_start": date(2025, 7, 1),
+            "date_end": date(2025, 7, 31),
+            "notes": "Turni estivi",
+        },
+    ],
+    "campo-pianura": [
+        {
+            "kind": StructureOpenPeriodKind.SEASON,
+            "season": StructureOpenPeriodSeason.SPRING,
+        },
+        {
+            "kind": StructureOpenPeriodKind.SEASON,
+            "season": StructureOpenPeriodSeason.SUMMER,
+        },
+    ],
+}
 
 
 def parse_float(value: str | None) -> float | None:
@@ -120,11 +150,12 @@ def seed_structures(dataset: Path) -> None:
                 "latitude": parse_float((row.get("latitude") or "").strip()),
                 "longitude": parse_float((row.get("longitude") or "").strip()),
                 "type": structure_type,
-                "beds": parse_int((row.get("beds") or "").strip()),
-                "bathrooms": parse_int((row.get("bathrooms") or "").strip()),
-                "showers": parse_int((row.get("showers") or "").strip()),
-                "dining_capacity": parse_int((row.get("dining_capacity") or "").strip()),
+                "indoor_beds": parse_int((row.get("indoor_beds") or row.get("beds") or "").strip()),
+                "indoor_bathrooms": parse_int((row.get("indoor_bathrooms") or row.get("bathrooms") or "").strip()),
+                "indoor_showers": parse_int((row.get("indoor_showers") or row.get("showers") or "").strip()),
+                "indoor_activity_rooms": parse_int((row.get("indoor_activity_rooms") or row.get("dining_capacity") or "").strip()),
                 "has_kitchen": parse_bool(row.get("has_kitchen")),
+                "pit_latrine_allowed": parse_bool(row.get("pit_latrine_allowed")),
                 "website_url": row.get("website_url", "").strip() or None,
                 "notes": row.get("notes", "").strip() or None,
             }
@@ -134,16 +165,33 @@ def seed_structures(dataset: Path) -> None:
             ).scalar_one_or_none()
 
             if existing is None:
-                session.add(Structure(**data))
+                structure = Structure(**data)
+                _apply_open_period_seed(structure, slug)
+                session.add(structure)
                 action = "created"
             else:
                 for key, value in data.items():
                     setattr(existing, key, value)
+                _apply_open_period_seed(existing, slug)
                 action = "updated"
 
             print(f"{action.capitalize()} structure '{slug}'")
 
         session.commit()
+
+
+def _apply_open_period_seed(structure: Structure, slug: str) -> None:
+    structure.open_periods.clear()
+    for entry in OPEN_PERIOD_SEED.get(slug, []):
+        structure.open_periods.append(
+            StructureOpenPeriod(
+                kind=entry["kind"],
+                season=entry.get("season"),
+                date_start=entry.get("date_start"),
+                date_end=entry.get("date_end"),
+                notes=entry.get("notes"),
+            )
+        )
 
 
 def seed_events(dataset: Path) -> None:

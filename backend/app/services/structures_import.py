@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from io import BytesIO, StringIO
 from typing import Iterator, Literal, Sequence
@@ -9,7 +10,13 @@ from urllib.parse import urlparse
 
 from openpyxl import Workbook, load_workbook
 
-from app.models.structure import FirePolicy, StructureType, WaterSource
+from app.models.structure import (
+    FirePolicy,
+    StructureOpenPeriodKind,
+    StructureOpenPeriodSeason,
+    StructureType,
+    WaterSource,
+)
 
 HEADERS = [
     "name",
@@ -22,13 +29,11 @@ HEADERS = [
     "indoor_beds",
     "indoor_bathrooms",
     "indoor_showers",
-    "dining_capacity",
+    "indoor_activity_rooms",
     "has_kitchen",
     "hot_water",
     "land_area_m2",
-    "max_tents",
     "shelter_on_field",
-    "toilets_on_field",
     "water_source",
     "electricity_available",
     "fire_policy",
@@ -36,13 +41,21 @@ HEADERS = [
     "access_by_coach",
     "access_by_public_transport",
     "coach_turning_area",
-    "max_vehicle_height_m",
     "nearest_bus_stop",
-    "winter_open",
     "weekend_only",
     "has_field_poles",
+    "pit_latrine_allowed",
     "website_url",
     "notes_logistics",
+    "notes",
+]
+
+OPEN_PERIOD_HEADERS = [
+    "structure_slug",
+    "kind",
+    "season",
+    "date_start",
+    "date_end",
     "notes",
 ]
 
@@ -62,13 +75,11 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "indoor_beds": 48,
         "indoor_bathrooms": 6,
         "indoor_showers": 10,
-        "dining_capacity": 60,
+        "indoor_activity_rooms": 4,
         "has_kitchen": True,
         "hot_water": True,
         "land_area_m2": None,
-        "max_tents": None,
         "shelter_on_field": False,
-        "toilets_on_field": None,
         "water_source": None,
         "electricity_available": True,
         "fire_policy": "with_permit",
@@ -76,11 +87,10 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "access_by_coach": True,
         "access_by_public_transport": True,
         "coach_turning_area": True,
-        "max_vehicle_height_m": Decimal("3.50"),
         "nearest_bus_stop": "Fermata Centro Scout",
-        "winter_open": True,
         "weekend_only": False,
         "has_field_poles": False,
+        "pit_latrine_allowed": False,
         "website_url": "https://example.org/casa-alpina",
         "notes_logistics": "Accesso anche con pullman",
         "notes": "Spazi esterni ampi",
@@ -96,13 +106,11 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "indoor_beds": None,
         "indoor_bathrooms": None,
         "indoor_showers": None,
-        "dining_capacity": None,
+        "indoor_activity_rooms": None,
         "has_kitchen": False,
         "hot_water": False,
         "land_area_m2": Decimal("5000"),
-        "max_tents": 60,
         "shelter_on_field": True,
-        "toilets_on_field": 6,
         "water_source": "tap",
         "electricity_available": False,
         "fire_policy": "allowed",
@@ -110,11 +118,10 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "access_by_coach": False,
         "access_by_public_transport": False,
         "coach_turning_area": False,
-        "max_vehicle_height_m": None,
         "nearest_bus_stop": None,
-        "winter_open": False,
         "weekend_only": True,
         "has_field_poles": True,
+        "pit_latrine_allowed": True,
         "website_url": "https://example.org/terreno",
         "notes_logistics": "Campo estivo disponibile da giugno a agosto",
         "notes": "Ideale per campi estivi",
@@ -143,13 +150,11 @@ class StructureImportRow:
     indoor_beds: int | None
     indoor_bathrooms: int | None
     indoor_showers: int | None
-    dining_capacity: int | None
+    indoor_activity_rooms: int | None
     has_kitchen: bool | None
     hot_water: bool | None
     land_area_m2: Decimal | None
-    max_tents: int | None
     shelter_on_field: bool | None
-    toilets_on_field: int | None
     water_source: WaterSource | None
     electricity_available: bool | None
     fire_policy: FirePolicy | None
@@ -157,11 +162,10 @@ class StructureImportRow:
     access_by_coach: bool | None
     access_by_public_transport: bool | None
     coach_turning_area: bool | None
-    max_vehicle_height_m: Decimal | None
     nearest_bus_stop: str | None
-    winter_open: bool | None
     weekend_only: bool | None
     has_field_poles: bool | None
+    pit_latrine_allowed: bool | None
     website_url: str | None
     notes_logistics: str | None
     notes: str | None
@@ -170,6 +174,25 @@ class StructureImportRow:
 @dataclass(slots=True)
 class ParsedWorkbook:
     rows: list[StructureImportRow]
+    errors: list[RowError]
+    blank_rows: int
+    source_format: TemplateFormat
+
+
+@dataclass(slots=True)
+class StructureOpenPeriodImportRow:
+    row: int
+    structure_slug: str
+    kind: StructureOpenPeriodKind
+    season: StructureOpenPeriodSeason | None
+    date_start: date | None
+    date_end: date | None
+    notes: str | None
+
+
+@dataclass(slots=True)
+class ParsedOpenPeriods:
+    rows: list[StructureOpenPeriodImportRow]
     errors: list[RowError]
     blank_rows: int
     source_format: TemplateFormat
@@ -351,28 +374,25 @@ def _process_rows(
         indoor_beds_raw = values[7]
         indoor_bathrooms_raw = values[8]
         indoor_showers_raw = values[9]
-        dining_capacity_raw = values[10]
+        indoor_activity_rooms_raw = values[10]
         has_kitchen_raw = values[11]
         hot_water_raw = values[12]
         land_area_raw = values[13]
-        max_tents_raw = values[14]
-        shelter_on_field_raw = values[15]
-        toilets_on_field_raw = values[16]
-        water_source_raw = values[17]
-        electricity_available_raw = values[18]
-        fire_policy_raw = values[19]
-        access_by_car_raw = values[20]
-        access_by_coach_raw = values[21]
-        access_by_public_transport_raw = values[22]
-        coach_turning_area_raw = values[23]
-        max_vehicle_height_raw = values[24]
-        nearest_bus_stop_raw = values[25]
-        winter_open_raw = values[26]
-        weekend_only_raw = values[27]
-        has_field_poles_raw = values[28]
-        website_url_raw = values[29]
-        notes_logistics_raw = values[30]
-        notes_raw = values[31]
+        shelter_on_field_raw = values[14]
+        water_source_raw = values[15]
+        electricity_available_raw = values[16]
+        fire_policy_raw = values[17]
+        access_by_car_raw = values[18]
+        access_by_coach_raw = values[19]
+        access_by_public_transport_raw = values[20]
+        coach_turning_area_raw = values[21]
+        nearest_bus_stop_raw = values[22]
+        weekend_only_raw = values[23]
+        has_field_poles_raw = values[24]
+        pit_latrine_allowed_raw = values[25]
+        website_url_raw = values[26]
+        notes_logistics_raw = values[27]
+        notes_raw = values[28]
 
         row_errors: list[RowError] = []
         row_warnings: list[RowError] = []
@@ -451,12 +471,17 @@ def _process_rows(
             indoor_showers = None
 
         try:
-            dining_capacity = _validate_positive_int(dining_capacity_raw)
+            indoor_activity_rooms = _validate_positive_int(indoor_activity_rooms_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="dining_capacity", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="indoor_activity_rooms",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
-            dining_capacity = None
+            indoor_activity_rooms = None
 
         try:
             has_kitchen = _validate_bool(has_kitchen_raw)
@@ -483,28 +508,12 @@ def _process_rows(
             land_area_m2 = None
 
         try:
-            max_tents = _validate_positive_int(max_tents_raw)
-        except ValueError as exc:
-            row_errors.append(
-                RowError(row=index, field="max_tents", message=str(exc), source_format=source_format)
-            )
-            max_tents = None
-
-        try:
             shelter_on_field = _validate_bool(shelter_on_field_raw)
         except ValueError as exc:
             row_errors.append(
                 RowError(row=index, field="shelter_on_field", message=str(exc), source_format=source_format)
             )
             shelter_on_field = None
-
-        try:
-            toilets_on_field = _validate_positive_int(toilets_on_field_raw)
-        except ValueError as exc:
-            row_errors.append(
-                RowError(row=index, field="toilets_on_field", message=str(exc), source_format=source_format)
-            )
-            toilets_on_field = None
 
         try:
             water_source = _validate_water_source(water_source_raw)
@@ -578,19 +587,6 @@ def _process_rows(
             coach_turning_area = None
 
         try:
-            max_vehicle_height_m = _validate_decimal_non_negative(max_vehicle_height_raw)
-        except ValueError as exc:
-            row_errors.append(
-                RowError(
-                    row=index,
-                    field="max_vehicle_height_m",
-                    message=str(exc),
-                    source_format=source_format,
-                )
-            )
-            max_vehicle_height_m = None
-
-        try:
             nearest_bus_stop = _validate_short_text(nearest_bus_stop_raw, max_length=255)
         except ValueError as exc:
             row_errors.append(
@@ -602,14 +598,6 @@ def _process_rows(
                 )
             )
             nearest_bus_stop = None
-
-        try:
-            winter_open = _validate_bool(winter_open_raw)
-        except ValueError as exc:
-            row_errors.append(
-                RowError(row=index, field="winter_open", message=str(exc), source_format=source_format)
-            )
-            winter_open = None
 
         try:
             weekend_only = _validate_bool(weekend_only_raw)
@@ -626,6 +614,19 @@ def _process_rows(
                 RowError(row=index, field="has_field_poles", message=str(exc), source_format=source_format)
             )
             has_field_poles = None
+
+        try:
+            pit_latrine_allowed = _validate_bool(pit_latrine_allowed_raw)
+        except ValueError as exc:
+            row_errors.append(
+                RowError(
+                    row=index,
+                    field="pit_latrine_allowed",
+                    message=str(exc),
+                    source_format=source_format,
+                )
+            )
+            pit_latrine_allowed = None
 
         try:
             website_url = _validate_url(website_url_raw)
@@ -647,15 +648,9 @@ def _process_rows(
             if land_area_m2 is not None:
                 _warn("land_area_m2", "Ignored for type=house")
                 land_area_m2 = None
-            if max_tents is not None:
-                _warn("max_tents", "Ignored for type=house")
-                max_tents = None
             if shelter_on_field:
                 _warn("shelter_on_field", "Ignored for type=house")
                 shelter_on_field = False
-            if toilets_on_field is not None:
-                _warn("toilets_on_field", "Ignored for type=house")
-                toilets_on_field = None
             if water_source is not None:
                 _warn("water_source", "Ignored for type=house")
                 water_source = None
@@ -668,6 +663,9 @@ def _process_rows(
             if has_field_poles:
                 _warn("has_field_poles", "Ignored for type=house")
                 has_field_poles = False
+            if pit_latrine_allowed:
+                _warn("pit_latrine_allowed", "Ignored for type=house")
+                pit_latrine_allowed = False
 
         if structure_type == StructureType.LAND:
             if indoor_beds is not None:
@@ -679,9 +677,9 @@ def _process_rows(
             if indoor_showers is not None:
                 _warn("indoor_showers", "Ignored for type=land")
                 indoor_showers = None
-            if dining_capacity is not None:
-                _warn("dining_capacity", "Ignored for type=land")
-                dining_capacity = None
+            if indoor_activity_rooms is not None:
+                _warn("indoor_activity_rooms", "Ignored for type=land")
+                indoor_activity_rooms = None
             if has_kitchen:
                 _warn("has_kitchen", "Ignored for type=land")
                 has_kitchen = False
@@ -718,13 +716,11 @@ def _process_rows(
                 indoor_beds=indoor_beds,
                 indoor_bathrooms=indoor_bathrooms,
                 indoor_showers=indoor_showers,
-                dining_capacity=dining_capacity,
+                indoor_activity_rooms=indoor_activity_rooms,
                 has_kitchen=has_kitchen,
                 hot_water=hot_water,
                 land_area_m2=land_area_m2,
-                max_tents=max_tents,
                 shelter_on_field=shelter_on_field,
-                toilets_on_field=toilets_on_field,
                 water_source=water_source,
                 electricity_available=electricity_available,
                 fire_policy=fire_policy,
@@ -732,11 +728,10 @@ def _process_rows(
                 access_by_coach=access_by_coach,
                 access_by_public_transport=access_by_public_transport,
                 coach_turning_area=coach_turning_area,
-                max_vehicle_height_m=max_vehicle_height_m,
                 nearest_bus_stop=nearest_bus_stop,
-                winter_open=winter_open,
                 weekend_only=weekend_only,
                 has_field_poles=has_field_poles,
+                pit_latrine_allowed=pit_latrine_allowed,
                 website_url=website_url,
                 notes_logistics=notes_logistics,
                 notes=notes,
@@ -745,6 +740,164 @@ def _process_rows(
         errors.extend(row_warnings)
 
     return ParsedWorkbook(
+        rows=stored_rows,
+        errors=errors,
+        blank_rows=blank_rows,
+        source_format=source_format,
+    )
+
+
+def _process_open_period_rows(
+    rows: Iterator[tuple[int, Sequence[object]]],
+    *,
+    source_format: TemplateFormat,
+    max_rows: int,
+) -> ParsedOpenPeriods:
+    processed_rows = 0
+    stored_rows: list[StructureOpenPeriodImportRow] = []
+    errors: list[RowError] = []
+    blank_rows = 0
+
+    for index, raw_values in rows:
+        values = list(raw_values)
+        if len(values) < len(OPEN_PERIOD_HEADERS):
+            values.extend([None] * (len(OPEN_PERIOD_HEADERS) - len(values)))
+        else:
+            values = values[: len(OPEN_PERIOD_HEADERS)]
+
+        if _is_blank_row(values):
+            blank_rows += 1
+            continue
+
+        processed_rows += 1
+        if processed_rows > max_rows:
+            raise ValueError(f"Too many rows. Maximum allowed is {max_rows}")
+
+        slug_raw, kind_raw, season_raw, date_start_raw, date_end_raw, notes_raw = values
+
+        row_errors: list[RowError] = []
+
+        try:
+            structure_slug = _validate_slug(_normalise_text(slug_raw))
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="structure_slug", message=str(exc), source_format=source_format)
+            )
+            structure_slug = ""
+
+        kind_text = _normalise_text(kind_raw).lower()
+        try:
+            kind = StructureOpenPeriodKind(kind_text)
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="kind", message="must be 'season' or 'range'", source_format=source_format)
+            )
+            kind = StructureOpenPeriodKind.SEASON
+
+        season: StructureOpenPeriodSeason | None = None
+        date_start: date | None = None
+        date_end: date | None = None
+
+        season_text = _normalise_text(season_raw).lower()
+        if season_text:
+            try:
+                season = StructureOpenPeriodSeason(season_text)
+            except ValueError as exc:
+                row_errors.append(
+                    RowError(row=index, field="season", message=str(exc), source_format=source_format)
+                )
+                season = None
+
+        date_start_text = _normalise_text(date_start_raw)
+        if date_start_text:
+            try:
+                date_start = date.fromisoformat(date_start_text)
+            except ValueError as exc:
+                row_errors.append(
+                    RowError(row=index, field="date_start", message="Invalid date", source_format=source_format)
+                )
+                date_start = None
+
+        date_end_text = _normalise_text(date_end_raw)
+        if date_end_text:
+            try:
+                date_end = date.fromisoformat(date_end_text)
+            except ValueError as exc:
+                row_errors.append(
+                    RowError(row=index, field="date_end", message="Invalid date", source_format=source_format)
+                )
+                date_end = None
+
+        if kind is StructureOpenPeriodKind.SEASON:
+            if season is None:
+                row_errors.append(
+                    RowError(
+                        row=index,
+                        field="season",
+                        message="Season is required for kind=season",
+                        source_format=source_format,
+                    )
+                )
+            if date_start is not None or date_end is not None:
+                row_errors.append(
+                    RowError(
+                        row=index,
+                        field="date_start",
+                        message="Dates must be empty for kind=season",
+                        source_format=source_format,
+                    )
+                )
+                date_start = None
+                date_end = None
+        else:  # range
+            if season is not None:
+                row_errors.append(
+                    RowError(
+                        row=index,
+                        field="season",
+                        message="Season must be empty for kind=range",
+                        source_format=source_format,
+                    )
+                )
+                season = None
+            if date_start is None or date_end is None:
+                row_errors.append(
+                    RowError(
+                        row=index,
+                        field="date_start",
+                        message="Both date_start and date_end are required for kind=range",
+                        source_format=source_format,
+                    )
+                )
+            elif date_start > date_end:
+                row_errors.append(
+                    RowError(
+                        row=index,
+                        field="date_start",
+                        message="date_start cannot be after date_end",
+                        source_format=source_format,
+                    )
+                )
+
+        notes = _normalise_text(notes_raw) or None
+
+        errors.extend(row_errors)
+        if row_errors:
+            continue
+
+        stored_rows.append(
+            StructureOpenPeriodImportRow(
+                row=index,
+                structure_slug=structure_slug,
+                kind=kind,
+                season=season,
+                date_start=date_start,
+                date_end=date_end,
+                notes=notes,
+            )
+        )
+
+    return ParsedOpenPeriods(
         rows=stored_rows,
         errors=errors,
         blank_rows=blank_rows,
@@ -818,6 +971,86 @@ def parse_structures_file(
     raise ValueError("Unsupported format")
 
 
+def parse_structure_open_periods_xlsx(
+    data: bytes,
+    *,
+    max_rows: int = 2000,
+) -> ParsedOpenPeriods:
+    if not data:
+        raise ValueError("The uploaded file is empty")
+
+    workbook = load_workbook(BytesIO(data), data_only=True, read_only=True)
+    try:
+        sheet = workbook.active
+        try:
+            header_row = next(sheet.iter_rows(max_row=1, values_only=True))
+        except StopIteration as exc:
+            raise ValueError("The uploaded file is empty") from exc
+
+        header = [str(cell) if cell is not None else "" for cell in header_row]
+        if [item.strip() for item in header] != OPEN_PERIOD_HEADERS:
+            raise ValueError("Invalid header. Please use the provided template")
+
+        rows = _process_open_period_rows(
+            (
+                (
+                    index,
+                    tuple(row or tuple()),
+                )
+                for index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2)
+            ),
+            source_format="xlsx",
+            max_rows=max_rows,
+        )
+        return rows
+    finally:
+        workbook.close()
+
+
+def parse_structure_open_periods_csv(
+    data: bytes,
+    *,
+    max_rows: int = 2000,
+) -> ParsedOpenPeriods:
+    if not data:
+        raise ValueError("The uploaded file is empty")
+
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError("CSV must be UTF-8 encoded") from exc
+
+    buffer = StringIO(text)
+    reader = csv.reader(buffer, delimiter=",")
+
+    try:
+        header = next(reader)
+    except StopIteration as exc:
+        raise ValueError("The uploaded file is empty") from exc
+
+    if [item.strip() for item in header] != OPEN_PERIOD_HEADERS:
+        raise ValueError("Invalid header. Please use the provided template")
+
+    return _process_open_period_rows(
+        ((index, row) for index, row in enumerate(reader, start=2)),
+        source_format="csv",
+        max_rows=max_rows,
+    )
+
+
+def parse_structure_open_periods_file(
+    data: bytes,
+    *,
+    source_format: TemplateFormat,
+    max_rows: int = 2000,
+) -> ParsedOpenPeriods:
+    if source_format == "xlsx":
+        return parse_structure_open_periods_xlsx(data, max_rows=max_rows)
+    if source_format == "csv":
+        return parse_structure_open_periods_csv(data, max_rows=max_rows)
+    raise ValueError("Unsupported format")
+
+
 def build_structures_template_workbook() -> bytes:
     workbook = Workbook()
     sheet = workbook.active
@@ -841,14 +1074,20 @@ def build_structures_template_csv() -> str:
 
 __all__ = [
     "HEADERS",
+    "OPEN_PERIOD_HEADERS",
     "TemplateFormat",
     "TEMPLATE_SAMPLE_ROWS",
     "ParsedWorkbook",
+    "ParsedOpenPeriods",
     "RowError",
     "StructureImportRow",
+    "StructureOpenPeriodImportRow",
     "parse_structures_file",
     "parse_structures_csv",
     "parse_structures_xlsx",
+    "parse_structure_open_periods_file",
+    "parse_structure_open_periods_csv",
+    "parse_structure_open_periods_xlsx",
     "build_structures_template_workbook",
     "build_structures_template_csv",
 ]

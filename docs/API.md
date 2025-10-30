@@ -97,10 +97,10 @@ coordinates configured via `DEFAULT_BASE_LAT`/`DEFAULT_BASE_LON`.
 | `cost_band` | string | Optional estimated cost band: `cheap`, `medium`, `expensive`. |
 | `access` | string | Filtra per accessibilità: combina `car`, `coach` o `pt` separati da `|`. |
 | `fire` | string | Policy fuochi: `allowed`, `with_permit`, `forbidden`. |
-| `min_tents` | integer | Numero minimo di tende supportate dal campo. |
 | `min_land_area` | number | Superficie minima dell'area esterna (in m²). |
 | `hot_water` | boolean | Richiede strutture con acqua calda disponibile (`1`, `true`, `yes`). |
-| `winter_open` | boolean | Richiede strutture aperte nel periodo invernale. |
+| `open_in_season` | string | Filtra strutture con almeno un periodo stagionale aperto (`spring`, `summer`, `autumn`, `winter`). |
+| `open_on_date` | string (YYYY-MM-DD) | Filtra strutture aperte in un intervallo che include la data indicata. |
 | `page` | integer | Page number (default `1`). |
 | `page_size` | integer | Page size (default `20`, max `100`). |
 | `sort` | string | Sort field: `distance`, `name`, or `created_at`. |
@@ -163,9 +163,10 @@ The detailed payload contains:
 - `estimated_cost` and `cost_band`: the average daily rate calculated from the
   configured cost options
 - Logistic metadata such as `indoor_beds`, `indoor_bathrooms`,
-  `indoor_showers`, `dining_capacity`, `has_kitchen`, `hot_water`,
-  `land_area_m2`, `max_tents`, `fire_policy`, accessibility flags,
-  `notes_logistics`, `website_url`, and free-form `notes`
+  `indoor_showers`, `indoor_activity_rooms`, `has_kitchen`, `hot_water`,
+  `land_area_m2`, `fire_policy`, accessibility flags,
+  `pit_latrine_allowed`, `notes_logistics`, `website_url`, and free-form `notes`
+- `open_periods`: elenco dei periodi stagionali o degli intervalli di date in cui la struttura è disponibile
 - `contacts`: when requested, each contact with `name`, `role`, `email`, `phone`,
   `preferred_channel`, `is_primary`, and timestamps
 
@@ -239,12 +240,12 @@ Accepted MIME types are `application/vnd.openxmlformats-officedocument.spreadshe
 files must be UTF-8 encoded, comma-separated, and use `.` for decimals. The
 file must contain the following headers as the first row: `name`, `slug`,
 `province`, `address`, `latitude`, `longitude`, `type`, `indoor_beds`,
-`indoor_bathrooms`, `indoor_showers`, `dining_capacity`, `has_kitchen`,
-`hot_water`, `land_area_m2`, `max_tents`, `shelter_on_field`,
-`toilets_on_field`, `water_source`, `electricity_available`, `fire_policy`,
+`indoor_bathrooms`, `indoor_showers`, `indoor_activity_rooms`, `has_kitchen`,
+`hot_water`, `land_area_m2`, `shelter_on_field`,
+`water_source`, `electricity_available`, `fire_policy`,
 `access_by_car`, `access_by_coach`, `access_by_public_transport`,
-`coach_turning_area`, `max_vehicle_height_m`, `nearest_bus_stop`, `winter_open`,
-`weekend_only`, `has_field_poles`, `website_url`, `notes_logistics`, `notes`.
+`coach_turning_area`, `nearest_bus_stop`,
+`weekend_only`, `has_field_poles`, `pit_latrine_allowed`, `website_url`, `notes_logistics`, `notes`.
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/import/structures?dry_run=true" \
@@ -276,7 +277,9 @@ updated. Blank rows are reported as `skipped`:
 {
   "created": 5,
   "updated": 12,
-  "skipped": 0
+  "skipped": 0,
+  "errors": [],
+  "source_format": "csv"
 }
 ```
 
@@ -287,8 +290,9 @@ Validation rules:
 - `type` must be one of `house`, `land`, `mixed`.
 - `latitude`/`longitude`, when provided, must fall within the [-90, 90] and
   [-180, 180] ranges respectively.
-- `beds`, `bathrooms`, `showers`, and `dining_capacity` must be integers greater
-  than or equal to zero when provided.
+- `indoor_beds`, `indoor_bathrooms`, `indoor_showers`, and
+  `indoor_activity_rooms` must be integers greater than or equal to zero when
+  provided.
 - `has_kitchen` accepts boolean-like values (`true`, `false`, `1`, `0`, `yes`,
   `no`).
 - `website_url`, when present, must be a valid HTTP or HTTPS URL.
@@ -299,12 +303,25 @@ whether the payload originated from a CSV or XLSX file.
 The backend logs an `import_structures` audit entry with the counts returned in
 the response.
 
+## POST `/api/v1/import/structure-open-periods`
+
+Importa periodi stagionali o intervalli di date per più strutture partendo da un
+file CSV/XLSX con le intestazioni `structure_slug`, `kind`, `season`,
+`date_start`, `date_end`, `notes`. Il campo `kind` accetta `season` oppure
+`range` e determina la validazione degli altri campi (stagione obbligatoria per
+`season`, date obbligatorie per `range`).
+
+La risposta segue la stessa struttura dell'import principale, con i periodi già
+esistenti ignorati automaticamente. In modalità `dry_run=true` viene fornita una
+preview con l'azione prevista per ogni riga.
+
 ## POST `/api/v1/structures/`
 
 Create a new structure. Payload must include `name`, `slug`, `type` and may
 optionally include `province`, `address`, geographic coordinates, and logistic
-metadata such as `beds`, `bathrooms`, `showers`, `dining_capacity`,
-`has_kitchen`, `website_url`, and `notes`. Any authenticated user can create a
+metadata such as `indoor_beds`, `indoor_bathrooms`, `indoor_showers`,
+`indoor_activity_rooms`, `has_kitchen`, `website_url`, and `notes`. Any
+authenticated user can create a
 structure; admin privileges are not required.
 
 Validation rules:
@@ -313,8 +330,9 @@ Validation rules:
 - `province`, when provided, must be a two-letter code.
 - Latitude and longitude must fall within valid coordinate ranges.
 - `type` must be one of `house`, `land`, `mixed`.
-- `beds`, `bathrooms`, `showers`, and `dining_capacity`, when provided, must be
-  integers greater than or equal to zero.
+- `indoor_beds`, `indoor_bathrooms`, `indoor_showers`, and
+  `indoor_activity_rooms`, when provided, must be integers greater than or equal
+  to zero.
 - `has_kitchen` accepts truthy values (`true`, `false`, `1`, `0`) and defaults to
   `false`.
 - `website_url`, when provided, must be a valid HTTP or HTTPS URL.
