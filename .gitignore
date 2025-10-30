@@ -17,6 +17,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!backend/.env
 !backend/.env.example
 !frontend/.env.example
 .mypy_cache/

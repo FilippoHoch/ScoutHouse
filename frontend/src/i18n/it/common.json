@@ -136,12 +136,6 @@
         "latitude": "Latitudine",
         "longitude": "Longitudine",
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
-        "beds": "Posti letto",
-        "bedsHint": "Indica quanti posti letto interni sono disponibili.",
-        "bathrooms": "Bagni",
-        "bathroomsHint": "Inserisci il numero totale di bagni utilizzabili.",
-        "showers": "Docce",
-        "showersHint": "Specificare le docce disponibili, se presenti.",
         "diningCapacity": "Posti a tavola",
         "diningCapacityHint": "Capienza indicativa della sala da pranzo o refettorio.",
         "hasKitchen": "Cucina attrezzata disponibile",
@@ -158,17 +152,85 @@
             "title": "Posizione e indirizzo",
             "description": "Aiuta i volontari a raggiungere facilmente la struttura."
           },
-          "logistics": {
-            "title": "Dettagli logistici",
-            "description": "Raccogli informazioni pratiche su spazi interni e servizi disponibili."
-          },
           "coordinates": {
             "title": "Coordinate geografiche",
             "description": "Inserisci le coordinate se vuoi mostrare la struttura su una mappa."
+          },
+          "indoor": {
+            "title": "Spazi interni",
+            "description": "Dettaglia posti letto e servizi disponibili all'interno."
+          },
+          "outdoor": {
+            "title": "Spazi esterni",
+            "description": "Descrivi l'area esterna, la capienza tende e le dotazioni disponibili."
+          },
+          "accessibility": {
+            "title": "Accessibilità e trasporti",
+            "description": "Aiuta a capire come raggiungere la struttura e quali mezzi sono adatti."
+          },
+          "operations": {
+            "title": "Operatività",
+            "description": "Specifica disponibilità stagionale e note organizzative importanti."
+          },
+          "extras": {
+            "title": "Link e note",
+            "description": "Aggiungi riferimenti utili e informazioni aggiuntive."
           }
         },
         "submit": "Crea struttura",
-        "submitting": "Creazione in corso…"
+        "submitting": "Creazione in corso…",
+        "indoorBeds": "Posti letto interni",
+        "indoorBedsHint": "Indica quanti posti letto al chiuso sono disponibili.",
+        "indoorBathrooms": "Bagni interni",
+        "indoorBathroomsHint": "Conta i bagni utilizzabili all'interno della struttura.",
+        "indoorShowers": "Docce interne",
+        "indoorShowersHint": "Specifica il numero di docce disponibili all'interno.",
+        "hotWater": "Acqua calda disponibile",
+        "hotWaterHint": "Spunta se è presente acqua calda per docce o lavelli.",
+        "landArea": "Superficie esterna (m²)",
+        "landAreaHint": "Inserisci l'area utilizzabile all'aperto, anche approssimativa.",
+        "maxTents": "Tende massime consigliate",
+        "maxTentsHint": "Numero indicativo di tende che il campo può ospitare.",
+        "shelterOnField": "Tettoia o rifugio sul campo",
+        "shelterOnFieldHint": "Spunta se è presente una tettoia o un riparo fisso nell'area esterna.",
+        "toiletsOnField": "Servizi igienici sul campo",
+        "toiletsOnFieldHint": "Numero di WC disponibili direttamente nell'area esterna (anche chimici).",
+        "waterSource": "Fonte d'acqua",
+        "waterSourcePlaceholder": "Seleziona la fonte",
+        "waterSourceHint": "Indica la principale fonte d'acqua disponibile nell'area esterna.",
+        "electricityAvailable": "Presa elettrica disponibile",
+        "electricityAvailableHint": "Spunta se nell'area esterna è presente un punto corrente utilizzabile.",
+        "firePolicy": "Regole per i fuochi",
+        "firePolicyPlaceholder": "Seleziona la regola",
+        "firePolicyHint": "Specifica se sono consentiti i fuochi e con quali limitazioni.",
+        "accessByCar": "Accesso con auto",
+        "accessByCoach": "Accesso con pullman",
+        "accessByCoachHint": "Segnala se un pullman può raggiungere o sostare vicino alla struttura.",
+        "accessByPublicTransport": "Raggiungibile con mezzi pubblici",
+        "accessByPublicTransportHint": "Indica se esistono collegamenti bus o treno nelle vicinanze.",
+        "coachTurningArea": "Area manovra per pullman",
+        "maxVehicleHeight": "Altezza massima veicoli (m)",
+        "maxVehicleHeightHint": "Lascia vuoto se non ci sono limitazioni di altezza note.",
+        "nearestBusStop": "Fermata più vicina",
+        "nearestBusStopHint": "Inserisci il nome o la distanza della fermata utile.",
+        "winterOpen": "Disponibile in inverno",
+        "weekendOnly": "Solo fine settimana",
+        "weekendOnlyHint": "Spunta se la struttura accetta gruppi solo durante il weekend.",
+        "notesLogistics": "Note logistiche",
+        "notesLogisticsHint": "Indica istruzioni operative (chiavi, accessi, limitazioni) utili per i capi.",
+        "hasFieldPoles": "Pali già presenti sul campo",
+        "hasFieldPolesHint": "Spunta se nell'area esterna sono disponibili pali fissi o strutture pronte.",
+        "waterSourceOptions": {
+          "none": "Nessuna",
+          "fountain": "Fontana",
+          "tap": "Rubinetto",
+          "river": "Fiume o ruscello"
+        },
+        "firePolicyOptions": {
+          "allowed": "Consentiti",
+          "with_permit": "Solo con autorizzazione",
+          "forbidden": "Vietati"
+        }
       },
       "errors": {
         "nameRequired": "Inserisci un nome per la struttura.",
@@ -179,14 +241,17 @@
         "longitudeInvalid": "La longitudine deve essere compresa tra -180 e 180.",
         "numberInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
         "websiteInvalid": "Inserisci un URL valido che inizi con http o https.",
-        "saveFailed": "Impossibile creare la struttura."
+        "saveFailed": "Impossibile creare la struttura.",
+        "decimalInvalid": "Inserisci un numero valido maggiore o uguale a zero."
       },
       "sidebar": {
         "title": "Suggerimenti rapidi",
         "items": {
           "fields": "Compila i campi obbligatori contrassegnati con * per procedere.",
           "details": "Aggiungi più dettagli possibili nell'indirizzo per aiutare chi deve arrivare.",
-          "logistics": "Annota capienza, servizi interni e note utili: saranno fondamentali in fase di scelta.",
+          "services": "Descrivi chiaramente quali servizi interni ed esterni sono disponibili.",
+          "accessibility": "Indica come arrivare e se ci sono limiti per pullman o mezzi alti.",
+          "operations": "Note logistiche precise aiutano chi organizza l'uscita.",
           "coordinates": "Se conosci le coordinate inseriscile: saranno utili per la pianificazione degli spostamenti."
         }
       },
@@ -303,6 +368,34 @@
       "costBand": {
         "label": "Fascia di costo"
       },
+      "firePolicy": {
+        "label": "Policy fuochi",
+        "options": {
+          "allowed": "Fuochi consentiti",
+          "with_permit": "Fuochi con permesso",
+          "forbidden": "Fuochi vietati"
+        }
+      },
+      "minTents": {
+        "label": "Min. tende",
+        "placeholder": "es. 10"
+      },
+      "minLandArea": {
+        "label": "Min. area esterna (m²)",
+        "placeholder": "es. 1000"
+      },
+      "access": {
+        "title": "Accessibilità",
+        "car": "Auto",
+        "coach": "Pullman",
+        "pt": "Trasporto pubblico"
+      },
+      "hotWater": {
+        "label": "Acqua calda"
+      },
+      "winterOpen": {
+        "label": "Aperto in inverno"
+      },
       "sort": {
         "label": "Ordina per",
         "distance": "Distanza",
@@ -334,7 +427,13 @@
         "season": "Stagione: {{value}}",
         "unit": "Unità: {{value}}",
         "costBand": "Fascia di costo: {{value}}",
-        "maxDistance": "Entro {{value}} km"
+        "maxDistance": "Entro {{value}} km",
+        "fire": "Fuochi: {{value}}",
+        "minTents": "Min. tende: {{value}}",
+        "minLandArea": "Area esterna ≥ {{value}} m²",
+        "access": "Accesso: {{value}}",
+        "hotWater": "Acqua calda disponibile",
+        "winterOpen": "Disponibile in inverno"
       }
     },
     "meta": {
@@ -349,7 +448,19 @@
       "estimatedCost": "Costo stimato: {{value}}",
       "costBand": "· fascia {{value}}",
       "viewDetails": "Dettagli",
-      "openMap": "Apri mappa"
+      "openMap": "Apri mappa",
+      "icons": {
+        "label": "Servizi rapidi",
+        "fire": {
+          "allowed": "Fuochi consentiti",
+          "with_permit": "Fuochi con permesso",
+          "forbidden": "Fuochi vietati"
+        },
+        "coach": "Accesso pullman",
+        "pt": "Trasporto pubblico vicino",
+        "kitchen": "Cucina disponibile",
+        "hotWater": "Acqua calda disponibile"
+      }
     },
     "pagination": {
       "label": "Paginazione strutture",

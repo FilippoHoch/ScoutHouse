@@ -20,6 +20,7 @@ from app.models import (
     StructureType,
     StructureUnit,
     User,
+    FirePolicy,
 )
 from app.schemas import (
     ContactCreate,
@@ -234,6 +235,12 @@ def search_structures(
     unit: StructureUnit | None = Query(default=None),
     cost_band: CostBand | None = Query(default=None),
     max_km: float | None = Query(default=None, gt=0),
+    access: str | None = Query(default=None),
+    fire_policy: FirePolicy | None = Query(default=None, alias="fire"),
+    min_tents: int | None = Query(default=None, ge=0),
+    min_land_area: float | None = Query(default=None, ge=0),
+    hot_water: bool | None = Query(default=None),
+    winter_open: bool | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     sort: str = Query(default=DEFAULT_SORT_FIELD),
@@ -271,8 +278,42 @@ def search_structures(
     if structure_type is not None:
         filters.append(Structure.type == structure_type)
 
-    if filters:
+    access_conditions: list[Any] = []
+    if access:
+        requested = {item.strip().lower() for item in access.split("|") if item.strip()}
+        valid_map = {
+            "car": Structure.access_by_car,
+            "coach": Structure.access_by_coach,
+            "pt": Structure.access_by_public_transport,
+        }
+        invalid = requested - set(valid_map.keys())
+        if invalid:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Invalid access filter",
+            )
+        for key in requested:
+            access_conditions.append(valid_map[key].is_(True))
+
+    if fire_policy is not None:
+        filters.append(Structure.fire_policy == fire_policy)
+
+    if min_tents is not None:
+        filters.append(Structure.max_tents >= min_tents)
+
+    if min_land_area is not None:
+        filters.append(Structure.land_area_m2 >= min_land_area)
+
+    if hot_water is not None:
+        filters.append(Structure.hot_water.is_(hot_water))
+
+    if winter_open is not None:
+        filters.append(Structure.winter_open.is_(winter_open))
+
+    if filters or access_conditions:
         query = query.where(*filters)
+        if access_conditions:
+            query = query.where(*access_conditions)
 
     results = db.execute(query).unique().scalars().all()
 
@@ -368,6 +409,12 @@ def search_structures(
             cost_band=band,
             seasons=seasons,
             units=units,
+            fire_policy=structure.fire_policy,
+            access_by_car=structure.access_by_car,
+            access_by_coach=structure.access_by_coach,
+            access_by_public_transport=structure.access_by_public_transport,
+            has_kitchen=structure.has_kitchen,
+            hot_water=structure.hot_water,
         )
         for structure, distance, band, estimated_cost, seasons, units in paginated
     ]

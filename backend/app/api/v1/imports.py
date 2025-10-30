@@ -147,12 +147,34 @@ async def import_structures(
                 latitude=row.latitude,
                 longitude=row.longitude,
                 type=row.type,
-                beds=row.beds,
-                bathrooms=row.bathrooms,
-                showers=row.showers,
+                indoor_beds=row.indoor_beds,
+                indoor_bathrooms=row.indoor_bathrooms,
+                indoor_showers=row.indoor_showers,
                 dining_capacity=row.dining_capacity,
                 has_kitchen=row.has_kitchen if row.has_kitchen is not None else False,
+                hot_water=row.hot_water if row.hot_water is not None else False,
+                land_area_m2=row.land_area_m2,
+                max_tents=row.max_tents,
+                shelter_on_field=row.shelter_on_field if row.shelter_on_field is not None else False,
+                toilets_on_field=row.toilets_on_field,
+                water_source=row.water_source,
+                electricity_available=(
+                    row.electricity_available if row.electricity_available is not None else False
+                ),
+                fire_policy=row.fire_policy,
+                access_by_car=row.access_by_car if row.access_by_car is not None else False,
+                access_by_coach=row.access_by_coach if row.access_by_coach is not None else False,
+                access_by_public_transport=(
+                    row.access_by_public_transport if row.access_by_public_transport is not None else False
+                ),
+                coach_turning_area=row.coach_turning_area if row.coach_turning_area is not None else False,
+                max_vehicle_height_m=row.max_vehicle_height_m,
+                nearest_bus_stop=row.nearest_bus_stop,
+                winter_open=row.winter_open if row.winter_open is not None else False,
+                weekend_only=row.weekend_only if row.weekend_only is not None else False,
+                has_field_poles=row.has_field_poles if row.has_field_poles is not None else False,
                 website_url=row.website_url,
+                notes_logistics=row.notes_logistics,
                 notes=row.notes,
             )
             db.add(structure)
@@ -164,13 +186,41 @@ async def import_structures(
             structure.latitude = row.latitude
             structure.longitude = row.longitude
             structure.type = row.type
-            structure.beds = row.beds
-            structure.bathrooms = row.bathrooms
-            structure.showers = row.showers
+            structure.indoor_beds = row.indoor_beds
+            structure.indoor_bathrooms = row.indoor_bathrooms
+            structure.indoor_showers = row.indoor_showers
             structure.dining_capacity = row.dining_capacity
             if row.has_kitchen is not None:
                 structure.has_kitchen = row.has_kitchen
+            if row.hot_water is not None:
+                structure.hot_water = row.hot_water
+            structure.land_area_m2 = row.land_area_m2
+            structure.max_tents = row.max_tents
+            if row.shelter_on_field is not None:
+                structure.shelter_on_field = row.shelter_on_field
+            structure.toilets_on_field = row.toilets_on_field
+            structure.water_source = row.water_source
+            if row.electricity_available is not None:
+                structure.electricity_available = row.electricity_available
+            structure.fire_policy = row.fire_policy
+            if row.access_by_car is not None:
+                structure.access_by_car = row.access_by_car
+            if row.access_by_coach is not None:
+                structure.access_by_coach = row.access_by_coach
+            if row.access_by_public_transport is not None:
+                structure.access_by_public_transport = row.access_by_public_transport
+            if row.coach_turning_area is not None:
+                structure.coach_turning_area = row.coach_turning_area
+            structure.max_vehicle_height_m = row.max_vehicle_height_m
+            structure.nearest_bus_stop = row.nearest_bus_stop
+            if row.winter_open is not None:
+                structure.winter_open = row.winter_open
+            if row.weekend_only is not None:
+                structure.weekend_only = row.weekend_only
+            if row.has_field_poles is not None:
+                structure.has_field_poles = row.has_field_poles
             structure.website_url = row.website_url
+            structure.notes_logistics = row.notes_logistics
             structure.notes = row.notes
             updated += 1
 

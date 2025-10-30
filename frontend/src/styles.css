@@ -403,6 +403,34 @@ section + section {
   color: var(--color-muted-strong);
 }
 
+.filter-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+
+.filter-fieldset legend {
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--color-muted-strong);
+}
+
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.9rem;
+  color: var(--color-muted-strong);
+}
+
+.filter-checkbox input {
+  margin: 0;
+}
+
 .filters label .helper-text,
 .toolbar label .helper-text {
   display: block;
@@ -532,6 +560,18 @@ textarea:focus {
   gap: var(--space-sm);
   font-size: 0.9rem;
   color: var(--color-muted-strong);
+}
+
+.structure-card__icons {
+  display: flex;
+  gap: var(--space-sm);
+  margin: var(--space-xs) 0;
+  font-size: 1.1rem;
+}
+
+.structure-card__icon {
+  display: inline-flex;
+  align-items: center;
 }
 
 .structure-card__badges {

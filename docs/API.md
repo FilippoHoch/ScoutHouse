@@ -95,6 +95,12 @@ coordinates configured via `DEFAULT_BASE_LAT`/`DEFAULT_BASE_LON`.
 | `season` | string | Optional seasonal availability filter (`winter`, `spring`, `summer`, `autumn`). |
 | `unit` | string | Optional scouting unit filter (`LC`, `EG`, `RS`, `ALL`). |
 | `cost_band` | string | Optional estimated cost band: `cheap`, `medium`, `expensive`. |
+| `access` | string | Filtra per accessibilità: combina `car`, `coach` o `pt` separati da `|`. |
+| `fire` | string | Policy fuochi: `allowed`, `with_permit`, `forbidden`. |
+| `min_tents` | integer | Numero minimo di tende supportate dal campo. |
+| `min_land_area` | number | Superficie minima dell'area esterna (in m²). |
+| `hot_water` | boolean | Richiede strutture con acqua calda disponibile (`1`, `true`, `yes`). |
+| `winter_open` | boolean | Richiede strutture aperte nel periodo invernale. |
 | `page` | integer | Page number (default `1`). |
 | `page_size` | integer | Page size (default `20`, max `100`). |
 | `sort` | string | Sort field: `distance`, `name`, or `created_at`. |
@@ -156,8 +162,10 @@ The detailed payload contains:
   `deposit`, `city_tax_per_night`, and `utilities_flat`
 - `estimated_cost` and `cost_band`: the average daily rate calculated from the
   configured cost options
-- Logistic metadata such as `beds`, `bathrooms`, `showers`,
-  `dining_capacity`, `has_kitchen`, `website_url`, and free-form `notes`
+- Logistic metadata such as `indoor_beds`, `indoor_bathrooms`,
+  `indoor_showers`, `dining_capacity`, `has_kitchen`, `hot_water`,
+  `land_area_m2`, `max_tents`, `fire_policy`, accessibility flags,
+  `notes_logistics`, `website_url`, and free-form `notes`
 - `contacts`: when requested, each contact with `name`, `role`, `email`, `phone`,
   `preferred_channel`, `is_primary`, and timestamps
 
@@ -230,8 +238,13 @@ Accepted MIME types are `application/vnd.openxmlformats-officedocument.spreadshe
 `application/csv`, and `text/csv`, up to 5 MB in size and 2 000 data rows. CSV
 files must be UTF-8 encoded, comma-separated, and use `.` for decimals. The
 file must contain the following headers as the first row: `name`, `slug`,
-`province`, `address`, `latitude`, `longitude`, `type`, `beds`, `bathrooms`,
-`showers`, `dining_capacity`, `has_kitchen`, `website_url`, `notes`.
+`province`, `address`, `latitude`, `longitude`, `type`, `indoor_beds`,
+`indoor_bathrooms`, `indoor_showers`, `dining_capacity`, `has_kitchen`,
+`hot_water`, `land_area_m2`, `max_tents`, `shelter_on_field`,
+`toilets_on_field`, `water_source`, `electricity_available`, `fire_policy`,
+`access_by_car`, `access_by_coach`, `access_by_public_transport`,
+`coach_turning_area`, `max_vehicle_height_m`, `nearest_bus_stop`, `winter_open`,
+`weekend_only`, `has_field_poles`, `website_url`, `notes_logistics`, `notes`.
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/import/structures?dry_run=true" \
