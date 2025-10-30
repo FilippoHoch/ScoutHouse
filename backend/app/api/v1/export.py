@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
 from app.deps import get_current_user, require_admin
-from app.models import Event, EventMember, Structure, StructureType, User
+from app.models import Event, EventMember, Structure, StructureType, User, FirePolicy
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.user import EventMemberRole
 from app.services.audit import record_audit
@@ -43,12 +43,30 @@ CSV_HEADERS_STRUCTURES = (
     "address",
     "latitude",
     "longitude",
-    "beds",
-    "bathrooms",
-    "showers",
+    "indoor_beds",
+    "indoor_bathrooms",
+    "indoor_showers",
     "dining_capacity",
     "has_kitchen",
+    "hot_water",
+    "land_area_m2",
+    "max_tents",
+    "shelter_on_field",
+    "toilets_on_field",
+    "water_source",
+    "electricity_available",
+    "fire_policy",
+    "access_by_car",
+    "access_by_coach",
+    "access_by_public_transport",
+    "coach_turning_area",
+    "max_vehicle_height_m",
+    "nearest_bus_stop",
+    "winter_open",
+    "weekend_only",
+    "has_field_poles",
     "website_url",
+    "notes_logistics",
     "notes",
     "estimated_cost",
     "cost_band",
@@ -87,6 +105,19 @@ def _parse_filters(filters: str | None) -> dict[str, Any]:
     return payload
 
 
+def _parse_bool(value: Any) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "y"}:
+        return True
+    if text in {"0", "false", "no", "n"}:
+        return False
+    raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid boolean value")
+
+
 def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
     str | None,
     str | None,
@@ -94,6 +125,12 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
     StructureSeason | None,
     StructureUnit | None,
     CostBand | None,
+    str | None,
+    FirePolicy | None,
+    int | None,
+    float | None,
+    bool | None,
+    bool | None,
 ]:
     q = payload.get("q")
     province = payload.get("province")
@@ -101,6 +138,12 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
     season_value = payload.get("season")
     unit_value = payload.get("unit")
     cost_band_value = payload.get("cost_band")
+    access_value = payload.get("access")
+    fire_value = payload.get("fire")
+    min_tents_value = payload.get("min_tents")
+    min_land_area_value = payload.get("min_land_area")
+    hot_water_value = payload.get("hot_water")
+    winter_open_value = payload.get("winter_open")
 
     structure_type = None
     if type_value is not None:
@@ -130,7 +173,48 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
         except ValueError as exc:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid cost band filter") from exc
 
-    return q, province, structure_type, season, unit, cost_band
+    fire_policy = None
+    if fire_value is not None:
+        try:
+            fire_policy = FirePolicy(str(fire_value))
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid fire filter") from exc
+
+    min_tents = None
+    if min_tents_value is not None and min_tents_value != "":
+        try:
+            min_tents = int(min_tents_value)
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_tents filter") from exc
+        if min_tents < 0:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_tents filter")
+
+    min_land_area = None
+    if min_land_area_value is not None and min_land_area_value != "":
+        try:
+            min_land_area = float(min_land_area_value)
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_land_area filter") from exc
+        if min_land_area < 0:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_land_area filter")
+
+    hot_water = _parse_bool(hot_water_value)
+    winter_open = _parse_bool(winter_open_value)
+
+    return (
+        q,
+        province,
+        structure_type,
+        season,
+        unit,
+        cost_band,
+        access_value,
+        fire_policy,
+        min_tents,
+        min_land_area,
+        hot_water,
+        winter_open,
+    )
 
 
 def _build_structure_row(
@@ -148,12 +232,32 @@ def _build_structure_row(
         "address": structure.address,
         "latitude": float(structure.latitude) if structure.latitude is not None else None,
         "longitude": float(structure.longitude) if structure.longitude is not None else None,
-        "beds": structure.beds,
-        "bathrooms": structure.bathrooms,
-        "showers": structure.showers,
+        "indoor_beds": structure.indoor_beds,
+        "indoor_bathrooms": structure.indoor_bathrooms,
+        "indoor_showers": structure.indoor_showers,
         "dining_capacity": structure.dining_capacity,
         "has_kitchen": structure.has_kitchen,
+        "hot_water": structure.hot_water,
+        "land_area_m2": float(structure.land_area_m2) if structure.land_area_m2 is not None else None,
+        "max_tents": structure.max_tents,
+        "shelter_on_field": structure.shelter_on_field,
+        "toilets_on_field": structure.toilets_on_field,
+        "water_source": structure.water_source.value if structure.water_source else None,
+        "electricity_available": structure.electricity_available,
+        "fire_policy": structure.fire_policy.value if structure.fire_policy else None,
+        "access_by_car": structure.access_by_car,
+        "access_by_coach": structure.access_by_coach,
+        "access_by_public_transport": structure.access_by_public_transport,
+        "coach_turning_area": structure.coach_turning_area,
+        "max_vehicle_height_m": float(structure.max_vehicle_height_m)
+        if structure.max_vehicle_height_m is not None
+        else None,
+        "nearest_bus_stop": structure.nearest_bus_stop,
+        "winter_open": structure.winter_open,
+        "weekend_only": structure.weekend_only,
+        "has_field_poles": structure.has_field_poles,
         "website_url": structure.website_url,
+        "notes_logistics": structure.notes_logistics,
         "notes": structure.notes,
         "estimated_cost": estimated_cost,
         "cost_band": cost_band.value if cost_band else None,
@@ -208,7 +312,20 @@ def export_structures(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unsupported export format")
 
     payload = _parse_filters(filters)
-    q, province, structure_type, season, unit, cost_band = _normalise_structure_filters(payload)
+    (
+        q,
+        province,
+        structure_type,
+        season,
+        unit,
+        cost_band,
+        access_value,
+        fire_policy,
+        min_tents,
+        min_land_area,
+        hot_water,
+        winter_open,
+    ) = _normalise_structure_filters(payload)
 
     start_time = time.monotonic()
     query = (
@@ -233,8 +350,39 @@ def export_structures(
     if structure_type is not None:
         conditions.append(Structure.type == structure_type)
 
+    access_conditions: list[Any] = []
+    if access_value:
+        requested_access = {item.strip().lower() for item in str(access_value).split("|") if item.strip()}
+        valid_access = {
+            "car": Structure.access_by_car,
+            "coach": Structure.access_by_coach,
+            "pt": Structure.access_by_public_transport,
+        }
+        invalid = requested_access - set(valid_access.keys())
+        if invalid:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid access filter")
+        for key in requested_access:
+            access_conditions.append(valid_access[key].is_(True))
+
+    if fire_policy is not None:
+        conditions.append(Structure.fire_policy == fire_policy)
+
+    if min_tents is not None:
+        conditions.append(Structure.max_tents >= min_tents)
+
+    if min_land_area is not None:
+        conditions.append(Structure.land_area_m2 >= min_land_area)
+
+    if hot_water is not None:
+        conditions.append(Structure.hot_water.is_(hot_water))
+
+    if winter_open is not None:
+        conditions.append(Structure.winter_open.is_(winter_open))
+
     if conditions:
         query = query.where(and_(*conditions))
+    if access_conditions:
+        query = query.where(and_(*access_conditions))
 
     results = db.execute(query).unique().scalars().all()
 

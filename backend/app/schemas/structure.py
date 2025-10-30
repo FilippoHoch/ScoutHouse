@@ -9,7 +9,7 @@ from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_valida
 
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.cost_option import StructureCostModel
-from app.models.structure import StructureType
+from app.models.structure import FirePolicy, StructureType, WaterSource
 from .contact import ContactRead
 from app.services.costs import CostBand
 
@@ -25,12 +25,30 @@ class StructureBase(BaseModel):
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
     type: StructureType
-    beds: int | None = Field(default=None, ge=0)
-    bathrooms: int | None = Field(default=None, ge=0)
-    showers: int | None = Field(default=None, ge=0)
+    indoor_beds: int | None = Field(default=None, ge=0)
+    indoor_bathrooms: int | None = Field(default=None, ge=0)
+    indoor_showers: int | None = Field(default=None, ge=0)
     dining_capacity: int | None = Field(default=None, ge=0)
     has_kitchen: bool = False
+    hot_water: bool = False
+    land_area_m2: float | None = Field(default=None, ge=0)
+    max_tents: int | None = Field(default=None, ge=0)
+    shelter_on_field: bool = False
+    toilets_on_field: int | None = Field(default=None, ge=0)
+    water_source: WaterSource | None = None
+    electricity_available: bool = False
+    fire_policy: FirePolicy | None = None
+    access_by_car: bool = False
+    access_by_coach: bool = False
+    access_by_public_transport: bool = False
+    coach_turning_area: bool = False
+    max_vehicle_height_m: float | None = Field(default=None, ge=0)
+    nearest_bus_stop: str | None = Field(default=None, max_length=255)
+    winter_open: bool = False
+    weekend_only: bool = False
+    has_field_poles: bool = False
     website_url: AnyHttpUrl | None = None
+    notes_logistics: str | None = None
     notes: str | None = None
 
     @field_validator("slug")
@@ -66,6 +84,40 @@ class StructureBase(BaseModel):
         if not -180 <= value <= 180:
             raise ValueError("Longitude must be between -180 and 180 degrees")
         return value
+
+    @model_validator(mode="after")
+    def validate_by_type(self) -> "StructureBase":
+        structure_type = self.type
+        indoor_values = [
+            self.indoor_beds,
+            self.indoor_bathrooms,
+            self.indoor_showers,
+            self.dining_capacity,
+        ]
+        indoor_flags = [self.has_kitchen, self.hot_water]
+        outdoor_values = [
+            self.land_area_m2,
+            self.max_tents,
+            self.toilets_on_field,
+        ]
+        outdoor_flags = [
+            self.shelter_on_field,
+            self.water_source,
+            self.electricity_available,
+            self.fire_policy,
+            self.has_field_poles,
+        ]
+
+        has_indoor_data = any(value not in (None, 0) for value in indoor_values) or any(flag is True for flag in indoor_flags)
+        has_outdoor_data = any(value not in (None, 0) for value in outdoor_values) or any(
+            flag not in (None, False) for flag in outdoor_flags
+        )
+
+        if structure_type == StructureType.HOUSE and has_outdoor_data:
+            raise ValueError("Campi outdoor non ammessi per type=house")
+        if structure_type == StructureType.LAND and has_indoor_data:
+            raise ValueError("Campi indoor non ammessi per type=land")
+        return self
 
 
 class StructureCreate(StructureBase):
@@ -171,6 +223,12 @@ class StructureSearchItem(BaseModel):
     cost_band: CostBand | None = None
     seasons: list[StructureSeason] = Field(default_factory=list)
     units: list[StructureUnit] = Field(default_factory=list)
+    fire_policy: FirePolicy | None = None
+    access_by_car: bool = False
+    access_by_coach: bool = False
+    access_by_public_transport: bool = False
+    has_kitchen: bool = False
+    hot_water: bool = False
 
     model_config = {
         "from_attributes": True,

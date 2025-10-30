@@ -43,12 +43,17 @@ def test_structures_flow() -> None:
         "address": "Via Scout 1, Milano",
         "latitude": 45.4642,
         "longitude": 9.1900,
-        "beds": 48,
-        "bathrooms": 6,
-        "showers": 10,
+        "indoor_beds": 48,
+        "indoor_bathrooms": 6,
+        "indoor_showers": 10,
         "dining_capacity": 60,
         "has_kitchen": True,
+        "hot_water": True,
+        "access_by_car": True,
+        "access_by_public_transport": True,
+        "winter_open": True,
         "website_url": "https://example.org/scout-center",
+        "notes_logistics": "Ingresso pullman",
         "notes": "Struttura con ampi spazi verdi.",
     }
 
@@ -58,12 +63,17 @@ def test_structures_flow() -> None:
     assert created["province"] == "MI"
     assert created["latitude"] == pytest.approx(payload["latitude"], rel=1e-3)
     assert created["longitude"] == pytest.approx(payload["longitude"], rel=1e-3)
-    assert created["beds"] == payload["beds"]
-    assert created["bathrooms"] == payload["bathrooms"]
-    assert created["showers"] == payload["showers"]
+    assert created["indoor_beds"] == payload["indoor_beds"]
+    assert created["indoor_bathrooms"] == payload["indoor_bathrooms"]
+    assert created["indoor_showers"] == payload["indoor_showers"]
     assert created["dining_capacity"] == payload["dining_capacity"]
     assert created["has_kitchen"] is True
+    assert created["hot_water"] is True
+    assert created["access_by_car"] is True
+    assert created["access_by_public_transport"] is True
+    assert created["winter_open"] is True
     assert created["website_url"] == payload["website_url"]
+    assert created["notes_logistics"] == payload["notes_logistics"]
     assert created["notes"] == payload["notes"]
 
     list_resp = client.get("/api/v1/structures/")
@@ -200,3 +210,102 @@ def test_authenticated_user_can_manage_structure_details() -> None:
     details = details_resp.json()
     assert len(details["availabilities"]) == 1
     assert len(details["cost_options"]) == 1
+
+
+def test_search_supports_extended_filters() -> None:
+    client = get_client(authenticated=True)
+
+    house_payload = {
+        "name": "Casa Bosco",
+        "slug": "casa-bosco",
+        "province": "MI",
+        "type": "house",
+        "indoor_beds": 24,
+        "indoor_bathrooms": 4,
+        "indoor_showers": 6,
+        "dining_capacity": 40,
+        "has_kitchen": True,
+        "hot_water": True,
+        "access_by_car": True,
+        "access_by_coach": True,
+        "access_by_public_transport": True,
+        "coach_turning_area": True,
+        "winter_open": True,
+    }
+
+    land_payload = {
+        "name": "Campo Pianura",
+        "slug": "campo-pianura",
+        "province": "BG",
+        "type": "land",
+        "land_area_m2": 5000,
+        "max_tents": 60,
+        "shelter_on_field": True,
+        "toilets_on_field": 6,
+        "water_source": "tap",
+        "electricity_available": False,
+        "fire_policy": "allowed",
+        "access_by_car": True,
+        "access_by_coach": False,
+        "access_by_public_transport": False,
+        "has_field_poles": True,
+        "winter_open": False,
+    }
+
+    mixed_payload = {
+        "name": "Base Mista",
+        "slug": "base-mista",
+        "province": "BS",
+        "type": "mixed",
+        "indoor_beds": 12,
+        "indoor_bathrooms": 2,
+        "dining_capacity": 20,
+        "has_kitchen": True,
+        "hot_water": True,
+        "land_area_m2": 2000,
+        "max_tents": 20,
+        "shelter_on_field": False,
+        "fire_policy": "with_permit",
+        "access_by_car": True,
+        "access_by_coach": True,
+        "access_by_public_transport": False,
+        "winter_open": False,
+    }
+
+    for payload in (house_payload, land_payload, mixed_payload):
+        response = client.post("/api/v1/structures/", json=payload)
+        assert response.status_code == 201, response.text
+
+    coach_response = client.get("/api/v1/structures/search", params={"access": "coach"})
+    assert coach_response.status_code == 200
+    coach_slugs = {item["slug"] for item in coach_response.json()["items"]}
+    assert coach_slugs == {"casa-bosco", "base-mista"}
+
+    strict_access = client.get("/api/v1/structures/search", params={"access": "coach|pt"})
+    assert strict_access.status_code == 200
+    strict_slugs = {item["slug"] for item in strict_access.json()["items"]}
+    assert strict_slugs == {"casa-bosco"}
+
+    fire_allowed = client.get("/api/v1/structures/search", params={"fire": "allowed"})
+    assert fire_allowed.status_code == 200
+    assert [item["slug"] for item in fire_allowed.json()["items"]] == ["campo-pianura"]
+
+    tents_response = client.get("/api/v1/structures/search", params={"min_tents": 40})
+    assert tents_response.status_code == 200
+    tents_slugs = {item["slug"] for item in tents_response.json()["items"]}
+    assert tents_slugs == {"campo-pianura"}
+
+    land_area_response = client.get("/api/v1/structures/search", params={"min_land_area": 3000})
+    assert land_area_response.status_code == 200
+    land_area_slugs = {item["slug"] for item in land_area_response.json()["items"]}
+    assert land_area_slugs == {"campo-pianura"}
+
+    hot_water_response = client.get("/api/v1/structures/search", params={"hot_water": "true"})
+    assert hot_water_response.status_code == 200
+    hot_water_slugs = {item["slug"] for item in hot_water_response.json()["items"]}
+    assert hot_water_slugs == {"casa-bosco", "base-mista"}
+
+    winter_response = client.get("/api/v1/structures/search", params={"winter_open": 1})
+    assert winter_response.status_code == 200
+    winter_slugs = {item["slug"] for item in winter_response.json()["items"]}
+    assert winter_slugs == {"casa-bosco"}

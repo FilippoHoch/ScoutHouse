@@ -1,4 +1,6 @@
 export type StructureType = "house" | "land" | "mixed";
+export type FirePolicy = "allowed" | "with_permit" | "forbidden";
+export type WaterSource = "none" | "fountain" | "tap" | "river";
 export type Season = "winter" | "spring" | "summer" | "autumn";
 export type Unit = "LC" | "EG" | "RS" | "ALL";
 export type CostModel = "per_person_day" | "per_person_night" | "forfait";
@@ -83,12 +85,30 @@ export interface Structure {
   latitude: number | null;
   longitude: number | null;
   type: StructureType;
-  beds: number | null;
-  bathrooms: number | null;
-  showers: number | null;
+  indoor_beds: number | null;
+  indoor_bathrooms: number | null;
+  indoor_showers: number | null;
   dining_capacity: number | null;
   has_kitchen: boolean;
+  hot_water: boolean;
+  land_area_m2: number | null;
+  max_tents: number | null;
+  shelter_on_field: boolean;
+  toilets_on_field: number | null;
+  water_source: WaterSource | null;
+  electricity_available: boolean;
+  fire_policy: FirePolicy | null;
+  access_by_car: boolean;
+  access_by_coach: boolean;
+  access_by_public_transport: boolean;
+  coach_turning_area: boolean;
+  max_vehicle_height_m: number | null;
+  nearest_bus_stop: string | null;
+  winter_open: boolean;
+  weekend_only: boolean;
+  has_field_poles: boolean;
   website_url: string | null;
+  notes_logistics: string | null;
   notes: string | null;
   created_at: string;
   estimated_cost?: number | null;
@@ -106,12 +126,30 @@ export interface StructureCreateDto {
   latitude?: number;
   longitude?: number;
   type: StructureType;
-  beds?: number | null;
-  bathrooms?: number | null;
-  showers?: number | null;
+  indoor_beds?: number | null;
+  indoor_bathrooms?: number | null;
+  indoor_showers?: number | null;
   dining_capacity?: number | null;
   has_kitchen?: boolean;
+  hot_water?: boolean;
+  land_area_m2?: number | null;
+  max_tents?: number | null;
+  shelter_on_field?: boolean;
+  toilets_on_field?: number | null;
+  water_source?: WaterSource | null;
+  electricity_available?: boolean;
+  fire_policy?: FirePolicy | null;
+  access_by_car?: boolean;
+  access_by_coach?: boolean;
+  access_by_public_transport?: boolean;
+  coach_turning_area?: boolean;
+  max_vehicle_height_m?: number | null;
+  nearest_bus_stop?: string | null;
+  winter_open?: boolean;
+  weekend_only?: boolean;
+  has_field_poles?: boolean;
   website_url?: string | null;
+  notes_logistics?: string | null;
   notes?: string | null;
 }
 
@@ -129,6 +167,12 @@ export interface StructureSearchItem {
   cost_band: CostBand | null;
   seasons: Season[];
   units: Unit[];
+  fire_policy: FirePolicy | null;
+  access_by_car: boolean;
+  access_by_coach: boolean;
+  access_by_public_transport: boolean;
+  has_kitchen: boolean;
+  hot_water: boolean;
 }
 
 export interface StructureSearchResponse {
@@ -182,6 +226,12 @@ export interface StructureSearchParams {
   cost_band?: CostBand;
   sort?: "name" | "created_at" | "distance";
   order?: "asc" | "desc";
+  access?: string;
+  fire?: FirePolicy;
+  min_tents?: number;
+  min_land_area?: number;
+  hot_water?: boolean;
+  winter_open?: boolean;
 }
 
 
