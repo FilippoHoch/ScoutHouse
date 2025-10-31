@@ -55,12 +55,18 @@ def test_structures_flow() -> None:
         "notes_logistics": "Ingresso pullman",
         "notes": "Struttura con ampi spazi verdi.",
         "open_periods": [
-            {"kind": "season", "season": "summer", "notes": "Aperta in estate"},
+            {
+                "kind": "season",
+                "season": "summer",
+                "notes": "Aperta in estate",
+                "units": ["ALL"],
+            },
             {
                 "kind": "range",
                 "date_start": "2025-08-01",
                 "date_end": "2025-08-31",
                 "notes": "Chiusura straordinaria",
+                "units": ["EG", "RS"],
             },
         ],
     }
@@ -83,6 +89,8 @@ def test_structures_flow() -> None:
     assert created["notes_logistics"] == payload["notes_logistics"]
     assert created["notes"] == payload["notes"]
     assert len(created["open_periods"]) == 2
+    assert created["open_periods"][0]["units"] == ["ALL"]
+    assert created["open_periods"][1]["units"] == ["EG", "RS"]
 
     list_resp = client.get("/api/v1/structures/")
     assert list_resp.status_code == 200
@@ -241,7 +249,9 @@ def test_search_supports_extended_filters() -> None:
         "access_by_coach": True,
         "access_by_public_transport": True,
         "coach_turning_area": True,
-        "open_periods": [{"kind": "season", "season": "summer"}],
+        "open_periods": [
+            {"kind": "season", "season": "summer", "units": ["ALL"]}
+        ],
     }
 
     land_payload = {
@@ -264,6 +274,7 @@ def test_search_supports_extended_filters() -> None:
                 "kind": "range",
                 "date_start": "2025-07-01",
                 "date_end": "2025-07-31",
+                "units": ["EG", "RS"],
             }
         ],
     }
@@ -284,7 +295,9 @@ def test_search_supports_extended_filters() -> None:
         "access_by_car": True,
         "access_by_coach": True,
         "access_by_public_transport": False,
-        "open_periods": [{"kind": "season", "season": "autumn"}],
+        "open_periods": [
+            {"kind": "season", "season": "autumn", "units": ["RS"]}
+        ],
     }
 
     for payload in (house_payload, land_payload, mixed_payload):

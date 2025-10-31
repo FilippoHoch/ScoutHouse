@@ -78,14 +78,23 @@ const sampleStructure: Structure = {
   ],
   contacts: [],
   open_periods: [
-    { id: 1, kind: "season", season: "summer", date_start: null, date_end: null, notes: "Aperto" },
+    {
+      id: 1,
+      kind: "season",
+      season: "summer",
+      date_start: null,
+      date_end: null,
+      notes: "Aperto",
+      units: ["ALL"]
+    },
     {
       id: 2,
       kind: "range",
       season: null,
       date_start: "2025-08-01",
       date_end: "2025-08-15",
-      notes: "Campo EG"
+      notes: "Campo EG",
+      units: ["EG"]
     }
   ]
 };

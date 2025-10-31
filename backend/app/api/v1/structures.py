@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from enum import Enum
 from datetime import date
 from typing import Annotated, Any
 
@@ -99,6 +100,18 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
     )
 
 
+def _coerce_units(units: Sequence[object] | None) -> list[str] | None:
+    if not units:
+        return None
+    result: list[str] = []
+    for item in units:
+        if isinstance(item, Enum):
+            result.append(str(item.value))
+        else:
+            result.append(str(item))
+    return result
+
+
 def _serialize_open_period(period: StructureOpenPeriod) -> StructureOpenPeriodRead:
     return StructureOpenPeriodRead(
         id=period.id,
@@ -107,6 +120,7 @@ def _serialize_open_period(period: StructureOpenPeriod) -> StructureOpenPeriodRe
         date_start=period.date_start,
         date_end=period.date_end,
         notes=period.notes,
+        units=_serialize_units(period.units) if period.units else None,
     )
 
 
@@ -128,6 +142,7 @@ def _sync_open_periods(
             period.date_start = item_dict.get("date_start")
             period.date_end = item_dict.get("date_end")
             period.notes = item_dict.get("notes")
+            period.units = _coerce_units(item_dict.get("units"))
             seen_ids.add(period_id)
             continue
 
@@ -137,6 +152,7 @@ def _sync_open_periods(
             date_start=item_dict.get("date_start"),
             date_end=item_dict.get("date_end"),
             notes=item_dict.get("notes"),
+            units=_coerce_units(item_dict.get("units")),
         )
         structure.open_periods.append(new_period)
 
@@ -559,6 +575,7 @@ def create_structure(
             date_start=period.date_start,
             date_end=period.date_end,
             notes=period.notes,
+            units=_coerce_units(period.units),
         )
         for period in structure_in.open_periods
     ]
