@@ -379,6 +379,9 @@ def _validate_url(value: object) -> str | None:
     return text
 
 
+_WEBSITE_URL_SEPARATORS = re.compile(r"[;\r\n]+")
+
+
 def _parse_website_urls(value: object) -> tuple[list[str], list[str]]:
     if value is None:
         return [], []
@@ -389,7 +392,7 @@ def _parse_website_urls(value: object) -> tuple[list[str], list[str]]:
         text = _normalise_text(value)
         if not text:
             return [], []
-        raw_items = re.split(r"[\n;]")
+        raw_items = _WEBSITE_URL_SEPARATORS.split(text)
 
     urls: list[str] = []
     errors: list[str] = []
