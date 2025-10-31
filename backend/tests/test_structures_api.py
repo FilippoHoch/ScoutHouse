@@ -251,7 +251,7 @@ def test_search_supports_extended_filters() -> None:
         "type": "land",
         "land_area_m2": 5000,
         "shelter_on_field": True,
-        "water_source": "tap",
+        "water_sources": ["tap"],
         "electricity_available": False,
         "fire_policy": "allowed",
         "access_by_car": True,

@@ -169,7 +169,7 @@ async def import_structures(
                 hot_water=row.hot_water if row.hot_water is not None else False,
                 land_area_m2=row.land_area_m2,
                 shelter_on_field=row.shelter_on_field if row.shelter_on_field is not None else False,
-                water_source=row.water_source,
+                water_sources=row.water_sources,
                 electricity_available=(
                     row.electricity_available if row.electricity_available is not None else False
                 ),
@@ -210,7 +210,7 @@ async def import_structures(
             structure.land_area_m2 = row.land_area_m2
             if row.shelter_on_field is not None:
                 structure.shelter_on_field = row.shelter_on_field
-            structure.water_source = row.water_source
+            structure.water_sources = row.water_sources
             if row.electricity_available is not None:
                 structure.electricity_available = row.electricity_available
             structure.fire_policy = row.fire_policy

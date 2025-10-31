@@ -119,7 +119,7 @@ export interface Structure {
   hot_water: boolean;
   land_area_m2: number | null;
   shelter_on_field: boolean;
-  water_source: WaterSource | null;
+  water_sources: WaterSource[];
   electricity_available: boolean;
   fire_policy: FirePolicy | null;
   access_by_car: boolean;
@@ -158,7 +158,7 @@ export interface StructureCreateDto {
   hot_water?: boolean;
   land_area_m2?: number | null;
   shelter_on_field?: boolean;
-  water_source?: WaterSource | null;
+  water_sources?: WaterSource[];
   electricity_available?: boolean;
   fire_policy?: FirePolicy | null;
   access_by_car?: boolean;

@@ -118,7 +118,7 @@ export const StructureCreatePage = () => {
   const [landArea, setLandArea] = useState("");
   const [shelterOnField, setShelterOnField] = useState(false);
   const [pitLatrineAllowed, setPitLatrineAllowed] = useState(false);
-  const [waterSource, setWaterSource] = useState<WaterSource | "">("");
+  const [waterSources, setWaterSources] = useState<WaterSource[]>([]);
   const [electricityAvailable, setElectricityAvailable] = useState(false);
   const [firePolicy, setFirePolicy] = useState<FirePolicy | "">("");
   const [accessByCar, setAccessByCar] = useState(false);
@@ -213,7 +213,7 @@ export const StructureCreatePage = () => {
     setLandArea("");
     setShelterOnField(false);
     setPitLatrineAllowed(false);
-    setWaterSource("");
+    setWaterSources([]);
     setElectricityAvailable(false);
     setFirePolicy("");
     setNearestBusStop("");
@@ -525,7 +525,8 @@ export const StructureCreatePage = () => {
   };
 
   const handleWaterSourceChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setWaterSource(event.target.value as WaterSource | "");
+    const selected = Array.from(event.target.selectedOptions, (option) => option.value as WaterSource);
+    setWaterSources(selected);
     setApiError(null);
   };
 
@@ -858,12 +859,12 @@ export const StructureCreatePage = () => {
     if (showOutdoorSection) {
       payload.land_area_m2 = trimmedLandArea ? Number.parseFloat(trimmedLandArea.replace(",", ".")) : null;
       payload.nearest_bus_stop = trimmedNearestBusStop || null;
-      payload.water_source = waterSource ? (waterSource as WaterSource) : null;
+      payload.water_sources = waterSources;
       payload.fire_policy = firePolicy ? (firePolicy as FirePolicy) : null;
     } else {
       payload.land_area_m2 = null;
       payload.shelter_on_field = false;
-      payload.water_source = null;
+      payload.water_sources = [];
       payload.electricity_available = false;
       payload.fire_policy = null;
       payload.nearest_bus_stop = null;
@@ -1340,12 +1341,11 @@ export const StructureCreatePage = () => {
                       {t("structures.create.form.waterSource")}
                       <select
                         id="structure-water-source"
-                        value={waterSource}
+                        multiple
+                        value={waterSources}
                         onChange={handleWaterSourceChange}
+                        aria-describedby="structure-water-source-hint"
                       >
-                        <option value="">
-                          {t("structures.create.form.waterSourcePlaceholder")}
-                        </option>
                         {waterSourceOptions.map((option) => (
                           <option key={option} value={option}>
                             {t(`structures.create.form.waterSourceOptions.${option}`)}
@@ -1353,7 +1353,7 @@ export const StructureCreatePage = () => {
                         ))}
                       </select>
                     </label>
-                    <span className="helper-text">
+                    <span className="helper-text" id="structure-water-source-hint">
                       {t("structures.create.form.waterSourceHint")}
                     </span>
                   </div>

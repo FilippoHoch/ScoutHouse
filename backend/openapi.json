@@ -6107,15 +6107,12 @@
             "title": "Shelter On Field",
             "default": false
           },
-          "water_source": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/WaterSource"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "water_sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaterSource"
+            },
+            "default": []
           },
           "electricity_available": {
             "type": "boolean",
@@ -6569,15 +6566,12 @@
             "title": "Shelter On Field",
             "default": false
           },
-          "water_source": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/WaterSource"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "water_sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaterSource"
+            },
+            "default": []
           },
           "electricity_available": {
             "type": "boolean",
@@ -7138,15 +7132,12 @@
             "title": "Shelter On Field",
             "default": false
           },
-          "water_source": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/WaterSource"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "water_sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaterSource"
+            },
+            "default": []
           },
           "electricity_available": {
             "type": "boolean",
