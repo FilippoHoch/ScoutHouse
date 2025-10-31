@@ -45,6 +45,21 @@ def upgrade() -> None:
     kind_enum.create(bind, checkfirst=True)
     season_enum.create(bind, checkfirst=True)
 
+    kind_enum_column = sa.Enum(
+        "season",
+        "range",
+        name="structure_open_period_kind",
+        create_type=False,
+    )
+    season_enum_column = sa.Enum(
+        "spring",
+        "summer",
+        "autumn",
+        "winter",
+        name="structure_open_period_season",
+        create_type=False,
+    )
+
     op.create_table(
         "structure_open_periods",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -54,8 +69,8 @@ def upgrade() -> None:
             sa.ForeignKey("structures.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("kind", kind_enum, nullable=False),
-        sa.Column("season", season_enum, nullable=True),
+        sa.Column("kind", kind_enum_column, nullable=False),
+        sa.Column("season", season_enum_column, nullable=True),
         sa.Column("date_start", sa.Date(), nullable=True),
         sa.Column("date_end", sa.Date(), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),
