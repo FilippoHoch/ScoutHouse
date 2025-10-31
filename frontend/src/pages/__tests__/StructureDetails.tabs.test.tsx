@@ -57,7 +57,7 @@ const structureWithDetails: Structure = {
   weekend_only: false,
   has_field_poles: true,
   pit_latrine_allowed: true,
-  website_url: null,
+  website_urls: [],
   notes_logistics: null,
   notes: null,
   created_at: new Date("2024-05-01T00:00:00Z").toISOString(),

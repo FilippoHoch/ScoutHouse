@@ -6,6 +6,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { ApiError, getStructureBySlug, getStructurePhotos } from "../../shared/api";
 import type { Structure } from "../../shared/types";
 import { StructureDetailsPage } from "../StructureDetails";
+import i18n from "../../i18n";
 
 vi.mock("../../shared/api", async () => {
   const actual = await vi.importActual<typeof import("../../shared/api")>("../../shared/api");
@@ -56,7 +57,7 @@ const sampleStructure: Structure = {
   weekend_only: false,
   has_field_poles: false,
   pit_latrine_allowed: false,
-  website_url: "https://example.org/casa-alpina",
+  website_urls: ["https://example.org/casa-alpina"],
   notes_logistics: "Contattare il custode",
   notes: null,
   created_at: new Date("2024-01-01T00:00:00Z").toISOString(),
@@ -117,9 +118,14 @@ describe("StructureDetailsPage", () => {
     );
 
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
-    expect(screen.getByText(/Open in Google Maps/)).toBeInTheDocument();
-    expect(screen.getByText(/Coordinates:/)).toBeInTheDocument();
-    expect(screen.getByText(/Estimated daily cost/i)).toBeInTheDocument();
+    const mapLink = screen.getByRole("link", { name: i18n.t("structures.list.cards.openMap") });
+    expect(mapLink).toHaveAttribute("href", "https://www.google.com/maps?q=45.6,10.16");
+    const coordinatesLabel = i18n.t("structures.details.location.coordinates", {
+      lat: sampleStructure.latitude?.toFixed(4),
+      lon: sampleStructure.longitude?.toFixed(4)
+    });
+    expect(screen.getByText(coordinatesLabel)).toBeInTheDocument();
+    expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 
   it("shows not found state for missing structure", async () => {

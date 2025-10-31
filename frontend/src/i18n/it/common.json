@@ -170,8 +170,11 @@
         "indoorActivityRoomsHint": "Numero di stanze interne utilizzabili per attività o riunioni.",
         "hasKitchen": "Cucina attrezzata disponibile",
         "hasKitchenHint": "Spunta se la struttura mette a disposizione una cucina utilizzabile.",
-        "website": "Sito o link di riferimento",
-        "websiteHint": "Inserisci un URL utile per approfondimenti o contatti.",
+        "website": "Siti o link di riferimento",
+        "websiteHint": "Inserisci uno o più URL utili per approfondimenti o contatti.",
+        "websiteAdd": "Aggiungi un altro link",
+        "websiteRemove": "Rimuovi questo link",
+        "websiteEntryLabel": "Link {{index}}",
         "notes": "Note aggiuntive",
         "contact": {
           "enable": "Aggiungi contatto",
@@ -350,7 +353,7 @@
         "latitudeInvalid": "La latitudine deve essere compresa tra -90 e 90.",
         "longitudeInvalid": "La longitudine deve essere compresa tra -180 e 180.",
         "numberInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
-        "websiteInvalid": "Inserisci un URL valido che inizi con http o https.",
+        "websiteInvalid": "Inserisci URL validi che inizino con http o https.",
         "saveFailed": "Impossibile creare la struttura.",
         "decimalInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
         "openPeriodsSeasonRequired": "Seleziona una stagione per i periodi stagionali.",
@@ -454,8 +457,8 @@
       },
       "confirmDelete": "Eliminare il contatto {{name}}?",
       "website": {
-        "title": "Sito web della struttura",
-        "empty": "Nessun sito web registrato"
+        "title": "Siti web della struttura",
+        "empty": "Nessun link registrato"
       }
     },
     "details": {
@@ -466,8 +469,8 @@
         "bathrooms": "Bagni",
         "showers": "Docce",
         "indoorActivityRooms": "Sale attività interne",
-        "website": "Sito di riferimento",
-        "websiteFallback": "Non disponibile",
+        "website": "Siti di riferimento",
+        "websiteFallback": "Non disponibili",
         "notes": "Note",
         "pitLatrineAllowed": "Latrina a fossa",
         "pitLatrineYes": "Consentita",

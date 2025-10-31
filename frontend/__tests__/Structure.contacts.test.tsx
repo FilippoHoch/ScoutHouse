@@ -7,6 +7,7 @@ import { StructureDetailsPage } from "../src/pages/StructureDetails";
 import {
   createStructureContact,
   getStructureBySlug,
+  searchContacts,
   updateStructureContact
 } from "../src/shared/api";
 import type { Contact, Structure } from "../src/shared/types";
@@ -17,7 +18,8 @@ vi.mock("../src/shared/api", async () => {
     ...actual,
     getStructureBySlug: vi.fn(),
     createStructureContact: vi.fn(),
-    updateStructureContact: vi.fn()
+    updateStructureContact: vi.fn(),
+    searchContacts: vi.fn()
   };
 });
 
@@ -54,7 +56,10 @@ describe("Structure contacts management", () => {
       contacts: [
         {
           id: 1,
+          contact_id: 101,
           structure_id: 12,
+          first_name: "Mario",
+          last_name: "Rossi",
           name: "Mario Rossi",
           role: "Referente",
           email: "mario@example.com",
@@ -66,15 +71,20 @@ describe("Structure contacts management", () => {
           created_at: new Date("2024-03-02T09:00:00Z").toISOString(),
           updated_at: new Date("2024-03-02T09:00:00Z").toISOString()
         }
-      ]
+      ],
+      website_urls: []
     };
 
     vi.mocked(getStructureBySlug).mockImplementation(async () => structureData);
+    vi.mocked(searchContacts).mockResolvedValue([]);
 
     vi.mocked(createStructureContact).mockImplementation(async () => {
       const newContact: Contact = {
         id: 2,
+        contact_id: 202,
         structure_id: 12,
+        first_name: "Lucia",
+        last_name: "Bianchi",
         name: "Lucia Bianchi",
         role: "Amministrazione",
         email: "lucia@example.com",

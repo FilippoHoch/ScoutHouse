@@ -165,7 +165,7 @@ The detailed payload contains:
 - Logistic metadata such as `indoor_beds`, `indoor_bathrooms`,
   `indoor_showers`, `indoor_activity_rooms`, `has_kitchen`, `hot_water`,
   `land_area_m2`, `fire_policy`, accessibility flags,
-  `pit_latrine_allowed`, `notes_logistics`, `website_url`, and free-form `notes`
+  `pit_latrine_allowed`, `notes_logistics`, `website_urls`, and free-form `notes`
 - `open_periods`: elenco dei periodi stagionali o degli intervalli di date in cui la struttura è disponibile
 - `contacts`: when requested, each contact with `name`, `role`, `email`, `phone`,
   `preferred_channel`, `is_primary`, and timestamps
@@ -256,7 +256,7 @@ file must contain the following headers as the first row: `name`, `slug`,
 `water_sources`, `electricity_available`, `fire_policy`,
 `access_by_car`, `access_by_coach`, `access_by_public_transport`,
 `coach_turning_area`, `nearest_bus_stop`,
-`weekend_only`, `has_field_poles`, `pit_latrine_allowed`, `website_url`, `notes_logistics`, `notes`.
+`weekend_only`, `has_field_poles`, `pit_latrine_allowed`, `website_urls`, `notes_logistics`, `notes`.
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/import/structures?dry_run=true" \
@@ -306,7 +306,7 @@ Validation rules:
   provided.
 - `has_kitchen` accepts boolean-like values (`true`, `false`, `1`, `0`, `yes`,
   `no`).
-- `website_url`, when present, must be a valid HTTP or HTTPS URL.
+- `website_urls`, when present, must contain valid HTTP or HTTPS URLs.
 
 Validation errors include the `source_format` attribute so clients can surface
 whether the payload originated from a CSV or XLSX file.
@@ -343,7 +343,7 @@ optionally include `province`, `address`, geographic coordinates, logistic
 metadata such as `indoor_beds`, `indoor_bathrooms`, `indoor_showers`,
 `indoor_activity_rooms`, `has_kitchen`, `hot_water`, outdoor accessibility flags
 (`access_by_car`, `access_by_coach`, `access_by_public_transport`),
-`pit_latrine_allowed`, `website_url`, `notes_logistics`, free-form `notes`, and
+`pit_latrine_allowed`, `website_urls`, `notes_logistics`, free-form `notes`, and
 an array of `open_periods`. Any authenticated user can create a structure; admin
 privileges are not required.
 
@@ -361,7 +361,7 @@ Validation rules:
   `false`, `1`, `0`) and default to `false`.
 - `open_periods` may include rows of `kind="season"` (richiede `season`) oppure
   `kind="range"` (richiede `date_start` e `date_end`).
-- `website_url`, when provided, must be a valid HTTP or HTTPS URL.
+- `website_urls`, when provided, must only contain valid HTTP or HTTPS URLs.
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/structures/ \
@@ -387,7 +387,7 @@ curl -X POST http://localhost:8000/api/v1/structures/ \
           { "kind": "season", "season": "summer", "notes": "Disponibile da giugno a settembre" },
           { "kind": "range", "date_start": "2025-12-27", "date_end": "2026-01-06" }
         ],
-        "website_url": "https://example.org/centro-garda"
+        "website_urls": ["https://example.org/centro-garda"]
       }'
 ```
 

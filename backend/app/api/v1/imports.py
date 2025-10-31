@@ -195,7 +195,7 @@ async def import_structures(
                 pit_latrine_allowed=(
                     row.pit_latrine_allowed if row.pit_latrine_allowed is not None else False
                 ),
-                website_url=row.website_url,
+                website_urls=row.website_urls or None,
                 notes_logistics=row.notes_logistics,
                 notes=row.notes,
             )
@@ -238,7 +238,7 @@ async def import_structures(
                 structure.has_field_poles = row.has_field_poles
             if row.pit_latrine_allowed is not None:
                 structure.pit_latrine_allowed = row.pit_latrine_allowed
-            structure.website_url = row.website_url
+            structure.website_urls = row.website_urls or None
             structure.notes_logistics = row.notes_logistics
             structure.notes = row.notes
             updated += 1

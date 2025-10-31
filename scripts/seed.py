@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from datetime import date
 from collections import defaultdict
 from datetime import date
@@ -101,6 +102,24 @@ def parse_bool(value: str | None) -> bool:
     return text in {"true", "1", "yes", "y", "si", "sì"}
 
 
+def parse_urls(value: str | None) -> list[str] | None:
+    if value is None:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    parts = re.split(r"[\n;]", text)
+    urls: list[str] = []
+    seen: set[str] = set()
+    for part in parts:
+        candidate = part.strip()
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        urls.append(candidate)
+    return urls or None
+
+
 def parse_participants(value: str | None) -> dict[str, int]:
     if not value:
         return {"lc": 0, "eg": 0, "rs": 0, "leaders": 0}
@@ -156,7 +175,9 @@ def seed_structures(dataset: Path) -> None:
                 "indoor_activity_rooms": parse_int((row.get("indoor_activity_rooms") or "").strip()),
                 "has_kitchen": parse_bool(row.get("has_kitchen")),
                 "pit_latrine_allowed": parse_bool(row.get("pit_latrine_allowed")),
-                "website_url": row.get("website_url", "").strip() or None,
+                "website_urls": parse_urls(
+                    (row.get("website_urls") or row.get("website_url") or "")
+                ),
                 "notes": row.get("notes", "").strip() or None,
             }
 

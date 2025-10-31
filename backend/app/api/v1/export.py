@@ -78,7 +78,7 @@ CSV_HEADERS_STRUCTURES = (
     "weekend_only",
     "has_field_poles",
     "pit_latrine_allowed",
-    "website_url",
+    "website_urls",
     "notes_logistics",
     "notes",
     "estimated_cost",
@@ -298,7 +298,7 @@ def _build_structure_row(
         "weekend_only": structure.weekend_only,
         "has_field_poles": structure.has_field_poles,
         "pit_latrine_allowed": structure.pit_latrine_allowed,
-        "website_url": structure.website_url,
+        "website_urls": list(structure.website_urls or []),
         "notes_logistics": structure.notes_logistics,
         "notes": structure.notes,
         "estimated_cost": estimated_cost,
@@ -357,12 +357,22 @@ def _render_rows(
     return StreamingResponse(rows_to_xlsx_stream(rows, headers), media_type=media_type)
 
 
+def _format_tabular_value(value: Any) -> Any:
+    if isinstance(value, list):
+        return "; ".join(str(item) for item in value)
+    return value
+
+
 def _rows_to_csv_bytes(rows: list[dict[str, Any]], headers: tuple[str, ...]) -> bytes:
     buffer = StringIO()
     writer = csv.DictWriter(buffer, fieldnames=list(headers))
     writer.writeheader()
     for row in rows:
-        filtered = {header: row.get(header) for header in headers}
+        filtered: dict[str, Any] = {}
+        for header in headers:
+            value = row.get(header)
+            value = _format_tabular_value(value)
+            filtered[header] = value
         writer.writerow(filtered)
     return buffer.getvalue().encode("utf-8")
 
@@ -391,12 +401,16 @@ def _render_structures_xlsx(
     main_sheet.title = "structures"
     main_sheet.append(list(CSV_HEADERS_STRUCTURES))
     for row in rows:
-        main_sheet.append([row.get(header) for header in CSV_HEADERS_STRUCTURES])
+        main_sheet.append([
+            _format_tabular_value(row.get(header)) for header in CSV_HEADERS_STRUCTURES
+        ])
 
     period_sheet = workbook.create_sheet("structure_open_periods")
     period_sheet.append(list(CSV_HEADERS_OPEN_PERIODS))
     for row in open_period_rows:
-        period_sheet.append([row.get(header) for header in CSV_HEADERS_OPEN_PERIODS])
+        period_sheet.append([
+            _format_tabular_value(row.get(header)) for header in CSV_HEADERS_OPEN_PERIODS
+        ])
 
     buffer = BytesIO()
     workbook.save(buffer)
