@@ -29,7 +29,13 @@ import {
   Unit,
   WaterSource
 } from "../shared/types";
-import { Button, InlineMessage, SectionHeader, Surface } from "../shared/ui/designSystem";
+import {
+  Button,
+  InlineMessage,
+  SectionHeader,
+  StatusBadge,
+  Surface
+} from "../shared/ui/designSystem";
 import {
   GoogleMapPicker,
   GOOGLE_MAP_DEFAULT_CENTER
@@ -752,17 +758,17 @@ export const StructureCreatePage = () => {
     setApiError(null);
   };
 
-  const handleAddContactToggle = (event: ChangeEvent<HTMLInputElement>) => {
-    const enabled = event.target.checked;
-    setAddContact(enabled);
-    if (!enabled) {
-      resetContactSection();
-    } else {
-      setContactAllowDuplicate(false);
-      setContactDuplicates([]);
-      setContactStatusMessage(null);
-      setContactIsPrimary(true);
-    }
+  const handleContactSectionEnable = () => {
+    setAddContact(true);
+    setContactAllowDuplicate(false);
+    setContactDuplicates([]);
+    setContactStatusMessage(null);
+    setContactIsPrimary(true);
+  };
+
+  const handleContactSectionDisable = () => {
+    setAddContact(false);
+    resetContactSection();
   };
 
   const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -2020,26 +2026,51 @@ export const StructureCreatePage = () => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-add-contact" className="checkbox-field">
-                    <input
-                      id="structure-add-contact"
-                      type="checkbox"
-                      checked={addContact}
-                      onChange={handleAddContactToggle}
-                    />
-                    {t("structures.create.form.contact.enable")}
-                  </label>
-                  <span className="helper-text">
-                    {t("structures.create.form.contact.enableHint")}
-                  </span>
+                  {!addContact ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleContactSectionEnable}
+                      >
+                        {t("structures.create.form.contact.enable")}
+                      </Button>
+                      <span className="helper-text">
+                        {t("structures.create.form.contact.enableHint")}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="helper-text">
+                      {t("structures.create.form.contact.enableHint")}
+                    </span>
+                  )}
                 </div>
 
                 {addContact && (
                   <div className="structure-form-field" data-span="full">
                     <div className="structure-contact-card">
                       <div className="structure-contact-card__intro">
-                        <h4>{t("structures.create.form.contact.cardTitle")}</h4>
-                        <p>{t("structures.create.form.contact.cardSubtitle")}</p>
+                        <div className="structure-contact-card__intro-header">
+                          <div>
+                            <h4>{t("structures.create.form.contact.cardTitle")}</h4>
+                            <p>{t("structures.create.form.contact.cardSubtitle")}</p>
+                          </div>
+                          <div className="structure-contact-card__intro-actions">
+                            {contactIsPrimary && (
+                              <StatusBadge status="info">
+                                {t("structures.create.form.contact.primaryBadge")}
+                              </StatusBadge>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleContactSectionDisable}
+                            >
+                              {t("structures.create.form.contact.remove")}
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                       {contactStatusMessage && (
                         <InlineMessage>{contactStatusMessage}</InlineMessage>
