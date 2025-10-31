@@ -112,4 +112,3 @@ def downgrade() -> None:
     )
 
     op.alter_column("structures", "indoor_activity_rooms", new_column_name="dining_capacity")
-*** End of File
