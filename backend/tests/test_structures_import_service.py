@@ -91,3 +91,27 @@ def test_land_row_clears_indoor_fields_and_normalises_booleans() -> None:
     assert row.shelter_on_field is True
     assert row.electricity_available is True
     assert row.pit_latrine_allowed is False
+
+
+def test_website_urls_split_from_text_field() -> None:
+    data = _build_csv(
+        [
+            {
+                "name": "Casa Digitale",
+                "slug": "casa-digitale",
+                "province": "MI",
+                "type": "house",
+                "website_urls": "https://example.org/uno;https://example.org/due\nhttps://example.org/tre",
+            }
+        ]
+    )
+
+    result = parse_structures_csv(data)
+
+    assert not result.errors
+    assert len(result.rows) == 1
+    assert result.rows[0].website_urls == [
+        "https://example.org/uno",
+        "https://example.org/due",
+        "https://example.org/tre",
+    ]
