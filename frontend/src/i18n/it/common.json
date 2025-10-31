@@ -476,6 +476,17 @@
           "no": "Cucina attrezzata non disponibile"
         }
       },
+      "meta": {
+        "slug": "Slug",
+        "created": "Creata il",
+        "estimatedDailyCost": "Costo stimato giornaliero"
+      },
+      "location": {
+        "title": "Posizione",
+        "coordinates": "Coordinate: {{lat}}, {{lon}}",
+        "placeholder": "Questa è una mappa di esempio. Integra un provider di mappe in futuro.",
+        "unavailable": "Le coordinate non sono disponibili per questa struttura."
+      },
       "openPeriods": {
         "title": "Periodi di apertura",
         "missingDate": "Data non indicata",
@@ -495,6 +506,11 @@
         "costs": "Costi",
         "contacts": "Contatti",
         "attachments": "Allegati"
+      },
+      "messages": {
+        "overviewPlaceholder": "La panoramica riassume i metadati e le coordinate della struttura.",
+        "availabilityEmpty": "Nessuna disponibilità stagionale è stata configurata.",
+        "costsEmpty": "Non sono state definite opzioni di costo per questa struttura."
       }
     },
     "filters": {
