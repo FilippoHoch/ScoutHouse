@@ -266,12 +266,13 @@
         "notesLogisticsHint": "Indica istruzioni operative (chiavi, accessi, limitazioni) utili per i capi.",
         "openPeriods": {
           "title": "Periodi di apertura",
-          "hint": "Aggiungi stagioni o intervalli di date in cui la struttura è disponibile alla prenotazione.",
+          "hint": "Aggiungi stagioni o intervalli di date in cui la struttura è disponibile alla prenotazione e specifica per quali branche.",
           "columns": {
             "kind": "Tipo",
             "season": "Stagione",
             "start": "Dal",
             "end": "Al",
+            "units": "Branche",
             "notes": "Note",
             "actions": "Azioni"
           },
@@ -286,6 +287,13 @@
             "autumn": "Autunno"
           },
           "seasonPlaceholder": "Seleziona stagione",
+          "unitsPlaceholder": "Seleziona branche",
+          "unitsOptions": {
+            "LC": "L/C",
+            "EG": "E/G",
+            "RS": "R/S",
+            "ALL": "Tutte le branche"
+          },
           "notesPlaceholder": "Note facoltative",
           "empty": "Nessun periodo impostato.",
           "addSeason": "Aggiungi stagione",
@@ -322,7 +330,8 @@
         "decimalInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
         "openPeriodsSeasonRequired": "Seleziona una stagione per i periodi stagionali.",
         "openPeriodsRangeRequired": "Indica sia data di inizio che data di fine per gli intervalli.",
-        "openPeriodsRangeOrder": "La data di fine deve essere successiva o uguale alla data di inizio."
+        "openPeriodsRangeOrder": "La data di fine deve essere successiva o uguale alla data di inizio.",
+        "openPeriodsUnitsRequired": "Seleziona almeno una branca per ogni periodo."
       },
       "contact": {
         "minimumDetails": "Compila almeno nome, cognome, email, telefono o note per cercare duplicati.",
@@ -451,7 +460,8 @@
           "summer": "Aperta in estate",
           "autumn": "Aperta in autunno"
         },
-        "seasonUnknown": "Periodo stagionale"
+        "seasonUnknown": "Periodo stagionale",
+        "units": "Branche abilitate: {{value}}"
       },
       "tabs": {
         "overview": "Panoramica",

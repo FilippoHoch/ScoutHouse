@@ -19,6 +19,7 @@ import {
   StructureOpenPeriodKind,
   StructureOpenPeriodInput,
   StructureOpenPeriodSeason,
+  Unit,
   WaterSource
 } from "../shared/types";
 import { Button, InlineMessage, SectionHeader, Surface } from "../shared/ui/designSystem";
@@ -54,6 +55,7 @@ type OpenPeriodFormRow = {
   dateStart: string;
   dateEnd: string;
   notes: string;
+  units: Unit[];
 };
 
 const openPeriodSeasonOptions: StructureOpenPeriodSeason[] = [
@@ -62,6 +64,8 @@ const openPeriodSeasonOptions: StructureOpenPeriodSeason[] = [
   "summer",
   "autumn"
 ];
+
+const openPeriodUnitOptions: Unit[] = ["LC", "EG", "RS", "ALL"];
 
 const openPeriodKindOptions: StructureOpenPeriodKind[] = ["season", "range"];
 
@@ -73,7 +77,8 @@ const createOpenPeriodRow = (kind: StructureOpenPeriodKind = "season"): OpenPeri
   season: "",
   dateStart: "",
   dateEnd: "",
-  notes: ""
+  notes: "",
+  units: []
 });
 
 const parseCoordinateValue = (value: string): number | null => {
@@ -524,6 +529,13 @@ export const StructureCreatePage = () => {
     );
   };
 
+  const handleOpenPeriodUnitsChange = (key: string, value: Unit[]) => {
+    setOpenPeriods((prev) =>
+      prev.map((row) => (row.key === key ? { ...row, units: value } : row))
+    );
+    clearFieldError("open_periods");
+  };
+
   const handleWaterSourceChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setWaterSource(event.target.value as WaterSource | "");
     setApiError(null);
@@ -742,6 +754,10 @@ export const StructureCreatePage = () => {
             break;
           }
         }
+        if (period.units.length === 0) {
+          errors.open_periods = t("structures.create.errors.openPeriodsUnitsRequired");
+          break;
+        }
       }
     }
 
@@ -894,6 +910,9 @@ export const StructureCreatePage = () => {
       const trimmedNotesValue = period.notes.trim();
       if (trimmedNotesValue) {
         base.notes = trimmedNotesValue;
+      }
+      if (period.units.length > 0) {
+        base.units = period.units as Unit[];
       }
       return base;
     });
@@ -1553,6 +1572,7 @@ export const StructureCreatePage = () => {
                           <th scope="col">{t("structures.create.form.openPeriods.columns.season")}</th>
                           <th scope="col">{t("structures.create.form.openPeriods.columns.start")}</th>
                           <th scope="col">{t("structures.create.form.openPeriods.columns.end")}</th>
+                          <th scope="col">{t("structures.create.form.openPeriods.columns.units")}</th>
                           <th scope="col">{t("structures.create.form.openPeriods.columns.notes")}</th>
                           <th scope="col" className="structure-open-periods-actions-column">
                             <span className="sr-only">
@@ -1564,7 +1584,7 @@ export const StructureCreatePage = () => {
                       <tbody>
                         {openPeriods.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="structure-open-periods-empty">
+                            <td colSpan={7} className="structure-open-periods-empty">
                               {t("structures.create.form.openPeriods.empty")}
                             </td>
                           </tr>
@@ -1649,6 +1669,51 @@ export const StructureCreatePage = () => {
                                 ) : (
                                   <span className="structure-open-periods-placeholder">—</span>
                                 )}
+                              </td>
+                              <td>
+                                <div className="structure-open-periods-units">
+                                  {openPeriodUnitOptions.map((option) => {
+                                    const label = t(
+                                      `structures.create.form.openPeriods.unitsOptions.${option}`
+                                    );
+                                    const isChecked = period.units.includes(option);
+                                    return (
+                                      <label
+                                        key={`${period.key}-${option}`}
+                                        className="structure-open-periods-unit-option"
+                                      >
+                                        <input
+                                          id={`structure-open-period-${period.key}-units-${option}`}
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={(event) => {
+                                            let nextUnits: Unit[];
+                                            if (event.target.checked) {
+                                              if (option === "ALL") {
+                                                nextUnits = ["ALL"];
+                                              } else {
+                                                nextUnits = Array.from(
+                                                  new Set(
+                                                    [
+                                                      ...period.units.filter((unit) => unit !== "ALL"),
+                                                      option
+                                                    ]
+                                                  )
+                                                ) as Unit[];
+                                              }
+                                            } else if (option === "ALL") {
+                                              nextUnits = period.units.filter((unit) => unit !== "ALL");
+                                            } else {
+                                              nextUnits = period.units.filter((unit) => unit !== option);
+                                            }
+                                            handleOpenPeriodUnitsChange(period.key, nextUnits);
+                                          }}
+                                        />
+                                        <span>{label}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
                               </td>
                               <td>
                                 <input

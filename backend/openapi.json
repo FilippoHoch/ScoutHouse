@@ -4014,6 +4014,20 @@
               }
             ],
             "title": "Notes"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureUnit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
           }
         },
         "type": "object",
@@ -4190,6 +4204,20 @@
               }
             ],
             "title": "Notes"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureUnit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
           }
         },
         "type": "object",
@@ -4248,6 +4276,20 @@
               }
             ],
             "title": "Notes"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureUnit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
           }
         },
         "type": "object",
@@ -6279,6 +6321,20 @@
               }
             ],
             "title": "Notes"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureUnit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
           }
         },
         "type": "object",
@@ -6344,6 +6400,20 @@
               }
             ],
             "title": "Notes"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureUnit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
           },
           "id": {
             "type": "integer",
@@ -6416,6 +6486,20 @@
               }
             ],
             "title": "Notes"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureUnit"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
           },
           "id": {
             "anyOf": [

@@ -1114,6 +1114,19 @@ table tbody tr:hover {
   width: 100%;
 }
 
+.structure-open-periods-units {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.structure-open-periods-unit-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
 .structure-open-periods-empty {
   text-align: center;
   padding: 2rem;

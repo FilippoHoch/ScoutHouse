@@ -103,17 +103,34 @@ export const StructureDetailsPage = () => {
   };
 
   const describeOpenPeriod = (period: StructureOpenPeriod) => {
+    const formatUnits = () => {
+      if (!period.units || period.units.length === 0) {
+        return null;
+      }
+      return t("structures.details.openPeriods.units", {
+        value: period.units.join(", ")
+      });
+    };
+    const noteSegments: string[] = [];
+    const unitsLabel = formatUnits();
+    if (unitsLabel) {
+      noteSegments.push(unitsLabel);
+    }
+    if (period.notes) {
+      noteSegments.push(period.notes);
+    }
+    const combinedNote = noteSegments.length > 0 ? noteSegments.join(" • ") : null;
     if (period.kind === "season") {
       const seasonLabel = period.season
         ? t(`structures.details.openPeriods.season.${period.season}`)
         : t("structures.details.openPeriods.seasonUnknown");
-      return { main: seasonLabel, note: period.notes ?? null };
+      return { main: seasonLabel, note: combinedNote };
     }
     const startLabel = formatDate(period.date_start);
     const endLabel = formatDate(period.date_end);
     return {
       main: t("structures.details.openPeriods.range", { start: startLabel, end: endLabel }),
-      note: period.notes ?? null,
+      note: combinedNote,
     };
   };
 

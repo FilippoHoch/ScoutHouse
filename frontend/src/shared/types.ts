@@ -17,6 +17,7 @@ export interface StructureOpenPeriod {
   date_start: string | null;
   date_end: string | null;
   notes: string | null;
+  units: Unit[] | null;
 }
 
 export interface StructureOpenPeriodInput {
@@ -26,6 +27,7 @@ export interface StructureOpenPeriodInput {
   date_start?: string | null;
   date_end?: string | null;
   notes?: string | null;
+  units?: Unit[] | null;
 }
 
 export type AttachmentOwnerType = "structure" | "event";

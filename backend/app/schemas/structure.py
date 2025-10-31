@@ -29,6 +29,7 @@ class StructureOpenPeriodBase(BaseModel):
     date_start: date | None = None
     date_end: date | None = None
     notes: str | None = None
+    units: list[StructureUnit] | None = None
 
     @model_validator(mode="after")
     def validate_period(self) -> "StructureOpenPeriodBase":
@@ -50,6 +51,8 @@ class StructureOpenPeriodBase(BaseModel):
                 )
             if self.date_start > self.date_end:
                 raise ValueError("date_start non può essere successiva a date_end")
+        if self.units is not None and len(self.units) == 0:
+            raise ValueError("Specificare almeno una branca quando units è indicato")
         return self
 
 
