@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type LeafletMap = import("leaflet").Map;
-type LeafletMarker = import("leaflet").Marker;
-type LeafletLatLng = import("leaflet").LatLng;
-type LeafletMouseEvent = import("leaflet").LeafletMouseEvent;
+type MapLibreModule = typeof import("maplibre-gl");
+type MapLibreMap = import("maplibre-gl").Map;
+type MapLibreMarker = import("maplibre-gl").Marker;
 
 export type GoogleMapPickerCoordinates = {
   lat: number;
@@ -34,8 +33,7 @@ export const GOOGLE_MAP_DEFAULT_CENTER: GoogleMapPickerCoordinates = {
   lng: 10.154572253126775
 };
 
-const FALLBACK_TILE_URL = "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
-const FALLBACK_TILE_SUBDOMAINS: string[] = ["mt0", "mt1", "mt2", "mt3"];
+const FALLBACK_STYLE_URL = "https://demotiles.maplibre.org/style.json";
 const FALLBACK_DEFAULT_ZOOM = 13;
 const FALLBACK_SELECTED_ZOOM = 15;
 
@@ -116,8 +114,8 @@ const FallbackGoogleMapPicker = ({
   ariaLabel
 }: FallbackProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
-  const markerRef = useRef<LeafletMarker | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markerRef = useRef<MapLibreMarker | null>(null);
   const latestValueRef = useRef<GoogleMapPickerCoordinates | null>(value);
   const onChangeRef = useRef(onChange);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -137,15 +135,18 @@ const FallbackGoogleMapPicker = ({
     const marker = markerRef.current;
 
     if (value) {
-      marker.setLatLng(value);
-      if (!map.hasLayer(marker)) {
-        marker.addTo(map);
-      }
+      marker.setLngLat([value.lng, value.lat]);
+      marker.addTo(map);
+      const updates: Parameters<MapLibreMap["jumpTo"]>[0] = {
+        center: [value.lng, value.lat]
+      };
+
       if (map.getZoom() < FALLBACK_SELECTED_ZOOM) {
-        map.setZoom(FALLBACK_SELECTED_ZOOM);
+        updates.zoom = FALLBACK_SELECTED_ZOOM;
       }
-      map.panTo(value);
-    } else if (map.hasLayer(marker)) {
+
+      map.jumpTo(updates);
+    } else {
       marker.remove();
     }
   }, [value]);
@@ -156,85 +157,131 @@ const FallbackGoogleMapPicker = ({
 
     (async () => {
       try {
-        const L = await import("leaflet");
-        await import("leaflet/dist/leaflet.css");
+        const maplibreModule = (await import("maplibre-gl")) as MapLibreModule;
+        await import("maplibre-gl/dist/maplibre-gl.css");
 
         if (!isMounted || !containerRef.current) {
           return;
         }
 
-        const map = L.map(containerRef.current, {
-          center: latestValueRef.current ?? GOOGLE_MAP_DEFAULT_CENTER,
+        const center = latestValueRef.current ?? GOOGLE_MAP_DEFAULT_CENTER;
+        const map = new maplibreModule.Map({
+          container: containerRef.current,
+          style: FALLBACK_STYLE_URL,
+          center: [center.lng, center.lat],
           zoom: latestValueRef.current ? FALLBACK_SELECTED_ZOOM : FALLBACK_DEFAULT_ZOOM,
-          zoomControl: true,
-          attributionControl: false
+          pitch: 45,
+          bearing: -17.6,
+          antialias: true
         });
 
-        const tileLayer = L.tileLayer(FALLBACK_TILE_URL, {
-          subdomains: FALLBACK_TILE_SUBDOMAINS,
-          maxZoom: 19,
-          minZoom: 4
+        const markerElement = document.createElement("div");
+        markerElement.className = "google-map-picker-marker";
+        const markerInner = document.createElement("span");
+        markerElement.appendChild(markerInner);
+
+        const marker = new maplibreModule.Marker({
+          element: markerElement,
+          draggable: true
         });
-
-        tileLayer.addTo(map);
-
-        const markerIcon = L.divIcon({
-          className: "google-map-picker-marker",
-          html: "<span></span>",
-          iconSize: [24, 24],
-          iconAnchor: [12, 12]
-        });
-
-        const marker = L.marker(
-          latestValueRef.current ?? GOOGLE_MAP_DEFAULT_CENTER,
-          {
-            draggable: true,
-            autoPan: true,
-            icon: markerIcon
-          }
-        );
 
         mapRef.current = map;
         markerRef.current = marker;
 
         if (latestValueRef.current) {
+          marker.setLngLat([latestValueRef.current.lng, latestValueRef.current.lat]);
           marker.addTo(map);
         }
 
-        const selectCoordinates = (coordinates: LeafletLatLng) => {
+        const selectCoordinates = (coordinates: { lat: number; lng: number }) => {
           if (!mapRef.current || !markerRef.current) {
             return;
           }
 
-          markerRef.current.setLatLng(coordinates);
-          if (!mapRef.current.hasLayer(markerRef.current)) {
-            markerRef.current.addTo(mapRef.current);
-          }
+          markerRef.current.setLngLat([coordinates.lng, coordinates.lat]);
+          markerRef.current.addTo(mapRef.current);
+          const options: Parameters<MapLibreMap["easeTo"]>[0] = {
+            center: [coordinates.lng, coordinates.lat]
+          };
           if (mapRef.current.getZoom() < FALLBACK_SELECTED_ZOOM) {
-            mapRef.current.setZoom(FALLBACK_SELECTED_ZOOM);
+            options.zoom = FALLBACK_SELECTED_ZOOM;
           }
-          mapRef.current.panTo(coordinates);
+          mapRef.current.easeTo(options);
           onChangeRef.current({ lat: coordinates.lat, lng: coordinates.lng });
         };
 
-        const handleMapClick = (event: LeafletMouseEvent) => {
-          selectCoordinates(event.latlng);
+        const handleMapClick = (event: import("maplibre-gl").MapMouseEvent) => {
+          const { lat, lng } = event.lngLat;
+          selectCoordinates({ lat, lng });
         };
 
-        const handleMarkerDrag = (event: import("leaflet").LeafletEvent) => {
-          const coords = (event.target as LeafletMarker).getLatLng();
-          selectCoordinates(coords);
+        const handleMarkerDrag = () => {
+          if (!markerRef.current) {
+            return;
+          }
+          const coords = markerRef.current.getLngLat();
+          selectCoordinates({ lat: coords.lat, lng: coords.lng });
         };
 
         map.on("click", handleMapClick);
         marker.on("dragend", handleMarkerDrag);
 
+        map.on("load", () => {
+          if (!mapRef.current) {
+            return;
+          }
+
+          const layers = mapRef.current.getStyle()?.layers ?? [];
+          const labelLayer = layers.find(
+            (layer) => layer.type === "symbol" && Boolean(layer.layout?.["text-field"])
+          );
+
+          if (!mapRef.current.getLayer("3d-buildings")) {
+            mapRef.current.addLayer(
+              {
+                id: "3d-buildings",
+                source: "openmaptiles",
+                "source-layer": "building",
+                type: "fill-extrusion",
+                minzoom: 13,
+                paint: {
+                  "fill-extrusion-color": [
+                    "case",
+                    ["boolean", ["feature-state", "hover"], false],
+                    "#4f83ff",
+                    "#9bb5ff"
+                  ],
+                  "fill-extrusion-opacity": 0.85,
+                  "fill-extrusion-height": [
+                    "coalesce",
+                    ["get", "render_height"],
+                    ["get", "height"],
+                    20
+                  ],
+                  "fill-extrusion-base": [
+                    "coalesce",
+                    ["get", "render_min_height"],
+                    ["get", "min_height"],
+                    0
+                  ]
+                }
+              },
+              labelLayer?.id
+            );
+          }
+
+          mapRef.current.addControl(new maplibreModule.NavigationControl());
+          setState("ready");
+        });
+
+        map.on("error", () => {
+          setState((prev) => (prev === "ready" ? prev : "error"));
+        });
+
         cleanup = () => {
           map.off("click", handleMapClick);
           marker.off("dragend", handleMarkerDrag);
         };
-
-        setState("ready");
       } catch {
         if (!isMounted) {
           return;

@@ -15,7 +15,8 @@
       "vitest/globals",
       "vite/client",
       "@testing-library/jest-dom/vitest",
-      "google.maps"
+      "google.maps",
+      "maplibre-gl"
     ]
   },
   "include": ["src"],
