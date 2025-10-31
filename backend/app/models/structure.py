@@ -4,6 +4,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import (
     Boolean,
     Date,
@@ -25,6 +27,9 @@ from app.core.db import Base
 from app.models.availability import StructureSeasonAvailability
 from app.models.cost_option import StructureCostOption
 from app.models.contact import Contact, StructureContact
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .structure_photo import StructurePhoto
 
 
 class StructureType(str, Enum):
@@ -191,6 +196,13 @@ class Structure(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="StructureOpenPeriod.id",
+    )
+    photos: Mapped[list["StructurePhoto"]] = relationship(
+        "StructurePhoto",
+        back_populates="structure",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="StructurePhoto.position",
     )
 
     @property

@@ -68,6 +68,7 @@ os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 
 from app.api.v1 import attachments as attachments_api  # noqa: E402
+from app.api.v1 import structures as structures_api  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.core.limiter import TEST_RATE_LIMIT_HEADER  # noqa: E402
@@ -189,6 +190,7 @@ def _install_fake_storage(monkeypatch: pytest.MonkeyPatch) -> FakeS3Client:
 
     fake_get_client.cache_clear = lambda: None  # type: ignore[attr-defined]
     monkeypatch.setattr(attachments_api, "get_s3_client", fake_get_client)
+    monkeypatch.setattr(structures_api, "get_s3_client", fake_get_client)
     monkeypatch.setattr(attachment_service, "get_s3_client", fake_get_client)
     return fake_s3
 
@@ -405,3 +407,143 @@ def test_structure_attachment_requires_admin(monkeypatch: pytest.MonkeyPatch) ->
         headers=regular_headers,
     )
     assert list_regular.status_code == 200
+
+
+def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = TestClient(app)
+    admin_headers = auth_headers(client, is_admin=True)
+
+    fake_s3 = _install_fake_storage(monkeypatch)
+
+    structure_resp = client.post(
+        "/api/v1/structures/",
+        json={
+            "name": "Base Immagini",
+            "slug": "base-immagini",
+            "province": "BG",
+            "type": "house",
+        },
+        headers=admin_headers,
+    )
+    assert structure_resp.status_code == 201, structure_resp.text
+    structure_id = structure_resp.json()["id"]
+
+    sign = client.post(
+        "/api/v1/attachments/sign-put",
+        json={
+            "owner_type": "structure",
+            "owner_id": structure_id,
+            "filename": "facciata.jpg",
+            "mime": "image/jpeg",
+        },
+        headers=admin_headers,
+    )
+    assert sign.status_code == 200, sign.text
+    upload_key = sign.json()["fields"]["key"]
+    fake_s3.add_head(upload_key, {"ContentLength": 1024, "ContentType": "image/jpeg"})
+
+    confirm = client.post(
+        "/api/v1/attachments/confirm",
+        json={
+            "owner_type": "structure",
+            "owner_id": structure_id,
+            "filename": "facciata.jpg",
+            "mime": "image/jpeg",
+            "size": 1024,
+            "key": upload_key,
+        },
+        headers=admin_headers,
+    )
+    assert confirm.status_code == 201, confirm.text
+    attachment_id = confirm.json()["id"]
+
+    create_photo = client.post(
+        f"/api/v1/structures/{structure_id}/photos",
+        json={"attachment_id": attachment_id},
+        headers=admin_headers,
+    )
+    assert create_photo.status_code == 201, create_photo.text
+    photo_payload = create_photo.json()
+    assert photo_payload["url"].startswith("https://")
+    photo_id = photo_payload["id"]
+
+    listing = client.get(f"/api/v1/structures/{structure_id}/photos")
+    assert listing.status_code == 200, listing.text
+    assert len(listing.json()) == 1
+
+    delete = client.delete(
+        f"/api/v1/structures/{structure_id}/photos/{photo_id}",
+        headers=admin_headers,
+    )
+    assert delete.status_code == 204, delete.text
+    assert any(key == upload_key for _, key in fake_s3.deleted)
+
+    after = client.get(f"/api/v1/structures/{structure_id}/photos")
+    assert after.status_code == 200
+    assert after.json() == []
+
+
+def test_structure_photo_requires_image(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = TestClient(app)
+    admin_headers = auth_headers(client, is_admin=True)
+
+    fake_s3 = _install_fake_storage(monkeypatch)
+
+    structure_resp = client.post(
+        "/api/v1/structures/",
+        json={
+            "name": "Base Documenti",
+            "slug": "base-documenti-foto",
+            "province": "TO",
+            "type": "house",
+        },
+        headers=admin_headers,
+    )
+    assert structure_resp.status_code == 201, structure_resp.text
+    structure_id = structure_resp.json()["id"]
+
+    sign = client.post(
+        "/api/v1/attachments/sign-put",
+        json={
+            "owner_type": "structure",
+            "owner_id": structure_id,
+            "filename": "listino.pdf",
+            "mime": "application/pdf",
+        },
+        headers=admin_headers,
+    )
+    assert sign.status_code == 200
+    upload_key = sign.json()["fields"]["key"]
+    fake_s3.add_head(
+        upload_key,
+        {"ContentLength": 2048, "ContentType": "application/pdf"},
+    )
+
+    confirm = client.post(
+        "/api/v1/attachments/confirm",
+        json={
+            "owner_type": "structure",
+            "owner_id": structure_id,
+            "filename": "listino.pdf",
+            "mime": "application/pdf",
+            "size": 2048,
+            "key": upload_key,
+        },
+        headers=admin_headers,
+    )
+    assert confirm.status_code == 201
+    attachment_id = confirm.json()["id"]
+
+    create_photo = client.post(
+        f"/api/v1/structures/{structure_id}/photos",
+        json={"attachment_id": attachment_id},
+        headers=admin_headers,
+    )
+    assert create_photo.status_code == 400
+    assert create_photo.json()["detail"] == "Attachment is not an image"
+
+    delete_attachment_resp = client.delete(
+        f"/api/v1/attachments/{attachment_id}",
+        headers=admin_headers,
+    )
+    assert delete_attachment_resp.status_code == 204

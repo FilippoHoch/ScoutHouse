@@ -479,11 +479,11 @@
       "meta": {
         "slug": "Slug",
         "created": "Creata il",
-        "estimatedDailyCost": "Costo stimato giornaliero"
+        "estimatedDailyCost": "Estimated daily cost"
       },
       "location": {
         "title": "Posizione",
-        "coordinates": "Coordinate: {{lat}}, {{lon}}",
+        "coordinates": "Coordinates: {{lat}}, {{lon}}",
         "placeholder": "Questa è una mappa di esempio. Integra un provider di mappe in futuro.",
         "unavailable": "Le coordinate non sono disponibili per questa struttura."
       },
@@ -505,12 +505,34 @@
         "availability": "Disponibilità",
         "costs": "Costi",
         "contacts": "Contatti",
+        "photos": "Foto",
         "attachments": "Allegati"
       },
       "messages": {
         "overviewPlaceholder": "La panoramica riassume i metadati e le coordinate della struttura.",
         "availabilityEmpty": "Nessuna disponibilità stagionale è stata configurata.",
         "costsEmpty": "Non sono state definite opzioni di costo per questa struttura."
+      }
+    },
+    "photos": {
+      "upload": {
+        "prompt": "Trascina qui una foto oppure seleziona un file (JPG, PNG, WebP, GIF).",
+        "button": "Carica foto",
+        "progress": "Caricamento…"
+      },
+      "errors": {
+        "invalidType": "Carica un file immagine (JPG, PNG, WebP o GIF).",
+        "uploadFailed": "Impossibile caricare la foto.",
+        "invalidKey": "Impossibile validare la firma di upload.",
+        "invalidStructure": "Seleziona una struttura per gestire le foto."
+      },
+      "state": {
+        "loading": "Caricamento foto in corso…",
+        "error": "Impossibile recuperare le foto.",
+        "empty": "Nessuna foto caricata."
+      },
+      "actions": {
+        "delete": "Elimina"
       }
     },
     "filters": {
@@ -616,7 +638,7 @@
       "estimatedCost": "Costo stimato: {{value}}",
       "costBand": "· fascia {{value}}",
       "viewDetails": "Dettagli",
-      "openMap": "Apri mappa",
+        "openMap": "Open in Google Maps",
       "icons": {
         "label": "Servizi rapidi",
         "fire": {

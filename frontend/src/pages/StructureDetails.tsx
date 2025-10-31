@@ -23,6 +23,7 @@ import type {
 } from "../shared/types";
 import { useAuth } from "../shared/auth";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
+import { StructurePhotosSection } from "../shared/ui/StructurePhotosSection";
 
 const formatCurrency = (value: number, currency: string) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency }).format(value);
@@ -67,10 +68,8 @@ export const StructureDetailsPage = () => {
   const { t } = useTranslation();
   const auth = useAuth();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "availability" | "costs" | "contacts" | "attachments"
-  >(
-    "overview"
-  );
+    "overview" | "availability" | "costs" | "contacts" | "photos" | "attachments"
+  >("overview");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -605,6 +604,13 @@ export const StructureDetailsPage = () => {
               </button>
               <button
                 type="button"
+                className={activeTab === "photos" ? "active" : ""}
+                onClick={() => setActiveTab("photos")}
+              >
+                {t("structures.details.tabs.photos")}
+              </button>
+              <button
+                type="button"
                 className={activeTab === "attachments" ? "active" : ""}
                 onClick={() => setActiveTab("attachments")}
               >
@@ -938,6 +944,15 @@ export const StructureDetailsPage = () => {
                 )}
               </div>
             )}
+            {activeTab === "photos" && (
+              <div className="detail-panel">
+                <StructurePhotosSection
+                  structureId={structure.id}
+                  canUpload={Boolean(auth.user?.is_admin)}
+                  canDelete={Boolean(auth.user?.is_admin)}
+                />
+              </div>
+            )}
             {activeTab === "attachments" && (
               <div className="detail-panel">
                 {!auth.user ? (
@@ -989,7 +1004,7 @@ export const StructureDetailsPage = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t("structures.list.cards.openMap")}
+                {t("structures.cards.openMap")}
               </a>
             )}
           </div>

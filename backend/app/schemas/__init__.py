@@ -33,6 +33,7 @@ from .structure import (
     StructureSearchResponse,
     StructureUpdate,
 )
+from .structure_photo import StructurePhotoCreate, StructurePhotoRead
 from .contact import ContactCreate, ContactRead, ContactUpdate
 from .quote import (
     QuoteBreakdownEntry,
@@ -76,6 +77,8 @@ __all__ = [
     "StructureSearchItem",
     "StructureSearchResponse",
     "StructureUpdate",
+    "StructurePhotoCreate",
+    "StructurePhotoRead",
     "ContactCreate",
     "ContactUpdate",
     "ContactRead",

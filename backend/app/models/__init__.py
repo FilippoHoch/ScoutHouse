@@ -21,6 +21,7 @@ from .structure import (
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
 )
+from .structure_photo import StructurePhoto
 from .attachment import Attachment, AttachmentOwnerType
 
 __all__ = [
@@ -57,4 +58,5 @@ __all__ = [
     "StructureOpenPeriod",
     "StructureOpenPeriodKind",
     "StructureOpenPeriodSeason",
+    "StructurePhoto",
 ]

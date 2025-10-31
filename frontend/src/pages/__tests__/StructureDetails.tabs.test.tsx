@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-import { getStructureBySlug } from "../../shared/api";
+import { getStructureBySlug, getStructurePhotos } from "../../shared/api";
 import type { Structure } from "../../shared/types";
 import { StructureDetailsPage } from "../StructureDetails";
 
@@ -12,7 +12,8 @@ vi.mock("../../shared/api", async () => {
   const actual = await vi.importActual<typeof import("../../shared/api")>("../../shared/api");
   return {
     ...actual,
-    getStructureBySlug: vi.fn()
+    getStructureBySlug: vi.fn(),
+    getStructurePhotos: vi.fn()
   };
 });
 
@@ -84,6 +85,7 @@ const structureWithDetails: Structure = {
 describe("StructureDetailsPage tabs", () => {
   beforeEach(() => {
     vi.mocked(getStructureBySlug).mockResolvedValue(structureWithDetails);
+    vi.mocked(getStructurePhotos).mockResolvedValue([]);
   });
 
   it("shows availability and cost information in dedicated tabs", async () => {

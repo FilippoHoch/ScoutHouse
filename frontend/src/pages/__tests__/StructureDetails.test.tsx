@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-import { ApiError, getStructureBySlug } from "../../shared/api";
+import { ApiError, getStructureBySlug, getStructurePhotos } from "../../shared/api";
 import type { Structure } from "../../shared/types";
 import { StructureDetailsPage } from "../StructureDetails";
 
@@ -11,7 +11,8 @@ vi.mock("../../shared/api", async () => {
   const actual = await vi.importActual<typeof import("../../shared/api")>("../../shared/api");
   return {
     ...actual,
-    getStructureBySlug: vi.fn()
+    getStructureBySlug: vi.fn(),
+    getStructurePhotos: vi.fn()
   };
 });
 
@@ -102,6 +103,7 @@ const sampleStructure: Structure = {
 describe("StructureDetailsPage", () => {
   beforeEach(() => {
     vi.mocked(getStructureBySlug).mockResolvedValue(sampleStructure);
+    vi.mocked(getStructurePhotos).mockResolvedValue([]);
   });
 
   it("renders structure details when found", async () => {

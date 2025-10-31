@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from enum import Enum
 from datetime import date
+from enum import Enum
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -14,15 +14,18 @@ from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
 from app.deps import get_current_user, require_admin
 from app.models import (
+    Attachment,
+    AttachmentOwnerType,
     Contact,
     ContactPreferredChannel,
-    StructureContact,
     FirePolicy,
     Structure,
+    StructureContact,
     StructureCostOption,
     StructureOpenPeriod,
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
+    StructurePhoto,
     StructureSeason,
     StructureSeasonAvailability,
     StructureType,
@@ -43,6 +46,8 @@ from app.schemas import (
     StructureOpenPeriodCreate,
     StructureOpenPeriodRead,
     StructureOpenPeriodUpdate,
+    StructurePhotoCreate,
+    StructurePhotoRead,
     StructureRead,
     StructureSearchItem,
     StructureSearchResponse,
@@ -52,11 +57,31 @@ from app.services.audit import record_audit
 from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
 from app.services.filters import structure_matches_filters
 from app.services.geo import haversine_km
+from app.services.attachments import (
+    StorageUnavailableError,
+    delete_object,
+    ensure_bucket,
+    get_s3_client,
+)
 
 router = APIRouter()
 
 
 DbSession = Annotated[Session, Depends(get_db)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+AdminUser = Annotated[User, Depends(require_admin)]
+
+
+def _ensure_storage_ready() -> tuple[str, Any]:
+    try:
+        bucket = ensure_bucket()
+    except StorageUnavailableError as exc:  # pragma: no cover - defensive guard
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File storage not configured",
+        ) from exc
+    client = get_s3_client()
+    return bucket, client
 
 DEFAULT_SORT_FIELD = "created_at"
 DEFAULT_SORT_ORDER = "desc"
@@ -121,6 +146,31 @@ def _serialize_open_period(period: StructureOpenPeriod) -> StructureOpenPeriodRe
         date_end=period.date_end,
         notes=period.notes,
         units=_serialize_units(period.units) if period.units else None,
+    )
+
+
+def _serialize_photo(
+    photo: StructurePhoto,
+    attachment: Attachment,
+    *,
+    bucket: str,
+    client: Any,
+) -> StructurePhotoRead:
+    url = client.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": bucket, "Key": attachment.storage_key},
+        ExpiresIn=120,
+    )
+    return StructurePhotoRead(
+        id=photo.id,
+        structure_id=photo.structure_id,
+        attachment_id=photo.attachment_id,
+        filename=attachment.filename,
+        mime=attachment.mime,
+        size=attachment.size,
+        position=photo.position,
+        url=url,
+        created_at=photo.created_at,
     )
 
 
@@ -1176,3 +1226,135 @@ def upsert_structure_cost_options(
         _serialize_cost_option(option)
         for option in updated_structure.cost_options
     ]
+
+
+@router.get("/{structure_id}/photos", response_model=list[StructurePhotoRead])
+def list_structure_photos(structure_id: int, db: DbSession) -> list[StructurePhotoRead]:
+    _get_structure_or_404(db, structure_id)
+
+    rows = (
+        db.execute(
+            select(StructurePhoto, Attachment)
+            .join(Attachment, StructurePhoto.attachment_id == Attachment.id)
+            .where(StructurePhoto.structure_id == structure_id)
+            .order_by(StructurePhoto.position, StructurePhoto.id)
+        )
+        .all()
+    )
+    if not rows:
+        return []
+
+    bucket, client = _ensure_storage_ready()
+    return [
+        _serialize_photo(photo, attachment, bucket=bucket, client=client)
+        for photo, attachment in rows
+    ]
+
+
+@router.post(
+    "/{structure_id}/photos",
+    response_model=StructurePhotoRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_structure_photo(
+    structure_id: int,
+    payload: StructurePhotoCreate,
+    db: DbSession,
+    _: AdminUser,
+) -> StructurePhotoRead:
+    _get_structure_or_404(db, structure_id)
+
+    attachment = db.get(Attachment, payload.attachment_id)
+    if attachment is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+    if attachment.owner_type is not AttachmentOwnerType.STRUCTURE:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Attachment must belong to a structure",
+        )
+    if attachment.owner_id != structure_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Attachment does not belong to this structure",
+        )
+    if not attachment.mime.lower().startswith("image/"):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Attachment is not an image",
+        )
+
+    existing = (
+        db.execute(
+            select(StructurePhoto.id).where(
+                StructurePhoto.attachment_id == attachment.id
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if existing is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="Photo already registered",
+        )
+
+    max_position = (
+        db.execute(
+            select(func.max(StructurePhoto.position)).where(
+                StructurePhoto.structure_id == structure_id
+            )
+        )
+        .scalars()
+        .first()
+    )
+    next_position = (max_position or -1) + 1
+
+    photo = StructurePhoto(
+        structure_id=structure_id,
+        attachment_id=attachment.id,
+        position=next_position,
+    )
+    db.add(photo)
+    db.commit()
+    db.refresh(photo)
+
+    bucket, client = _ensure_storage_ready()
+    return _serialize_photo(photo, attachment, bucket=bucket, client=client)
+
+
+@router.delete("/{structure_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_structure_photo(
+    structure_id: int,
+    photo_id: int,
+    db: DbSession,
+    _: AdminUser,
+) -> None:
+    row = (
+        db.execute(
+            select(StructurePhoto, Attachment)
+            .join(Attachment, StructurePhoto.attachment_id == Attachment.id)
+            .where(
+                StructurePhoto.id == photo_id,
+                StructurePhoto.structure_id == structure_id,
+            )
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Photo not found")
+
+    photo, attachment = row
+    bucket, client = _ensure_storage_ready()
+    delete_object(client, bucket, attachment.storage_key)
+
+    db.delete(photo)
+    db.delete(attachment)
+    db.execute(
+        update(StructurePhoto)
+        .where(
+            StructurePhoto.structure_id == structure_id,
+            StructurePhoto.position > photo.position,
+        )
+        .values(position=StructurePhoto.position - 1)
+    )
+    db.commit()

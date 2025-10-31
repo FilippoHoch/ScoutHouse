@@ -29,6 +29,7 @@ import {
   ContactCreateDto,
   ContactUpdateDto,
   Structure,
+  StructurePhoto,
   StructureCreateDto,
   StructureSearchParams,
   StructureSearchResponse,
@@ -206,6 +207,32 @@ export async function deleteAttachment(attachmentId: number): Promise<void> {
   await apiFetch<void>(`/api/v1/attachments/${attachmentId}`, {
     method: "DELETE",
     auth: true,
+  });
+}
+
+export interface StructurePhotoCreateRequest {
+  attachment_id: number;
+}
+
+export async function getStructurePhotos(structureId: number): Promise<StructurePhoto[]> {
+  return apiFetch<StructurePhoto[]>(`/api/v1/structures/${structureId}/photos`);
+}
+
+export async function createStructurePhoto(
+  structureId: number,
+  payload: StructurePhotoCreateRequest
+): Promise<StructurePhoto> {
+  return apiFetch<StructurePhoto>(`/api/v1/structures/${structureId}/photos`, {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteStructurePhoto(structureId: number, photoId: number): Promise<void> {
+  await apiFetch<void>(`/api/v1/structures/${structureId}/photos/${photoId}`, {
+    method: "DELETE",
+    auth: true
   });
 }
 
