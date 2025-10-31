@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
-revision: str = "20240320_0011_structure_open_periods_and_fields"
+revision: str = "20240320_0011"
 down_revision: str | None = "20240701_0012"
 branch_labels = None
 depends_on = None
@@ -30,12 +31,12 @@ def upgrade() -> None:
     )
 
     bind = op.get_bind()
-    kind_enum = sa.Enum(
+    kind_enum = postgresql.ENUM(
         "season",
         "range",
         name="structure_open_period_kind",
     )
-    season_enum = sa.Enum(
+    season_enum = postgresql.ENUM(
         "spring",
         "summer",
         "autumn",
@@ -45,13 +46,13 @@ def upgrade() -> None:
     kind_enum.create(bind, checkfirst=True)
     season_enum.create(bind, checkfirst=True)
 
-    kind_enum_column = sa.Enum(
+    kind_enum_column = postgresql.ENUM(
         "season",
         "range",
         name="structure_open_period_kind",
         create_type=False,
     )
-    season_enum_column = sa.Enum(
+    season_enum_column = postgresql.ENUM(
         "spring",
         "summer",
         "autumn",
@@ -108,8 +109,8 @@ def downgrade() -> None:
     op.drop_table("structure_open_periods")
 
     bind = op.get_bind()
-    season_enum = sa.Enum(name="structure_open_period_season")
-    kind_enum = sa.Enum(name="structure_open_period_kind")
+    season_enum = postgresql.ENUM(name="structure_open_period_season")
+    kind_enum = postgresql.ENUM(name="structure_open_period_kind")
     season_enum.drop(bind, checkfirst=True)
     kind_enum.drop(bind, checkfirst=True)
 
