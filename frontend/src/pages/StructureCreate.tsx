@@ -1156,6 +1156,7 @@ export const StructureCreatePage = () => {
   const waterSourcesLabelId = "structure-water-sources-label";
   const waterSourcesGroupId = "structure-water-sources-group";
   const waterSourcesHintId = "structure-water-sources-hint";
+  const hasOtherWaterSourcesSelected = waterSources.some((source) => source !== "none");
   const websiteHintId = "structure-website-hint";
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
   const openPeriodsHintId = "structure-open-periods-hint";
@@ -1516,17 +1517,24 @@ export const StructureCreatePage = () => {
                       role="group"
                       aria-labelledby={waterSourcesLabelId}
                       aria-describedby={waterSourcesHintId}
+                      className="structure-water-sources-options"
                     >
                       {waterSourceOptions.map((option) => {
                         const inputId = `structure-water-source-${option}`;
+                        const isNoneOption = option === "none";
+                        const isChecked = waterSources.includes(option);
+                        const shouldDisable = isNoneOption
+                          ? hasOtherWaterSourcesSelected && !isChecked
+                          : false;
                         return (
                           <label key={option} htmlFor={inputId} className="checkbox-field">
                             <input
                               id={inputId}
                               type="checkbox"
                               value={option}
-                              checked={waterSources.includes(option)}
+                              checked={isChecked}
                               onChange={handleWaterSourcesChange}
+                              disabled={shouldDisable}
                             />
                             {t(`structures.create.form.waterSourceOptions.${option}`)}
                           </label>
