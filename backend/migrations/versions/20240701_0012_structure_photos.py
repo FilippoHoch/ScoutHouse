@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from sqlalchemy.engine import reflection
 
 revision: str = "20240701_0012_structure_photos"
-down_revision: str | None = "20240611_0011_structure_extra_details"
+down_revision: str | None = "20240611_0011"
 branch_labels: tuple[str, ...] | None = None
 depends_on: tuple[str, ...] | None = None
 
