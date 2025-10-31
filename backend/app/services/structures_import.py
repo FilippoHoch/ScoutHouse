@@ -36,7 +36,7 @@ HEADERS = [
     "hot_water",
     "land_area_m2",
     "shelter_on_field",
-    "water_source",
+    "water_sources",
     "electricity_available",
     "fire_policy",
     "access_by_car",
@@ -83,7 +83,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "hot_water": True,
         "land_area_m2": None,
         "shelter_on_field": False,
-        "water_source": None,
+        "water_sources": None,
         "electricity_available": True,
         "fire_policy": "with_permit",
         "access_by_car": True,
@@ -114,7 +114,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "hot_water": False,
         "land_area_m2": Decimal("5000"),
         "shelter_on_field": True,
-        "water_source": "tap",
+        "water_sources": "tap",
         "electricity_available": False,
         "fire_policy": "allowed",
         "access_by_car": True,
@@ -180,7 +180,7 @@ class StructureImportRow:
     hot_water: bool | None
     land_area_m2: Decimal | None
     shelter_on_field: bool | None
-    water_source: WaterSource | None
+    water_sources: list[WaterSource] | None
     electricity_available: bool | None
     fire_policy: FirePolicy | None
     access_by_car: bool | None
@@ -318,15 +318,31 @@ def _validate_decimal_non_negative(value: object) -> Decimal | None:
     return decimal_value
 
 
-def _validate_water_source(value: object) -> WaterSource | None:
+def _parse_water_sources(value: object) -> tuple[list[WaterSource] | None, list[str]]:
     text = _normalise_text(value)
     if not text:
-        return None
-    try:
-        return WaterSource(text.lower())
-    except ValueError as exc:
-        allowed = ", ".join(item.value for item in WaterSource)
-        raise ValueError(f"must be one of {allowed}") from exc
+        return None, []
+    separators = re.compile(r"[;,]")
+    candidates = [item.strip().lower() for item in separators.split(text) if item.strip()]
+    sources: list[WaterSource] = []
+    invalid: list[str] = []
+    for candidate in candidates:
+        try:
+            sources.append(WaterSource(candidate))
+        except ValueError:
+            invalid.append(candidate)
+    if invalid:
+        return None, invalid
+    if not sources:
+        return None, []
+    # Preserve order while removing duplicates
+    seen: set[WaterSource] = set()
+    unique_sources: list[WaterSource] = []
+    for source in sources:
+        if source not in seen:
+            seen.add(source)
+            unique_sources.append(source)
+    return unique_sources, []
 
 
 def _validate_fire_policy(value: object) -> FirePolicy | None:
@@ -425,7 +441,7 @@ def _process_rows(
         hot_water_raw = values[12]
         land_area_raw = values[13]
         shelter_on_field_raw = values[14]
-        water_source_raw = values[15]
+        water_sources_raw = values[15]
         electricity_available_raw = values[16]
         fire_policy_raw = values[17]
         access_by_car_raw = values[18]
@@ -561,13 +577,29 @@ def _process_rows(
             )
             shelter_on_field = None
 
-        try:
-            water_source = _validate_water_source(water_source_raw)
-        except ValueError as exc:
+        water_sources_list, water_sources_invalid = _parse_water_sources(water_sources_raw)
+        water_sources: list[WaterSource] | None
+        if water_sources_invalid:
             row_errors.append(
-                RowError(row=index, field="water_source", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="water_sources",
+                    message=f"Invalid values: {', '.join(water_sources_invalid)}",
+                    source_format=source_format,
+                )
             )
-            water_source = None
+            water_sources = None
+        else:
+            water_sources = water_sources_list
+            if water_sources and WaterSource.NONE in water_sources and len(water_sources) > 1:
+                row_errors.append(
+                    RowError(
+                        row=index,
+                        field="water_sources",
+                        message="Value 'none' cannot be combined with other entries",
+                        source_format=source_format,
+                    )
+                )
 
         try:
             electricity_available = _validate_bool(electricity_available_raw)
@@ -697,9 +729,9 @@ def _process_rows(
             if shelter_on_field:
                 _warn("shelter_on_field", "Ignored for type=house")
                 shelter_on_field = False
-            if water_source is not None:
-                _warn("water_source", "Ignored for type=house")
-                water_source = None
+            if water_sources:
+                _warn("water_sources", "Ignored for type=house")
+                water_sources = None
             if electricity_available:
                 _warn("electricity_available", "Ignored for type=house")
                 electricity_available = False
@@ -767,7 +799,7 @@ def _process_rows(
                 hot_water=hot_water,
                 land_area_m2=land_area_m2,
                 shelter_on_field=shelter_on_field,
-                water_source=water_source,
+                water_sources=water_sources,
                 electricity_available=electricity_available,
                 fire_policy=fire_policy,
                 access_by_car=access_by_car,

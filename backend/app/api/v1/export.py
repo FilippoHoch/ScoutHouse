@@ -25,6 +25,7 @@ from app.models import (
     StructureOpenPeriodSeason,
     StructureType,
     User,
+    WaterSource,
 )
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.user import EventMemberRole
@@ -66,7 +67,7 @@ CSV_HEADERS_STRUCTURES = (
     "hot_water",
     "land_area_m2",
     "shelter_on_field",
-    "water_source",
+    "water_sources",
     "electricity_available",
     "fire_policy",
     "access_by_car",
@@ -280,7 +281,13 @@ def _build_structure_row(
         "hot_water": structure.hot_water,
         "land_area_m2": float(structure.land_area_m2) if structure.land_area_m2 is not None else None,
         "shelter_on_field": structure.shelter_on_field,
-        "water_source": structure.water_source.value if structure.water_source else None,
+        "water_sources": (
+            ",".join(
+                source.value if isinstance(source, WaterSource) else str(source)
+                for source in (structure.water_sources or [])
+            )
+            or None
+        ),
         "electricity_available": structure.electricity_available,
         "fire_policy": structure.fire_policy.value if structure.fire_policy else None,
         "access_by_car": structure.access_by_car,

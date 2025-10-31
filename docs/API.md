@@ -253,7 +253,7 @@ file must contain the following headers as the first row: `name`, `slug`,
 `province`, `address`, `latitude`, `longitude`, `type`, `indoor_beds`,
 `indoor_bathrooms`, `indoor_showers`, `indoor_activity_rooms`, `has_kitchen`,
 `hot_water`, `land_area_m2`, `shelter_on_field`,
-`water_source`, `electricity_available`, `fire_policy`,
+`water_sources`, `electricity_available`, `fire_policy`,
 `access_by_car`, `access_by_coach`, `access_by_public_transport`,
 `coach_turning_area`, `nearest_bus_stop`,
 `weekend_only`, `has_field_poles`, `pit_latrine_allowed`, `website_url`, `notes_logistics`, `notes`.

@@ -86,7 +86,7 @@ class StructureBase(BaseModel):
     hot_water: bool = False
     land_area_m2: float | None = Field(default=None, ge=0)
     shelter_on_field: bool = False
-    water_source: WaterSource | None = None
+    water_sources: list[WaterSource] | None = None
     electricity_available: bool = False
     fire_policy: FirePolicy | None = None
     access_by_car: bool = False
@@ -153,11 +153,13 @@ class StructureBase(BaseModel):
         }
         outdoor_flags = {
             "shelter_on_field": self.shelter_on_field,
-            "water_source": self.water_source,
             "electricity_available": self.electricity_available,
             "fire_policy": self.fire_policy,
             "has_field_poles": self.has_field_poles,
             "pit_latrine_allowed": self.pit_latrine_allowed,
+        }
+        outdoor_lists = {
+            "water_sources": self.water_sources,
         }
 
         has_indoor_data = any(
@@ -165,14 +167,21 @@ class StructureBase(BaseModel):
         ) or any(flag is True for flag in indoor_flags.values())
         has_outdoor_data = any(
             value not in (None, 0) for value in outdoor_values.values()
-        ) or any(flag not in (None, False) for flag in outdoor_flags.values())
+        ) or any(flag not in (None, False) for flag in outdoor_flags.values()) or any(
+            sequence for sequence in outdoor_lists.values() if sequence
+        )
 
         if structure_type == StructureType.HOUSE and has_outdoor_data:
-            offending = [
-                name
-                for name, value in {**outdoor_values, **outdoor_flags}.items()
-                if value not in (None, False) and value != 0
-            ]
+            offending: list[str] = []
+            for name, value in outdoor_values.items():
+                if value not in (None, 0):
+                    offending.append(name)
+            for name, flag in outdoor_flags.items():
+                if flag not in (None, False):
+                    offending.append(name)
+            for name, sequence in outdoor_lists.items():
+                if sequence:
+                    offending.append(name)
             detail = ", ".join(sorted(offending)) if offending else "campi outdoor"
             raise ValueError(
                 f"Campi outdoor non ammessi per type=house: {detail}"

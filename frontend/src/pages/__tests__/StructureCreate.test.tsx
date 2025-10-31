@@ -44,7 +44,7 @@ const createdStructure: Structure = {
   hot_water: true,
   land_area_m2: null,
   shelter_on_field: false,
-  water_source: null,
+  water_sources: null,
   electricity_available: true,
   fire_policy: null,
   access_by_car: true,
@@ -123,7 +123,7 @@ describe("StructureCreatePage", () => {
       has_field_poles: false,
       pit_latrine_allowed: false,
       land_area_m2: null,
-      water_source: null,
+      water_sources: null,
       fire_policy: null,
       open_periods: []
     });
