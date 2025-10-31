@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 from io import BytesIO
@@ -54,6 +55,7 @@ def create_structure(client: TestClient, slug: str, province: str) -> None:
         "address": "Via Rover 1",
         "latitude": 45.0,
         "longitude": 9.0,
+        "altitude": 210.0,
     }
     response = client.post("/api/v1/structures/", json=payload)
     assert response.status_code == 201
@@ -93,6 +95,8 @@ def test_export_structures_with_filters_csv() -> None:
         assert set(archive.namelist()) == {"structures.csv", "structure_open_periods.csv"}
         structures = archive.read("structures.csv").decode("utf-8").strip().splitlines()
         assert len(structures) == 2  # header + single row
+        header = next(csv.reader([structures[0]]))
+        assert header[8] == "altitude"
         assert "casa-scout" in structures[1]
         assert all("casa-nord" not in line for line in structures)
 

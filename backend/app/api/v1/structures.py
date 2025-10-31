@@ -561,6 +561,7 @@ def search_structures(
             address=structure.address,
             latitude=float(structure.latitude) if structure.latitude is not None else None,
             longitude=float(structure.longitude) if structure.longitude is not None else None,
+            altitude=float(structure.altitude) if structure.altitude is not None else None,
             distance_km=distance,
             estimated_cost=estimated_cost,
             cost_band=band,

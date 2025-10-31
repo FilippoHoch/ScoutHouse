@@ -37,6 +37,7 @@ const sampleStructure: Structure = {
   address: "Via Roma 1",
   latitude: 45.6,
   longitude: 10.16,
+  altitude: 1250,
   type: "house",
   indoor_beds: 48,
   indoor_bathrooms: 6,
@@ -118,13 +119,17 @@ describe("StructureDetailsPage", () => {
     );
 
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
-    const mapLink = screen.getByRole("link", { name: i18n.t("structures.list.cards.openMap") });
+    const mapLink = screen.getByRole("link", { name: /Google Maps/i });
     expect(mapLink).toHaveAttribute("href", "https://www.google.com/maps?q=45.6,10.16");
     const coordinatesLabel = i18n.t("structures.details.location.coordinates", {
       lat: sampleStructure.latitude?.toFixed(4),
       lon: sampleStructure.longitude?.toFixed(4)
     });
     expect(screen.getByText(coordinatesLabel)).toBeInTheDocument();
+    const altitudeLabel = i18n.t("structures.details.location.altitude", {
+      alt: sampleStructure.altitude?.toFixed(0)
+    });
+    expect(screen.getByText(altitudeLabel)).toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 

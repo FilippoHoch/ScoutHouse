@@ -47,6 +47,7 @@ describe("Structure contacts management", () => {
       address: "Via Test 1",
       latitude: 45.0,
       longitude: 9.0,
+      altitude: 320,
       type: "house",
       created_at: new Date("2024-03-01T10:00:00Z").toISOString(),
       estimated_cost: null,

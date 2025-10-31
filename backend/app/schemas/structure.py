@@ -78,6 +78,7 @@ class StructureBase(BaseModel):
     address: str | None = None
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
+    altitude: float | None = Field(default=None)
     type: StructureType
     indoor_beds: int | None = Field(default=None, ge=0)
     indoor_bathrooms: int | None = Field(default=None, ge=0)
@@ -156,6 +157,15 @@ class StructureBase(BaseModel):
             return value
         if not -180 <= value <= 180:
             raise ValueError("Longitude must be between -180 and 180 degrees")
+        return value
+
+    @field_validator("altitude")
+    @classmethod
+    def validate_altitude(cls, value: float | None) -> float | None:
+        if value is None:
+            return value
+        if not -500 <= value <= 9000:
+            raise ValueError("Altitude must be between -500 and 9000 meters")
         return value
 
     @model_validator(mode="after")
@@ -321,6 +331,7 @@ class StructureSearchItem(BaseModel):
     address: str | None = None
     latitude: float | None = None
     longitude: float | None = None
+    altitude: float | None = None
     distance_km: float | None = None
     estimated_cost: float | None = None
     cost_band: CostBand | None = None

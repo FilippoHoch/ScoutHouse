@@ -73,6 +73,7 @@ class Structure(Base):
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
     latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
+    altitude: Mapped[Decimal | None] = mapped_column(Numeric(7, 2), nullable=True)
     type: Mapped[StructureType] = mapped_column(
         SQLEnum(StructureType, name="structure_type"),
         nullable=False,

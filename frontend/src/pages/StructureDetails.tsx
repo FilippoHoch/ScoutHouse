@@ -200,6 +200,16 @@ export const StructureDetailsPage = () => {
   const structure = data as Structure;
   const createdAt = new Date(structure.created_at).toLocaleDateString();
   const hasCoordinates = structure.latitude !== null && structure.longitude !== null;
+  const altitudeValue =
+    structure.altitude !== null && structure.altitude !== undefined
+      ? structure.altitude
+      : null;
+  const altitudeLabel =
+    altitudeValue !== null
+      ? t("structures.details.location.altitude", {
+          alt: altitudeValue.toFixed(0)
+        })
+      : null;
   const googleMapsUrl = hasCoordinates
     ? `https://www.google.com/maps?q=${structure.latitude},${structure.longitude}`
     : null;
@@ -999,6 +1009,9 @@ export const StructureDetailsPage = () => {
                       lon: structure.longitude?.toFixed(4)
                     })}
                   </p>
+                  {altitudeLabel && (
+                    <p className="structure-details__map-coordinates">{altitudeLabel}</p>
+                  )}
                   <p className="structure-details__map-note">
                     {t("structures.details.location.placeholder")}
                   </p>
