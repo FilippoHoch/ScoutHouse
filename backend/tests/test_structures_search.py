@@ -38,6 +38,7 @@ def seed_sample_structures(client: TestClient) -> None:
             "address": "Via Piazzetta 3, Gussago",
             "latitude": 45.5968,
             "longitude": 10.1658,
+            "altitude": 320,
         },
         {
             "name": "Rifugio Panorama",
@@ -47,6 +48,7 @@ def seed_sample_structures(client: TestClient) -> None:
             "address": "Località Monte Campione",
             "latitude": 45.7793,
             "longitude": 10.1774,
+            "altitude": 1780,
         },
         {
             "name": "Campo Delta",
@@ -56,6 +58,7 @@ def seed_sample_structures(client: TestClient) -> None:
             "address": "Via del Lago 12, Lazise",
             "latitude": 45.5050,
             "longitude": 10.7360,
+            "altitude": 68,
         },
         {
             "name": "Magazzino senza coordinate",
@@ -86,6 +89,7 @@ def test_search_pagination_and_sorting() -> None:
         "campo-base-gussago",
         "campo-delta",
     ]
+    assert data["items"][0]["altitude"] == pytest.approx(320, rel=1e-3)
 
     resp_page_2 = client.get(
         "/api/v1/structures/search",

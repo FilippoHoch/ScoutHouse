@@ -43,6 +43,7 @@ def test_structures_flow() -> None:
         "address": "Via Scout 1, Milano",
         "latitude": 45.4642,
         "longitude": 9.1900,
+        "altitude": 120.5,
         "indoor_beds": 48,
         "indoor_bathrooms": 6,
         "indoor_showers": 10,
@@ -77,6 +78,7 @@ def test_structures_flow() -> None:
     assert created["province"] == "MI"
     assert created["latitude"] == pytest.approx(payload["latitude"], rel=1e-3)
     assert created["longitude"] == pytest.approx(payload["longitude"], rel=1e-3)
+    assert created["altitude"] == pytest.approx(payload["altitude"], rel=1e-3)
     assert created["indoor_beds"] == payload["indoor_beds"]
     assert created["indoor_bathrooms"] == payload["indoor_bathrooms"]
     assert created["indoor_showers"] == payload["indoor_showers"]
@@ -97,6 +99,7 @@ def test_structures_flow() -> None:
     data = list_resp.json()
     assert len(data) == 1
     assert data[0]["slug"] == payload["slug"]
+    assert data[0]["altitude"] == pytest.approx(payload["altitude"], rel=1e-3)
 
     slug_resp = client.get("/api/v1/structures/by-slug/scout-training-center")
     assert slug_resp.status_code == 200
@@ -133,6 +136,7 @@ def test_field_validation_errors() -> None:
         "type": "house",
         "latitude": 123.0,
         "longitude": -200.0,
+        "altitude": 12000,
     }
 
     response = client.post("/api/v1/structures/", json=invalid_payload)

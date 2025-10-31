@@ -91,6 +91,7 @@ def test_dry_run_preview_lists_actions() -> None:
                 "address": "Via Neve 12",
                 "latitude": 46.2,
                 "longitude": 10.5,
+                "altitude": 1450,
                 "type": "house",
             },
             {
@@ -100,6 +101,7 @@ def test_dry_run_preview_lists_actions() -> None:
                 "address": "Località Bosco",
                 "latitude": 46.0,
                 "longitude": 11.0,
+                "altitude": 980,
                 "type": "mixed",
             },
         ]
@@ -129,6 +131,7 @@ def test_validation_errors_reported_per_row() -> None:
                 "province": "Bergamo",
                 "latitude": 91,
                 "longitude": -181,
+                "altitude": -900,
                 "type": "villa",
             }
         ]
@@ -149,6 +152,7 @@ def test_validation_errors_reported_per_row() -> None:
         and ("province", "must be 2 letters", "xlsx") in error_map
         and ("latitude", "must be between -90 and 90", "xlsx") in error_map
         and ("longitude", "must be between -180 and 180", "xlsx") in error_map
+        and ("altitude", "must be between -500 and 9000", "xlsx") in error_map
         and ("type", "must be one of house, land, mixed", "xlsx") in error_map
     )
 
@@ -171,6 +175,7 @@ def test_confirmed_import_upserts_rows() -> None:
                 "address": "Via Centro 10",
                 "latitude": 45.5,
                 "longitude": 9.19,
+                "altitude": 115,
                 "type": "house",
             },
             {
@@ -180,6 +185,7 @@ def test_confirmed_import_upserts_rows() -> None:
                 "address": "Borgata Bosco",
                 "latitude": 45.1,
                 "longitude": 7.7,
+                "altitude": 780,
                 "type": "land",
             },
         ]

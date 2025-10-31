@@ -37,17 +37,7 @@ def build_csv(rows: list[dict[str, object]]) -> bytes:
     writer = csv.writer(buffer)
     writer.writerow(HEADERS)
     for row in rows:
-        writer.writerow(
-            [
-                row.get("name"),
-                row.get("slug"),
-                row.get("province"),
-                row.get("address"),
-                row.get("latitude"),
-                row.get("longitude"),
-                row.get("type"),
-            ]
-        )
+        writer.writerow([row.get(header) for header in HEADERS])
     return buffer.getvalue().encode("utf-8")
 
 
@@ -97,6 +87,7 @@ def test_csv_dry_run_preview_lists_actions() -> None:
                 "address": "Via Neve 12",
                 "latitude": 46.2,
                 "longitude": 10.5,
+                "altitude": 1450,
                 "type": "house",
             },
             {
@@ -106,6 +97,7 @@ def test_csv_dry_run_preview_lists_actions() -> None:
                 "address": "Località Bosco",
                 "latitude": 46.0,
                 "longitude": 11.0,
+                "altitude": 980,
                 "type": "mixed",
             },
         ]
@@ -159,6 +151,7 @@ def test_csv_confirmed_import_upserts_rows() -> None:
                 "address": "Via Centro 10",
                 "latitude": 45.5,
                 "longitude": 9.19,
+                "altitude": 115,
                 "type": "house",
             },
             {
@@ -168,6 +161,7 @@ def test_csv_confirmed_import_upserts_rows() -> None:
                 "address": "Borgata Bosco",
                 "latitude": 45.1,
                 "longitude": 7.7,
+                "altitude": 780,
                 "type": "land",
             },
         ]

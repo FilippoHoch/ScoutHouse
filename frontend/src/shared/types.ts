@@ -124,6 +124,7 @@ export interface Structure {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  altitude: number | null;
   type: StructureType;
   indoor_beds: number | null;
   indoor_bathrooms: number | null;
@@ -163,6 +164,7 @@ export interface StructureCreateDto {
   address?: string;
   latitude?: number;
   longitude?: number;
+  altitude?: number;
   type: StructureType;
   indoor_beds?: number | null;
   indoor_bathrooms?: number | null;
@@ -197,6 +199,7 @@ export interface StructureSearchItem {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  altitude: number | null;
   type: StructureType;
   distance_km: number | null;
   estimated_cost: number | null;

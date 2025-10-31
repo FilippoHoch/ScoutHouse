@@ -169,6 +169,7 @@ async def import_structures(
                 address=row.address,
                 latitude=row.latitude,
                 longitude=row.longitude,
+                altitude=row.altitude,
                 type=row.type,
                 indoor_beds=row.indoor_beds,
                 indoor_bathrooms=row.indoor_bathrooms,
@@ -207,6 +208,7 @@ async def import_structures(
             structure.address = row.address
             structure.latitude = row.latitude
             structure.longitude = row.longitude
+            structure.altitude = row.altitude
             structure.type = row.type
             structure.indoor_beds = row.indoor_beds
             structure.indoor_bathrooms = row.indoor_bathrooms

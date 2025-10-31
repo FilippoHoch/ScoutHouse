@@ -52,6 +52,7 @@ type FieldErrorKey =
   | "province"
   | "latitude"
   | "longitude"
+  | "altitude"
   | "type"
   | "indoor_beds"
   | "indoor_bathrooms"
@@ -136,6 +137,7 @@ export const StructureCreatePage = () => {
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+  const [altitude, setAltitude] = useState("");
   const [type, setType] = useState<StructureType | "">("");
   const [indoorBeds, setIndoorBeds] = useState("");
   const [indoorBathrooms, setIndoorBathrooms] = useState("");
@@ -535,6 +537,12 @@ export const StructureCreatePage = () => {
     clearFieldError("longitude");
   };
 
+  const handleAltitudeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setAltitude(event.target.value);
+    setApiError(null);
+    clearFieldError("altitude");
+  };
+
   const handleMapCoordinatesChange = (coordinates: { lat: number; lng: number }) => {
     setLatitude(coordinates.lat.toFixed(6));
     setLongitude(coordinates.lng.toFixed(6));
@@ -822,6 +830,7 @@ export const StructureCreatePage = () => {
     const trimmedProvince = province.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
+    const trimmedAltitude = altitude.trim();
     const trimmedIndoorBeds = indoorBeds.trim();
     const trimmedIndoorBathrooms = indoorBathrooms.trim();
     const trimmedIndoorShowers = indoorShowers.trim();
@@ -858,6 +867,13 @@ export const StructureCreatePage = () => {
       const lonNumber = parseCoordinateValue(trimmedLongitude);
       if (lonNumber === null || lonNumber < -180 || lonNumber > 180) {
         errors.longitude = t("structures.create.errors.longitudeInvalid");
+      }
+    }
+
+    if (trimmedAltitude) {
+      const altNumber = parseCoordinateValue(trimmedAltitude);
+      if (altNumber === null || altNumber < -500 || altNumber > 9000) {
+        errors.altitude = t("structures.create.errors.altitudeInvalid");
       }
     }
 
@@ -1031,6 +1047,11 @@ export const StructureCreatePage = () => {
       payload.longitude = longitudeValue;
     }
 
+    const altitudeValue = parseCoordinateValue(trimmedAltitude);
+    if (altitudeValue !== null) {
+      payload.altitude = altitudeValue;
+    }
+
     if (showIndoorSection) {
       payload.indoor_beds = trimmedIndoorBeds
         ? Number.parseInt(trimmedIndoorBeds, 10)
@@ -1138,6 +1159,7 @@ export const StructureCreatePage = () => {
   const provinceErrorId = fieldErrors.province ? "structure-province-error" : undefined;
   const latitudeErrorId = fieldErrors.latitude ? "structure-latitude-error" : undefined;
   const longitudeErrorId = fieldErrors.longitude ? "structure-longitude-error" : undefined;
+  const altitudeErrorId = fieldErrors.altitude ? "structure-altitude-error" : undefined;
   const nameErrorId = fieldErrors.name ? "structure-name-error" : undefined;
   const typeErrorId = fieldErrors.type ? "structure-type-error" : undefined;
   const indoorBedsErrorId = fieldErrors.indoor_beds ? "structure-indoor-beds-error" : undefined;
@@ -1165,6 +1187,8 @@ export const StructureCreatePage = () => {
   const latitudeDescribedBy = [latitudeHintId, latitudeErrorId].filter(Boolean).join(" ") || undefined;
   const longitudeHintId = "structure-longitude-hint";
   const longitudeDescribedBy = [longitudeHintId, longitudeErrorId].filter(Boolean).join(" ") || undefined;
+  const altitudeHintId = "structure-altitude-hint";
+  const altitudeDescribedBy = [altitudeHintId, altitudeErrorId].filter(Boolean).join(" ") || undefined;
   const indoorBedsHintId = "structure-indoor-beds-hint";
   const indoorBedsDescribedBy = [indoorBedsHintId, indoorBedsErrorId]
     .filter(Boolean)
@@ -1206,6 +1230,7 @@ export const StructureCreatePage = () => {
   const trimmedAddress = address.trim();
   const trimmedLatitude = latitude.trim();
   const trimmedLongitude = longitude.trim();
+  const trimmedAltitude = altitude.trim();
 
   const slugPreviewMessage = trimmedSlug
     ? t("structures.create.form.slugPreviewLabel", { url: `/structures/${trimmedSlug}` })
@@ -1227,6 +1252,9 @@ export const StructureCreatePage = () => {
           lon: trimmedLongitude
         })
       : t("structures.create.preview.coordinatesPlaceholder");
+  const previewAltitudeLabel = trimmedAltitude
+    ? t("structures.create.preview.altitudeLabel", { alt: trimmedAltitude })
+    : null;
 
   const sidebarTips = [
     t("structures.create.sidebar.items.fields"),
@@ -2460,6 +2488,29 @@ export const StructureCreatePage = () => {
                   )}
                 </div>
 
+                <div className="structure-form-field">
+                  <label htmlFor="structure-altitude">
+                    {t("structures.create.form.altitude")}
+                    <input
+                      id="structure-altitude"
+                      value={altitude}
+                      onChange={handleAltitudeChange}
+                      inputMode="decimal"
+                      step="any"
+                      aria-invalid={fieldErrors.altitude ? "true" : undefined}
+                      aria-describedby={altitudeDescribedBy}
+                    />
+                  </label>
+                  <span className="helper-text" id={altitudeHintId}>
+                    {t("structures.create.form.altitudeHint")}
+                  </span>
+                  {fieldErrors.altitude && (
+                    <p className="error-text" id={altitudeErrorId}>
+                      {fieldErrors.altitude}
+                    </p>
+                  )}
+                </div>
+
                 <div className="structure-form-field" data-span="full">
                   <div className="structure-map-field">
                     <span className="structure-map-field-title">
@@ -2541,6 +2592,9 @@ export const StructureCreatePage = () => {
               <p className="structure-preview-address">{previewAddress}</p>
               <p className="structure-preview-url">{previewUrlLabel}</p>
               <p className="structure-preview-hint">{previewCoordinatesLabel}</p>
+              {previewAltitudeLabel && (
+                <p className="structure-preview-hint">{previewAltitudeLabel}</p>
+              )}
             </div>
           </Surface>
         </aside>

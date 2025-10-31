@@ -37,6 +37,7 @@ const structureWithDetails: Structure = {
   address: null,
   latitude: null,
   longitude: null,
+  altitude: null,
   type: "mixed",
   indoor_beds: null,
   indoor_bathrooms: null,

@@ -27,6 +27,7 @@ HEADERS = [
     "address",
     "latitude",
     "longitude",
+    "altitude",
     "type",
     "indoor_beds",
     "indoor_bathrooms",
@@ -74,6 +75,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "address": "Via Bosco 10",
         "latitude": Decimal("46.123"),
         "longitude": Decimal("11.456"),
+        "altitude": Decimal("1250"),
         "type": "house",
         "indoor_beds": 48,
         "indoor_bathrooms": 6,
@@ -105,6 +107,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "address": "Località Campi",
         "latitude": Decimal("45.45"),
         "longitude": Decimal("9.12"),
+        "altitude": Decimal("120"),
         "type": "land",
         "indoor_beds": None,
         "indoor_bathrooms": None,
@@ -171,6 +174,7 @@ class StructureImportRow:
     address: str | None
     latitude: Decimal | None
     longitude: Decimal | None
+    altitude: Decimal | None
     type: StructureType
     indoor_beds: int | None
     indoor_bathrooms: int | None
@@ -425,6 +429,14 @@ def _validate_longitude(value: Decimal | None) -> Decimal | None:
     return value
 
 
+def _validate_altitude(value: Decimal | None) -> Decimal | None:
+    if value is None:
+        return None
+    if value < Decimal("-500") or value > Decimal("9000"):
+        raise ValueError("must be between -500 and 9000")
+    return value
+
+
 def _is_blank_row(values: Sequence[object]) -> bool:
     for value in values:
         text = _normalise_text(value)
@@ -466,29 +478,30 @@ def _process_rows(
         address_value = values[3]
         latitude_raw = values[4]
         longitude_raw = values[5]
-        type_raw = values[6]
-        indoor_beds_raw = values[7]
-        indoor_bathrooms_raw = values[8]
-        indoor_showers_raw = values[9]
-        indoor_activity_rooms_raw = values[10]
-        has_kitchen_raw = values[11]
-        hot_water_raw = values[12]
-        land_area_raw = values[13]
-        shelter_on_field_raw = values[14]
-        water_sources_raw = values[15]
-        electricity_available_raw = values[16]
-        fire_policy_raw = values[17]
-        access_by_car_raw = values[18]
-        access_by_coach_raw = values[19]
-        access_by_public_transport_raw = values[20]
-        coach_turning_area_raw = values[21]
-        nearest_bus_stop_raw = values[22]
-        weekend_only_raw = values[23]
-        has_field_poles_raw = values[24]
-        pit_latrine_allowed_raw = values[25]
-        website_urls_raw = values[26]
-        notes_logistics_raw = values[27]
-        notes_raw = values[28]
+        altitude_raw = values[6]
+        type_raw = values[7]
+        indoor_beds_raw = values[8]
+        indoor_bathrooms_raw = values[9]
+        indoor_showers_raw = values[10]
+        indoor_activity_rooms_raw = values[11]
+        has_kitchen_raw = values[12]
+        hot_water_raw = values[13]
+        land_area_raw = values[14]
+        shelter_on_field_raw = values[15]
+        water_sources_raw = values[16]
+        electricity_available_raw = values[17]
+        fire_policy_raw = values[18]
+        access_by_car_raw = values[19]
+        access_by_coach_raw = values[20]
+        access_by_public_transport_raw = values[21]
+        coach_turning_area_raw = values[22]
+        nearest_bus_stop_raw = values[23]
+        weekend_only_raw = values[24]
+        has_field_poles_raw = values[25]
+        pit_latrine_allowed_raw = values[26]
+        website_urls_raw = values[27]
+        notes_logistics_raw = values[28]
+        notes_raw = values[29]
 
         row_errors: list[RowError] = []
         row_warnings: list[RowError] = []
@@ -533,6 +546,14 @@ def _process_rows(
                 RowError(row=index, field="longitude", message=str(exc), source_format=source_format)
             )
             longitude = None
+
+        try:
+            altitude = _validate_altitude(_normalise_decimal(altitude_raw))
+        except ValueError as exc:
+            row_errors.append(
+                RowError(row=index, field="altitude", message=str(exc), source_format=source_format)
+            )
+            altitude = None
 
         try:
             structure_type = _validate_type(_normalise_text(type_raw))
@@ -822,6 +843,7 @@ def _process_rows(
                 address=address,
                 latitude=latitude,
                 longitude=longitude,
+                altitude=altitude,
                 type=structure_type,
                 indoor_beds=indoor_beds,
                 indoor_bathrooms=indoor_bathrooms,

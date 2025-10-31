@@ -156,6 +156,8 @@
         "addressHint": "Indica via, numero civico e località se disponibili.",
         "latitude": "Latitudine",
         "longitude": "Longitudine",
+        "altitude": "Altitudine",
+        "altitudeHint": "Inserisci l'altitudine in metri sul livello del mare (opzionale).",
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
         "map": {
           "title": "Seleziona sulla mappa",
@@ -352,6 +354,7 @@
         "provinceInvalid": "La provincia deve contenere esattamente due lettere.",
         "latitudeInvalid": "La latitudine deve essere compresa tra -90 e 90.",
         "longitudeInvalid": "La longitudine deve essere compresa tra -180 e 180.",
+        "altitudeInvalid": "L'altitudine deve essere compresa tra -500 e 9000 metri.",
         "numberInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
         "websiteInvalid": "Inserisci URL validi che inizino con http o https.",
         "saveFailed": "Impossibile creare la struttura.",
@@ -389,6 +392,7 @@
         "urlLabel": "URL: {{url}}",
         "urlPlaceholder": "L'URL verrà mostrato qui appena inserisci lo slug.",
         "coordinatesLabel": "Coordinate: {{lat}}, {{lon}}",
+        "altitudeLabel": "Altitudine: {{alt}} m s.l.m.",
         "coordinatesPlaceholder": "Inserisci latitudine e longitudine per completare l'anteprima.",
         "mapTitle": "Vista satellitare 3D",
         "mapAriaLabel": "Vista satellitare 3D della struttura",
@@ -489,6 +493,7 @@
       "location": {
         "title": "Posizione",
         "coordinates": "Coordinates: {{lat}}, {{lon}}",
+        "altitude": "Altitudine: {{alt}} m s.l.m.",
         "placeholder": "Questa è una mappa di esempio. Integra un provider di mappe in futuro.",
         "unavailable": "Le coordinate non sono disponibili per questa struttura."
       },

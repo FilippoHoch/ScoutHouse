@@ -35,6 +35,7 @@ const createdStructure: Structure = {
   address: "Via Bosco 1",
   latitude: 45.12,
   longitude: 9.12,
+  altitude: 450,
   type: "house",
   indoor_beds: 30,
   indoor_bathrooms: 4,
@@ -97,6 +98,7 @@ describe("StructureCreatePage", () => {
     await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
     await user.type(screen.getByLabelText(/Provincia/i), "bs");
+    await user.type(screen.getByLabelText(/Altitudine/i), "350");
 
     await user.type(screen.getByLabelText(/Siti o link di riferimento/i), "https://base.example.org");
     await user.click(screen.getByRole("button", { name: /Aggiungi un altro link/i }));
@@ -129,6 +131,7 @@ describe("StructureCreatePage", () => {
       land_area_m2: null,
       water_sources: null,
       fire_policy: null,
+      altitude: 350,
       open_periods: []
     });
     expect(payload.website_urls).toEqual([

@@ -1770,6 +1770,156 @@
         }
       }
     },
+    "/api/v1/structures/{structure_id}/photos": {
+      "get": {
+        "tags": [
+          "structures"
+        ],
+        "summary": "List Structure Photos",
+        "operationId": "list_structure_photos_api_v1_structures__structure_id__photos_get",
+        "parameters": [
+          {
+            "name": "structure_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Structure Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StructurePhotoRead"
+                  },
+                  "title": "Response List Structure Photos Api V1 Structures  Structure Id  Photos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "structures"
+        ],
+        "summary": "Create Structure Photo",
+        "operationId": "create_structure_photo_api_v1_structures__structure_id__photos_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "structure_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Structure Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StructurePhotoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructurePhotoRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/structures/{structure_id}/photos/{photo_id}": {
+      "delete": {
+        "tags": [
+          "structures"
+        ],
+        "summary": "Delete Structure Photo",
+        "operationId": "delete_structure_photo_api_v1_structures__structure_id__photos__photo_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "structure_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Structure Id"
+            }
+          },
+          {
+            "name": "photo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Photo Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/events/{event_id}/live": {
       "get": {
         "tags": [
@@ -6251,6 +6401,17 @@
             ],
             "title": "Longitude"
           },
+          "altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude"
+          },
           "type": {
             "$ref": "#/components/schemas/StructureType"
           },
@@ -6699,6 +6860,76 @@
         ],
         "title": "StructureOpenPeriodUpdate"
       },
+      "StructurePhotoCreate": {
+        "properties": {
+          "attachment_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Attachment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attachment_id"
+        ],
+        "title": "StructurePhotoCreate"
+      },
+      "StructurePhotoRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "structure_id": {
+            "type": "integer",
+            "title": "Structure Id"
+          },
+          "attachment_id": {
+            "type": "integer",
+            "title": "Attachment Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "mime": {
+            "type": "string",
+            "title": "Mime"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "format": "uri",
+            "title": "Url"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "structure_id",
+          "attachment_id",
+          "filename",
+          "mime",
+          "size",
+          "position",
+          "url",
+          "created_at"
+        ],
+        "title": "StructurePhotoRead"
+      },
       "StructureRead": {
         "properties": {
           "name": {
@@ -6754,6 +6985,17 @@
               }
             ],
             "title": "Longitude"
+          },
+          "altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude"
           },
           "type": {
             "$ref": "#/components/schemas/StructureType"
@@ -7099,6 +7341,17 @@
             ],
             "title": "Longitude"
           },
+          "altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude"
+          },
           "distance_km": {
             "anyOf": [
               {
@@ -7323,6 +7576,17 @@
               }
             ],
             "title": "Longitude"
+          },
+          "altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude"
           },
           "type": {
             "$ref": "#/components/schemas/StructureType"
