@@ -1,7 +1,7 @@
 
 from .availability import StructureSeason, StructureSeasonAvailability, StructureUnit
 from .cost_option import StructureCostModel, StructureCostOption
-from .contact import Contact, ContactPreferredChannel
+from .contact import Contact, ContactPreferredChannel, StructureContact
 from .event import Event, EventBranch, EventStatus
 from .event_candidate import EventStructureCandidate, EventStructureCandidateStatus
 from .event_contact_task import (
@@ -32,6 +32,7 @@ __all__ = [
     "StructureCostOption",
     "StructureCostModel",
     "Contact",
+    "StructureContact",
     "ContactPreferredChannel",
     "Event",
     "EventBranch",

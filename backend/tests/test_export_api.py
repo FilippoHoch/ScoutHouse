@@ -1,8 +1,10 @@
 import json
 import os
+from io import BytesIO
 from typing import Generator
 from urllib.parse import quote
 from uuid import uuid4
+from zipfile import ZipFile
 
 import pytest
 from fastapi.testclient import TestClient
@@ -85,12 +87,14 @@ def test_export_structures_with_filters_csv() -> None:
     filters = quote(json.dumps({"province": "MI"}))
     response = client.get(f"/api/v1/export/structures?format=csv&filters={filters}")
     assert response.status_code == 200
-    assert response.headers["content-disposition"] == 'attachment; filename="structures.csv"'
+    assert response.headers["content-disposition"] == 'attachment; filename="structures.zip"'
 
-    lines = response.content.decode("utf-8").strip().splitlines()
-    assert len(lines) == 2  # header + single row
-    assert "casa-scout" in lines[1]
-    assert "casa-nord" not in response.text
+    with ZipFile(BytesIO(response.content)) as archive:
+        assert set(archive.namelist()) == {"structures.csv", "structure_open_periods.csv"}
+        structures = archive.read("structures.csv").decode("utf-8").strip().splitlines()
+        assert len(structures) == 2  # header + single row
+        assert "casa-scout" in structures[1]
+        assert all("casa-nord" not in line for line in structures)
 
 
 def test_export_events_json_with_date_range() -> None:

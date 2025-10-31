@@ -8,6 +8,7 @@ import {
   createStructureContact,
   deleteStructureContact,
   getStructureBySlug,
+  searchContacts,
   updateStructureContact
 } from "../shared/api";
 import type {
@@ -30,23 +31,27 @@ const formatCostBand = (band: CostBand | null | undefined) =>
   band ? band.charAt(0).toUpperCase() + band.slice(1) : null;
 
 type ContactFormState = {
-  name: string;
+  first_name: string;
+  last_name: string;
   role: string;
   email: string;
   phone: string;
   preferred_channel: ContactPreferredChannel;
   is_primary: boolean;
   notes: string;
+  contactId: number | null;
 };
 
 const initialContactForm: ContactFormState = {
-  name: "",
+  first_name: "",
+  last_name: "",
   role: "",
   email: "",
   phone: "",
   preferred_channel: "email",
   is_primary: false,
-  notes: ""
+  notes: "",
+  contactId: null
 };
 
 const sortContacts = (items: Contact[]): Contact[] =>
@@ -73,6 +78,9 @@ export const StructureDetailsPage = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [savingContact, setSavingContact] = useState(false);
+  const [duplicateMatches, setDuplicateMatches] = useState<Contact[]>([]);
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
   const channelLabels = useMemo(
     () => ({
@@ -191,10 +199,16 @@ export const StructureDetailsPage = () => {
     setFormState(initialContactForm);
     setIsFormVisible(false);
     setFormError(null);
+    setDuplicateMatches([]);
+    setAllowDuplicate(false);
+    setCheckingDuplicates(false);
   };
 
   const startCreateContact = () => {
     setActionError(null);
+    setDuplicateMatches([]);
+    setAllowDuplicate(false);
+    setCheckingDuplicates(false);
     setEditingContact(null);
     setFormState({
       ...initialContactForm,
@@ -207,57 +221,64 @@ export const StructureDetailsPage = () => {
     setActionError(null);
     setEditingContact(contact);
     setFormState({
-      name: contact.name,
+      first_name: contact.first_name ?? "",
+      last_name: contact.last_name ?? "",
       role: contact.role ?? "",
       email: contact.email ?? "",
       phone: contact.phone ?? "",
       preferred_channel: contact.preferred_channel,
       is_primary: contact.is_primary,
-      notes: contact.notes ?? ""
+      notes: contact.notes ?? "",
+      contactId: contact.contact_id
     });
     setIsFormVisible(true);
     setFormError(null);
+    setDuplicateMatches([]);
+    setAllowDuplicate(false);
+    setCheckingDuplicates(false);
   };
 
-  const buildPayload = (state: ContactFormState): ContactCreateDto => {
+  const sanitizeField = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
+
+  const preparePayload = (
+    contactIdOverride: number | null = null
+  ): ContactCreateDto => {
     const payload: ContactCreateDto = {
-      name: state.name.trim(),
-      preferred_channel: state.preferred_channel,
-      is_primary: state.is_primary
+      contact_id: contactIdOverride ?? formState.contactId ?? undefined,
+      first_name: sanitizeField(formState.first_name),
+      last_name: sanitizeField(formState.last_name),
+      preferred_channel: formState.preferred_channel,
+      is_primary: formState.is_primary,
+      role: sanitizeField(formState.role),
+      email: sanitizeField(formState.email),
+      phone: sanitizeField(formState.phone),
+      notes: sanitizeField(formState.notes)
     };
-    if (state.role.trim()) {
-      payload.role = state.role.trim();
-    }
-    if (state.email.trim()) {
-      payload.email = state.email.trim();
-    }
-    if (state.phone.trim()) {
-      payload.phone = state.phone.trim();
-    }
-    if (state.notes.trim()) {
-      payload.notes = state.notes.trim();
-    }
-    return payload;
+
+    return Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
+    ) as ContactCreateDto;
   };
 
-  const handleContactSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const trimmedName = formState.name.trim();
-    if (!trimmedName) {
-      setFormError(t("structures.contacts.errors.nameRequired"));
-      return;
-    }
-
+  const finalizeContactSave = async (contactIdOverride: number | null = null) => {
     setSavingContact(true);
     setFormError(null);
     setActionError(null);
 
-    const payload = buildPayload({ ...formState, name: trimmedName });
+    const payload = preparePayload(contactIdOverride);
 
     try {
       let saved: Contact;
       if (editingContact) {
-        saved = await updateStructureContact(structure.id, editingContact.id, payload);
+        const { contact_id, ...updatePayload } = payload;
+        saved = await updateStructureContact(
+          structure.id,
+          editingContact.id,
+          updatePayload
+        );
       } else {
         saved = await createStructureContact(structure.id, payload);
       }
@@ -267,12 +288,110 @@ export const StructureDetailsPage = () => {
           : [...prev, saved];
         return sortContacts(next);
       });
-      resetContactForm();
       await refetch();
+      resetContactForm();
     } catch (apiError) {
       setFormError(t("structures.contacts.errors.saveFailed"));
     } finally {
       setSavingContact(false);
+    }
+  };
+
+  const handleContactSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (savingContact) {
+      return;
+    }
+
+    const trimmedFirst = formState.first_name.trim();
+    const trimmedLast = formState.last_name.trim();
+    const trimmedEmail = formState.email.trim();
+    const trimmedPhone = formState.phone.trim();
+    const trimmedNotes = formState.notes.trim();
+
+    if (!editingContact && formState.contactId === null) {
+      if (!trimmedFirst && !trimmedLast && !trimmedEmail && !trimmedPhone && !trimmedNotes) {
+        setFormError(t("structures.contacts.errors.minimumDetails"));
+        return;
+      }
+
+      if (!allowDuplicate) {
+        setCheckingDuplicates(true);
+        try {
+          const matches = await searchContacts({
+            first_name: trimmedFirst || undefined,
+            last_name: trimmedLast || undefined,
+            email: trimmedEmail || undefined,
+            phone: trimmedPhone || undefined,
+            limit: 5
+          });
+          if (matches.length > 0) {
+            setDuplicateMatches(matches);
+            setFormError(
+              t("structures.contacts.errors.duplicatesFound", { count: matches.length })
+            );
+            return;
+          }
+        } catch (apiError) {
+          setActionError(t("structures.contacts.errors.searchFailed"));
+          return;
+        } finally {
+          setCheckingDuplicates(false);
+        }
+      }
+    }
+
+    await finalizeContactSave();
+  };
+
+  const handleForceCreate = async () => {
+    setAllowDuplicate(true);
+    setFormError(null);
+    await finalizeContactSave();
+  };
+
+  const handleUseExisting = async (match: Contact) => {
+    setAllowDuplicate(true);
+    setFormError(null);
+    await finalizeContactSave(match.contact_id);
+  };
+
+  const handleSearchDuplicates = async () => {
+    if (savingContact) {
+      return;
+    }
+
+    const trimmedFirst = formState.first_name.trim();
+    const trimmedLast = formState.last_name.trim();
+    const trimmedEmail = formState.email.trim();
+    const trimmedPhone = formState.phone.trim();
+
+    if (!trimmedFirst && !trimmedLast && !trimmedEmail && !trimmedPhone) {
+      setFormError(t("structures.contacts.errors.minimumDetails"));
+      return;
+    }
+
+    setCheckingDuplicates(true);
+    setActionError(null);
+    setFormError(null);
+    try {
+      const matches = await searchContacts({
+        first_name: trimmedFirst || undefined,
+        last_name: trimmedLast || undefined,
+        email: trimmedEmail || undefined,
+        phone: trimmedPhone || undefined,
+        limit: 5
+      });
+      setDuplicateMatches(matches);
+      if (matches.length > 0) {
+        setFormError(t("structures.contacts.errors.duplicatesFound", { count: matches.length }));
+      } else {
+        setFormError(t("structures.contacts.errors.noMatches"));
+      }
+    } catch (apiError) {
+      setActionError(t("structures.contacts.errors.searchFailed"));
+    } finally {
+      setCheckingDuplicates(false);
     }
   };
 
@@ -541,6 +660,25 @@ export const StructureDetailsPage = () => {
               </button>
             </div>
             {actionError && <p className="error">{actionError}</p>}
+            <div
+              className="contacts-website"
+              style={{
+                marginBottom: "1rem",
+                padding: "1rem",
+                border: "1px solid #d1d5db",
+                borderRadius: "0.5rem",
+                backgroundColor: "#f9fafb"
+              }}
+            >
+              <h4 style={{ marginTop: 0 }}>{t("structures.contacts.website.title")}</h4>
+              {structure.website_url ? (
+                <a href={structure.website_url} target="_blank" rel="noopener noreferrer">
+                  {structure.website_url}
+                </a>
+              ) : (
+                <p style={{ margin: 0 }}>{t("structures.contacts.website.empty")}</p>
+              )}
+            </div>
             {contacts.length === 0 ? (
               <p>{t("structures.contacts.empty")}</p>
             ) : (
@@ -615,17 +753,34 @@ export const StructureDetailsPage = () => {
                     ? t("structures.contacts.form.editTitle")
                     : t("structures.contacts.form.createTitle")}
                 </h3>
-                <label>
-                  {t("structures.contacts.form.name")}
-                  <input
-                    type="text"
-                    value={formState.name}
-                    onChange={(event) =>
-                      setFormState((prev) => ({ ...prev, name: event.target.value }))
-                    }
-                    required
-                  />
-                </label>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    gap: "1rem"
+                  }}
+                >
+                  <label>
+                    {t("structures.contacts.form.firstName")}
+                    <input
+                      type="text"
+                      value={formState.first_name}
+                      onChange={(event) =>
+                        setFormState((prev) => ({ ...prev, first_name: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    {t("structures.contacts.form.lastName")}
+                    <input
+                      type="text"
+                      value={formState.last_name}
+                      onChange={(event) =>
+                        setFormState((prev) => ({ ...prev, last_name: event.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
                 <label>
                   {t("structures.contacts.form.role")}
                   <input
@@ -691,6 +846,55 @@ export const StructureDetailsPage = () => {
                     }
                   />
                 </label>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    onClick={handleSearchDuplicates}
+                    disabled={savingContact || checkingDuplicates}
+                  >
+                    {checkingDuplicates
+                      ? t("structures.contacts.form.searching")
+                      : t("structures.contacts.form.searchExisting")}
+                  </button>
+                  {checkingDuplicates && (
+                    <span>{t("structures.contacts.form.searchingHelp")}</span>
+                  )}
+                </div>
+                {duplicateMatches.length > 0 && !editingContact && (
+                  <div className="duplicate-warning" style={{ margin: "1rem 0" }}>
+                    <p>
+                      {t("structures.contacts.form.duplicatesIntro", {
+                        count: duplicateMatches.length
+                      })}
+                    </p>
+                    <ul style={{ paddingLeft: "1.25rem" }}>
+                      {duplicateMatches.map((candidate) => (
+                        <li key={candidate.id} style={{ marginBottom: "0.5rem" }}>
+                          <div>
+                            <strong>{candidate.name}</strong>
+                            {candidate.email && ` · ${candidate.email}`}
+                            {candidate.phone && ` · ${candidate.phone}`}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleUseExisting(candidate)}
+                            disabled={savingContact}
+                            style={{ marginTop: "0.25rem" }}
+                          >
+                            {t("structures.contacts.actions.useExisting")}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={handleForceCreate}
+                      disabled={savingContact}
+                    >
+                      {t("structures.contacts.actions.createAnyway")}
+                    </button>
+                  </div>
+                )}
                 {formError && <p className="error">{formError}</p>}
                 <div className="form-actions" style={{ display: "flex", gap: "0.75rem" }}>
                   <button type="submit" disabled={savingContact}>

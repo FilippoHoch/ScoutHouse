@@ -21,7 +21,7 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
-def get_client(*, authenticated: bool = False, is_admin: bool = False) -> TestClient:
+def get_client(*, authenticated: bool = False, is_admin: bool = True) -> TestClient:
     client = TestClient(app)
     if authenticated:
         client.headers.update(auth_headers(client, is_admin=is_admin))
@@ -154,7 +154,8 @@ def test_authenticated_user_can_manage_structure_details() -> None:
 
     unauthenticated = get_client()
     contact_payload = {
-        "name": "Mario Rossi",
+        "first_name": "Mario",
+        "last_name": "Rossi",
         "email": "mario.rossi@example.org",
         "phone": "+39 02 1234567",
         "preferred_channel": "phone",

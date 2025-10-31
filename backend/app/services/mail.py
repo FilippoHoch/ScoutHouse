@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal, Mapping
+import logging
 from urllib.parse import urlsplit
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -12,6 +13,7 @@ from app.core.config import get_settings
 from app.core.mail import MailMessage
 from app.tasks.email_jobs import send_email_job
 from app.tasks.queue import queue
+from redis.exceptions import RedisError
 from rq.job import Job
 
 MailTemplateName = Literal[
@@ -138,14 +140,21 @@ def _path_from_url(url: str) -> str:
     return path
 
 
-def _enqueue_mail(recipient_email: str, message: MailMessage) -> Job:
+logger = logging.getLogger(__name__)
+
+
+def _enqueue_mail(recipient_email: str, message: MailMessage) -> Job | None:
     payload = {
         "to": recipient_email,
         "subject": message.subject,
         "html": message.html,
         "text": message.text,
     }
-    return queue.enqueue(send_email_job, payload, job_timeout=120)
+    try:
+        return queue.enqueue(send_email_job, payload, job_timeout=120)
+    except RedisError:
+        logger.warning("Mail queue unavailable; skipping async dispatch", exc_info=True)
+        return None
 
 
 def schedule_password_reset_email(
@@ -153,7 +162,7 @@ def schedule_password_reset_email(
     recipient_email: str,
     recipient_name: str,
     token: str,
-) -> Job:
+) -> Job | None:
     settings = get_settings()
     base = settings.frontend_base_url.rstrip("/")
     reset_url = f"{base}/reset-password?token={token}"
@@ -177,7 +186,7 @@ def schedule_task_assigned_email(
     event_end: str,
     structure_name: str | None,
     notes: str | None,
-) -> Job:
+) -> Job | None:
     context: dict[str, Any] = {
         "recipient_name": recipient_name,
         "event_title": event_title,
@@ -201,7 +210,7 @@ def schedule_candidate_status_email(
     new_status: str,
     notes: str | None,
     assigned_user_name: str | None,
-) -> Job:
+) -> Job | None:
     status_label = STATUS_LABELS.get(new_status, new_status)
     context: dict[str, Any] = {
         "recipient_name": recipient_name,

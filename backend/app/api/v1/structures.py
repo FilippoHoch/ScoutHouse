@@ -5,15 +5,17 @@ from datetime import date
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
 from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
-from app.deps import get_current_user
+from app.deps import get_current_user, require_admin
 from app.models import (
     Contact,
+    ContactPreferredChannel,
+    StructureContact,
     FirePolicy,
     Structure,
     StructureCostOption,
@@ -201,7 +203,9 @@ def _get_structure_or_404(
             ]
         )
     if with_contacts:
-        options.append(selectinload(Structure.contacts))
+        options.append(
+            selectinload(Structure.contacts).selectinload(StructureContact.contact)
+        )
 
     structure = (
         db.execute(
@@ -218,21 +222,29 @@ def _get_structure_or_404(
     return structure
 
 
-def _get_contact_or_404(db: Session, structure_id: int, contact_id: int) -> Contact:
-    contact = (
+def _serialize_contact(link: StructureContact) -> ContactRead:
+    return ContactRead.model_validate(link)
+
+
+def _get_contact_or_404(db: Session, structure_id: int, contact_id: int) -> StructureContact:
+    link = (
         db.execute(
-            select(Contact)
-            .where(Contact.id == contact_id, Contact.structure_id == structure_id)
+            select(StructureContact)
+            .options(selectinload(StructureContact.contact))
+            .where(
+                StructureContact.id == contact_id,
+                StructureContact.structure_id == structure_id,
+            )
         )
         .scalars()
         .first()
     )
-    if contact is None:
+    if link is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Contact not found",
         )
-    return contact
+    return link
 
 
 @router.get("/", response_model=list[StructureRead])
@@ -527,7 +539,7 @@ def create_structure(
     structure_in: StructureCreate,
     db: DbSession,
     request: Request,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_admin)],
 ) -> Structure:
     existing = db.execute(
         select(Structure).where(Structure.slug == structure_in.slug)
@@ -574,7 +586,7 @@ def update_structure(
     structure_in: StructureUpdate,
     db: DbSession,
     request: Request,
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(require_admin)],
 ) -> Structure:
     structure = _get_structure_or_404(
         db,
@@ -636,14 +648,63 @@ def list_structure_contacts(
     _get_structure_or_404(db, structure_id)
     contacts = (
         db.execute(
-            select(Contact)
-            .where(Contact.structure_id == structure_id)
-            .order_by(Contact.is_primary.desc(), func.lower(Contact.name))
+            select(StructureContact)
+            .options(selectinload(StructureContact.contact))
+            .join(Contact, StructureContact.contact_id == Contact.id)
+            .where(StructureContact.structure_id == structure_id)
+            .order_by(
+                StructureContact.is_primary.desc(),
+                func.lower(Contact.first_name),
+                func.lower(Contact.last_name),
+            )
         )
         .scalars()
         .all()
     )
-    return [ContactRead.model_validate(contact) for contact in contacts]
+    return [_serialize_contact(contact) for contact in contacts]
+
+
+@router.get("/contacts/search", response_model=list[ContactRead])
+def search_contacts(
+    db: DbSession,
+    _: Annotated[User, Depends(get_current_user)],
+    first_name: str | None = Query(default=None),
+    last_name: str | None = Query(default=None),
+    email: str | None = Query(default=None),
+    phone: str | None = Query(default=None),
+    limit: int = Query(default=10, ge=1, le=50),
+) -> list[ContactRead]:
+    normalized_clauses: list[Any] = []
+
+    if first_name and last_name:
+        normalized_clauses.append(
+            and_(
+                func.lower(Contact.first_name) == first_name.strip().lower(),
+                func.lower(Contact.last_name) == last_name.strip().lower(),
+            )
+        )
+    if email:
+        normalized_clauses.append(func.lower(Contact.email) == email.strip().lower())
+    if phone:
+        normalized_phone = phone.strip().replace(" ", "")
+        normalized_clauses.append(
+            func.replace(func.replace(Contact.phone, " ", ""), "-", "")
+            == normalized_phone.replace("-", "")
+        )
+
+    if not normalized_clauses:
+        return []
+
+    query = (
+        select(StructureContact)
+        .options(selectinload(StructureContact.contact))
+        .join(Contact, StructureContact.contact_id == Contact.id)
+        .where(or_(*normalized_clauses))
+        .limit(limit)
+    )
+
+    contacts = db.execute(query).scalars().all()
+    return [_serialize_contact(item) for item in contacts]
 
 
 @router.post(
@@ -660,19 +721,69 @@ def create_structure_contact(
 ) -> ContactRead:
     structure = _get_structure_or_404(db, structure_id)
     payload = contact_in.model_dump()
+    contact_id = payload.pop("contact_id", None)
+
+    contact_data = {
+        "first_name": payload.pop("first_name", None),
+        "last_name": payload.pop("last_name", None),
+        "email": payload.pop("email", None),
+        "phone": payload.pop("phone", None),
+        "notes": payload.pop("notes", None),
+    }
+
+    if contact_id is not None:
+        contact = db.get(Contact, contact_id)
+        if contact is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
+        already_linked = (
+            db.execute(
+                select(StructureContact)
+                .where(
+                    StructureContact.structure_id == structure.id,
+                    StructureContact.contact_id == contact.id,
+                )
+            )
+            .scalars()
+            .first()
+        )
+        if already_linked is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Contact already linked to this structure",
+            )
+
+        # Update contact details if provided
+        for field, value in contact_data.items():
+            if value is not None:
+                setattr(contact, field, value)
+        db.add(contact)
+    else:
+        contact = Contact(**contact_data)
+        db.add(contact)
+        db.flush()
+
     if payload.get("is_primary"):
         db.execute(
-            update(Contact)
+            update(StructureContact)
             .where(
-                Contact.structure_id == structure.id,
-                Contact.is_primary.is_(True),
+                StructureContact.structure_id == structure.id,
+                StructureContact.is_primary.is_(True),
             )
             .values(is_primary=False)
         )
 
-    contact = Contact(structure_id=structure.id, **payload)
-    db.add(contact)
+    link = StructureContact(
+        structure_id=structure.id,
+        contact_id=contact.id,
+        role=payload.get("role"),
+        preferred_channel=payload.get("preferred_channel", ContactPreferredChannel.EMAIL),
+        is_primary=payload.get("is_primary", False),
+        gdpr_consent_at=payload.get("gdpr_consent_at"),
+    )
+
+    db.add(link)
     db.flush()
+    db.refresh(link)
     db.refresh(contact)
 
     record_audit(
@@ -680,17 +791,17 @@ def create_structure_contact(
         actor=current_user,
         action="structure.contact.create",
         entity_type="structure_contact",
-        entity_id=contact.id,
+        entity_id=link.id,
         diff={
             "structure_id": structure.id,
-            "after": ContactRead.model_validate(contact).model_dump(),
+            "after": _serialize_contact(link).model_dump(),
         },
         request=request,
     )
 
     db.commit()
-    db.refresh(contact)
-    return ContactRead.model_validate(contact)
+    db.refresh(link)
+    return _serialize_contact(link)
 
 
 @router.patch(
@@ -706,44 +817,61 @@ def update_structure_contact(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> ContactRead:
     structure = _get_structure_or_404(db, structure_id)
-    contact = _get_contact_or_404(db, structure.id, contact_id)
+    link = _get_contact_or_404(db, structure.id, contact_id)
 
-    before_snapshot = ContactRead.model_validate(contact).model_dump()
+    before_snapshot = _serialize_contact(link).model_dump()
     data = contact_in.model_dump(exclude_unset=True)
-    if data.get("is_primary"):
+
+    contact_updates = {
+        key: data[key]
+        for key in ("first_name", "last_name", "email", "phone", "notes")
+        if key in data
+    }
+    relation_updates = {
+        key: data[key]
+        for key in ("role", "preferred_channel", "is_primary", "gdpr_consent_at")
+        if key in data
+    }
+
+    if relation_updates.get("is_primary"):
         db.execute(
-            update(Contact)
+            update(StructureContact)
             .where(
-                Contact.structure_id == structure.id,
-                Contact.id != contact.id,
-                Contact.is_primary.is_(True),
+                StructureContact.structure_id == structure.id,
+                StructureContact.id != link.id,
+                StructureContact.is_primary.is_(True),
             )
             .values(is_primary=False)
         )
 
-    for key, value in data.items():
-        setattr(contact, key, value)
+    for key, value in contact_updates.items():
+        setattr(link.contact, key, value)
 
-    db.add(contact)
+    for key, value in relation_updates.items():
+        setattr(link, key, value)
+
+    db.add(link.contact)
+    db.add(link)
     db.flush()
-    db.refresh(contact)
+    db.refresh(link)
 
     record_audit(
         db,
         actor=current_user,
         action="structure.contact.update",
         entity_type="structure_contact",
-        entity_id=contact.id,
+        entity_id=link.id,
         diff={
             "structure_id": structure.id,
             "before": before_snapshot,
-            "after": ContactRead.model_validate(contact).model_dump(),
+            "after": _serialize_contact(link).model_dump(),
         },
         request=request,
     )
 
     db.commit()
-    return ContactRead.model_validate(contact)
+    db.refresh(link)
+    return _serialize_contact(link)
 
 
 @router.delete("/{structure_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -755,11 +883,24 @@ def delete_structure_contact(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     structure = _get_structure_or_404(db, structure_id)
-    contact = _get_contact_or_404(db, structure.id, contact_id)
-    before_snapshot = ContactRead.model_validate(contact).model_dump()
+    link = _get_contact_or_404(db, structure.id, contact_id)
+    before_snapshot = _serialize_contact(link).model_dump()
 
-    db.delete(contact)
+    contact = link.contact
+
+    db.delete(link)
     db.flush()
+
+    remaining = (
+        db.execute(
+            select(StructureContact).where(StructureContact.contact_id == contact.id)
+        )
+        .scalars()
+        .first()
+    )
+    if remaining is None:
+        db.delete(contact)
+        db.flush()
 
     record_audit(
         db,

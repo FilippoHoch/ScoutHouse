@@ -18,6 +18,7 @@ from app.core.security import decode_token
 from app.deps import get_current_user, require_event_member
 from app.models import (
     Contact,
+    StructureContact,
     Event,
     EventContactTask,
     EventMember,
@@ -52,6 +53,7 @@ from app.services.mail import (
     schedule_task_assigned_email,
 )
 from app.services.audit import record_audit
+from app.schemas.contact import ContactRead
 
 router = APIRouter()
 
@@ -305,20 +307,59 @@ def _get_structure_contact(
 ) -> Contact | None:
     if contact_id is None:
         return None
-    contact = (
+    link = (
         db.execute(
-            select(Contact)
-            .where(Contact.id == contact_id, Contact.structure_id == structure_id)
+            select(StructureContact)
+            .where(
+                StructureContact.contact_id == contact_id,
+                StructureContact.structure_id == structure_id,
+            )
         )
         .scalars()
         .first()
     )
-    if contact is None:
+    if link is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Contact does not belong to this structure",
         )
-    return contact
+    return link.contact
+
+
+def _serialize_event_candidate(
+    db: Session, candidate: EventStructureCandidate
+) -> EventCandidateRead:
+    contact_payload: ContactRead | None = None
+    if candidate.contact_id is not None:
+        link = (
+            db.execute(
+                select(StructureContact)
+                .options(selectinload(StructureContact.contact))
+                .where(
+                    StructureContact.structure_id == candidate.structure_id,
+                    StructureContact.contact_id == candidate.contact_id,
+                )
+            )
+            .scalars()
+            .first()
+        )
+        if link is not None:
+            contact_payload = ContactRead.model_validate(link)
+
+    payload = {
+        "id": candidate.id,
+        "event_id": candidate.event_id,
+        "structure_id": candidate.structure_id,
+        "status": candidate.status,
+        "assigned_user": candidate.assigned_user,
+        "assigned_user_id": candidate.assigned_user_id,
+        "assigned_user_name": candidate.assigned_user_name,
+        "contact_id": candidate.contact_id,
+        "contact": contact_payload,
+        "last_update": candidate.last_update,
+        "structure": candidate.structure,
+    }
+    return EventCandidateRead.model_validate(payload)
 
 
 @router.post("/", response_model=EventRead, status_code=status.HTTP_201_CREATED)
@@ -549,13 +590,15 @@ def add_candidate(
     db.add(candidate)
     db.flush()
 
+    serialized = _serialize_event_candidate(db, candidate)
+
     record_audit(
         db,
         actor=_.user if _ is not None else None,
         action="event.candidate.create",
         entity_type="event_candidate",
         entity_id=candidate.id,
-        diff={"after": EventCandidateRead.model_validate(candidate).model_dump()},
+        diff={"after": serialized.model_dump()},
         request=request,
     )
 
@@ -565,7 +608,7 @@ def add_candidate(
     event_bus.publish("candidate_updated", {"event_id": event.id})
     event_bus.publish("summary_updated", {"event_id": event.id})
 
-    return EventCandidateRead.model_validate(candidate)
+    return serialized
 
 
 @router.patch("/{event_id}/candidates/{candidate_id}", response_model=EventCandidateRead)
@@ -598,7 +641,7 @@ def update_candidate(
 
     data = candidate_in.model_dump(exclude_unset=True)
     previous_status = candidate.status
-    before_snapshot = EventCandidateRead.model_validate(candidate).model_dump()
+    before_snapshot = _serialize_event_candidate(db, candidate).model_dump()
     if "contact_id" in data:
         contact_id_value = data.pop("contact_id")
         if contact_id_value is None:
@@ -634,6 +677,8 @@ def update_candidate(
     db.add(candidate)
     db.flush()
 
+    serialized = _serialize_event_candidate(db, candidate)
+
     record_audit(
         db,
         actor=_.user if _ is not None else None,
@@ -642,7 +687,7 @@ def update_candidate(
         entity_id=candidate.id,
         diff={
             "before": before_snapshot,
-            "after": EventCandidateRead.model_validate(candidate).model_dump(),
+            "after": serialized.model_dump(),
         },
         request=request,
     )
@@ -694,7 +739,7 @@ def update_candidate(
                 )
     event_bus.publish("candidate_updated", {"event_id": event.id})
     event_bus.publish("summary_updated", {"event_id": event.id})
-    return EventCandidateRead.model_validate(candidate)
+    return serialized
 
 
 @router.get("/{event_id}/summary", response_model=EventSummary)
