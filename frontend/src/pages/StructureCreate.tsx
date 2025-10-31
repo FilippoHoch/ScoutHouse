@@ -1867,159 +1867,181 @@ export const StructureCreatePage = () => {
 
                 {addContact && (
                   <div className="structure-form-field" data-span="full">
-                    {contactStatusMessage && (
-                      <InlineMessage>{contactStatusMessage}</InlineMessage>
-                    )}
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "1rem",
-                        marginTop: contactStatusMessage ? "1rem" : 0
-                      }}
-                    >
-                      <label>
-                        {t("structures.create.form.contact.firstName")}
-                        <input
-                          type="text"
-                          value={contactFirstName}
-                          onChange={(event) => setContactFirstName(event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        {t("structures.create.form.contact.lastName")}
-                        <input
-                          type="text"
-                          value={contactLastName}
-                          onChange={(event) => setContactLastName(event.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "1rem",
-                        marginTop: "1rem"
-                      }}
-                    >
-                      <label>
-                        {t("structures.create.form.contact.role")}
-                        <input
-                          type="text"
-                          value={contactRole}
-                          onChange={(event) => setContactRole(event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        {t("structures.create.form.contact.email")}
-                        <input
-                          type="email"
-                          value={contactEmail}
-                          onChange={(event) => setContactEmail(event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        {t("structures.create.form.contact.phone")}
-                        <input
-                          type="tel"
-                          value={contactPhone}
-                          onChange={(event) => setContactPhone(event.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "1rem",
-                        marginTop: "1rem"
-                      }}
-                    >
-                      <label>
-                        {t("structures.create.form.contact.preferredChannel")}
-                        <select
-                          value={contactPreferredChannel}
-                          onChange={(event) =>
-                            setContactPreferredChannel(
-                              event.target.value as ContactPreferredChannel
-                            )
-                          }
-                        >
-                          <option value="email">{t("structures.contacts.channels.email")}</option>
-                          <option value="phone">{t("structures.contacts.channels.phone")}</option>
-                          <option value="other">{t("structures.contacts.channels.other")}</option>
-                        </select>
-                      </label>
-                      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <input
-                          type="checkbox"
-                          checked={contactIsPrimary}
-                          onChange={(event) => setContactIsPrimary(event.target.checked)}
-                        />
-                        {t("structures.create.form.contact.isPrimary")}
-                      </label>
-                    </div>
-                    <div style={{ marginTop: "1rem" }}>
-                      <label>
-                        {t("structures.create.form.contact.notes")}
-                        <textarea
-                          value={contactNotes}
-                          onChange={(event) => setContactNotes(event.target.value)}
-                          rows={3}
-                        />
-                      </label>
-                    </div>
-                    <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "1rem" }}>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleContactDuplicateSearch}
-                        disabled={contactCheckingDuplicates}
-                      >
-                        {contactCheckingDuplicates
-                          ? t("structures.create.form.contact.searching")
-                          : t("structures.create.form.contact.search")}
-                      </Button>
-                      {contactCheckingDuplicates && (
-                        <span className="helper-text">
-                          {t("structures.create.form.contact.searchingHelp")}
+                    <div className="structure-contact-card">
+                      <div className="structure-contact-card__intro">
+                        <h4>{t("structures.create.form.contact.cardTitle")}</h4>
+                        <p>{t("structures.create.form.contact.cardSubtitle")}</p>
+                      </div>
+                      {contactStatusMessage && (
+                        <InlineMessage>{contactStatusMessage}</InlineMessage>
+                      )}
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionPerson")}
                         </span>
+                        <div className="structure-contact-grid">
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.firstName")}
+                            </span>
+                            <input
+                              type="text"
+                              value={contactFirstName}
+                              onChange={(event) => setContactFirstName(event.target.value)}
+                            />
+                          </label>
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.lastName")}
+                            </span>
+                            <input
+                              type="text"
+                              value={contactLastName}
+                              onChange={(event) => setContactLastName(event.target.value)}
+                            />
+                          </label>
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.role")}
+                            </span>
+                            <input
+                              type="text"
+                              value={contactRole}
+                              onChange={(event) => setContactRole(event.target.value)}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionReachability")}
+                        </span>
+                        <div className="structure-contact-grid">
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.email")}
+                            </span>
+                            <input
+                              type="email"
+                              value={contactEmail}
+                              onChange={(event) => setContactEmail(event.target.value)}
+                            />
+                          </label>
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.phone")}
+                            </span>
+                            <input
+                              type="tel"
+                              value={contactPhone}
+                              onChange={(event) => setContactPhone(event.target.value)}
+                            />
+                          </label>
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.preferredChannel")}
+                            </span>
+                            <select
+                              value={contactPreferredChannel}
+                              onChange={(event) =>
+                                setContactPreferredChannel(
+                                  event.target.value as ContactPreferredChannel
+                                )
+                              }
+                            >
+                              <option value="email">{t("structures.contacts.channels.email")}</option>
+                              <option value="phone">{t("structures.contacts.channels.phone")}</option>
+                              <option value="other">{t("structures.contacts.channels.other")}</option>
+                            </select>
+                          </label>
+                          <label className="structure-contact-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={contactIsPrimary}
+                              onChange={(event) => setContactIsPrimary(event.target.checked)}
+                            />
+                            <span>{t("structures.create.form.contact.isPrimary")}</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionNotes")}
+                        </span>
+                        <label className="structure-contact-field structure-contact-field--full">
+                          <span className="structure-contact-label">
+                            {t("structures.create.form.contact.notes")}
+                          </span>
+                          <textarea
+                            value={contactNotes}
+                            onChange={(event) => setContactNotes(event.target.value)}
+                            rows={3}
+                          />
+                        </label>
+                      </div>
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionActions")}
+                        </span>
+                        <p className="structure-contact-helper">
+                          {t("structures.create.form.contact.searchHelper")}
+                        </p>
+                        <div className="structure-contact-actions">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={handleContactDuplicateSearch}
+                            disabled={contactCheckingDuplicates}
+                          >
+                            {contactCheckingDuplicates
+                              ? t("structures.create.form.contact.searching")
+                              : t("structures.create.form.contact.search")}
+                          </Button>
+                          {contactCheckingDuplicates && (
+                            <span className="structure-contact-helper">
+                              {t("structures.create.form.contact.searchingHelp")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {contactDuplicates.length > 0 && (
+                        <div className="structure-contact-duplicates">
+                          <p className="structure-contact-duplicates__title">
+                            {t("structures.create.form.contact.duplicatesIntro", {
+                              count: contactDuplicates.length
+                            })}
+                          </p>
+                          <ul className="structure-contact-duplicates__list">
+                            {contactDuplicates.map((candidate) => (
+                              <li key={candidate.id}>
+                                <div className="structure-contact-duplicates__match">
+                                  <strong>{candidate.name}</strong>
+                                  {candidate.email && ` · ${candidate.email}`}
+                                  {candidate.phone && ` · ${candidate.phone}`}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleContactUseExisting(candidate)}
+                                >
+                                  {t("structures.create.form.contact.useExisting")}
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleContactCreateAnyway}
+                          >
+                            {t("structures.create.form.contact.createAnyway")}
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    {contactDuplicates.length > 0 && (
-                      <div style={{ marginTop: "1rem" }}>
-                        <p>{t("structures.create.form.contact.duplicatesIntro", { count: contactDuplicates.length })}</p>
-                        <ul style={{ paddingLeft: "1.25rem" }}>
-                          {contactDuplicates.map((candidate) => (
-                            <li key={candidate.id} style={{ marginBottom: "0.5rem" }}>
-                              <div>
-                                <strong>{candidate.name}</strong>
-                                {candidate.email && ` · ${candidate.email}`}
-                                {candidate.phone && ` · ${candidate.phone}`}
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleContactUseExisting(candidate)}
-                              >
-                                {t("structures.create.form.contact.useExisting")}
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleContactCreateAnyway}
-                        >
-                          {t("structures.create.form.contact.createAnyway")}
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
