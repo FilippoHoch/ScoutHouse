@@ -195,12 +195,30 @@ export const StructureCreatePage = () => {
 
   const previewMapUrl = useMemo(() => {
     const target = selectedCoordinates ?? GOOGLE_MAP_DEFAULT_CENTER;
-    const altitude = selectedCoordinates ? 600 : 1200;
-    const tilt = selectedCoordinates ? 67 : 45;
     const lat = target.lat.toFixed(6);
     const lng = target.lng.toFixed(6);
-    return `https://earth.google.com/web/embed/@${lat},${lng},${altitude}a,${tilt}d,60y,0h,0t,0r`;
-  }, [selectedCoordinates]);
+    const zoom = selectedCoordinates ? 15 : 8;
+
+    if (googleMapsApiKey) {
+      const params = new URLSearchParams({
+        key: googleMapsApiKey,
+        center: `${lat},${lng}`,
+        zoom: zoom.toString(),
+        maptype: "satellite"
+      });
+
+      return `https://www.google.com/maps/embed/v1/view?${params.toString()}`;
+    }
+
+    const params = new URLSearchParams({
+      q: `${lat},${lng}`,
+      z: zoom.toString(),
+      output: "embed",
+      iwloc: "near"
+    });
+
+    return `https://maps.google.com/maps?${params.toString()}`;
+  }, [googleMapsApiKey, selectedCoordinates]);
 
   const previewMapPlaceholder = t("structures.create.preview.mapPlaceholder");
   const previewMapTitle = t("structures.create.preview.mapTitle");
