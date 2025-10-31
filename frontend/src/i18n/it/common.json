@@ -188,15 +188,31 @@
           "cardSubtitle": "Completa i dati del referente per agevolare la comunicazione in futuro.",
           "sectionPerson": "Identità",
           "sectionReachability": "Come contattarlo",
+          "sectionExisting": "Seleziona da contatti esistenti",
           "sectionNotes": "Note e preferenze",
           "sectionActions": "Controllo duplicati",
-          "searchHelper": "Verifica se il contatto è già presente nel catalogo prima di crearne uno nuovo.",
+          "searchHelper": "Puoi verificare i contatti già salvati o controllare i duplicati prima di crearne uno nuovo.",
           "search": "Cerca contatti esistenti",
           "searching": "Ricerca in corso…",
           "searchingHelp": "Controllo duplicati",
           "duplicatesIntro": "Sono stati trovati {{count}} contatti simili:",
           "useExisting": "Usa questo contatto",
-          "createAnyway": "Crea comunque un nuovo contatto"
+          "createAnyway": "Crea comunque un nuovo contatto",
+          "picker": {
+            "open": "Apri rubrica contatti",
+            "clearSelection": "Rimuovi selezione",
+            "selected": "Hai selezionato: {{name}}",
+            "title": "Seleziona un contatto esistente",
+            "searchLabel": "Cerca nel catalogo",
+            "searchPlaceholder": "Nome, cognome, email o telefono",
+            "search": "Cerca",
+            "loading": "Caricamento contatti…",
+            "noResults": "Nessun contatto trovato.",
+            "choose": "Usa questo contatto",
+            "close": "Chiudi",
+            "error": "Impossibile caricare i contatti. Riprova più tardi.",
+            "unknownContact": "Contatto senza nome"
+          }
         },
         "sections": {
           "general": {
