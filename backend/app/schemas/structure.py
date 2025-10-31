@@ -86,7 +86,7 @@ class StructureBase(BaseModel):
     hot_water: bool = False
     land_area_m2: float | None = Field(default=None, ge=0)
     shelter_on_field: bool = False
-    water_source: WaterSource | None = None
+    water_sources: list[WaterSource] = Field(default_factory=list)
     electricity_available: bool = False
     fire_policy: FirePolicy | None = None
     access_by_car: bool = False
@@ -153,7 +153,6 @@ class StructureBase(BaseModel):
         }
         outdoor_flags = {
             "shelter_on_field": self.shelter_on_field,
-            "water_source": self.water_source,
             "electricity_available": self.electricity_available,
             "fire_policy": self.fire_policy,
             "has_field_poles": self.has_field_poles,
@@ -163,9 +162,11 @@ class StructureBase(BaseModel):
         has_indoor_data = any(
             value not in (None, 0) for value in indoor_fields.values()
         ) or any(flag is True for flag in indoor_flags.values())
-        has_outdoor_data = any(
-            value not in (None, 0) for value in outdoor_values.values()
-        ) or any(flag not in (None, False) for flag in outdoor_flags.values())
+        has_outdoor_data = (
+            any(value not in (None, 0) for value in outdoor_values.values())
+            or any(flag not in (None, False) for flag in outdoor_flags.values())
+            or bool(self.water_sources)
+        )
 
         if structure_type == StructureType.HOUSE and has_outdoor_data:
             offending = [
@@ -173,6 +174,8 @@ class StructureBase(BaseModel):
                 for name, value in {**outdoor_values, **outdoor_flags}.items()
                 if value not in (None, False) and value != 0
             ]
+            if self.water_sources:
+                offending.append("water_sources")
             detail = ", ".join(sorted(offending)) if offending else "campi outdoor"
             raise ValueError(
                 f"Campi outdoor non ammessi per type=house: {detail}"

@@ -16,9 +16,13 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    JSON,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import expression
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.ext.mutable import MutableList
+from sqlalchemy.types import TypeDecorator
 from sqlalchemy.sql.sqltypes import JSON
 
 from app.core.db import Base
@@ -44,6 +48,31 @@ class WaterSource(str, Enum):
     FOUNTAIN = "fountain"
     TAP = "tap"
     RIVER = "river"
+
+
+class WaterSourceListType(TypeDecorator):
+    impl = ARRAY(SQLEnum(WaterSource, name="water_source"))
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(
+                ARRAY(SQLEnum(WaterSource, name="water_source"))
+            )
+        return dialect.type_descriptor(JSON())
+
+    def process_bind_param(self, value, dialect):
+        if not value:
+            return []
+        values = [item if isinstance(item, WaterSource) else WaterSource(item) for item in value]
+        if dialect.name == "postgresql":
+            return values
+        return [item.value for item in values]
+
+    def process_result_value(self, value, dialect):
+        if not value:
+            return []
+        return [item if isinstance(item, WaterSource) else WaterSource(item) for item in value]
 
 
 class StructureOpenPeriodKind(str, Enum):
@@ -95,9 +124,10 @@ class Structure(Base):
         server_default=expression.false(),
         default=False,
     )
-    water_source: Mapped[WaterSource | None] = mapped_column(
-        SQLEnum(WaterSource, name="water_source"),
-        nullable=True,
+    water_sources: Mapped[list[WaterSource]] = mapped_column(
+        MutableList.as_mutable(WaterSourceListType()),
+        nullable=False,
+        default=list,
     )
     electricity_available: Mapped[bool] = mapped_column(
         Boolean,

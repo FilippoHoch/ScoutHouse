@@ -44,7 +44,7 @@ const sampleStructure: Structure = {
   hot_water: true,
   land_area_m2: null,
   shelter_on_field: false,
-  water_source: null,
+  water_sources: [],
   electricity_available: true,
   fire_policy: "with_permit",
   access_by_car: true,
