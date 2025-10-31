@@ -157,6 +157,15 @@
         "latitude": "Latitudine",
         "longitude": "Longitudine",
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
+        "map": {
+          "title": "Seleziona sulla mappa",
+          "hint": "Clicca sulla mappa per posizionare il segnaposto oppure inserisci manualmente le coordinate.",
+          "loading": "Caricamento della mappa in corso…",
+          "error": "Impossibile caricare Google Maps. Controlla la connessione o riprova più tardi.",
+          "missingKey": "Configura la variabile VITE_GOOGLE_MAPS_API_KEY per abilitare la mappa interattiva.",
+          "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
+          "ariaLabel": "Mappa di Google per scegliere le coordinate"
+        },
         "indoorActivityRooms": "Sale attività interne",
         "indoorActivityRoomsHint": "Numero di stanze interne utilizzabili per attività o riunioni.",
         "hasKitchen": "Cucina attrezzata disponibile",

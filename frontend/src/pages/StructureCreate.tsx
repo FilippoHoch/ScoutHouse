@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,7 @@ import {
   WaterSource
 } from "../shared/types";
 import { Button, InlineMessage, SectionHeader, Surface } from "../shared/ui/designSystem";
+import { GoogleMapPicker } from "../shared/ui/GoogleMapPicker";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -67,6 +68,15 @@ const createOpenPeriodRow = (kind: StructureOpenPeriodKind = "season"): OpenPeri
   notes: ""
 });
 
+const parseCoordinateValue = (value: string): number | null => {
+  const normalized = value.trim().replace(",", ".");
+  if (!normalized) {
+    return null;
+  }
+  const parsed = Number.parseFloat(normalized);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
 function toSlug(value: string): string {
   return value
     .trim()
@@ -82,6 +92,7 @@ export const StructureCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -116,6 +127,28 @@ export const StructureCreatePage = () => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [slugDirty, setSlugDirty] = useState(false);
+
+  const selectedCoordinates = useMemo(() => {
+    const latNumber = parseCoordinateValue(latitude);
+    const lonNumber = parseCoordinateValue(longitude);
+
+    if (latNumber === null || lonNumber === null) {
+      return null;
+    }
+
+    return { lat: latNumber, lng: lonNumber };
+  }, [latitude, longitude]);
+
+  const selectedCoordinatesLabel = useMemo(() => {
+    if (!selectedCoordinates) {
+      return null;
+    }
+
+    return t("structures.create.form.map.selected", {
+      lat: selectedCoordinates.lat.toFixed(6),
+      lon: selectedCoordinates.lng.toFixed(6)
+    });
+  }, [selectedCoordinates, t]);
 
   const createMutation = useMutation({
     mutationFn: (dto: StructureCreateDto) => createStructure(dto)
@@ -217,6 +250,13 @@ export const StructureCreatePage = () => {
     setLongitude(event.target.value);
     setApiError(null);
     clearFieldError("longitude");
+  };
+
+  const handleMapCoordinatesChange = (coordinates: { lat: number; lng: number }) => {
+    setLatitude(coordinates.lat.toFixed(6));
+    setLongitude(coordinates.lng.toFixed(6));
+    setApiError(null);
+    clearFieldErrorsGroup(["latitude", "longitude"]);
   };
 
   const handleIndoorBedsChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -466,15 +506,15 @@ export const StructureCreatePage = () => {
     }
 
     if (trimmedLatitude) {
-      const latNumber = Number.parseFloat(trimmedLatitude);
-      if (Number.isNaN(latNumber) || latNumber < -90 || latNumber > 90) {
+      const latNumber = parseCoordinateValue(trimmedLatitude);
+      if (latNumber === null || latNumber < -90 || latNumber > 90) {
         errors.latitude = t("structures.create.errors.latitudeInvalid");
       }
     }
 
     if (trimmedLongitude) {
-      const lonNumber = Number.parseFloat(trimmedLongitude);
-      if (Number.isNaN(lonNumber) || lonNumber < -180 || lonNumber > 180) {
+      const lonNumber = parseCoordinateValue(trimmedLongitude);
+      if (lonNumber === null || lonNumber < -180 || lonNumber > 180) {
         errors.longitude = t("structures.create.errors.longitudeInvalid");
       }
     }
@@ -624,12 +664,14 @@ export const StructureCreatePage = () => {
       payload.address = trimmedAddress;
     }
 
-    if (trimmedLatitude) {
-      payload.latitude = Number.parseFloat(trimmedLatitude);
+    const latitudeValue = parseCoordinateValue(trimmedLatitude);
+    if (latitudeValue !== null) {
+      payload.latitude = latitudeValue;
     }
 
-    if (trimmedLongitude) {
-      payload.longitude = Number.parseFloat(trimmedLongitude);
+    const longitudeValue = parseCoordinateValue(trimmedLongitude);
+    if (longitudeValue !== null) {
+      payload.longitude = longitudeValue;
     }
 
     if (showIndoorSection) {
@@ -1620,6 +1662,33 @@ export const StructureCreatePage = () => {
                       {fieldErrors.longitude}
                     </p>
                   )}
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <div className="structure-map-field">
+                    <span className="structure-map-field-title">
+                      {t("structures.create.form.map.title")}
+                    </span>
+                    <GoogleMapPicker
+                      apiKey={googleMapsApiKey}
+                      value={selectedCoordinates}
+                      onChange={handleMapCoordinatesChange}
+                      labels={{
+                        loading: t("structures.create.form.map.loading"),
+                        loadError: t("structures.create.form.map.error"),
+                        missingKey: t("structures.create.form.map.missingKey")
+                      }}
+                      ariaLabel={t("structures.create.form.map.ariaLabel")}
+                    />
+                    <span className="helper-text">
+                      {t("structures.create.form.map.hint")}
+                    </span>
+                    {selectedCoordinatesLabel && (
+                      <span className="structure-map-field-selected helper-text">
+                        {selectedCoordinatesLabel}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </fieldset>
