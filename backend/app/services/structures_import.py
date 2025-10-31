@@ -389,7 +389,7 @@ def _parse_website_urls(value: object) -> tuple[list[str], list[str]]:
         text = _normalise_text(value)
         if not text:
             return [], []
-        raw_items = re.split(r"[\n;]")
+        raw_items = re.split(r"[\n;]", text)
 
     urls: list[str] = []
     errors: list[str] = []
