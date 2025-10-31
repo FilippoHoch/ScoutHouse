@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+type LeafletMap = import("leaflet").Map;
+type LeafletMarker = import("leaflet").Marker;
+type LeafletLatLng = import("leaflet").LatLng;
+type LeafletMouseEvent = import("leaflet").LeafletMouseEvent;
+
 export type GoogleMapPickerCoordinates = {
   lat: number;
   lng: number;
@@ -22,12 +27,17 @@ type GoogleMapPickerProps = {
   ariaLabel?: string;
 };
 
-type LoaderState = "idle" | "missing-key" | "loading" | "ready" | "error";
+type LoaderState = "idle" | "loading" | "ready" | "error";
 
-const DEFAULT_CENTER: GoogleMapPickerCoordinates = {
-  lat: 41.8719,
-  lng: 12.5674
+export const GOOGLE_MAP_DEFAULT_CENTER: GoogleMapPickerCoordinates = {
+  lat: 45.59342700792413,
+  lng: 10.154572253126775
 };
+
+const FALLBACK_TILE_URL = "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+const FALLBACK_TILE_SUBDOMAINS: string[] = ["mt0", "mt1", "mt2", "mt3"];
+const FALLBACK_DEFAULT_ZOOM = 13;
+const FALLBACK_SELECTED_ZOOM = 15;
 
 const scriptCache: Record<string, Promise<typeof google.maps> | undefined> = {};
 
@@ -90,43 +100,218 @@ const cleanupListeners = (listeners: google.maps.MapsEventListener[]) => {
   }
 };
 
-export const GoogleMapPicker = ({
+type FallbackProps = {
+  value: GoogleMapPickerCoordinates | null;
+  onChange: (value: GoogleMapPickerCoordinates) => void;
+  className?: string;
+  labels: GoogleMapPickerLabels;
+  ariaLabel?: string;
+};
+
+const FallbackGoogleMapPicker = ({
+  value,
+  onChange,
+  className,
+  labels,
+  ariaLabel
+}: FallbackProps) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerRef = useRef<LeafletMarker | null>(null);
+  const latestValueRef = useRef<GoogleMapPickerCoordinates | null>(value);
+  const onChangeRef = useRef(onChange);
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    latestValueRef.current = value;
+
+    if (!mapRef.current || !markerRef.current) {
+      return;
+    }
+
+    const map = mapRef.current;
+    const marker = markerRef.current;
+
+    if (value) {
+      marker.setLatLng(value);
+      if (!map.hasLayer(marker)) {
+        marker.addTo(map);
+      }
+      if (map.getZoom() < FALLBACK_SELECTED_ZOOM) {
+        map.setZoom(FALLBACK_SELECTED_ZOOM);
+      }
+      map.panTo(value);
+    } else if (map.hasLayer(marker)) {
+      marker.remove();
+    }
+  }, [value]);
+
+  useEffect(() => {
+    let isMounted = true;
+    let cleanup: (() => void) | null = null;
+
+    (async () => {
+      try {
+        const L = await import("leaflet");
+        await import("leaflet/dist/leaflet.css");
+
+        if (!isMounted || !containerRef.current) {
+          return;
+        }
+
+        const map = L.map(containerRef.current, {
+          center: latestValueRef.current ?? GOOGLE_MAP_DEFAULT_CENTER,
+          zoom: latestValueRef.current ? FALLBACK_SELECTED_ZOOM : FALLBACK_DEFAULT_ZOOM,
+          zoomControl: true,
+          attributionControl: false
+        });
+
+        const tileLayer = L.tileLayer(FALLBACK_TILE_URL, {
+          subdomains: FALLBACK_TILE_SUBDOMAINS,
+          maxZoom: 19,
+          minZoom: 4
+        });
+
+        tileLayer.addTo(map);
+
+        const markerIcon = L.divIcon({
+          className: "google-map-picker-marker",
+          html: "<span></span>",
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
+        const marker = L.marker(
+          latestValueRef.current ?? GOOGLE_MAP_DEFAULT_CENTER,
+          {
+            draggable: true,
+            autoPan: true,
+            icon: markerIcon
+          }
+        );
+
+        mapRef.current = map;
+        markerRef.current = marker;
+
+        if (latestValueRef.current) {
+          marker.addTo(map);
+        }
+
+        const selectCoordinates = (coordinates: LeafletLatLng) => {
+          if (!mapRef.current || !markerRef.current) {
+            return;
+          }
+
+          markerRef.current.setLatLng(coordinates);
+          if (!mapRef.current.hasLayer(markerRef.current)) {
+            markerRef.current.addTo(mapRef.current);
+          }
+          if (mapRef.current.getZoom() < FALLBACK_SELECTED_ZOOM) {
+            mapRef.current.setZoom(FALLBACK_SELECTED_ZOOM);
+          }
+          mapRef.current.panTo(coordinates);
+          onChangeRef.current({ lat: coordinates.lat, lng: coordinates.lng });
+        };
+
+        const handleMapClick = (event: LeafletMouseEvent) => {
+          selectCoordinates(event.latlng);
+        };
+
+        const handleMarkerDrag = (event: import("leaflet").LeafletEvent) => {
+          const coords = (event.target as LeafletMarker).getLatLng();
+          selectCoordinates(coords);
+        };
+
+        map.on("click", handleMapClick);
+        marker.on("dragend", handleMarkerDrag);
+
+        cleanup = () => {
+          map.off("click", handleMapClick);
+          marker.off("dragend", handleMarkerDrag);
+        };
+
+        setState("ready");
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+        setState("error");
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+      cleanup?.();
+      markerRef.current?.remove();
+      markerRef.current = null;
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  const statusMessage = useMemo(() => {
+    if (state === "loading") {
+      return labels.loading;
+    }
+    if (state === "error") {
+      return labels.loadError;
+    }
+    return null;
+  }, [labels.loadError, labels.loading, state]);
+
+  return (
+    <div
+      className={["google-map-picker", className].filter(Boolean).join(" ")}
+      data-state={`fallback-${state}`}
+    >
+      <div
+        ref={containerRef}
+        className="google-map-picker-canvas"
+        role="application"
+        aria-label={ariaLabel}
+      />
+      {statusMessage && (
+        <div className="google-map-picker-status" role="status">
+          <p>{statusMessage}</p>
+        </div>
+      )}
+      {state === "ready" && labels.missingKey && (
+        <div className="google-map-picker-helper">
+          <p>{labels.missingKey}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+type GoogleMapPickerWithApiProps = GoogleMapPickerProps & { apiKey: string };
+
+const GoogleMapPickerWithApi = ({
   apiKey,
   value,
   onChange,
   className,
   labels,
   ariaLabel
-}: GoogleMapPickerProps) => {
+}: GoogleMapPickerWithApiProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const listenersRef = useRef<google.maps.MapsEventListener[]>([]);
   const latestValueRef = useRef<GoogleMapPickerCoordinates | null>(value);
   const onChangeRef = useRef(onChange);
-  const [state, setState] = useState<LoaderState>(() =>
-    apiKey ? "idle" : "missing-key"
-  );
+  const [state, setState] = useState<LoaderState>("idle");
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  const fallbackEmbedUrl = useMemo(() => {
-    const center = value ?? DEFAULT_CENTER;
-    const zoom = value ? 14 : 6;
-    const { lat, lng } = center;
-    const url = new URL("https://maps.google.com/maps");
-    url.searchParams.set("q", `${lat},${lng}`);
-    url.searchParams.set("z", zoom.toString());
-    url.searchParams.set("output", "embed");
-    url.searchParams.set("iwloc", "");
-    return url.toString();
-  }, [value]);
-
   useEffect(() => {
     if (!apiKey) {
-      setState("missing-key");
       return;
     }
 
@@ -147,8 +332,8 @@ export const GoogleMapPicker = ({
         const initialValue = latestValueRef.current;
 
         const map = new google.maps.Map(containerRef.current, {
-          center: initialValue ?? DEFAULT_CENTER,
-          zoom: initialValue ? 12 : 6,
+          center: initialValue ?? GOOGLE_MAP_DEFAULT_CENTER,
+          zoom: initialValue ? 14 : 13,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
@@ -221,8 +406,8 @@ export const GoogleMapPicker = ({
       markerRef.current.setMap(mapRef.current);
       markerRef.current.setPosition(value);
       mapRef.current.panTo(value);
-      if (mapRef.current.getZoom() < 12) {
-        mapRef.current.setZoom(12);
+      if (mapRef.current.getZoom() < 14) {
+        mapRef.current.setZoom(14);
       }
     } else {
       markerRef.current.setMap(null);
@@ -236,35 +421,8 @@ export const GoogleMapPicker = ({
     if (state === "error") {
       return labels.loadError;
     }
-    if (state === "missing-key") {
-      return labels.missingKey;
-    }
     return null;
-  }, [labels.loadError, labels.loading, labels.missingKey, state]);
-
-  if (!apiKey) {
-    return (
-      <div
-        className={["google-map-picker", className].filter(Boolean).join(" ")}
-        data-state="embed"
-      >
-        <div className="google-map-picker-embed">
-          <iframe
-            src={fallbackEmbedUrl}
-            title={ariaLabel ?? labels.missingKey ?? "Google Maps embed"}
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-        {labels.missingKey && (
-          <div className="google-map-picker-status" role="status">
-            <p>{labels.missingKey}</p>
-          </div>
-        )}
-      </div>
-    );
-  }
+  }, [labels.loadError, labels.loading, state]);
 
   return (
     <div
@@ -283,6 +441,38 @@ export const GoogleMapPicker = ({
         </div>
       )}
     </div>
+  );
+};
+
+export const GoogleMapPicker = ({
+  apiKey,
+  value,
+  onChange,
+  className,
+  labels,
+  ariaLabel
+}: GoogleMapPickerProps) => {
+  if (!apiKey) {
+    return (
+      <FallbackGoogleMapPicker
+        value={value}
+        onChange={onChange}
+        className={className}
+        labels={labels}
+        ariaLabel={ariaLabel}
+      />
+    );
+  }
+
+  return (
+    <GoogleMapPickerWithApi
+      apiKey={apiKey}
+      value={value}
+      onChange={onChange}
+      className={className}
+      labels={labels}
+      ariaLabel={ariaLabel}
+    />
   );
 };
 
