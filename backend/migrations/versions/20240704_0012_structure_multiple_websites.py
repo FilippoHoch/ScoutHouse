@@ -1,7 +1,7 @@
 """Store multiple website URLs for structures.
 
 Revision ID: 20240704_0012
-Revises: 20240611_0011
+Revises: 20240701_0012_structure_photos
 Create Date: 2024-07-04
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "20240704_0012"
-down_revision = "20240611_0011"
+down_revision = "20240701_0012_structure_photos"
 branch_labels = None
 depends_on = None
 
