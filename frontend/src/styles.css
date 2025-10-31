@@ -662,6 +662,11 @@ textarea:focus {
   background-color: currentColor;
 }
 
+.status-badge.info {
+  color: #1d4ed8;
+  background-color: #dbeafe;
+}
+
 .status-badge.draft {
   color: #854d0e;
   background-color: #fef3c7;
@@ -1023,6 +1028,20 @@ table tbody tr:hover {
 .structure-contact-card__intro {
   display: grid;
   gap: var(--space-xs);
+}
+
+.structure-contact-card__intro-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.structure-contact-card__intro-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 .structure-contact-card__intro h4 {
