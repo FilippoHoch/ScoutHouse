@@ -44,6 +44,18 @@ export interface Attachment {
   created_at: string;
 }
 
+export interface StructurePhoto {
+  id: number;
+  structure_id: number;
+  attachment_id: number;
+  filename: string;
+  mime: string;
+  size: number;
+  position: number;
+  url: string;
+  created_at: string;
+}
+
 export interface User {
   id: string;
   email: string;
