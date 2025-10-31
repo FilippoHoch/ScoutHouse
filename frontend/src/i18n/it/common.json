@@ -36,13 +36,8 @@
   },
   "importExport": {
     "pageTitle": "Import/Export strutture ed eventi",
-    "title": "Import strutture (CSV/XLSX)",
-    "description": "Carica il file CSV o XLSX con le strutture per validare i dati prima dell'import definitivo.",
-    "downloadTemplateXlsx": "Scarica template XLSX",
-    "downloadTemplateCsv": "Scarica template CSV",
-    "fileLabel": "File CSV o XLSX",
-    "loading": "Elaborazione in corso…",
-    "summary": "Righe valide: {{valid}}, righe con errori: {{invalid}}",
+    "importTitle": "Import dataset",
+    "importDescription": "Valida e carica i file CSV/XLSX con le strutture e i periodi di apertura.",
     "export": {
       "title": "Export",
       "structures": {
@@ -82,9 +77,6 @@
       }
     },
     "importOnlyAdmin": "Solo gli amministratori possono importare strutture.",
-    "actions": {
-      "import": "Importa"
-    },
     "errors": {
       "title": "Errori rilevati",
       "row": "Riga",
@@ -99,10 +91,39 @@
       "action": "Azione",
       "actions": {
         "create": "Creazione",
-        "update": "Aggiornamento"
+        "update": "Aggiornamento",
+        "skip": "Già presente",
+        "missing_structure": "Struttura non trovata"
       }
     },
-    "success": "Import completato: {{created}} create, {{updated}} aggiornate, {{skipped}} righe ignorate"
+    "structures": {
+      "title": "Strutture base",
+      "description": "Carica o aggiorna le schede delle strutture a partire dal template ufficiale.",
+      "downloadTemplateXlsx": "Scarica template strutture (XLSX)",
+      "downloadTemplateCsv": "Scarica template strutture (CSV)",
+      "fileLabel": "File strutture CSV o XLSX",
+      "loading": "Elaborazione anteprima…",
+      "summary": "Righe valide: {{valid}}, righe con errori: {{invalid}}",
+      "actions": {
+        "import": "Importa strutture"
+      },
+      "success": "Import completato: {{created}} create, {{updated}} aggiornate, {{skipped}} righe ignorate"
+    },
+    "openPeriods": {
+      "title": "Periodi di apertura",
+      "description": "Importa stagioni e intervalli di date per le strutture già censite.",
+      "downloadTemplateXlsx": "Scarica template periodi (XLSX)",
+      "downloadTemplateCsv": "Scarica template periodi (CSV)",
+      "fileLabel": "File periodi CSV o XLSX",
+      "loading": "Elaborazione anteprima…",
+      "summary": "Righe valide: {{valid}}, con errori: {{invalid}}, da creare: {{create}}, duplicate: {{skip}}",
+      "blockingErrors": "Correggi gli errori segnalati prima di procedere con l'import.",
+      "blockingMissing": "Sono stati rilevati {{count}} slug inesistenti: {{slugs}}.",
+      "actions": {
+        "import": "Importa periodi"
+      },
+      "success": "Import completato: {{created}} periodi creati, {{skipped}} righe ignorate"
+    }
   },
   "common": {
     "loading": "Caricamento…"
@@ -136,8 +157,8 @@
         "latitude": "Latitudine",
         "longitude": "Longitudine",
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
-        "diningCapacity": "Posti a tavola",
-        "diningCapacityHint": "Capienza indicativa della sala da pranzo o refettorio.",
+        "indoorActivityRooms": "Sale attività interne",
+        "indoorActivityRoomsHint": "Numero di stanze interne utilizzabili per attività o riunioni.",
         "hasKitchen": "Cucina attrezzata disponibile",
         "hasKitchenHint": "Spunta se la struttura mette a disposizione una cucina utilizzabile.",
         "website": "Sito o link di riferimento",
@@ -189,12 +210,8 @@
         "hotWaterHint": "Spunta se è presente acqua calda per docce o lavelli.",
         "landArea": "Superficie esterna (m²)",
         "landAreaHint": "Inserisci l'area utilizzabile all'aperto, anche approssimativa.",
-        "maxTents": "Tende massime consigliate",
-        "maxTentsHint": "Numero indicativo di tende che il campo può ospitare.",
         "shelterOnField": "Tettoia o rifugio sul campo",
         "shelterOnFieldHint": "Spunta se è presente una tettoia o un riparo fisso nell'area esterna.",
-        "toiletsOnField": "Servizi igienici sul campo",
-        "toiletsOnFieldHint": "Numero di WC disponibili direttamente nell'area esterna (anche chimici).",
         "waterSource": "Fonte d'acqua",
         "waterSourcePlaceholder": "Seleziona la fonte",
         "waterSourceHint": "Indica la principale fonte d'acqua disponibile nell'area esterna.",
@@ -204,20 +221,49 @@
         "firePolicyPlaceholder": "Seleziona la regola",
         "firePolicyHint": "Specifica se sono consentiti i fuochi e con quali limitazioni.",
         "accessByCar": "Accesso con auto",
+        "accessByCarHint": "Segnala se è possibile arrivare con auto private fino alla struttura.",
         "accessByCoach": "Accesso con pullman",
         "accessByCoachHint": "Segnala se un pullman può raggiungere o sostare vicino alla struttura.",
         "accessByPublicTransport": "Raggiungibile con mezzi pubblici",
         "accessByPublicTransportHint": "Indica se esistono collegamenti bus o treno nelle vicinanze.",
         "coachTurningArea": "Area manovra per pullman",
-        "maxVehicleHeight": "Altezza massima veicoli (m)",
-        "maxVehicleHeightHint": "Lascia vuoto se non ci sono limitazioni di altezza note.",
         "nearestBusStop": "Fermata più vicina",
         "nearestBusStopHint": "Inserisci il nome o la distanza della fermata utile.",
-        "winterOpen": "Disponibile in inverno",
         "weekendOnly": "Solo fine settimana",
         "weekendOnlyHint": "Spunta se la struttura accetta gruppi solo durante il weekend.",
         "notesLogistics": "Note logistiche",
         "notesLogisticsHint": "Indica istruzioni operative (chiavi, accessi, limitazioni) utili per i capi.",
+        "openPeriods": {
+          "title": "Periodi di apertura",
+          "hint": "Aggiungi stagioni o intervalli di date in cui la struttura è disponibile alla prenotazione.",
+          "columns": {
+            "kind": "Tipo",
+            "season": "Stagione",
+            "start": "Dal",
+            "end": "Al",
+            "notes": "Note",
+            "actions": "Azioni"
+          },
+          "kind": {
+            "season": "Stagione",
+            "range": "Intervallo date"
+          },
+          "season": {
+            "winter": "Inverno",
+            "spring": "Primavera",
+            "summer": "Estate",
+            "autumn": "Autunno"
+          },
+          "seasonPlaceholder": "Seleziona stagione",
+          "notesPlaceholder": "Note facoltative",
+          "empty": "Nessun periodo impostato.",
+          "addSeason": "Aggiungi stagione",
+          "addRange": "Aggiungi intervallo",
+          "remove": "Rimuovi",
+          "notApplicable": "—"
+        },
+        "pitLatrineAllowed": "È possibile scavare una latrina",
+        "pitLatrineAllowedHint": "Spunta se si possono allestire latrine a fossa nell'area esterna.",
         "hasFieldPoles": "Pali già presenti sul campo",
         "hasFieldPolesHint": "Spunta se nell'area esterna sono disponibili pali fissi o strutture pronte.",
         "waterSourceOptions": {
@@ -242,7 +288,10 @@
         "numberInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
         "websiteInvalid": "Inserisci un URL valido che inizi con http o https.",
         "saveFailed": "Impossibile creare la struttura.",
-        "decimalInvalid": "Inserisci un numero valido maggiore o uguale a zero."
+        "decimalInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
+        "openPeriodsSeasonRequired": "Seleziona una stagione per i periodi stagionali.",
+        "openPeriodsRangeRequired": "Indica sia data di inizio che data di fine per gli intervalli.",
+        "openPeriodsRangeOrder": "La data di fine deve essere successiva o uguale alla data di inizio."
       },
       "sidebar": {
         "title": "Suggerimenti rapidi",
@@ -326,15 +375,30 @@
         "beds": "Posti letto",
         "bathrooms": "Bagni",
         "showers": "Docce",
-        "diningCapacity": "Posti a tavola",
+        "indoorActivityRooms": "Sale attività interne",
         "website": "Sito di riferimento",
         "websiteFallback": "Non disponibile",
         "notes": "Note",
+        "pitLatrineAllowed": "Latrina a fossa",
+        "pitLatrineYes": "Consentita",
+        "pitLatrineNo": "Non consentita",
         "hasKitchen": {
           "label": "Cucina",
           "yes": "Cucina attrezzata disponibile",
           "no": "Cucina attrezzata non disponibile"
         }
+      },
+      "openPeriods": {
+        "title": "Periodi di apertura",
+        "missingDate": "Data non indicata",
+        "range": "{{start}} – {{end}}",
+        "season": {
+          "winter": "Aperta in inverno",
+          "spring": "Aperta in primavera",
+          "summer": "Aperta in estate",
+          "autumn": "Aperta in autunno"
+        },
+        "seasonUnknown": "Periodo stagionale"
       },
       "tabs": {
         "overview": "Panoramica",
@@ -361,6 +425,12 @@
       "unit": {
         "label": "Unità"
       },
+      "openInSeason": {
+        "label": "Aperta in"
+      },
+      "openOnDate": {
+        "label": "Aperta il"
+      },
       "maxDistance": {
         "label": "Distanza massima (km)",
         "placeholder": "es. 25"
@@ -376,10 +446,6 @@
           "forbidden": "Fuochi vietati"
         }
       },
-      "minTents": {
-        "label": "Min. tende",
-        "placeholder": "es. 10"
-      },
       "minLandArea": {
         "label": "Min. area esterna (m²)",
         "placeholder": "es. 1000"
@@ -391,10 +457,7 @@
         "pt": "Trasporto pubblico"
       },
       "hotWater": {
-        "label": "Acqua calda"
-      },
-      "winterOpen": {
-        "label": "Aperto in inverno"
+        "label": "Solo strutture con acqua calda"
       },
       "sort": {
         "label": "Ordina per",
@@ -429,11 +492,11 @@
         "costBand": "Fascia di costo: {{value}}",
         "maxDistance": "Entro {{value}} km",
         "fire": "Fuochi: {{value}}",
-        "minTents": "Min. tende: {{value}}",
         "minLandArea": "Area esterna ≥ {{value}} m²",
         "access": "Accesso: {{value}}",
         "hotWater": "Acqua calda disponibile",
-        "winterOpen": "Disponibile in inverno"
+        "openIn": "Aperta in: {{value}}",
+        "openOn": "Aperta il: {{value}}"
       }
     },
     "meta": {
@@ -460,6 +523,10 @@
         "pt": "Trasporto pubblico vicino",
         "kitchen": "Cucina disponibile",
         "hotWater": "Acqua calda disponibile"
+      },
+      "badges": {
+        "pitLatrineAllowed": "Latrina consentita",
+        "pitLatrineLabel": "Latrina a fossa consentita"
       }
     },
     "pagination": {

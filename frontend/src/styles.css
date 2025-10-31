@@ -970,6 +970,83 @@ table tbody tr:hover {
   resize: vertical;
 }
 
+.structure-open-periods-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.structure-open-periods-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.structure-open-periods-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.structure-open-periods-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.structure-open-periods-table th,
+.structure-open-periods-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.structure-open-periods-table th {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted-strong);
+  background: var(--color-surface-muted);
+}
+
+.structure-open-periods-table tr:last-child td {
+  border-bottom: none;
+}
+
+.structure-open-periods-table select,
+.structure-open-periods-table input[type="date"],
+.structure-open-periods-table input[type="text"] {
+  width: 100%;
+}
+
+.structure-open-periods-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.structure-open-periods-placeholder {
+  color: var(--color-muted);
+}
+
+.structure-open-periods-actions-column {
+  width: 120px;
+  text-align: right;
+}
+
+.structure-open-periods-actions-cell {
+  text-align: right;
+}
+
+.structure-open-periods-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
 .structure-form-field.checkbox-field label {
   flex-direction: row;
   align-items: center;
@@ -1006,6 +1083,45 @@ table tbody tr:hover {
   margin: 0;
   color: var(--color-muted);
   word-break: break-word;
+}
+
+.structure-open-periods-detail {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.structure-open-periods-detail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.structure-open-periods-detail__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.structure-open-periods-detail__item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.structure-open-periods-detail__main {
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.structure-open-periods-detail__note {
+  color: var(--color-muted);
+  font-size: 0.95rem;
 }
 
 .structure-form-footnote {

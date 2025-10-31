@@ -129,6 +129,26 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
 ]
 
 
+OPEN_PERIOD_TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
+    {
+        "structure_slug": "casa-alpina",
+        "kind": "season",
+        "season": "summer",
+        "date_start": None,
+        "date_end": None,
+        "notes": "Chiuso a ferragosto",
+    },
+    {
+        "structure_slug": "terreno-pianura",
+        "kind": "range",
+        "season": None,
+        "date_start": date(2025, 6, 1),
+        "date_end": date(2025, 8, 31),
+        "notes": "Campo estivo",
+    },
+]
+
+
 @dataclass(slots=True)
 class RowError:
     row: int
@@ -1072,11 +1092,33 @@ def build_structures_template_csv() -> str:
     return output.getvalue()
 
 
+def build_structure_open_periods_template_workbook() -> bytes:
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "structure_open_periods"
+    sheet.append(OPEN_PERIOD_HEADERS)
+    for row in OPEN_PERIOD_TEMPLATE_SAMPLE_ROWS:
+        sheet.append([row.get(header) for header in OPEN_PERIOD_HEADERS])
+    output = BytesIO()
+    workbook.save(output)
+    return output.getvalue()
+
+
+def build_structure_open_periods_template_csv() -> str:
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(OPEN_PERIOD_HEADERS)
+    for row in OPEN_PERIOD_TEMPLATE_SAMPLE_ROWS:
+        writer.writerow([row.get(header) for header in OPEN_PERIOD_HEADERS])
+    return output.getvalue()
+
+
 __all__ = [
     "HEADERS",
     "OPEN_PERIOD_HEADERS",
     "TemplateFormat",
     "TEMPLATE_SAMPLE_ROWS",
+    "OPEN_PERIOD_TEMPLATE_SAMPLE_ROWS",
     "ParsedWorkbook",
     "ParsedOpenPeriods",
     "RowError",
@@ -1090,4 +1132,6 @@ __all__ = [
     "parse_structure_open_periods_xlsx",
     "build_structures_template_workbook",
     "build_structures_template_csv",
+    "build_structure_open_periods_template_workbook",
+    "build_structure_open_periods_template_csv",
 ]

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -36,19 +36,35 @@ const createdStructure: Structure = {
   latitude: 45.12,
   longitude: 9.12,
   type: "house",
-  beds: 30,
-  bathrooms: 4,
-  showers: 4,
-  dining_capacity: 40,
+  indoor_beds: 30,
+  indoor_bathrooms: 4,
+  indoor_showers: 4,
+  indoor_activity_rooms: 2,
   has_kitchen: true,
+  hot_water: true,
+  land_area_m2: null,
+  shelter_on_field: false,
+  water_source: null,
+  electricity_available: true,
+  fire_policy: null,
+  access_by_car: true,
+  access_by_coach: false,
+  access_by_public_transport: true,
+  coach_turning_area: false,
+  nearest_bus_stop: null,
+  weekend_only: false,
+  has_field_poles: false,
+  pit_latrine_allowed: false,
   website_url: "https://example.org/base-bosco",
+  notes_logistics: null,
   notes: null,
   created_at: "2024-05-01T10:00:00Z",
   estimated_cost: null,
   cost_band: null,
   availabilities: null,
   cost_options: null,
-  contacts: null
+  contacts: null,
+  open_periods: []
 };
 
 const createWrapper = (queryClient: QueryClient) =>
@@ -89,16 +105,88 @@ describe("StructureCreatePage", () => {
 
     await waitFor(() => expect(createStructure).toHaveBeenCalled());
 
-    expect(createStructure).toHaveBeenCalledWith({
+    const payload = vi.mocked(createStructure).mock.calls[0][0];
+    expect(payload).toMatchObject({
       name: "Base Bosco",
       slug: "base-bosco",
       type: "house",
       province: "BS",
-      has_kitchen: false
+      has_kitchen: false,
+      hot_water: false,
+      access_by_car: false,
+      access_by_coach: false,
+      access_by_public_transport: false,
+      coach_turning_area: false,
+      shelter_on_field: false,
+      electricity_available: false,
+      weekend_only: false,
+      has_field_poles: false,
+      pit_latrine_allowed: false,
+      land_area_m2: null,
+      water_source: null,
+      fire_policy: null,
+      open_periods: []
     });
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
+  });
+
+  it("serialises open periods when provided", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "mixed");
+    await user.type(screen.getByLabelText(/Provincia/i), "BS");
+
+    const openPeriodsGroup = screen
+      .getByText(/Periodi di apertura/i)
+      .closest('[role="group"]') as HTMLElement;
+    const openPeriodsWithin = within(openPeriodsGroup);
+
+    await user.click(openPeriodsWithin.getByRole("button", { name: /Aggiungi stagione/i }));
+    await user.click(openPeriodsWithin.getByRole("button", { name: /Aggiungi intervallo/i }));
+
+    const seasonSelect = openPeriodsWithin
+      .getAllByRole("combobox")
+      .find((element) =>
+        Array.from((element as HTMLSelectElement).options).some((option) =>
+          option.textContent?.includes("Seleziona stagione")
+        )
+      ) as HTMLSelectElement;
+    await user.selectOptions(seasonSelect, "summer");
+
+    const notesInputs = openPeriodsWithin.getAllByPlaceholderText(/Note facoltative/i);
+    await user.type(notesInputs[0], "Chiuso settimana 33");
+    await user.type(notesInputs[1], "Campo EG");
+
+    const dateInputs = openPeriodsGroup.querySelectorAll('input[type="date"]');
+    await user.type(dateInputs[0] as HTMLInputElement, "2025-08-01");
+    await user.type(dateInputs[1] as HTMLInputElement, "2025-08-15");
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+    const payload = vi.mocked(createStructure).mock.calls[0][0];
+    expect(payload.open_periods).toEqual([
+      { kind: "season", season: "summer", notes: "Chiuso settimana 33" },
+      {
+        kind: "range",
+        date_start: "2025-08-01",
+        date_end: "2025-08-15",
+        notes: "Campo EG"
+      }
+    ]);
   });
 
   it("shows an error message when the API rejects the request", async () => {

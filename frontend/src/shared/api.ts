@@ -33,7 +33,9 @@ import {
   StructureSearchParams,
   StructureSearchResponse,
   StructureImportDryRunResponse,
-  StructureImportResult
+  StructureImportResult,
+  StructureOpenPeriodsImportDryRunResponse,
+  StructureOpenPeriodsImportResult
 } from "./types";
 import { clearSession, getAccessToken, refreshAccessToken } from "./auth";
 import { API_URL, ApiError } from "./http";
@@ -274,10 +276,10 @@ export async function getStructures(
     cost_band: params.cost_band,
     access: params.access,
     fire: params.fire,
-    min_tents: params.min_tents,
     min_land_area: params.min_land_area,
     hot_water: params.hot_water,
-    winter_open: params.winter_open,
+    open_in_season: params.open_in_season,
+    open_on_date: params.open_on_date,
     page: params.page,
     page_size: params.page_size,
     sort: params.sort,
@@ -352,6 +354,29 @@ export async function importStructures(
   formData.append("file", file);
   const query = options.dryRun === undefined ? "" : `?dry_run=${options.dryRun}`;
   return apiFetch(`/api/v1/import/structures${query}`, {
+    method: "POST",
+    body: formData,
+    auth: true,
+    contentType: null
+  });
+}
+
+export async function importStructureOpenPeriods(
+  file: File,
+  options: { dryRun?: true }
+): Promise<StructureOpenPeriodsImportDryRunResponse>;
+export async function importStructureOpenPeriods(
+  file: File,
+  options: { dryRun: false }
+): Promise<StructureOpenPeriodsImportResult>;
+export async function importStructureOpenPeriods(
+  file: File,
+  options: { dryRun?: boolean } = {}
+): Promise<StructureOpenPeriodsImportDryRunResponse | StructureOpenPeriodsImportResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const query = options.dryRun === undefined ? "" : `?dry_run=${options.dryRun}`;
+  return apiFetch(`/api/v1/import/structure-open-periods${query}`, {
     method: "POST",
     body: formData,
     auth: true,

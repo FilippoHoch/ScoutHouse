@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import {
   importStructures,
+  importStructureOpenPeriods,
   exportStructures,
   exportEvents,
   ApiError,
@@ -16,7 +17,9 @@ import {
   StructureType,
   Season,
   Unit,
-  CostBand
+  CostBand,
+  StructureOpenPeriodsImportDryRunResponse,
+  StructureOpenPeriodsImportResult
 } from "../shared/types";
 import { useAuth } from "../shared/auth";
 
@@ -139,12 +142,58 @@ export const ImportExportPage = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [openPeriodsFile, setOpenPeriodsFile] = useState<File | null>(null);
+  const [openPeriodsPreview, setOpenPeriodsPreview] =
+    useState<StructureOpenPeriodsImportDryRunResponse | null>(null);
+  const [openPeriodsResult, setOpenPeriodsResult] =
+    useState<StructureOpenPeriodsImportResult | null>(null);
+  const [openPeriodsErrorMessage, setOpenPeriodsErrorMessage] = useState<string | null>(null);
+  const [openPeriodsLoading, setOpenPeriodsLoading] = useState(false);
+
   const hasBlockingErrors = useMemo(() => {
     if (!preview) {
       return false;
     }
     return preview.invalid_rows > 0;
   }, [preview]);
+
+  const openPeriodsStats = useMemo(() => {
+    if (!openPeriodsPreview) {
+      return { create: 0, skip: 0, missing: 0 };
+    }
+    return openPeriodsPreview.preview.reduce(
+      (acc, item) => {
+        if (item.action === "create") {
+          acc.create += 1;
+        } else if (item.action === "skip") {
+          acc.skip += 1;
+        } else if (item.action === "missing_structure") {
+          acc.missing += 1;
+        }
+        return acc;
+      },
+      { create: 0, skip: 0, missing: 0 }
+    );
+  }, [openPeriodsPreview]);
+
+  const openPeriodsHasBlockingErrors = useMemo(() => {
+    if (!openPeriodsPreview) {
+      return false;
+    }
+    if (openPeriodsPreview.invalid_rows > 0) {
+      return true;
+    }
+    return openPeriodsStats.missing > 0;
+  }, [openPeriodsPreview, openPeriodsStats]);
+
+  const openPeriodsMissingSlugs = useMemo(() => {
+    if (!openPeriodsPreview) {
+      return [] as string[];
+    }
+    return openPeriodsPreview.preview
+      .filter((item) => item.action === "missing_structure")
+      .map((item) => item.slug);
+  }, [openPeriodsPreview]);
 
   const clearStructureExportMessages = () => {
     setStructureExportError(null);
@@ -308,6 +357,76 @@ export const ImportExportPage = () => {
       setLoading(false);
     }
   }, [file, parseError]);
+
+  const handleOpenPeriodsFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = event.target.files?.[0] ?? null;
+      setOpenPeriodsFile(selectedFile);
+      setOpenPeriodsResult(null);
+      setOpenPeriodsErrorMessage(null);
+      setOpenPeriodsPreview(null);
+
+      if (!selectedFile) {
+        return;
+      }
+
+      const fallbackFormat = inferSourceFormatFromFile(selectedFile);
+      setOpenPeriodsLoading(true);
+      try {
+        const result = await importStructureOpenPeriods(selectedFile, { dryRun: true });
+        setOpenPeriodsPreview(result);
+      } catch (error) {
+        const parsed = parseError(error, fallbackFormat);
+        setOpenPeriodsErrorMessage(parsed.message);
+        setOpenPeriodsPreview({
+          valid_rows: 0,
+          invalid_rows: summariseErrors(parsed.errors),
+          errors: parsed.errors,
+          preview: [],
+          source_format: parsed.sourceFormat,
+        });
+      } finally {
+        setOpenPeriodsLoading(false);
+      }
+    },
+    [parseError]
+  );
+
+  const handleOpenPeriodsImport = useCallback(async () => {
+    if (!openPeriodsFile) {
+      return;
+    }
+    const fallbackFormat = inferSourceFormatFromFile(openPeriodsFile);
+    setOpenPeriodsLoading(true);
+    setOpenPeriodsErrorMessage(null);
+    try {
+      const response = await importStructureOpenPeriods(openPeriodsFile, { dryRun: false });
+      setOpenPeriodsResult(response);
+    } catch (error) {
+      const parsed = parseError(error, fallbackFormat);
+      setOpenPeriodsErrorMessage(parsed.message);
+      setOpenPeriodsResult(null);
+      setOpenPeriodsPreview((previous) => {
+        if (previous) {
+          return {
+            ...previous,
+            invalid_rows: summariseErrors(parsed.errors),
+            errors: parsed.errors,
+            source_format: parsed.sourceFormat,
+          };
+        }
+        return {
+          valid_rows: 0,
+          invalid_rows: summariseErrors(parsed.errors),
+          errors: parsed.errors,
+          preview: [],
+          source_format: parsed.sourceFormat,
+        };
+      });
+    } finally {
+      setOpenPeriodsLoading(false);
+    }
+  }, [openPeriodsFile, parseError]);
 
   return (
     <section>
@@ -491,92 +610,212 @@ export const ImportExportPage = () => {
 
         {auth.user?.is_admin ? (
           <section aria-labelledby="import-section-title" className="import-section">
-            <h2 id="import-section-title">{t("importExport.title")}</h2>
-            <p>{t("importExport.description")}</p>
-            <div className="actions">
-              <a href="/api/v1/templates/structures.xlsx" className="button" download>
-                {t("importExport.downloadTemplateXlsx")}
-              </a>
-              <a href="/api/v1/templates/structures.csv" className="button" download>
-                {t("importExport.downloadTemplateCsv")}
-              </a>
-            </div>
-            <label className="file-input">
-              <span>{t("importExport.fileLabel")}</span>
-              <input type="file" accept=".xlsx,.csv" onChange={handleFileChange} />
-            </label>
-            {loading && <p>{t("importExport.loading")}</p>}
-            {errorMessage && <p className="error">{errorMessage}</p>}
-            {preview && (
-              <div className="import-preview">
-                <p>
-                  {t("importExport.summary", {
-                    valid: preview.valid_rows,
-                    invalid: preview.invalid_rows,
+            <h2 id="import-section-title">{t("importExport.importTitle")}</h2>
+            <p>{t("importExport.importDescription")}</p>
+            <div className="import-block">
+              <h3>{t("importExport.structures.title")}</h3>
+              <p>{t("importExport.structures.description")}</p>
+              <div className="actions">
+                <a href="/api/v1/templates/structures.xlsx" className="button" download>
+                  {t("importExport.structures.downloadTemplateXlsx")}
+                </a>
+                <a href="/api/v1/templates/structures.csv" className="button" download>
+                  {t("importExport.structures.downloadTemplateCsv")}
+                </a>
+              </div>
+              <label className="file-input">
+                <span>{t("importExport.structures.fileLabel")}</span>
+                <input type="file" accept=".xlsx,.csv" onChange={handleFileChange} />
+              </label>
+              {loading && <p>{t("importExport.structures.loading")}</p>}
+              {errorMessage && <p className="error">{errorMessage}</p>}
+              {preview && (
+                <div className="import-preview">
+                  <p>
+                    {t("importExport.structures.summary", {
+                      valid: preview.valid_rows,
+                      invalid: preview.invalid_rows,
+                    })}
+                  </p>
+                  {preview.errors.length > 0 && (
+                    <div>
+                      <h3>{t("importExport.errors.title")}</h3>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th scope="col">{t("importExport.errors.row")}</th>
+                            <th scope="col">{t("importExport.errors.field")}</th>
+                            <th scope="col">{t("importExport.errors.message")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {preview.errors.map((error) => (
+                            <tr key={`${error.row}-${error.field}`}>
+                              <td>{error.row}</td>
+                              <td>{error.field}</td>
+                              <td>{error.msg}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {preview.preview.length > 0 && (
+                    <div>
+                      <h3>{t("importExport.preview.title")}</h3>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th scope="col">{t("importExport.preview.slug")}</th>
+                            <th scope="col">{t("importExport.preview.action")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {preview.preview.map((item) => (
+                            <tr key={item.slug}>
+                              <td>{item.slug}</td>
+                              <td>{t(`importExport.preview.actions.${item.action}`)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleImport}
+                    disabled={!file || hasBlockingErrors || loading}
+                  >
+                    {loading ? t("common.loading") : t("importExport.structures.actions.import")}
+                  </button>
+                </div>
+              )}
+              {importResult && (
+                <p className="success">
+                  {t("importExport.structures.success", {
+                    created: importResult.created,
+                    updated: importResult.updated,
+                    skipped: importResult.skipped,
                   })}
                 </p>
-                {preview.errors.length > 0 && (
-                  <div>
-                    <h3>{t("importExport.errors.title")}</h3>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th scope="col">{t("importExport.errors.row")}</th>
-                          <th scope="col">{t("importExport.errors.field")}</th>
-                          <th scope="col">{t("importExport.errors.message")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {preview.errors.map((error) => (
-                          <tr key={`${error.row}-${error.field}`}>
-                            <td>{error.row}</td>
-                            <td>{error.field}</td>
-                            <td>{error.msg}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                {preview.preview.length > 0 && (
-                  <div>
-                    <h3>{t("importExport.preview.title")}</h3>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th scope="col">{t("importExport.preview.slug")}</th>
-                          <th scope="col">{t("importExport.preview.action")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {preview.preview.map((item) => (
-                          <tr key={item.slug}>
-                            <td>{item.slug}</td>
-                            <td>{t(`importExport.preview.actions.${item.action}`)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={handleImport}
-                  disabled={!file || hasBlockingErrors || loading}
+              )}
+            </div>
+            <div className="import-block">
+              <h3>{t("importExport.openPeriods.title")}</h3>
+              <p>{t("importExport.openPeriods.description")}</p>
+              <div className="actions">
+                <a
+                  href="/api/v1/templates/structure-open-periods.xlsx"
+                  className="button"
+                  download
                 >
-                  {loading ? t("common.loading") : t("importExport.actions.import")}
-                </button>
+                  {t("importExport.openPeriods.downloadTemplateXlsx")}
+                </a>
+                <a
+                  href="/api/v1/templates/structure-open-periods.csv"
+                  className="button"
+                  download
+                >
+                  {t("importExport.openPeriods.downloadTemplateCsv")}
+                </a>
               </div>
-            )}
-            {importResult && (
-              <p className="success">
-                {t("importExport.success", {
-                  created: importResult.created,
-                  updated: importResult.updated,
-                  skipped: importResult.skipped,
-                })}
-              </p>
-            )}
+              <label className="file-input">
+                <span>{t("importExport.openPeriods.fileLabel")}</span>
+                <input
+                  type="file"
+                  accept=".xlsx,.csv"
+                  onChange={handleOpenPeriodsFileChange}
+                />
+              </label>
+              {openPeriodsLoading && <p>{t("importExport.openPeriods.loading")}</p>}
+              {openPeriodsErrorMessage && <p className="error">{openPeriodsErrorMessage}</p>}
+              {openPeriodsPreview && (
+                <div className="import-preview">
+                  <p>
+                    {t("importExport.openPeriods.summary", {
+                      valid: openPeriodsPreview.valid_rows,
+                      invalid: openPeriodsPreview.invalid_rows,
+                      create: openPeriodsStats.create,
+                      skip: openPeriodsStats.skip,
+                    })}
+                  </p>
+                  {openPeriodsPreview.errors.length > 0 && (
+                    <div>
+                      <h3>{t("importExport.errors.title")}</h3>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th scope="col">{t("importExport.errors.row")}</th>
+                            <th scope="col">{t("importExport.errors.field")}</th>
+                            <th scope="col">{t("importExport.errors.message")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {openPeriodsPreview.errors.map((error) => (
+                            <tr key={`${error.row}-${error.field}`}>
+                              <td>{error.row}</td>
+                              <td>{error.field}</td>
+                              <td>{error.msg}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {openPeriodsMissingSlugs.length > 0 && (
+                    <p className="error">
+                      {t("importExport.openPeriods.blockingMissing", {
+                        count: openPeriodsMissingSlugs.length,
+                        slugs: openPeriodsMissingSlugs.join(", "),
+                      })}
+                    </p>
+                  )}
+                  {openPeriodsPreview.preview.length > 0 && (
+                    <div>
+                      <h3>{t("importExport.preview.title")}</h3>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th scope="col">{t("importExport.preview.slug")}</th>
+                            <th scope="col">{t("importExport.preview.action")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {openPeriodsPreview.preview.map((item) => (
+                            <tr key={`${item.slug}-${item.action}`}>
+                              <td>{item.slug}</td>
+                              <td>{t(`importExport.preview.actions.${item.action}`)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {openPeriodsPreview.invalid_rows > 0 && (
+                    <p className="error">{t("importExport.openPeriods.blockingErrors")}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleOpenPeriodsImport}
+                    disabled={
+                      !openPeriodsFile || openPeriodsHasBlockingErrors || openPeriodsLoading
+                    }
+                  >
+                    {openPeriodsLoading
+                      ? t("common.loading")
+                      : t("importExport.openPeriods.actions.import")}
+                  </button>
+                </div>
+              )}
+              {openPeriodsResult && (
+                <p className="success">
+                  {t("importExport.openPeriods.success", {
+                    created: openPeriodsResult.created,
+                    skipped: openPeriodsResult.skipped,
+                  })}
+                </p>
+              )}
+            </div>
           </section>
         ) : (
           <p className="muted">{t("importExport.importOnlyAdmin")}</p>

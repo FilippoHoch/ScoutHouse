@@ -36,12 +36,27 @@ const sampleStructure: Structure = {
   latitude: 45.6,
   longitude: 10.16,
   type: "house",
-  beds: 48,
-  bathrooms: 6,
-  showers: 8,
-  dining_capacity: 70,
+  indoor_beds: 48,
+  indoor_bathrooms: 6,
+  indoor_showers: 8,
+  indoor_activity_rooms: 4,
   has_kitchen: true,
+  hot_water: true,
+  land_area_m2: null,
+  shelter_on_field: false,
+  water_source: null,
+  electricity_available: true,
+  fire_policy: "with_permit",
+  access_by_car: true,
+  access_by_coach: true,
+  access_by_public_transport: true,
+  coach_turning_area: true,
+  nearest_bus_stop: "Fermata centro",
+  weekend_only: false,
+  has_field_poles: false,
+  pit_latrine_allowed: false,
   website_url: "https://example.org/casa-alpina",
+  notes_logistics: "Contattare il custode",
   notes: null,
   created_at: new Date("2024-01-01T00:00:00Z").toISOString(),
   estimated_cost: 18.5,
@@ -59,6 +74,18 @@ const sampleStructure: Structure = {
       city_tax_per_night: null,
       utilities_flat: null,
       age_rules: null
+    }
+  ],
+  contacts: [],
+  open_periods: [
+    { id: 1, kind: "season", season: "summer", date_start: null, date_end: null, notes: "Aperto" },
+    {
+      id: 2,
+      kind: "range",
+      season: null,
+      date_start: "2025-08-01",
+      date_end: "2025-08-15",
+      notes: "Campo EG"
     }
   ]
 };

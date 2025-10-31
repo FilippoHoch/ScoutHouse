@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Import `structure_open_periods` con template dedicati (`/api/v1/templates/structure-open-periods.*`).
+- Nuovi filtri frontend "Aperta in" e "Aperta il" con badge periodi nella lista strutture.
+- Esportazione strutture: foglio/dataset aggiuntivo per `structure_open_periods` in CSV/XLSX e annidamento nel JSON.
+
+### Changed
+- Campo `dining_capacity` rinominato in `indoor_activity_rooms` in API, frontend e seed.
+- Rimossi riferimenti legacy a `max_vehicle_height_m`, `max_tents`, `toilets_on_field`, `winter_open` dal codice applicativo.
+- Pagina Import/Export aggiornata con blocco dedicato ai periodi di apertura e nuove stringhe localizzate.
+
+### Migration
+- Aggiornare eventuali fogli o pipeline CSV rinominando la colonna `dining_capacity` in `indoor_activity_rooms` prima dell'import.
+- Utilizzare i nuovi template scaricati dalle API per assicurarsi che le intestazioni coincidano con il parser aggiornato.
+
 ## [0.17.0] - 2025-10-28
 ### Added
 - Job queue RQ su Redis e servizio `worker` in Compose.
