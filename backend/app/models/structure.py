@@ -95,8 +95,8 @@ class Structure(Base):
         server_default=expression.false(),
         default=False,
     )
-    water_source: Mapped[WaterSource | None] = mapped_column(
-        SQLEnum(WaterSource, name="water_source"),
+    water_sources: Mapped[list[WaterSource] | None] = mapped_column(
+        JSON,
         nullable=True,
     )
     electricity_available: Mapped[bool] = mapped_column(

@@ -133,7 +133,7 @@ export const StructureCreatePage = () => {
   const [landArea, setLandArea] = useState("");
   const [shelterOnField, setShelterOnField] = useState(false);
   const [pitLatrineAllowed, setPitLatrineAllowed] = useState(false);
-  const [waterSource, setWaterSource] = useState<WaterSource | "">("");
+  const [waterSources, setWaterSources] = useState<WaterSource[]>([]);
   const [electricityAvailable, setElectricityAvailable] = useState(false);
   const [firePolicy, setFirePolicy] = useState<FirePolicy | "">("");
   const [accessByCar, setAccessByCar] = useState(false);
@@ -247,7 +247,7 @@ export const StructureCreatePage = () => {
     setLandArea("");
     setShelterOnField(false);
     setPitLatrineAllowed(false);
-    setWaterSource("");
+    setWaterSources([]);
     setElectricityAvailable(false);
     setFirePolicy("");
     setNearestBusStop("");
@@ -644,8 +644,25 @@ export const StructureCreatePage = () => {
     clearFieldError("open_periods");
   };
 
-  const handleWaterSourceChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setWaterSource(event.target.value as WaterSource | "");
+  const handleWaterSourcesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const option = event.target.value as WaterSource;
+    const { checked } = event.target;
+    setWaterSources((prev) => {
+      if (checked) {
+        if (option === "none") {
+          return ["none"];
+        }
+        const withoutNone = prev.filter((item) => item !== "none");
+        if (withoutNone.includes(option)) {
+          return withoutNone;
+        }
+        return [...withoutNone, option];
+      }
+      if (option === "none") {
+        return [];
+      }
+      return prev.filter((item) => item !== option);
+    });
     setApiError(null);
   };
 
@@ -982,12 +999,12 @@ export const StructureCreatePage = () => {
     if (showOutdoorSection) {
       payload.land_area_m2 = trimmedLandArea ? Number.parseFloat(trimmedLandArea.replace(",", ".")) : null;
       payload.nearest_bus_stop = trimmedNearestBusStop || null;
-      payload.water_source = waterSource ? (waterSource as WaterSource) : null;
+      payload.water_sources = waterSources.length > 0 ? [...waterSources] : null;
       payload.fire_policy = firePolicy ? (firePolicy as FirePolicy) : null;
     } else {
       payload.land_area_m2 = null;
       payload.shelter_on_field = false;
-      payload.water_source = null;
+      payload.water_sources = null;
       payload.electricity_available = false;
       payload.fire_policy = null;
       payload.nearest_bus_stop = null;
@@ -1111,6 +1128,9 @@ export const StructureCreatePage = () => {
     .join(" ") || undefined;
   const landAreaHintId = "structure-land-area-hint";
   const landAreaDescribedBy = [landAreaHintId, landAreaErrorId].filter(Boolean).join(" ") || undefined;
+  const waterSourcesLabelId = "structure-water-sources-label";
+  const waterSourcesGroupId = "structure-water-sources-group";
+  const waterSourcesHintId = "structure-water-sources-hint";
   const websiteHintId = "structure-website-hint";
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
   const openPeriodsHintId = "structure-open-periods-hint";
@@ -1463,24 +1483,32 @@ export const StructureCreatePage = () => {
                   </div>
 
                   <div className="structure-form-field">
-                    <label htmlFor="structure-water-source">
+                    <span id={waterSourcesLabelId}>
                       {t("structures.create.form.waterSource")}
-                      <select
-                        id="structure-water-source"
-                        value={waterSource}
-                        onChange={handleWaterSourceChange}
-                      >
-                        <option value="">
-                          {t("structures.create.form.waterSourcePlaceholder")}
-                        </option>
-                        {waterSourceOptions.map((option) => (
-                          <option key={option} value={option}>
+                    </span>
+                    <div
+                      id={waterSourcesGroupId}
+                      role="group"
+                      aria-labelledby={waterSourcesLabelId}
+                      aria-describedby={waterSourcesHintId}
+                    >
+                      {waterSourceOptions.map((option) => {
+                        const inputId = `structure-water-source-${option}`;
+                        return (
+                          <label key={option} htmlFor={inputId} className="checkbox-field">
+                            <input
+                              id={inputId}
+                              type="checkbox"
+                              value={option}
+                              checked={waterSources.includes(option)}
+                              onChange={handleWaterSourcesChange}
+                            />
                             {t(`structures.create.form.waterSourceOptions.${option}`)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <span className="helper-text">
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <span className="helper-text" id={waterSourcesHintId}>
                       {t("structures.create.form.waterSourceHint")}
                     </span>
                   </div>

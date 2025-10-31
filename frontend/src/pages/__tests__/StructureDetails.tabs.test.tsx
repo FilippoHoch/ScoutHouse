@@ -45,7 +45,7 @@ const structureWithDetails: Structure = {
   hot_water: false,
   land_area_m2: 5000,
   shelter_on_field: true,
-  water_source: "tap",
+  water_sources: ["tap"],
   electricity_available: false,
   fire_policy: "allowed",
   access_by_car: true,

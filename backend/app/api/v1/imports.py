@@ -18,6 +18,7 @@ from app.models import (
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
     User,
+    WaterSource,
 )
 from app.services.audit import record_audit
 from app.services.structures_import import (
@@ -28,6 +29,14 @@ from app.services.structures_import import (
     parse_structure_open_periods_file,
     parse_structures_file,
 )
+
+
+def _serialize_water_sources(
+    sources: list[WaterSource] | None,
+) -> list[str] | None:
+    if not sources:
+        return None
+    return [item.value for item in sources]
 
 router = APIRouter()
 
@@ -169,7 +178,7 @@ async def import_structures(
                 hot_water=row.hot_water if row.hot_water is not None else False,
                 land_area_m2=row.land_area_m2,
                 shelter_on_field=row.shelter_on_field if row.shelter_on_field is not None else False,
-                water_source=row.water_source,
+                water_sources=_serialize_water_sources(row.water_sources),
                 electricity_available=(
                     row.electricity_available if row.electricity_available is not None else False
                 ),
@@ -210,7 +219,7 @@ async def import_structures(
             structure.land_area_m2 = row.land_area_m2
             if row.shelter_on_field is not None:
                 structure.shelter_on_field = row.shelter_on_field
-            structure.water_source = row.water_source
+            structure.water_sources = _serialize_water_sources(row.water_sources)
             if row.electricity_available is not None:
                 structure.electricity_available = row.electricity_available
             structure.fire_policy = row.fire_policy
