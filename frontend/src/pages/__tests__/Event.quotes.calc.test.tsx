@@ -148,7 +148,7 @@ describe("Event quotes tab", () => {
 
     expect(screen.getByText(/Costo per persona\/giorno/)).toBeInTheDocument();
     expect(screen.getByText(/Caparra/)).toBeInTheDocument();
-    expect(screen.getByText(/Totale: 575.00/)).toBeInTheDocument();
-    expect(screen.getByText("632.50")).toBeInTheDocument();
+    expect(screen.getByText("575.00")).toBeInTheDocument();
+    expect(screen.getByText(/€632\.50/)).toBeInTheDocument();
   });
 });

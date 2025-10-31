@@ -8,6 +8,9 @@ import {
   FirePolicy,
   StructureCreateDto,
   StructureType,
+  StructureOpenPeriodKind,
+  StructureOpenPeriodInput,
+  StructureOpenPeriodSeason,
   WaterSource
 } from "../shared/types";
 import { Button, InlineMessage, SectionHeader, Surface } from "../shared/ui/designSystem";
@@ -27,14 +30,42 @@ type FieldErrorKey =
   | "indoor_beds"
   | "indoor_bathrooms"
   | "indoor_showers"
-  | "dining_capacity"
+  | "indoor_activity_rooms"
   | "website_url"
   | "land_area_m2"
-  | "max_tents"
-  | "toilets_on_field"
-  | "max_vehicle_height_m";
+  | "open_periods";
 
 type FieldErrors = Partial<Record<FieldErrorKey, string>>;
+
+type OpenPeriodFormRow = {
+  key: string;
+  id?: number;
+  kind: StructureOpenPeriodKind;
+  season: StructureOpenPeriodSeason | "";
+  dateStart: string;
+  dateEnd: string;
+  notes: string;
+};
+
+const openPeriodSeasonOptions: StructureOpenPeriodSeason[] = [
+  "winter",
+  "spring",
+  "summer",
+  "autumn"
+];
+
+const openPeriodKindOptions: StructureOpenPeriodKind[] = ["season", "range"];
+
+const createOpenPeriodKey = () => `op-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+
+const createOpenPeriodRow = (kind: StructureOpenPeriodKind = "season"): OpenPeriodFormRow => ({
+  key: createOpenPeriodKey(),
+  kind,
+  season: "",
+  dateStart: "",
+  dateEnd: "",
+  notes: ""
+});
 
 function toSlug(value: string): string {
   return value
@@ -62,13 +93,12 @@ export const StructureCreatePage = () => {
   const [indoorBeds, setIndoorBeds] = useState("");
   const [indoorBathrooms, setIndoorBathrooms] = useState("");
   const [indoorShowers, setIndoorShowers] = useState("");
-  const [diningCapacity, setDiningCapacity] = useState("");
+  const [indoorActivityRooms, setIndoorActivityRooms] = useState("");
   const [hasKitchen, setHasKitchen] = useState(false);
   const [hotWater, setHotWater] = useState(false);
   const [landArea, setLandArea] = useState("");
-  const [maxTents, setMaxTents] = useState("");
   const [shelterOnField, setShelterOnField] = useState(false);
-  const [toiletsOnField, setToiletsOnField] = useState("");
+  const [pitLatrineAllowed, setPitLatrineAllowed] = useState(false);
   const [waterSource, setWaterSource] = useState<WaterSource | "">("");
   const [electricityAvailable, setElectricityAvailable] = useState(false);
   const [firePolicy, setFirePolicy] = useState<FirePolicy | "">("");
@@ -76,14 +106,13 @@ export const StructureCreatePage = () => {
   const [accessByCoach, setAccessByCoach] = useState(false);
   const [accessByPublicTransport, setAccessByPublicTransport] = useState(false);
   const [coachTurningArea, setCoachTurningArea] = useState(false);
-  const [maxVehicleHeight, setMaxVehicleHeight] = useState("");
   const [nearestBusStop, setNearestBusStop] = useState("");
-  const [winterOpen, setWinterOpen] = useState(false);
   const [weekendOnly, setWeekendOnly] = useState(false);
   const [hasFieldPoles, setHasFieldPoles] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
+  const [openPeriods, setOpenPeriods] = useState<OpenPeriodFormRow[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [slugDirty, setSlugDirty] = useState(false);
@@ -113,33 +142,29 @@ export const StructureCreatePage = () => {
     setIndoorBeds("");
     setIndoorBathrooms("");
     setIndoorShowers("");
-    setDiningCapacity("");
+    setIndoorActivityRooms("");
     setHasKitchen(false);
     setHotWater(false);
     clearFieldErrorsGroup([
       "indoor_beds",
       "indoor_bathrooms",
       "indoor_showers",
-      "dining_capacity"
+      "indoor_activity_rooms"
     ]);
   };
 
   const resetOutdoorFields = () => {
     setLandArea("");
-    setMaxTents("");
     setShelterOnField(false);
-    setToiletsOnField("");
+    setPitLatrineAllowed(false);
     setWaterSource("");
     setElectricityAvailable(false);
     setFirePolicy("");
-    setMaxVehicleHeight("");
     setNearestBusStop("");
     setHasFieldPoles(false);
     clearFieldErrorsGroup([
       "land_area_m2",
-      "max_tents",
-      "toilets_on_field",
-      "max_vehicle_height_m"
+      "open_periods"
     ]);
   };
 
@@ -212,10 +237,10 @@ export const StructureCreatePage = () => {
     clearFieldError("indoor_showers");
   };
 
-  const handleDiningCapacityChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setDiningCapacity(event.target.value);
+  const handleIndoorActivityRoomsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setIndoorActivityRooms(event.target.value);
     setApiError(null);
-    clearFieldError("dining_capacity");
+    clearFieldError("indoor_activity_rooms");
   };
 
   const handleHasKitchenChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -234,21 +259,90 @@ export const StructureCreatePage = () => {
     clearFieldError("land_area_m2");
   };
 
-  const handleMaxTentsChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setMaxTents(event.target.value);
-    setApiError(null);
-    clearFieldError("max_tents");
-  };
-
   const handleShelterOnFieldChange = (event: ChangeEvent<HTMLInputElement>) => {
     setShelterOnField(event.target.checked);
     setApiError(null);
   };
 
-  const handleToiletsOnFieldChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setToiletsOnField(event.target.value);
+  const handlePitLatrineAllowedChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setPitLatrineAllowed(event.target.checked);
     setApiError(null);
-    clearFieldError("toilets_on_field");
+  };
+
+  const focusOpenPeriodField = (key: string, field: "season" | "date_start") => {
+    requestAnimationFrame(() => {
+      const element = document.getElementById(`structure-open-period-${key}-${field}`);
+      if (element instanceof HTMLElement) {
+        element.focus();
+      }
+    });
+  };
+
+  const handleAddOpenPeriod = (kind: StructureOpenPeriodKind) => {
+    const row = createOpenPeriodRow(kind);
+    setOpenPeriods((prev) => [...prev, row]);
+    clearFieldError("open_periods");
+    focusOpenPeriodField(row.key, kind === "season" ? "season" : "date_start");
+  };
+
+  const handleRemoveOpenPeriod = (key: string) => {
+    setOpenPeriods((prev) => prev.filter((row) => row.key !== key));
+    clearFieldError("open_periods");
+    requestAnimationFrame(() => {
+      const addButton = document.getElementById("structure-open-periods-add-season");
+      if (addButton instanceof HTMLElement) {
+        addButton.focus();
+      }
+    });
+  };
+
+  const handleOpenPeriodKindChange = (
+    key: string,
+    nextKind: StructureOpenPeriodKind
+  ) => {
+    setOpenPeriods((prev) =>
+      prev.map((row) => {
+        if (row.key !== key) {
+          return row;
+        }
+        return {
+          ...row,
+          kind: nextKind,
+          season: nextKind === "season" ? row.season : "",
+          dateStart: nextKind === "range" ? row.dateStart : "",
+          dateEnd: nextKind === "range" ? row.dateEnd : ""
+        };
+      })
+    );
+    clearFieldError("open_periods");
+    focusOpenPeriodField(key, nextKind === "season" ? "season" : "date_start");
+  };
+
+  const handleOpenPeriodSeasonChange = (
+    key: string,
+    nextSeason: StructureOpenPeriodSeason | ""
+  ) => {
+    setOpenPeriods((prev) =>
+      prev.map((row) => (row.key === key ? { ...row, season: nextSeason } : row))
+    );
+    clearFieldError("open_periods");
+  };
+
+  const handleOpenPeriodDateChange = (
+    key: string,
+    field: "dateStart" | "dateEnd",
+    value: string
+  ) => {
+    setOpenPeriods((prev) =>
+      prev.map((row) => (row.key === key ? { ...row, [field]: value } : row))
+    );
+    clearFieldError("open_periods");
+  };
+
+  const handleOpenPeriodNotesChange = (key: string, value: string) => {
+    setOpenPeriods((prev) =>
+      prev.map((row) => (row.key === key ? { ...row, notes: value } : row))
+    );
   };
 
   const handleWaterSourceChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -286,19 +380,8 @@ export const StructureCreatePage = () => {
     setApiError(null);
   };
 
-  const handleMaxVehicleHeightChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setMaxVehicleHeight(event.target.value);
-    setApiError(null);
-    clearFieldError("max_vehicle_height_m");
-  };
-
   const handleNearestBusStopChange = (event: ChangeEvent<HTMLInputElement>) => {
     setNearestBusStop(event.target.value);
-    setApiError(null);
-  };
-
-  const handleWinterOpenChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setWinterOpen(event.target.checked);
     setApiError(null);
   };
 
@@ -360,11 +443,8 @@ export const StructureCreatePage = () => {
     const trimmedIndoorBeds = indoorBeds.trim();
     const trimmedIndoorBathrooms = indoorBathrooms.trim();
     const trimmedIndoorShowers = indoorShowers.trim();
-    const trimmedDiningCapacity = diningCapacity.trim();
+    const trimmedIndoorActivityRooms = indoorActivityRooms.trim();
     const trimmedLandArea = landArea.trim();
-    const trimmedMaxTents = maxTents.trim();
-    const trimmedToiletsOnField = toiletsOnField.trim();
-    const trimmedMaxVehicleHeight = maxVehicleHeight.trim();
     const trimmedWebsiteUrl = websiteUrl.trim();
 
     const errors: FieldErrors = {};
@@ -443,8 +523,8 @@ export const StructureCreatePage = () => {
       t("structures.create.errors.numberInvalid")
     );
     validatePositiveInteger(
-      trimmedDiningCapacity,
-      "dining_capacity",
+      trimmedIndoorActivityRooms,
+      "indoor_activity_rooms",
       t("structures.create.errors.numberInvalid")
     );
     validateNonNegativeDecimal(
@@ -452,21 +532,26 @@ export const StructureCreatePage = () => {
       "land_area_m2",
       t("structures.create.errors.decimalInvalid")
     );
-    validatePositiveInteger(
-      trimmedMaxTents,
-      "max_tents",
-      t("structures.create.errors.numberInvalid")
-    );
-    validatePositiveInteger(
-      trimmedToiletsOnField,
-      "toilets_on_field",
-      t("structures.create.errors.numberInvalid")
-    );
-    validateNonNegativeDecimal(
-      trimmedMaxVehicleHeight,
-      "max_vehicle_height_m",
-      t("structures.create.errors.decimalInvalid")
-    );
+
+    if (openPeriods.length > 0 && !errors.open_periods) {
+      for (const period of openPeriods) {
+        if (period.kind === "season") {
+          if (!period.season) {
+            errors.open_periods = t("structures.create.errors.openPeriodsSeasonRequired");
+            break;
+          }
+        } else {
+          if (!period.dateStart || !period.dateEnd) {
+            errors.open_periods = t("structures.create.errors.openPeriodsRangeRequired");
+            break;
+          }
+          if (period.dateStart > period.dateEnd) {
+            errors.open_periods = t("structures.create.errors.openPeriodsRangeOrder");
+            break;
+          }
+        }
+      }
+    }
 
     if (trimmedWebsiteUrl) {
       try {
@@ -504,11 +589,8 @@ export const StructureCreatePage = () => {
     const trimmedIndoorBeds = indoorBeds.trim();
     const trimmedIndoorBathrooms = indoorBathrooms.trim();
     const trimmedIndoorShowers = indoorShowers.trim();
-    const trimmedDiningCapacity = diningCapacity.trim();
+    const trimmedIndoorActivityRooms = indoorActivityRooms.trim();
     const trimmedLandArea = landArea.trim();
-    const trimmedMaxTents = maxTents.trim();
-    const trimmedToiletsOnField = toiletsOnField.trim();
-    const trimmedMaxVehicleHeight = maxVehicleHeight.trim();
     const trimmedNearestBusStop = nearestBusStop.trim();
     const trimmedWebsiteUrl = websiteUrl.trim();
     const trimmedNotesLogistics = notesLogistics.trim();
@@ -526,9 +608,9 @@ export const StructureCreatePage = () => {
       coach_turning_area: coachTurningArea,
       shelter_on_field: shelterOnField,
       electricity_available: electricityAvailable,
-      winter_open: winterOpen,
       weekend_only: weekendOnly,
       has_field_poles: hasFieldPoles,
+      pit_latrine_allowed: pitLatrineAllowed,
     };
 
     const showIndoorSection = type !== "land";
@@ -560,41 +642,32 @@ export const StructureCreatePage = () => {
       payload.indoor_showers = trimmedIndoorShowers
         ? Number.parseInt(trimmedIndoorShowers, 10)
         : null;
-      payload.dining_capacity = trimmedDiningCapacity
-        ? Number.parseInt(trimmedDiningCapacity, 10)
+      payload.indoor_activity_rooms = trimmedIndoorActivityRooms
+        ? Number.parseInt(trimmedIndoorActivityRooms, 10)
         : null;
     } else {
       payload.indoor_beds = null;
       payload.indoor_bathrooms = null;
       payload.indoor_showers = null;
-      payload.dining_capacity = null;
+      payload.indoor_activity_rooms = null;
       payload.has_kitchen = false;
       payload.hot_water = false;
     }
 
     if (showOutdoorSection) {
       payload.land_area_m2 = trimmedLandArea ? Number.parseFloat(trimmedLandArea.replace(",", ".")) : null;
-      payload.max_tents = trimmedMaxTents ? Number.parseInt(trimmedMaxTents, 10) : null;
-      payload.toilets_on_field = trimmedToiletsOnField
-        ? Number.parseInt(trimmedToiletsOnField, 10)
-        : null;
-      payload.max_vehicle_height_m = trimmedMaxVehicleHeight
-        ? Number.parseFloat(trimmedMaxVehicleHeight.replace(",", "."))
-        : null;
       payload.nearest_bus_stop = trimmedNearestBusStop || null;
       payload.water_source = waterSource ? (waterSource as WaterSource) : null;
       payload.fire_policy = firePolicy ? (firePolicy as FirePolicy) : null;
     } else {
       payload.land_area_m2 = null;
-      payload.max_tents = null;
       payload.shelter_on_field = false;
-      payload.toilets_on_field = null;
       payload.water_source = null;
       payload.electricity_available = false;
       payload.fire_policy = null;
-      payload.max_vehicle_height_m = null;
       payload.nearest_bus_stop = null;
       payload.has_field_poles = false;
+      payload.pit_latrine_allowed = false;
     }
 
     if (trimmedWebsiteUrl) {
@@ -608,6 +681,21 @@ export const StructureCreatePage = () => {
     if (trimmedNotes) {
       payload.notes = trimmedNotes;
     }
+
+    payload.open_periods = openPeriods.map((period): StructureOpenPeriodInput => {
+      const base: StructureOpenPeriodInput = { kind: period.kind };
+      if (period.kind === "season") {
+        base.season = period.season ? (period.season as StructureOpenPeriodSeason) : undefined;
+      } else {
+        base.date_start = period.dateStart || undefined;
+        base.date_end = period.dateEnd || undefined;
+      }
+      const trimmedNotesValue = period.notes.trim();
+      if (trimmedNotesValue) {
+        base.notes = trimmedNotesValue;
+      }
+      return base;
+    });
 
     try {
       const created = await createMutation.mutateAsync(payload);
@@ -647,18 +735,14 @@ export const StructureCreatePage = () => {
   const indoorShowersErrorId = fieldErrors.indoor_showers
     ? "structure-indoor-showers-error"
     : undefined;
-  const diningCapacityErrorId = fieldErrors.dining_capacity
-    ? "structure-dining-capacity-error"
+  const indoorActivityRoomsErrorId = fieldErrors.indoor_activity_rooms
+    ? "structure-indoor-activity-rooms-error"
     : undefined;
   const landAreaErrorId = fieldErrors.land_area_m2 ? "structure-land-area-error" : undefined;
-  const maxTentsErrorId = fieldErrors.max_tents ? "structure-max-tents-error" : undefined;
-  const toiletsOnFieldErrorId = fieldErrors.toilets_on_field
-    ? "structure-toilets-on-field-error"
-    : undefined;
-  const maxVehicleHeightErrorId = fieldErrors.max_vehicle_height_m
-    ? "structure-max-vehicle-height-error"
-    : undefined;
   const websiteErrorId = fieldErrors.website_url ? "structure-website-url-error" : undefined;
+  const openPeriodsErrorId = fieldErrors.open_periods
+    ? "structure-open-periods-error"
+    : undefined;
 
   const typeHintId = "structure-type-hint";
   const typeDescribedBy = [typeHintId, typeErrorId].filter(Boolean).join(" ") || undefined;
@@ -681,24 +765,21 @@ export const StructureCreatePage = () => {
   const indoorShowersDescribedBy = [indoorShowersHintId, indoorShowersErrorId]
     .filter(Boolean)
     .join(" ") || undefined;
-  const diningCapacityHintId = "structure-dining-capacity-hint";
-  const diningCapacityDescribedBy = [diningCapacityHintId, diningCapacityErrorId]
+  const indoorActivityRoomsHintId = "structure-indoor-activity-rooms-hint";
+  const indoorActivityRoomsDescribedBy = [
+    indoorActivityRoomsHintId,
+    indoorActivityRoomsErrorId
+  ]
     .filter(Boolean)
     .join(" ") || undefined;
   const landAreaHintId = "structure-land-area-hint";
   const landAreaDescribedBy = [landAreaHintId, landAreaErrorId].filter(Boolean).join(" ") || undefined;
-  const maxTentsHintId = "structure-max-tents-hint";
-  const maxTentsDescribedBy = [maxTentsHintId, maxTentsErrorId].filter(Boolean).join(" ") || undefined;
-  const toiletsOnFieldHintId = "structure-toilets-on-field-hint";
-  const toiletsOnFieldDescribedBy = [toiletsOnFieldHintId, toiletsOnFieldErrorId]
-    .filter(Boolean)
-    .join(" ") || undefined;
-  const maxVehicleHeightHintId = "structure-max-vehicle-height-hint";
-  const maxVehicleHeightDescribedBy = [maxVehicleHeightHintId, maxVehicleHeightErrorId]
-    .filter(Boolean)
-    .join(" ") || undefined;
   const websiteHintId = "structure-website-hint";
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
+  const openPeriodsHintId = "structure-open-periods-hint";
+  const openPeriodsDescribedBy = [openPeriodsHintId, openPeriodsErrorId]
+    .filter(Boolean)
+    .join(" ") || undefined;
 
   const showIndoorSection = type !== "land";
   const showOutdoorSection = type !== "house";
@@ -959,24 +1040,24 @@ export const StructureCreatePage = () => {
                   </div>
 
                   <div className="structure-form-field">
-                    <label htmlFor="structure-dining-capacity">
-                      {t("structures.create.form.diningCapacity")}
+                    <label htmlFor="structure-indoor-activity-rooms">
+                      {t("structures.create.form.indoorActivityRooms")}
                       <input
-                        id="structure-dining-capacity"
-                        value={diningCapacity}
-                        onChange={handleDiningCapacityChange}
+                        id="structure-indoor-activity-rooms"
+                        value={indoorActivityRooms}
+                        onChange={handleIndoorActivityRoomsChange}
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        aria-describedby={diningCapacityDescribedBy}
-                        aria-invalid={fieldErrors.dining_capacity ? "true" : undefined}
+                        aria-describedby={indoorActivityRoomsDescribedBy}
+                        aria-invalid={fieldErrors.indoor_activity_rooms ? "true" : undefined}
                       />
                     </label>
-                    <span className="helper-text" id={diningCapacityHintId}>
-                      {t("structures.create.form.diningCapacityHint")}
+                    <span className="helper-text" id={indoorActivityRoomsHintId}>
+                      {t("structures.create.form.indoorActivityRoomsHint")}
                     </span>
-                    {fieldErrors.dining_capacity && (
-                      <p className="error-text" id={diningCapacityErrorId!}>
-                        {fieldErrors.dining_capacity}
+                    {fieldErrors.indoor_activity_rooms && (
+                      <p className="error-text" id={indoorActivityRoomsErrorId!}>
+                        {fieldErrors.indoor_activity_rooms}
                       </p>
                     )}
                   </div>
@@ -1040,52 +1121,6 @@ export const StructureCreatePage = () => {
                     {fieldErrors.land_area_m2 && (
                       <p className="error-text" id={landAreaErrorId!}>
                         {fieldErrors.land_area_m2}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="structure-form-field">
-                    <label htmlFor="structure-max-tents">
-                      {t("structures.create.form.maxTents")}
-                      <input
-                        id="structure-max-tents"
-                        value={maxTents}
-                        onChange={handleMaxTentsChange}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        aria-describedby={maxTentsDescribedBy}
-                        aria-invalid={fieldErrors.max_tents ? "true" : undefined}
-                      />
-                    </label>
-                    <span className="helper-text" id={maxTentsHintId}>
-                      {t("structures.create.form.maxTentsHint")}
-                    </span>
-                    {fieldErrors.max_tents && (
-                      <p className="error-text" id={maxTentsErrorId!}>
-                        {fieldErrors.max_tents}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="structure-form-field">
-                    <label htmlFor="structure-toilets-on-field">
-                      {t("structures.create.form.toiletsOnField")}
-                      <input
-                        id="structure-toilets-on-field"
-                        value={toiletsOnField}
-                        onChange={handleToiletsOnFieldChange}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        aria-describedby={toiletsOnFieldDescribedBy}
-                        aria-invalid={fieldErrors.toilets_on_field ? "true" : undefined}
-                      />
-                    </label>
-                    <span className="helper-text" id={toiletsOnFieldHintId}>
-                      {t("structures.create.form.toiletsOnFieldHint")}
-                    </span>
-                    {fieldErrors.toilets_on_field && (
-                      <p className="error-text" id={toiletsOnFieldErrorId!}>
-                        {fieldErrors.toilets_on_field}
                       </p>
                     )}
                   </div>
@@ -1180,6 +1215,21 @@ export const StructureCreatePage = () => {
                       {t("structures.create.form.hasFieldPolesHint")}
                     </span>
                   </div>
+
+                  <div className="structure-form-field checkbox-field">
+                    <label htmlFor="structure-pit-latrine">
+                      <input
+                        id="structure-pit-latrine"
+                        type="checkbox"
+                        checked={pitLatrineAllowed}
+                        onChange={handlePitLatrineAllowedChange}
+                      />
+                      {t("structures.create.form.pitLatrineAllowed")}
+                    </label>
+                    <span className="helper-text">
+                      {t("structures.create.form.pitLatrineAllowedHint")}
+                    </span>
+                  </div>
                 </div>
               </fieldset>
             )}
@@ -1200,6 +1250,9 @@ export const StructureCreatePage = () => {
                     />
                     {t("structures.create.form.accessByCar")}
                   </label>
+                  <span className="helper-text">
+                    {t("structures.create.form.accessByCarHint")}
+                  </span>
                 </div>
 
                 <div className="structure-form-field checkbox-field">
@@ -1245,29 +1298,6 @@ export const StructureCreatePage = () => {
                 </div>
 
                 <div className="structure-form-field">
-                  <label htmlFor="structure-max-vehicle-height">
-                    {t("structures.create.form.maxVehicleHeight")}
-                    <input
-                      id="structure-max-vehicle-height"
-                      value={maxVehicleHeight}
-                      onChange={handleMaxVehicleHeightChange}
-                      inputMode="decimal"
-                      step="any"
-                      aria-describedby={maxVehicleHeightDescribedBy}
-                      aria-invalid={fieldErrors.max_vehicle_height_m ? "true" : undefined}
-                    />
-                  </label>
-                  <span className="helper-text" id={maxVehicleHeightHintId}>
-                    {t("structures.create.form.maxVehicleHeightHint")}
-                  </span>
-                  {fieldErrors.max_vehicle_height_m && (
-                    <p className="error-text" id={maxVehicleHeightErrorId!}>
-                      {fieldErrors.max_vehicle_height_m}
-                    </p>
-                  )}
-                </div>
-
-                <div className="structure-form-field">
                   <label htmlFor="structure-nearest-bus-stop">
                     {t("structures.create.form.nearestBusStop")}
                     <input
@@ -1290,16 +1320,179 @@ export const StructureCreatePage = () => {
                 {t("structures.create.form.sections.operations.description")}
               </p>
               <div className="structure-field-grid">
-                <div className="structure-form-field checkbox-field">
-                  <label htmlFor="structure-winter-open">
-                    <input
-                      id="structure-winter-open"
-                      type="checkbox"
-                      checked={winterOpen}
-                      onChange={handleWinterOpenChange}
-                    />
-                    {t("structures.create.form.winterOpen")}
-                  </label>
+                <div
+                  className="structure-form-field structure-open-periods-field"
+                  data-span="full"
+                  id="structure-open_periods"
+                  role="group"
+                  aria-describedby={openPeriodsDescribedBy}
+                  aria-invalid={fieldErrors.open_periods ? "true" : undefined}
+                >
+                  <div className="structure-open-periods-header">
+                    <span className="form-label">
+                      {t("structures.create.form.openPeriods.title")}
+                    </span>
+                    <p className="helper-text" id={openPeriodsHintId}>
+                      {t("structures.create.form.openPeriods.hint")}
+                    </p>
+                  </div>
+                  <div className="structure-open-periods-table-wrapper">
+                    <table className="structure-open-periods-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">{t("structures.create.form.openPeriods.columns.kind")}</th>
+                          <th scope="col">{t("structures.create.form.openPeriods.columns.season")}</th>
+                          <th scope="col">{t("structures.create.form.openPeriods.columns.start")}</th>
+                          <th scope="col">{t("structures.create.form.openPeriods.columns.end")}</th>
+                          <th scope="col">{t("structures.create.form.openPeriods.columns.notes")}</th>
+                          <th scope="col" className="structure-open-periods-actions-column">
+                            <span className="sr-only">
+                              {t("structures.create.form.openPeriods.columns.actions")}
+                            </span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {openPeriods.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="structure-open-periods-empty">
+                              {t("structures.create.form.openPeriods.empty")}
+                            </td>
+                          </tr>
+                        ) : (
+                          openPeriods.map((period) => (
+                            <tr key={period.key}>
+                              <td>
+                                <select
+                                  id={`structure-open-period-${period.key}-kind`}
+                                  value={period.kind}
+                                  onChange={(event) =>
+                                    handleOpenPeriodKindChange(
+                                      period.key,
+                                      event.target.value as StructureOpenPeriodKind
+                                    )
+                                  }
+                                >
+                                  {openPeriodKindOptions.map((option) => (
+                                    <option key={option} value={option}>
+                                      {t(`structures.create.form.openPeriods.kind.${option}`)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td>
+                                {period.kind === "season" ? (
+                                  <select
+                                    id={`structure-open-period-${period.key}-season`}
+                                    value={period.season}
+                                    onChange={(event) =>
+                                      handleOpenPeriodSeasonChange(
+                                        period.key,
+                                        event.target.value as StructureOpenPeriodSeason | ""
+                                      )
+                                    }
+                                  >
+                                    <option value="">
+                                      {t("structures.create.form.openPeriods.seasonPlaceholder")}
+                                    </option>
+                                    {openPeriodSeasonOptions.map((option) => (
+                                      <option key={option} value={option}>
+                                        {t(`structures.create.form.openPeriods.season.${option}`)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span className="structure-open-periods-placeholder">—</span>
+                                )}
+                              </td>
+                              <td>
+                                {period.kind === "range" ? (
+                                  <input
+                                    id={`structure-open-period-${period.key}-date_start`}
+                                    type="date"
+                                    value={period.dateStart}
+                                    onChange={(event) =>
+                                      handleOpenPeriodDateChange(
+                                        period.key,
+                                        "dateStart",
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+                                ) : (
+                                  <span className="structure-open-periods-placeholder">—</span>
+                                )}
+                              </td>
+                              <td>
+                                {period.kind === "range" ? (
+                                  <input
+                                    id={`structure-open-period-${period.key}-date_end`}
+                                    type="date"
+                                    value={period.dateEnd}
+                                    onChange={(event) =>
+                                      handleOpenPeriodDateChange(
+                                        period.key,
+                                        "dateEnd",
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+                                ) : (
+                                  <span className="structure-open-periods-placeholder">—</span>
+                                )}
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  value={period.notes}
+                                  onChange={(event) =>
+                                    handleOpenPeriodNotesChange(period.key, event.target.value)
+                                  }
+                                  placeholder={t(
+                                    "structures.create.form.openPeriods.notesPlaceholder"
+                                  )}
+                                />
+                              </td>
+                              <td className="structure-open-periods-actions-cell">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveOpenPeriod(period.key)}
+                                >
+                                  {t("structures.create.form.openPeriods.remove")}
+                                </Button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="structure-open-periods-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      id="structure-open-periods-add-season"
+                      onClick={() => handleAddOpenPeriod("season")}
+                    >
+                      {t("structures.create.form.openPeriods.addSeason")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleAddOpenPeriod("range")}
+                    >
+                      {t("structures.create.form.openPeriods.addRange")}
+                    </Button>
+                  </div>
+                  {fieldErrors.open_periods && (
+                    <p className="error-text" id={openPeriodsErrorId!}>
+                      {fieldErrors.open_periods}
+                    </p>
+                  )}
                 </div>
 
                 <div className="structure-form-field checkbox-field">

@@ -11,7 +11,8 @@ traccia delle verifiche fatte con le strutture.
 ### Esperienza utente
 - Pagina indice con elenco e card delle strutture registrate.
 - Filtri per testo libero, provincia, tipologia (`house`, `land`, `mixed`),
-  stagione, unità, fascia di costo e distanza dalla base di riferimento.
+  stagione, unità, fascia di costo, periodi di apertura (`open_in`/`open_on`) e
+  distanza dalla base di riferimento.
 - Accesso rapido alla scheda dettagliata con contatti, disponibilità stagionali
   e documenti allegati.
 - Possibilità di aggiungere nuove strutture per tutti gli utenti autenticati
@@ -25,8 +26,9 @@ meglio le diverse casistiche:
 - **Identità:** nome, slug univoco, tipologia, data di creazione.
 - **Posizionamento:** provincia (sigla a due lettere), indirizzo completo,
   coordinate geografiche per mappa e calcolo distanze.
-- **Logistica:** posti letto interni, numero di bagni e docce, capienza della
-  sala da pranzo, presenza di cucina attrezzata, eventuali note descrittive.
+- **Logistica:** posti letto interni, numero di bagni e docce, sale attività,
+  disponibilità cucina e acqua calda, accessibilità mezzi (auto, pullman, TPL),
+  politiche fuochi, possibilità di scavare latrine, eventuali note descrittive.
 - **Riferimenti esterni:** URL del sito o della fonte informativa.
 - **Disponibilità stagionali:** unità ammesse (`LC`, `EG`, `RS`, `ALL`) con
   capacità minima/massima per stagione.
@@ -46,8 +48,9 @@ meglio le diverse casistiche:
   candidati (trasporti, numero ragazzi e capi, ecc.).
 
 ## Operazioni e automazione
-- Import massivo da CSV/XLSX con intestazioni estese (`beds`, `bathrooms`,
-  `showers`, `dining_capacity`, `has_kitchen`, ecc.) e validazioni puntuali.
+- Import massivo da CSV/XLSX con intestazioni estese (`indoor_beds`,
+  `indoor_bathrooms`, `indoor_showers`, `indoor_activity_rooms`, `has_kitchen`,
+  ecc.) e validazioni puntuali.
 - Esportazione dei dati delle strutture in CSV, JSON e XLSX con i nuovi campi
   logistici inclusi.
 - Allegati gestiti via storage S3-compatibile con controllo di dimensione e mime

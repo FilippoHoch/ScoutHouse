@@ -223,8 +223,19 @@ Generate and download the CSV template for structure imports. The response is
 UTF-8 encoded, uses `,` as separator, and mirrors the XLSX headers and sample
 rows.
 
-Both endpoints generate content on the fly so no binary assets need to be stored
-in the repository.
+## GET `/api/v1/templates/structure-open-periods.xlsx`
+
+Generate il template XLSX per l'import dei periodi di apertura. Il foglio
+contiene le intestazioni canonicali (`structure_slug`, `kind`, `season`,
+`date_start`, `date_end`, `notes`) e due righe di esempio per `season` e `range`.
+
+## GET `/api/v1/templates/structure-open-periods.csv`
+
+Controparte CSV del template periodi. Il file è UTF-8, comma separated e riporta
+gli stessi esempi del foglio XLSX.
+
+Tutti i template vengono generati on-the-fly, quindi non è necessario versionare
+file binari nel repository.
 
 ## POST `/api/v1/import/structures`
 
@@ -311,18 +322,30 @@ file CSV/XLSX con le intestazioni `structure_slug`, `kind`, `season`,
 `range` e determina la validazione degli altri campi (stagione obbligatoria per
 `season`, date obbligatorie per `range`).
 
-La risposta segue la stessa struttura dell'import principale, con i periodi già
-esistenti ignorati automaticamente. In modalità `dry_run=true` viene fornita una
-preview con l'azione prevista per ogni riga.
+Durante il `dry_run` la risposta include una preview con l'azione prevista per
+ciascuna riga:
+
+- `create` per periodi nuovi che verranno salvati alla conferma.
+- `skip` per righe duplicate rispetto ai periodi già presenti in archivio.
+- `missing_structure` quando lo `slug` indicato non corrisponde a nessuna
+  struttura esistente (in questo caso l'import completo viene bloccato).
+
+Quando `dry_run=false` l'import crea solo i periodi non duplicati. I duplicati e
+le righe vuote sono conteggiati in `skipped`. Eventuali errori di validazione
+impediscono il commit e vengono restituiti con l'indicazione della sorgente
+(`csv` o `xlsx`). L'operazione è tracciata con l'audit
+`import_structure_open_periods`.
 
 ## POST `/api/v1/structures/`
 
 Create a new structure. Payload must include `name`, `slug`, `type` and may
-optionally include `province`, `address`, geographic coordinates, and logistic
+optionally include `province`, `address`, geographic coordinates, logistic
 metadata such as `indoor_beds`, `indoor_bathrooms`, `indoor_showers`,
-`indoor_activity_rooms`, `has_kitchen`, `website_url`, and `notes`. Any
-authenticated user can create a
-structure; admin privileges are not required.
+`indoor_activity_rooms`, `has_kitchen`, `hot_water`, outdoor accessibility flags
+(`access_by_car`, `access_by_coach`, `access_by_public_transport`),
+`pit_latrine_allowed`, `website_url`, `notes_logistics`, free-form `notes`, and
+an array of `open_periods`. Any authenticated user can create a structure; admin
+privileges are not required.
 
 Validation rules:
 
@@ -333,8 +356,11 @@ Validation rules:
 - `indoor_beds`, `indoor_bathrooms`, `indoor_showers`, and
   `indoor_activity_rooms`, when provided, must be integers greater than or equal
   to zero.
-- `has_kitchen` accepts truthy values (`true`, `false`, `1`, `0`) and defaults to
-  `false`.
+- `has_kitchen`, `hot_water`, `shelter_on_field`, `electricity_available`,
+  accessibility flags and `pit_latrine_allowed` accept truthy values (`true`,
+  `false`, `1`, `0`) and default to `false`.
+- `open_periods` may include rows of `kind="season"` (richiede `season`) oppure
+  `kind="range"` (richiede `date_start` e `date_end`).
 - `website_url`, when provided, must be a valid HTTP or HTTPS URL.
 
 ```bash
@@ -348,10 +374,19 @@ curl -X POST http://localhost:8000/api/v1/structures/ \
         "address": "Via dei Colli 22, Bardolino",
         "latitude": 45.5603,
         "longitude": 10.7218,
-        "beds": 80,
-        "bathrooms": 8,
-        "dining_capacity": 110,
+        "indoor_beds": 80,
+        "indoor_bathrooms": 8,
+        "indoor_showers": 10,
+        "indoor_activity_rooms": 5,
         "has_kitchen": true,
+        "hot_water": true,
+        "access_by_car": true,
+        "access_by_public_transport": true,
+        "pit_latrine_allowed": false,
+        "open_periods": [
+          { "kind": "season", "season": "summer", "notes": "Disponibile da giugno a settembre" },
+          { "kind": "range", "date_start": "2025-12-27", "date_end": "2026-01-06" }
+        ],
         "website_url": "https://example.org/centro-garda"
       }'
 ```
@@ -411,7 +446,7 @@ endpoint.
 | Name | Type | Description |
 | --- | --- | --- |
 | `format` | string | Required output format: `csv`, `xlsx`, or `json`. |
-| `filters` | string | Optional JSON payload with keys `q`, `province`, `type`, `season`, `unit`, and `cost_band`. |
+| `filters` | string | Optional JSON payload with keys `q`, `province`, `type`, `season`, `unit`, `cost_band`, `max_km`, `fire`, `min_land_area`, `open_in_season`, `open_on_date`, `access`, and `hot_water`. |
 
 The response uses `Transfer-Encoding: chunked` and caps exports at 10 000 rows or
 10 seconds of processing time. Example:
@@ -419,8 +454,13 @@ The response uses `Transfer-Encoding: chunked` and caps exports at 10 000 rows
 ```bash
 curl "http://localhost:8000/api/v1/export/structures?format=csv&filters=%7B%22province%22%3A%20%22MI%22%2C%20%22type%22%3A%20%22house%22%7D" \
   -H "Authorization: Bearer $TOKEN" \
-  -o structures.csv
+  -o structures.zip
 ```
+
+Per il formato CSV la risposta è un archivio ZIP contenente `structures.csv` e
+`structure_open_periods.csv`. L'export XLSX genera un secondo foglio denominato
+`structure_open_periods`, mentre il JSON include l'array `open_periods` annidato
+in ogni struttura.
 
 # Events API
 

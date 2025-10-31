@@ -37,12 +37,27 @@ const structureWithDetails: Structure = {
   latitude: null,
   longitude: null,
   type: "mixed",
-  beds: null,
-  bathrooms: null,
-  showers: null,
-  dining_capacity: null,
+  indoor_beds: null,
+  indoor_bathrooms: null,
+  indoor_showers: null,
+  indoor_activity_rooms: null,
   has_kitchen: false,
+  hot_water: false,
+  land_area_m2: 5000,
+  shelter_on_field: true,
+  water_source: "tap",
+  electricity_available: false,
+  fire_policy: "allowed",
+  access_by_car: true,
+  access_by_coach: false,
+  access_by_public_transport: false,
+  coach_turning_area: false,
+  nearest_bus_stop: null,
+  weekend_only: false,
+  has_field_poles: true,
+  pit_latrine_allowed: true,
   website_url: null,
+  notes_logistics: null,
   notes: null,
   created_at: new Date("2024-05-01T00:00:00Z").toISOString(),
   estimated_cost: 9.5,
@@ -61,7 +76,9 @@ const structureWithDetails: Structure = {
       utilities_flat: null,
       age_rules: null
     }
-  ]
+  ],
+  contacts: [],
+  open_periods: []
 };
 
 describe("StructureDetailsPage tabs", () => {

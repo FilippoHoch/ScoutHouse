@@ -7,6 +7,27 @@ export type CostModel = "per_person_day" | "per_person_night" | "forfait";
 export type CostBand = "cheap" | "medium" | "expensive";
 export type ContactPreferredChannel = "email" | "phone" | "other";
 
+export type StructureOpenPeriodKind = "season" | "range";
+export type StructureOpenPeriodSeason = Season;
+
+export interface StructureOpenPeriod {
+  id: number;
+  kind: StructureOpenPeriodKind;
+  season: StructureOpenPeriodSeason | null;
+  date_start: string | null;
+  date_end: string | null;
+  notes: string | null;
+}
+
+export interface StructureOpenPeriodInput {
+  id?: number;
+  kind: StructureOpenPeriodKind;
+  season?: StructureOpenPeriodSeason | null;
+  date_start?: string | null;
+  date_end?: string | null;
+  notes?: string | null;
+}
+
 export type AttachmentOwnerType = "structure" | "event";
 
 export interface Attachment {
@@ -88,13 +109,11 @@ export interface Structure {
   indoor_beds: number | null;
   indoor_bathrooms: number | null;
   indoor_showers: number | null;
-  dining_capacity: number | null;
+  indoor_activity_rooms: number | null;
   has_kitchen: boolean;
   hot_water: boolean;
   land_area_m2: number | null;
-  max_tents: number | null;
   shelter_on_field: boolean;
-  toilets_on_field: number | null;
   water_source: WaterSource | null;
   electricity_available: boolean;
   fire_policy: FirePolicy | null;
@@ -102,11 +121,10 @@ export interface Structure {
   access_by_coach: boolean;
   access_by_public_transport: boolean;
   coach_turning_area: boolean;
-  max_vehicle_height_m: number | null;
   nearest_bus_stop: string | null;
-  winter_open: boolean;
   weekend_only: boolean;
   has_field_poles: boolean;
+  pit_latrine_allowed: boolean;
   website_url: string | null;
   notes_logistics: string | null;
   notes: string | null;
@@ -116,6 +134,7 @@ export interface Structure {
   availabilities?: Availability[] | null;
   cost_options?: CostOption[] | null;
   contacts?: Contact[] | null;
+  open_periods?: StructureOpenPeriod[] | null;
 }
 
 export interface StructureCreateDto {
@@ -129,13 +148,11 @@ export interface StructureCreateDto {
   indoor_beds?: number | null;
   indoor_bathrooms?: number | null;
   indoor_showers?: number | null;
-  dining_capacity?: number | null;
+  indoor_activity_rooms?: number | null;
   has_kitchen?: boolean;
   hot_water?: boolean;
   land_area_m2?: number | null;
-  max_tents?: number | null;
   shelter_on_field?: boolean;
-  toilets_on_field?: number | null;
   water_source?: WaterSource | null;
   electricity_available?: boolean;
   fire_policy?: FirePolicy | null;
@@ -143,14 +160,14 @@ export interface StructureCreateDto {
   access_by_coach?: boolean;
   access_by_public_transport?: boolean;
   coach_turning_area?: boolean;
-  max_vehicle_height_m?: number | null;
   nearest_bus_stop?: string | null;
-  winter_open?: boolean;
   weekend_only?: boolean;
   has_field_poles?: boolean;
+  pit_latrine_allowed?: boolean;
   website_url?: string | null;
   notes_logistics?: string | null;
   notes?: string | null;
+  open_periods?: StructureOpenPeriodInput[];
 }
 
 export interface StructureSearchItem {
@@ -173,6 +190,7 @@ export interface StructureSearchItem {
   access_by_public_transport: boolean;
   has_kitchen: boolean;
   hot_water: boolean;
+  pit_latrine_allowed: boolean;
 }
 
 export interface StructureSearchResponse {
@@ -216,6 +234,26 @@ export interface StructureImportResult {
   skipped: number;
 }
 
+export interface StructureOpenPeriodsImportPreviewItem {
+  slug: string;
+  action: "create" | "skip" | "missing_structure";
+}
+
+export interface StructureOpenPeriodsImportDryRunResponse {
+  valid_rows: number;
+  invalid_rows: number;
+  errors: StructureImportError[];
+  preview: StructureOpenPeriodsImportPreviewItem[];
+  source_format: StructureImportSourceFormat;
+}
+
+export interface StructureOpenPeriodsImportResult {
+  created: number;
+  skipped: number;
+  errors: StructureImportError[];
+  source_format: StructureImportSourceFormat;
+}
+
 export interface StructureSearchParams {
   q?: string;
   province?: string;
@@ -228,10 +266,10 @@ export interface StructureSearchParams {
   order?: "asc" | "desc";
   access?: string;
   fire?: FirePolicy;
-  min_tents?: number;
   min_land_area?: number;
   hot_water?: boolean;
-  winter_open?: boolean;
+  open_in_season?: StructureOpenPeriodSeason;
+  open_on_date?: string;
 }
 
 

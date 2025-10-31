@@ -8,6 +8,7 @@ import {
   CostBand,
   FirePolicy,
   Season,
+  StructureOpenPeriodSeason,
   StructureSearchItem,
   StructureSearchParams,
   StructureSearchResponse,
@@ -68,13 +69,13 @@ interface FilterFormState {
   unit: string;
   cost_band: string;
   fire: string;
-  min_tents: string;
   min_land_area: string;
   access_car: boolean;
   access_coach: boolean;
   access_pt: boolean;
   hot_water: boolean;
-  winter_open: boolean;
+  open_in_season: string;
+  open_on_date: string;
   sort: StructureSearchParams["sort"];
   order: StructureSearchParams["order"];
 }
@@ -88,13 +89,13 @@ const initialFormState: FilterFormState = {
   unit: "",
   cost_band: "",
   fire: "",
-  min_tents: "",
   min_land_area: "",
   access_car: false,
   access_coach: false,
   access_pt: false,
   hot_water: false,
-  winter_open: false,
+  open_in_season: "",
+  open_on_date: "",
   sort: "distance",
   order: "asc",
 };
@@ -108,10 +109,10 @@ const filterToParam: Partial<Record<keyof FilterFormState, keyof StructureSearch
   unit: "unit",
   cost_band: "cost_band",
   fire: "fire",
-  min_tents: "min_tents",
   min_land_area: "min_land_area",
   hot_water: "hot_water",
-  winter_open: "winter_open",
+  open_in_season: "open_in_season",
+  open_on_date: "open_on_date",
 };
 
 const formatCurrency = (value: number) =>
@@ -167,12 +168,19 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
             </div>
           )}
           {hasUnits && (
-            <div className="badge-group" aria-label={t("structures.cards.unitsLabel")}> 
+            <div className="badge-group" aria-label={t("structures.cards.unitsLabel")}>
               {item.units.map((unit) => (
                 <span key={`${item.id}-unit-${unit}`} className="badge badge-unit">
                   {unit}
                 </span>
               ))}
+            </div>
+          )}
+          {item.pit_latrine_allowed && (
+            <div className="badge-group" aria-label={t("structures.cards.badges.pitLatrineLabel")}>
+              <span className="badge badge-feature">
+                {t("structures.cards.badges.pitLatrineAllowed")}
+              </span>
             </div>
           )}
         </div>
@@ -281,18 +289,19 @@ export const StructuresPage = () => {
       nextFilters.fire = form.fire as FirePolicy;
     }
 
-    if (form.min_tents) {
-      const numeric = Number.parseInt(form.min_tents, 10);
-      if (!Number.isNaN(numeric)) {
-        nextFilters.min_tents = numeric;
-      }
-    }
-
     if (form.min_land_area) {
       const numeric = Number.parseFloat(form.min_land_area);
       if (!Number.isNaN(numeric)) {
         nextFilters.min_land_area = numeric;
       }
+    }
+
+    if (form.open_in_season) {
+      nextFilters.open_in_season = form.open_in_season as StructureOpenPeriodSeason;
+    }
+
+    if (form.open_on_date) {
+      nextFilters.open_on_date = form.open_on_date;
     }
 
     const accessSelections: string[] = [];
@@ -311,10 +320,6 @@ export const StructuresPage = () => {
 
     if (form.hot_water) {
       nextFilters.hot_water = true;
-    }
-
-    if (form.winter_open) {
-      nextFilters.winter_open = true;
     }
 
     setFilters(nextFilters);
@@ -414,9 +419,6 @@ export const StructuresPage = () => {
     if (filters.fire) {
       chips.push({ key: "fire", label: t("structures.filters.active.fire", { value: filters.fire }) });
     }
-    if (typeof filters.min_tents === "number") {
-      chips.push({ key: "min_tents", label: t("structures.filters.active.minTents", { value: filters.min_tents }) });
-    }
     if (typeof filters.min_land_area === "number") {
       chips.push({ key: "min_land_area", label: t("structures.filters.active.minLandArea", { value: filters.min_land_area }) });
     }
@@ -429,8 +431,11 @@ export const StructuresPage = () => {
     if (filters.hot_water) {
       chips.push({ key: "hot_water", label: t("structures.filters.active.hotWater") });
     }
-    if (filters.winter_open) {
-      chips.push({ key: "winter_open", label: t("structures.filters.active.winterOpen") });
+    if (filters.open_in_season) {
+      chips.push({ key: "open_in_season", label: t("structures.filters.active.openIn", { value: filters.open_in_season }) });
+    }
+    if (filters.open_on_date) {
+      chips.push({ key: "open_on_date", label: t("structures.filters.active.openOn", { value: filters.open_on_date }) });
     }
     return chips;
   }, [filters, t]);
@@ -542,6 +547,32 @@ export const StructuresPage = () => {
                 ))}
               </select>
             </label>
+            <label>
+              {t("structures.filters.openInSeason.label")}
+              <select
+                value={form.open_in_season}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, open_in_season: event.target.value }))
+                }
+              >
+                <option value="">{allOptionLabel}</option>
+                {seasons.map((season) => (
+                  <option key={`open-${season}`} value={season}>
+                    {season}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t("structures.filters.openOnDate.label")}
+              <input
+                type="date"
+                value={form.open_on_date}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, open_on_date: event.target.value }))
+                }
+              />
+            </label>
           </ToolbarSection>
 
           <ToolbarSection>
@@ -586,17 +617,6 @@ export const StructuresPage = () => {
               </select>
             </label>
             <label>
-              {t("structures.filters.minTents.label")}
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={form.min_tents}
-                onChange={(event) => setForm((prev) => ({ ...prev, min_tents: event.target.value }))}
-                placeholder={t("structures.filters.minTents.placeholder")}
-              />
-            </label>
-            <label>
               {t("structures.filters.minLandArea.label")}
               <input
                 type="number"
@@ -634,14 +654,6 @@ export const StructuresPage = () => {
                 onChange={(event) => setForm((prev) => ({ ...prev, hot_water: event.target.checked }))}
               />
               {t("structures.filters.hotWater.label")}
-            </label>
-            <label className="filter-checkbox">
-              <input
-                type="checkbox"
-                checked={form.winter_open}
-                onChange={(event) => setForm((prev) => ({ ...prev, winter_open: event.target.checked }))}
-              />
-              {t("structures.filters.winterOpen.label")}
             </label>
             <label>
               {t("structures.filters.sort.label")}

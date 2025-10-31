@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import os
+import csv
 from io import BytesIO, StringIO
 from typing import Generator
 
@@ -14,7 +15,7 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-from app.services.structures_import import HEADERS  # noqa: E402
+from app.services.structures_import import HEADERS, OPEN_PERIOD_HEADERS  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -63,3 +64,39 @@ def test_structures_template_csv_download() -> None:
     reader = csv.reader(buffer)
     header = next(reader)
     assert header == HEADERS
+
+
+def test_structure_open_periods_template_xlsx_download() -> None:
+    client = get_client()
+    response = client.get("/api/v1/templates/structure-open-periods.xlsx")
+    assert response.status_code == 200
+    assert (
+        response.headers["content-type"]
+        == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert (
+        response.headers["content-disposition"]
+        == 'attachment; filename="structure_open_periods_template.xlsx"'
+    )
+
+    workbook = load_workbook(BytesIO(response.content), read_only=True)
+    sheet = workbook.active
+    header_row = next(sheet.iter_rows(max_row=1, values_only=True))
+    assert [str(cell) for cell in header_row] == OPEN_PERIOD_HEADERS
+    workbook.close()
+
+
+def test_structure_open_periods_template_csv_download() -> None:
+    client = get_client()
+    response = client.get("/api/v1/templates/structure-open-periods.csv")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "text/csv; charset=utf-8"
+    assert (
+        response.headers["content-disposition"]
+        == 'attachment; filename="structure_open_periods_template.csv"'
+    )
+
+    buffer = StringIO(response.content.decode("utf-8"))
+    reader = csv.reader(buffer)
+    header = next(reader)
+    assert header == OPEN_PERIOD_HEADERS

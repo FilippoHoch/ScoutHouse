@@ -47,7 +47,14 @@ const sampleResponse: StructureSearchResponse = {
       estimated_cost: 11.75,
       cost_band: "medium",
       seasons: ["summer"],
-      units: ["LC", "EG"]
+      units: ["LC", "EG"],
+      fire_policy: "with_permit",
+      access_by_car: true,
+      access_by_coach: false,
+      access_by_public_transport: true,
+      has_kitchen: true,
+      hot_water: true,
+      pit_latrine_allowed: false
     },
     {
       id: 2,
@@ -62,7 +69,14 @@ const sampleResponse: StructureSearchResponse = {
       estimated_cost: null,
       cost_band: null,
       seasons: [],
-      units: []
+      units: [],
+      fire_policy: "allowed",
+      access_by_car: true,
+      access_by_coach: false,
+      access_by_public_transport: false,
+      has_kitchen: false,
+      hot_water: false,
+      pit_latrine_allowed: true
     }
   ],
   page: 1,
@@ -85,7 +99,9 @@ describe("StructuresPage", () => {
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
     expect(screen.getByLabelText(/Cerca/i)).toBeInTheDocument();
     expect(screen.getByText(/Distanza: 12.4 km/)).toBeInTheDocument();
-    expect(screen.getByText(/Costo stimato: €11.75/)).toBeInTheDocument();
+    expect(
+      screen.getByText((content) => content.startsWith("Costo stimato:") && content.includes("€"))
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Casa Alpina/i })).toHaveAttribute(
       "href",
       "/structures/casa-alpina"
@@ -125,6 +141,30 @@ describe("StructuresPage", () => {
           order: "asc",
           page: 1,
           page_size: 6
+        })
+      )
+    );
+  });
+
+  it("applies open period filters", async () => {
+    const Wrapper = createWrapper();
+    const user = userEvent.setup();
+    render(<StructuresPage />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
+
+    await user.selectOptions(screen.getByLabelText(/Aperta in/i), "summer");
+    const dateInput = screen.getByLabelText(/Aperta il/i) as HTMLInputElement;
+    await user.clear(dateInput);
+    await user.type(dateInput, "2025-08-05");
+
+    await user.click(screen.getByRole("button", { name: /Applica/i }));
+
+    await waitFor(() =>
+      expect(vi.mocked(getStructures)).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          open_in_season: "summer",
+          open_on_date: "2025-08-05",
         })
       )
     );

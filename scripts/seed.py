@@ -153,7 +153,7 @@ def seed_structures(dataset: Path) -> None:
                 "indoor_beds": parse_int((row.get("indoor_beds") or row.get("beds") or "").strip()),
                 "indoor_bathrooms": parse_int((row.get("indoor_bathrooms") or row.get("bathrooms") or "").strip()),
                 "indoor_showers": parse_int((row.get("indoor_showers") or row.get("showers") or "").strip()),
-                "indoor_activity_rooms": parse_int((row.get("indoor_activity_rooms") or row.get("dining_capacity") or "").strip()),
+                "indoor_activity_rooms": parse_int((row.get("indoor_activity_rooms") or "").strip()),
                 "has_kitchen": parse_bool(row.get("has_kitchen")),
                 "pit_latrine_allowed": parse_bool(row.get("pit_latrine_allowed")),
                 "website_url": row.get("website_url", "").strip() or None,

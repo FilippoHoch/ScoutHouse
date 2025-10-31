@@ -17,7 +17,8 @@ import type {
   ContactPreferredChannel,
   CostOption,
   CostBand,
-  Structure
+  Structure,
+  StructureOpenPeriod
 } from "../shared/types";
 import { useAuth } from "../shared/auth";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
@@ -81,6 +82,32 @@ export const StructureDetailsPage = () => {
     }),
     [t]
   );
+
+  const formatDate = (value: string | null | undefined) => {
+    if (!value) {
+      return t("structures.details.openPeriods.missingDate");
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return value;
+    }
+    return new Intl.DateTimeFormat("it-IT", { dateStyle: "medium" }).format(parsed);
+  };
+
+  const describeOpenPeriod = (period: StructureOpenPeriod) => {
+    if (period.kind === "season") {
+      const seasonLabel = period.season
+        ? t(`structures.details.openPeriods.season.${period.season}`)
+        : t("structures.details.openPeriods.seasonUnknown");
+      return { main: seasonLabel, note: period.notes ?? null };
+    }
+    const startLabel = formatDate(period.date_start);
+    const endLabel = formatDate(period.date_end);
+    return {
+      main: t("structures.details.openPeriods.range", { start: startLabel, end: endLabel }),
+      note: period.notes ?? null,
+    };
+  };
 
   const { data, isLoading, isError, error, refetch } = useQuery<Structure, ApiError>({
     queryKey: ["structure", slug],
@@ -306,28 +333,28 @@ export const StructureDetailsPage = () => {
           <dl className="structure-logistics-grid">
             <dt>{t("structures.details.overview.hasKitchen.label")}</dt>
             <dd>{kitchenLabel}</dd>
-            {structure.beds !== null && (
+            {structure.indoor_beds !== null && (
               <>
                 <dt>{t("structures.details.overview.beds")}</dt>
-                <dd>{structure.beds}</dd>
+                <dd>{structure.indoor_beds}</dd>
               </>
             )}
-            {structure.bathrooms !== null && (
+            {structure.indoor_bathrooms !== null && (
               <>
                 <dt>{t("structures.details.overview.bathrooms")}</dt>
-                <dd>{structure.bathrooms}</dd>
+                <dd>{structure.indoor_bathrooms}</dd>
               </>
             )}
-            {structure.showers !== null && (
+            {structure.indoor_showers !== null && (
               <>
                 <dt>{t("structures.details.overview.showers")}</dt>
-                <dd>{structure.showers}</dd>
+                <dd>{structure.indoor_showers}</dd>
               </>
             )}
-            {structure.dining_capacity !== null && (
+            {structure.indoor_activity_rooms !== null && (
               <>
-                <dt>{t("structures.details.overview.diningCapacity")}</dt>
-                <dd>{structure.dining_capacity}</dd>
+                <dt>{t("structures.details.overview.indoorActivityRooms")}</dt>
+                <dd>{structure.indoor_activity_rooms}</dd>
               </>
             )}
             <dt>{t("structures.details.overview.website")}</dt>
@@ -346,8 +373,33 @@ export const StructureDetailsPage = () => {
                 <dd>{structure.notes}</dd>
               </>
             )}
+            <dt>{t("structures.details.overview.pitLatrineAllowed")}</dt>
+            <dd>
+              {structure.pit_latrine_allowed
+                ? t("structures.details.overview.pitLatrineYes")
+                : t("structures.details.overview.pitLatrineNo")}
+            </dd>
           </dl>
         </div>
+
+        {structure.open_periods && structure.open_periods.length > 0 && (
+          <div className="structure-open-periods-detail">
+            <h3>{t("structures.details.openPeriods.title")}</h3>
+            <ul className="structure-open-periods-detail__list">
+              {structure.open_periods.map((period) => {
+                const description = describeOpenPeriod(period);
+                return (
+                  <li key={period.id} className="structure-open-periods-detail__item">
+                    <span className="structure-open-periods-detail__main">{description.main}</span>
+                    {description.note && (
+                      <span className="structure-open-periods-detail__note">{description.note}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
         <div
           className="map-placeholder"
