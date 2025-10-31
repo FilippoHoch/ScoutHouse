@@ -46,7 +46,10 @@ export const Layout = () => {
       <header>
         <nav aria-label={t("layout.navigationLabel")}>
           <div className="nav-links">
-            <Link to="/" aria-label={t("layout.nav.home")}>ScoutHouse</Link>
+            <Link to="/" aria-label={t("layout.nav.home")} className="nav-home">
+              <img src="/logo.svg" alt="" className="nav-logo" aria-hidden="true" />
+              <span className="sr-only">ScoutHouse</span>
+            </Link>
             {navItems.map((item) => (
               <NavLink key={item.to} to={item.to}>
                 {item.label}
