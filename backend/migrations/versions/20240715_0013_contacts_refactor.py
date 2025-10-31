@@ -1,7 +1,7 @@
 """Refactor contacts to support reuse across structures
 
 Revision ID: 20240715_0013
-Revises: 20240701_0012
+Revises: 20240320_0011_structure_open_periods_and_fields
 Create Date: 2024-07-15 00:00:00.000000
 """
 
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 
 revision = "20240715_0013"
-down_revision = "20240701_0012"
+down_revision = "20240320_0011_structure_open_periods_and_fields"
 branch_labels = None
 depends_on = None
 
