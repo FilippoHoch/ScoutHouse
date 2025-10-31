@@ -207,6 +207,10 @@ export const StructureDetailsPage = () => {
   const kitchenLabel = structure.has_kitchen
     ? t("structures.details.overview.hasKitchen.yes")
     : t("structures.details.overview.hasKitchen.no");
+  const structureTypeLabel = structure.type
+    ? t(`structures.types.${structure.type}`, { defaultValue: structure.type })
+    : null;
+  const costBandLabel = formatCostBand(structure.cost_band);
 
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
@@ -449,506 +453,552 @@ export const StructureDetailsPage = () => {
   };
 
   return (
-    <section>
-      <div className="card">
-        <h2>{structure.name}</h2>
-        <p>
-          <strong>{structure.type}</strong> · {structure.province ?? "N/A"}
-        </p>
-        {structure.address && <p>{structure.address}</p>}
-        <p>Slug: {structure.slug}</p>
-        <p>Created: {createdAt}</p>
-        {structure.estimated_cost !== undefined && structure.estimated_cost !== null && (
-          <p>
-            Estimated daily cost: €{structure.estimated_cost.toFixed(2)}
-            {structure.cost_band && ` · ${formatCostBand(structure.cost_band)}`}
-          </p>
-        )}
-
-        <div className="structure-logistics">
-          <h3>{t("structures.details.overview.logistics")}</h3>
-          <dl className="structure-logistics-grid">
-            <dt>{t("structures.details.overview.hasKitchen.label")}</dt>
-            <dd>{kitchenLabel}</dd>
-            {structure.indoor_beds !== null && (
-              <>
-                <dt>{t("structures.details.overview.beds")}</dt>
-                <dd>{structure.indoor_beds}</dd>
-              </>
+    <section className="structure-details" aria-labelledby="structure-details-title">
+      <div className="structure-details__hero">
+        <div className="structure-details__hero-content">
+          <div className="structure-details__hero-tags">
+            {structureTypeLabel && <span className="structure-details__badge">{structureTypeLabel}</span>}
+            {structure.province && <span className="structure-details__chip">{structure.province}</span>}
+          </div>
+          <h2 id="structure-details-title">{structure.name}</h2>
+          {structure.address && <p className="structure-details__address">{structure.address}</p>}
+          <div className="structure-details__meta">
+            <div>
+              <span className="structure-details__meta-label">
+                {t("structures.details.meta.slug")}
+              </span>
+              <span className="structure-details__meta-value">{structure.slug}</span>
+            </div>
+            <div>
+              <span className="structure-details__meta-label">
+                {t("structures.details.meta.created")}
+              </span>
+              <span className="structure-details__meta-value">{createdAt}</span>
+            </div>
+            {structure.estimated_cost !== undefined && structure.estimated_cost !== null && (
+              <div className="structure-details__meta-highlight">
+                <span className="structure-details__meta-label">
+                  {t("structures.details.meta.estimatedDailyCost")}
+                </span>
+                <span className="structure-details__meta-value">
+                  €{structure.estimated_cost.toFixed(2)}
+                </span>
+                {costBandLabel && <span className="structure-details__meta-pill">{costBandLabel}</span>}
+              </div>
             )}
-            {structure.indoor_bathrooms !== null && (
-              <>
-                <dt>{t("structures.details.overview.bathrooms")}</dt>
-                <dd>{structure.indoor_bathrooms}</dd>
-              </>
-            )}
-            {structure.indoor_showers !== null && (
-              <>
-                <dt>{t("structures.details.overview.showers")}</dt>
-                <dd>{structure.indoor_showers}</dd>
-              </>
-            )}
-            {structure.indoor_activity_rooms !== null && (
-              <>
-                <dt>{t("structures.details.overview.indoorActivityRooms")}</dt>
-                <dd>{structure.indoor_activity_rooms}</dd>
-              </>
-            )}
-            <dt>{t("structures.details.overview.website")}</dt>
-            <dd>
-              {structure.website_url ? (
-                <a href={structure.website_url} target="_blank" rel="noopener noreferrer">
-                  {structure.website_url}
-                </a>
-              ) : (
-                t("structures.details.overview.websiteFallback")
-              )}
-            </dd>
-            {structure.notes && (
-              <>
-                <dt>{t("structures.details.overview.notes")}</dt>
-                <dd>{structure.notes}</dd>
-              </>
-            )}
-            <dt>{t("structures.details.overview.pitLatrineAllowed")}</dt>
-            <dd>
-              {structure.pit_latrine_allowed
-                ? t("structures.details.overview.pitLatrineYes")
-                : t("structures.details.overview.pitLatrineNo")}
-            </dd>
-          </dl>
+          </div>
         </div>
+      </div>
 
-        {structure.open_periods && structure.open_periods.length > 0 && (
-          <div className="structure-open-periods-detail">
-            <h3>{t("structures.details.openPeriods.title")}</h3>
-            <ul className="structure-open-periods-detail__list">
-              {structure.open_periods.map((period) => {
-                const description = describeOpenPeriod(period);
-                return (
-                  <li key={period.id} className="structure-open-periods-detail__item">
-                    <span className="structure-open-periods-detail__main">{description.main}</span>
-                    {description.note && (
-                      <span className="structure-open-periods-detail__note">{description.note}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
+      <div className="structure-details__layout">
+        <div className="structure-details__main">
+          <div className="structure-details-card">
+            <div className="structure-details-card__section">
+              <h3 className="structure-details-card__title">
+                {t("structures.details.overview.logistics")}
+              </h3>
+              <dl className="structure-logistics-grid">
+                <dt>{t("structures.details.overview.hasKitchen.label")}</dt>
+                <dd>{kitchenLabel}</dd>
+                {structure.indoor_beds !== null && (
+                  <>
+                    <dt>{t("structures.details.overview.beds")}</dt>
+                    <dd>{structure.indoor_beds}</dd>
+                  </>
+                )}
+                {structure.indoor_bathrooms !== null && (
+                  <>
+                    <dt>{t("structures.details.overview.bathrooms")}</dt>
+                    <dd>{structure.indoor_bathrooms}</dd>
+                  </>
+                )}
+                {structure.indoor_showers !== null && (
+                  <>
+                    <dt>{t("structures.details.overview.showers")}</dt>
+                    <dd>{structure.indoor_showers}</dd>
+                  </>
+                )}
+                {structure.indoor_activity_rooms !== null && (
+                  <>
+                    <dt>{t("structures.details.overview.indoorActivityRooms")}</dt>
+                    <dd>{structure.indoor_activity_rooms}</dd>
+                  </>
+                )}
+                <dt>{t("structures.details.overview.website")}</dt>
+                <dd>
+                  {structure.website_url ? (
+                    <a href={structure.website_url} target="_blank" rel="noopener noreferrer">
+                      {structure.website_url}
+                    </a>
+                  ) : (
+                    t("structures.details.overview.websiteFallback")
+                  )}
+                </dd>
+                {structure.notes && (
+                  <>
+                    <dt>{t("structures.details.overview.notes")}</dt>
+                    <dd>{structure.notes}</dd>
+                  </>
+                )}
+                <dt>{t("structures.details.overview.pitLatrineAllowed")}</dt>
+                <dd>
+                  {structure.pit_latrine_allowed
+                    ? t("structures.details.overview.pitLatrineYes")
+                    : t("structures.details.overview.pitLatrineNo")}
+                </dd>
+              </dl>
+            </div>
 
-        <div
-          className="map-placeholder"
-          style={{ marginTop: "1rem", padding: "1rem", backgroundColor: "#f3f4f6" }}
-        >
-          {hasCoordinates ? (
-            <>
-              <p>
-                Coordinates: {structure.latitude?.toFixed(4)}, {structure.longitude?.toFixed(4)}
-              </p>
-              <p>This is a placeholder map. Integrate a map provider in future milestones.</p>
-            </>
-          ) : (
-            <p>Coordinates are not available for this structure.</p>
-          )}
-        </div>
-
-        {googleMapsUrl && (
-          <p style={{ marginTop: "1rem" }}>
-            <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-              Open in Google Maps
-            </a>
-          </p>
-        )}
-
-        <div className="detail-tabs">
-          <button
-            type="button"
-            className={activeTab === "overview" ? "active" : ""}
-            onClick={() => setActiveTab("overview")}
-          >
-            {t("structures.details.tabs.overview")}
-          </button>
-          <button
-            type="button"
-            className={activeTab === "availability" ? "active" : ""}
-            onClick={() => setActiveTab("availability")}
-          >
-            {t("structures.details.tabs.availability")}
-          </button>
-          <button
-            type="button"
-            className={activeTab === "costs" ? "active" : ""}
-            onClick={() => setActiveTab("costs")}
-          >
-            {t("structures.details.tabs.costs")}
-          </button>
-          <button
-            type="button"
-            className={activeTab === "contacts" ? "active" : ""}
-            onClick={() => setActiveTab("contacts")}
-          >
-            {t("structures.details.tabs.contacts")}
-          </button>
-          <button
-            type="button"
-            className={activeTab === "attachments" ? "active" : ""}
-            onClick={() => setActiveTab("attachments")}
-          >
-            {t("structures.details.tabs.attachments")}
-          </button>
-        </div>
-
-        {activeTab === "overview" && (
-          <div className="detail-panel">
-            <p>The overview tab summarises the structure metadata and coordinates.</p>
-          </div>
-        )}
-
-        {activeTab === "availability" && (
-          <div className="detail-panel">
-            {availabilities.length === 0 ? (
-              <p>No seasonal availability has been configured yet.</p>
-            ) : (
-              <table className="detail-table">
-                <thead>
-                  <tr>
-                    <th>Season</th>
-                    <th>Units</th>
-                    <th>Capacity</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {availabilities.map((availability: Availability) => {
-                    const { capacity_min, capacity_max } = availability;
-                    const capacityLabel =
-                      capacity_min !== null && capacity_max !== null
-                        ? `${capacity_min} – ${capacity_max}`
-                        : capacity_min !== null
-                        ? `from ${capacity_min}`
-                        : capacity_max !== null
-                        ? `up to ${capacity_max}`
-                        : "n/a";
-
-                    return (
-                      <tr key={availability.id}>
-                        <td>{availability.season}</td>
-                        <td>{availability.units.join(", ")}</td>
-                        <td>{capacityLabel}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            {structure.open_periods && structure.open_periods.length > 0 && (
+              <div className="structure-details-card__section">
+                <h3 className="structure-details-card__title">
+                  {t("structures.details.openPeriods.title")}
+                </h3>
+                <div className="structure-open-periods-detail">
+                  <ul className="structure-open-periods-detail__list">
+                    {structure.open_periods.map((period) => {
+                      const description = describeOpenPeriod(period);
+                      return (
+                        <li key={period.id} className="structure-open-periods-detail__item">
+                          <span className="structure-open-periods-detail__main">{description.main}</span>
+                          {description.note && (
+                            <span className="structure-open-periods-detail__note">{description.note}</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
             )}
           </div>
-        )}
 
-        {activeTab === "costs" && (
-          <div className="detail-panel">
-            {costOptions.length === 0 ? (
-              <p>No cost options are available for this structure.</p>
-            ) : (
-              <ul className="cost-options">
-                {costOptions.map((option: CostOption) => (
-                  <li key={option.id}>
-                    <strong>{option.model}</strong> — {formatCurrency(option.amount, option.currency)}
-                    <div className="cost-breakdown">
-                      {option.deposit !== null && <span>Deposit: {formatCurrency(option.deposit, option.currency)}</span>}
-                      {option.city_tax_per_night !== null && (
-                        <span>City tax: {formatCurrency(option.city_tax_per_night, option.currency)} per night</span>
-                      )}
-                      {option.utilities_flat !== null && (
-                        <span>Utilities: {formatCurrency(option.utilities_flat, option.currency)}</span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
-        {activeTab === "contacts" && (
-          <div className="detail-panel">
-            <div className="contacts-header" style={{ marginBottom: "1rem" }}>
-              <button type="button" onClick={startCreateContact}>
-                {t("structures.contacts.new")}
+          <div className="structure-details-card structure-details-card--tabs">
+            <div className="detail-tabs">
+              <button
+                type="button"
+                className={activeTab === "overview" ? "active" : ""}
+                onClick={() => setActiveTab("overview")}
+              >
+                {t("structures.details.tabs.overview")}
+              </button>
+              <button
+                type="button"
+                className={activeTab === "availability" ? "active" : ""}
+                onClick={() => setActiveTab("availability")}
+              >
+                {t("structures.details.tabs.availability")}
+              </button>
+              <button
+                type="button"
+                className={activeTab === "costs" ? "active" : ""}
+                onClick={() => setActiveTab("costs")}
+              >
+                {t("structures.details.tabs.costs")}
+              </button>
+              <button
+                type="button"
+                className={activeTab === "contacts" ? "active" : ""}
+                onClick={() => setActiveTab("contacts")}
+              >
+                {t("structures.details.tabs.contacts")}
+              </button>
+              <button
+                type="button"
+                className={activeTab === "attachments" ? "active" : ""}
+                onClick={() => setActiveTab("attachments")}
+              >
+                {t("structures.details.tabs.attachments")}
               </button>
             </div>
-            {actionError && <p className="error">{actionError}</p>}
-            <div
-              className="contacts-website"
-              style={{
-                marginBottom: "1rem",
-                padding: "1rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "0.5rem",
-                backgroundColor: "#f9fafb"
-              }}
-            >
-              <h4 style={{ marginTop: 0 }}>{t("structures.contacts.website.title")}</h4>
-              {structure.website_url ? (
-                <a href={structure.website_url} target="_blank" rel="noopener noreferrer">
-                  {structure.website_url}
-                </a>
-              ) : (
-                <p style={{ margin: 0 }}>{t("structures.contacts.website.empty")}</p>
-              )}
-            </div>
-            {contacts.length === 0 ? (
-              <p>{t("structures.contacts.empty")}</p>
-            ) : (
-              <table className="detail-table">
-                <thead>
-                  <tr>
-                    <th>{t("structures.contacts.table.name")}</th>
-                    <th>{t("structures.contacts.table.role")}</th>
-                    <th>{t("structures.contacts.table.channel")}</th>
-                    <th>{t("structures.contacts.table.email")}</th>
-                    <th>{t("structures.contacts.table.phone")}</th>
-                    <th>{t("structures.contacts.table.primary")}</th>
-                    <th>{t("structures.contacts.table.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contacts.map((contact) => {
-                    const mailHref = contact.email ? `mailto:${contact.email}` : null;
-                    const telHref = contact.phone
-                      ? `tel:${contact.phone.replace(/\s+/g, "")}`
-                      : null;
-                    return (
-                      <tr key={contact.id}>
-                        <td>{contact.name}</td>
-                        <td>{contact.role ?? t("structures.contacts.placeholders.none")}</td>
-                        <td>{channelLabels[contact.preferred_channel]}</td>
-                        <td>
-                          {mailHref ? (
-                            <a href={mailHref}>{contact.email}</a>
-                          ) : (
-                            t("structures.contacts.placeholders.none")
-                          )}
-                        </td>
-                        <td>
-                          {telHref ? (
-                            <a href={telHref}>{contact.phone}</a>
-                          ) : (
-                            t("structures.contacts.placeholders.none")
-                          )}
-                        </td>
-                        <td>
-                          {contact.is_primary
-                            ? t("structures.contacts.primary.yes")
-                            : t("structures.contacts.primary.no")}
-                        </td>
-                        <td>
-                          <div className="inline-actions" style={{ display: "flex", gap: "0.5rem" }}>
-                            <button type="button" onClick={() => startEditContact(contact)}>
-                              {t("structures.contacts.actions.edit")}
-                            </button>
-                            <button type="button" onClick={() => handleDeleteContact(contact)}>
-                              {t("structures.contacts.actions.delete")}
-                            </button>
-                            {!contact.is_primary && (
-                              <button type="button" onClick={() => handleSetPrimary(contact)}>
-                                {t("structures.contacts.actions.makePrimary")}
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+
+            {activeTab === "overview" && (
+              <div className="detail-panel">
+                <p className="structure-details__placeholder">
+                  {t("structures.details.messages.overviewPlaceholder")}
+                </p>
+              </div>
             )}
 
-            {isFormVisible && (
-              <form className="contact-form" onSubmit={handleContactSubmit} style={{ marginTop: "1.5rem" }}>
-                <h3>
-                  {editingContact
-                    ? t("structures.contacts.form.editTitle")
-                    : t("structures.contacts.form.createTitle")}
-                </h3>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    gap: "1rem"
-                  }}
-                >
-                  <label>
-                    {t("structures.contacts.form.firstName")}
-                    <input
-                      type="text"
-                      value={formState.first_name}
-                      onChange={(event) =>
-                        setFormState((prev) => ({ ...prev, first_name: event.target.value }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {t("structures.contacts.form.lastName")}
-                    <input
-                      type="text"
-                      value={formState.last_name}
-                      onChange={(event) =>
-                        setFormState((prev) => ({ ...prev, last_name: event.target.value }))
-                      }
-                    />
-                  </label>
-                </div>
-                <label>
-                  {t("structures.contacts.form.role")}
-                  <input
-                    type="text"
-                    value={formState.role}
-                    onChange={(event) =>
-                      setFormState((prev) => ({ ...prev, role: event.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  {t("structures.contacts.form.email")}
-                  <input
-                    type="email"
-                    value={formState.email}
-                    onChange={(event) =>
-                      setFormState((prev) => ({ ...prev, email: event.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  {t("structures.contacts.form.phone")}
-                  <input
-                    type="tel"
-                    value={formState.phone}
-                    onChange={(event) =>
-                      setFormState((prev) => ({ ...prev, phone: event.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  {t("structures.contacts.form.preferredChannel")}
-                  <select
-                    value={formState.preferred_channel}
-                    onChange={(event) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        preferred_channel: event.target.value as ContactPreferredChannel
-                      }))
-                    }
-                  >
-                    <option value="email">{channelLabels.email}</option>
-                    <option value="phone">{channelLabels.phone}</option>
-                    <option value="other">{channelLabels.other}</option>
-                  </select>
-                </label>
-                <label style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                  <input
-                    type="checkbox"
-                    checked={formState.is_primary}
-                    onChange={(event) =>
-                      setFormState((prev) => ({ ...prev, is_primary: event.target.checked }))
-                    }
-                  />
-                  {t("structures.contacts.form.isPrimary")}
-                </label>
-                <label>
-                  {t("structures.contacts.form.notes")}
-                  <textarea
-                    value={formState.notes}
-                    onChange={(event) =>
-                      setFormState((prev) => ({ ...prev, notes: event.target.value }))
-                    }
-                  />
-                </label>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                  <button
-                    type="button"
-                    onClick={handleSearchDuplicates}
-                    disabled={savingContact || checkingDuplicates}
-                  >
-                    {checkingDuplicates
-                      ? t("structures.contacts.form.searching")
-                      : t("structures.contacts.form.searchExisting")}
+            {activeTab === "availability" && (
+              <div className="detail-panel">
+                {availabilities.length === 0 ? (
+                  <p className="structure-details__placeholder">
+                    {t("structures.details.messages.availabilityEmpty")}
+                  </p>
+                ) : (
+                  <table className="detail-table">
+                    <thead>
+                      <tr>
+                        <th>Season</th>
+                        <th>Units</th>
+                        <th>Capacity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availabilities.map((availability: Availability) => {
+                        const { capacity_min, capacity_max } = availability;
+                        const capacityLabel =
+                          capacity_min !== null && capacity_max !== null
+                            ? `${capacity_min} – ${capacity_max}`
+                            : capacity_min !== null
+                            ? `from ${capacity_min}`
+                            : capacity_max !== null
+                            ? `up to ${capacity_max}`
+                            : "n/a";
+
+                        return (
+                          <tr key={availability.id}>
+                            <td>{availability.season}</td>
+                            <td>{availability.units.join(", ")}</td>
+                            <td>{capacityLabel}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
+            {activeTab === "costs" && (
+              <div className="detail-panel">
+                {costOptions.length === 0 ? (
+                  <p className="structure-details__placeholder">
+                    {t("structures.details.messages.costsEmpty")}
+                  </p>
+                ) : (
+                  <ul className="cost-options">
+                    {costOptions.map((option: CostOption) => (
+                      <li key={option.id}>
+                        <strong>{option.model}</strong> — {formatCurrency(option.amount, option.currency)}
+                        <div className="cost-breakdown">
+                          {option.deposit !== null && (
+                            <span>Deposit: {formatCurrency(option.deposit, option.currency)}</span>
+                          )}
+                          {option.city_tax_per_night !== null && (
+                            <span>
+                              City tax: {formatCurrency(option.city_tax_per_night, option.currency)} per night
+                            </span>
+                          )}
+                          {option.utilities_flat !== null && (
+                            <span>Utilities: {formatCurrency(option.utilities_flat, option.currency)}</span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {activeTab === "contacts" && (
+              <div className="detail-panel structure-contacts">
+                <div className="structure-contacts__actions">
+                  <button type="button" onClick={startCreateContact}>
+                    {t("structures.contacts.new")}
                   </button>
-                  {checkingDuplicates && (
-                    <span>{t("structures.contacts.form.searchingHelp")}</span>
+                </div>
+                {actionError && <p className="error">{actionError}</p>}
+                <div className="structure-contacts__website">
+                  <h4>{t("structures.contacts.website.title")}</h4>
+                  {structure.website_url ? (
+                    <a href={structure.website_url} target="_blank" rel="noopener noreferrer">
+                      {structure.website_url}
+                    </a>
+                  ) : (
+                    <p>{t("structures.contacts.website.empty")}</p>
                   )}
                 </div>
-                {duplicateMatches.length > 0 && !editingContact && (
-                  <div className="duplicate-warning" style={{ margin: "1rem 0" }}>
-                    <p>
-                      {t("structures.contacts.form.duplicatesIntro", {
-                        count: duplicateMatches.length
+                {contacts.length === 0 ? (
+                  <p className="structure-details__placeholder">{t("structures.contacts.empty")}</p>
+                ) : (
+                  <table className="detail-table">
+                    <thead>
+                      <tr>
+                        <th>{t("structures.contacts.table.name")}</th>
+                        <th>{t("structures.contacts.table.role")}</th>
+                        <th>{t("structures.contacts.table.channel")}</th>
+                        <th>{t("structures.contacts.table.email")}</th>
+                        <th>{t("structures.contacts.table.phone")}</th>
+                        <th>{t("structures.contacts.table.primary")}</th>
+                        <th>{t("structures.contacts.table.actions")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contacts.map((contact) => {
+                        const mailHref = contact.email ? `mailto:${contact.email}` : null;
+                        const telHref = contact.phone
+                          ? `tel:${contact.phone.replace(/\s+/g, "")}`
+                          : null;
+                        return (
+                          <tr key={contact.id}>
+                            <td>{contact.name}</td>
+                            <td>{contact.role ?? t("structures.contacts.placeholders.none")}</td>
+                            <td>{channelLabels[contact.preferred_channel]}</td>
+                            <td>
+                              {mailHref ? (
+                                <a href={mailHref}>{contact.email}</a>
+                              ) : (
+                                t("structures.contacts.placeholders.none")
+                              )}
+                            </td>
+                            <td>
+                              {telHref ? (
+                                <a href={telHref}>{contact.phone}</a>
+                              ) : (
+                                t("structures.contacts.placeholders.none")
+                              )}
+                            </td>
+                            <td>
+                              {contact.is_primary
+                                ? t("structures.contacts.primary.yes")
+                                : t("structures.contacts.primary.no")}
+                            </td>
+                            <td>
+                              <div className="structure-contacts__table-actions">
+                                <button type="button" onClick={() => startEditContact(contact)}>
+                                  {t("structures.contacts.actions.edit")}
+                                </button>
+                                <button type="button" onClick={() => handleDeleteContact(contact)}>
+                                  {t("structures.contacts.actions.delete")}
+                                </button>
+                                {!contact.is_primary && (
+                                  <button type="button" onClick={() => handleSetPrimary(contact)}>
+                                    {t("structures.contacts.actions.makePrimary")}
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
                       })}
-                    </p>
-                    <ul style={{ paddingLeft: "1.25rem" }}>
-                      {duplicateMatches.map((candidate) => (
-                        <li key={candidate.id} style={{ marginBottom: "0.5rem" }}>
-                          <div>
-                            <strong>{candidate.name}</strong>
-                            {candidate.email && ` · ${candidate.email}`}
-                            {candidate.phone && ` · ${candidate.phone}`}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleUseExisting(candidate)}
-                            disabled={savingContact}
-                            style={{ marginTop: "0.25rem" }}
-                          >
-                            {t("structures.contacts.actions.useExisting")}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    <button
-                      type="button"
-                      onClick={handleForceCreate}
-                      disabled={savingContact}
-                    >
-                      {t("structures.contacts.actions.createAnyway")}
-                    </button>
-                  </div>
+                    </tbody>
+                  </table>
                 )}
-                {formError && <p className="error">{formError}</p>}
-                <div className="form-actions" style={{ display: "flex", gap: "0.75rem" }}>
-                  <button type="submit" disabled={savingContact}>
-                    {savingContact
-                      ? t("structures.contacts.form.saving")
-                      : editingContact
-                      ? t("structures.contacts.form.save")
-                      : t("structures.contacts.form.create")}
-                  </button>
-                  <button type="button" onClick={resetContactForm}>
-                    {t("structures.contacts.form.cancel")}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        )}
-        {activeTab === "attachments" && (
-          <div className="detail-panel">
-            {!auth.user ? (
-              <p>{t("attachments.state.authRequired")}</p>
-            ) : (
-              <AttachmentsSection
-                ownerType="structure"
-                ownerId={structure.id}
-                canUpload={auth.user.is_admin}
-                canDelete={auth.user.is_admin}
-              />
-            )}
-          </div>
-        )}
 
-        <p style={{ marginTop: "1rem" }}>
-          <Link to="/structures">← Back to catalog</Link>
-        </p>
+                {isFormVisible && (
+                  <form className="structure-contacts__form" onSubmit={handleContactSubmit}>
+                    <h3 className="structure-contacts__form-title">
+                      {editingContact
+                        ? t("structures.contacts.form.editTitle")
+                        : t("structures.contacts.form.createTitle")}
+                    </h3>
+                    <div className="structure-contacts__grid">
+                      <label>
+                        {t("structures.contacts.form.firstName")}
+                        <input
+                          type="text"
+                          value={formState.first_name}
+                          onChange={(event) =>
+                            setFormState((prev) => ({ ...prev, first_name: event.target.value }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        {t("structures.contacts.form.lastName")}
+                        <input
+                          type="text"
+                          value={formState.last_name}
+                          onChange={(event) =>
+                            setFormState((prev) => ({ ...prev, last_name: event.target.value }))
+                          }
+                        />
+                      </label>
+                    </div>
+                    <label>
+                      {t("structures.contacts.form.role")}
+                      <input
+                        type="text"
+                        value={formState.role}
+                        onChange={(event) =>
+                          setFormState((prev) => ({ ...prev, role: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      {t("structures.contacts.form.email")}
+                      <input
+                        type="email"
+                        value={formState.email}
+                        onChange={(event) =>
+                          setFormState((prev) => ({ ...prev, email: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      {t("structures.contacts.form.phone")}
+                      <input
+                        type="tel"
+                        value={formState.phone}
+                        onChange={(event) =>
+                          setFormState((prev) => ({ ...prev, phone: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      {t("structures.contacts.form.preferredChannel")}
+                      <select
+                        value={formState.preferred_channel}
+                        onChange={(event) =>
+                          setFormState((prev) => ({
+                            ...prev,
+                            preferred_channel: event.target.value as ContactPreferredChannel
+                          }))
+                        }
+                      >
+                        <option value="email">{channelLabels.email}</option>
+                        <option value="phone">{channelLabels.phone}</option>
+                        <option value="other">{channelLabels.other}</option>
+                      </select>
+                    </label>
+                    <label className="structure-contacts__checkbox">
+                      <input
+                        type="checkbox"
+                        checked={formState.is_primary}
+                        onChange={(event) =>
+                          setFormState((prev) => ({ ...prev, is_primary: event.target.checked }))
+                        }
+                      />
+                      {t("structures.contacts.form.isPrimary")}
+                    </label>
+                    <label>
+                      {t("structures.contacts.form.notes")}
+                      <textarea
+                        value={formState.notes}
+                        onChange={(event) =>
+                          setFormState((prev) => ({ ...prev, notes: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <div className="structure-contacts__duplicate-actions">
+                      <button
+                        type="button"
+                        onClick={handleSearchDuplicates}
+                        disabled={savingContact || checkingDuplicates}
+                      >
+                        {checkingDuplicates
+                          ? t("structures.contacts.form.searching")
+                          : t("structures.contacts.form.searchExisting")}
+                      </button>
+                      {checkingDuplicates && (
+                        <span className="structure-contacts__status">
+                          {t("structures.contacts.form.searchingHelp")}
+                        </span>
+                      )}
+                    </div>
+                    {duplicateMatches.length > 0 && !editingContact && (
+                      <div className="structure-contacts__duplicates">
+                        <p>
+                          {t("structures.contacts.form.duplicatesIntro", {
+                            count: duplicateMatches.length
+                          })}
+                        </p>
+                        <ul>
+                          {duplicateMatches.map((candidate) => (
+                            <li key={candidate.id}>
+                              <div>
+                                <strong>{candidate.name}</strong>
+                                {candidate.email && ` · ${candidate.email}`}
+                                {candidate.phone && ` · ${candidate.phone}`}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleUseExisting(candidate)}
+                                disabled={savingContact}
+                              >
+                                {t("structures.contacts.actions.useExisting")}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          type="button"
+                          onClick={handleForceCreate}
+                          disabled={savingContact}
+                        >
+                          {t("structures.contacts.actions.createAnyway")}
+                        </button>
+                      </div>
+                    )}
+                    {formError && <p className="error">{formError}</p>}
+                    <div className="structure-contacts__form-actions">
+                      <button type="submit" disabled={savingContact}>
+                        {savingContact
+                          ? t("structures.contacts.form.saving")
+                          : editingContact
+                          ? t("structures.contacts.form.save")
+                          : t("structures.contacts.form.create")}
+                      </button>
+                      <button type="button" onClick={resetContactForm}>
+                        {t("structures.contacts.form.cancel")}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+            {activeTab === "attachments" && (
+              <div className="detail-panel">
+                {!auth.user ? (
+                  <p className="structure-details__placeholder">{t("attachments.state.authRequired")}</p>
+                ) : (
+                  <AttachmentsSection
+                    ownerType="structure"
+                    ownerId={structure.id}
+                    canUpload={auth.user.is_admin}
+                    canDelete={auth.user.is_admin}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <aside className="structure-details__sidebar">
+          <div className="structure-details-card structure-details-card--sidebar">
+            <h3 className="structure-details-card__title">
+              {t("structures.details.location.title")}
+            </h3>
+            <div
+              className="structure-details__map"
+              data-has-coordinates={hasCoordinates ? "true" : "false"}
+            >
+              {hasCoordinates ? (
+                <>
+                  <p className="structure-details__map-coordinates">
+                    {t("structures.details.location.coordinates", {
+                      lat: structure.latitude?.toFixed(4),
+                      lon: structure.longitude?.toFixed(4)
+                    })}
+                  </p>
+                  <p className="structure-details__map-note">
+                    {t("structures.details.location.placeholder")}
+                  </p>
+                </>
+              ) : (
+                <p className="structure-details__map-note">
+                  {t("structures.details.location.unavailable")}
+                </p>
+              )}
+            </div>
+            {googleMapsUrl && (
+              <a
+                className="structure-details__map-link"
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("structures.list.cards.openMap")}
+              </a>
+            )}
+          </div>
+        </aside>
       </div>
+
+      <p className="structure-details__back-link">
+        <Link to="/structures">← Back to catalog</Link>
+      </p>
     </section>
   );
 };
