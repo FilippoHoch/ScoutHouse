@@ -51,8 +51,9 @@ calculations. Authentication adds `JWT_SECRET`, `ACCESS_TTL_MIN`,
 `REFRESH_TTL_DAYS`, `ALLOW_REGISTRATION` (disabled by default),
 `CORS_ALLOWED_ORIGINS`, and `SECURE_COOKIES`. The frontend `.env` exposes the
 `VITE_API_URL` used to talk to the API, `VITE_BASE_COORDS` for the default
-map reference point, and an optional `VITE_GOOGLE_MAPS_API_KEY` to enable the
-embedded picker.
+map reference point, and an optional `VITE_GOOGLE_MAPS_API_KEY` to unlock the
+fully interactive Google Maps picker (without it a read-only embedded preview
+is shown).
 
 ### Local development (without Docker)
 

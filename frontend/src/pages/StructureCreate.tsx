@@ -1536,7 +1536,6 @@ export const StructureCreatePage = () => {
                   id="structure-open_periods"
                   role="group"
                   aria-describedby={openPeriodsDescribedBy}
-                  aria-invalid={fieldErrors.open_periods ? "true" : undefined}
                 >
                   <div className="structure-open-periods-header">
                     <span className="form-label">

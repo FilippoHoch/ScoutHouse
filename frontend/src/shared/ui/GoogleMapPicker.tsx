@@ -103,9 +103,26 @@ export const GoogleMapPicker = ({
   const markerRef = useRef<google.maps.Marker | null>(null);
   const listenersRef = useRef<google.maps.MapsEventListener[]>([]);
   const latestValueRef = useRef<GoogleMapPickerCoordinates | null>(value);
+  const onChangeRef = useRef(onChange);
   const [state, setState] = useState<LoaderState>(() =>
     apiKey ? "idle" : "missing-key"
   );
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  const fallbackEmbedUrl = useMemo(() => {
+    const center = value ?? DEFAULT_CENTER;
+    const zoom = value ? 14 : 6;
+    const { lat, lng } = center;
+    const url = new URL("https://maps.google.com/maps");
+    url.searchParams.set("q", `${lat},${lng}`);
+    url.searchParams.set("z", zoom.toString());
+    url.searchParams.set("output", "embed");
+    url.searchParams.set("iwloc", "");
+    return url.toString();
+  }, [value]);
 
   useEffect(() => {
     if (!apiKey) {
@@ -161,7 +178,7 @@ export const GoogleMapPicker = ({
             const coordinates = event.latLng.toJSON();
             marker.setMap(map);
             marker.setPosition(coordinates);
-            onChange(coordinates);
+            onChangeRef.current(coordinates);
           }),
           marker.addListener("dragend", (event: google.maps.MapMouseEvent) => {
             if (!event.latLng) {
@@ -170,7 +187,7 @@ export const GoogleMapPicker = ({
             const coordinates = event.latLng.toJSON();
             marker.setMap(map);
             marker.setPosition(coordinates);
-            onChange(coordinates);
+            onChangeRef.current(coordinates);
           })
         ];
 
@@ -224,6 +241,30 @@ export const GoogleMapPicker = ({
     }
     return null;
   }, [labels.loadError, labels.loading, labels.missingKey, state]);
+
+  if (!apiKey) {
+    return (
+      <div
+        className={["google-map-picker", className].filter(Boolean).join(" ")}
+        data-state="embed"
+      >
+        <div className="google-map-picker-embed">
+          <iframe
+            src={fallbackEmbedUrl}
+            title={ariaLabel ?? labels.missingKey ?? "Google Maps embed"}
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+        {labels.missingKey && (
+          <div className="google-map-picker-status" role="status">
+            <p>{labels.missingKey}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

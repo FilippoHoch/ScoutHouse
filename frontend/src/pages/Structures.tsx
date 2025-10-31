@@ -36,7 +36,6 @@ const accessOptions = [
   { key: "access_coach", value: "coach", labelKey: "structures.filters.access.coach" },
   { key: "access_pt", value: "pt", labelKey: "structures.filters.access.pt" },
 ] as const;
-type AccessOptionKey = (typeof accessOptions)[number]["key"];
 type FilterChipKey = keyof FilterFormState | "access";
 const sortOptions: Array<{ value: StructureSearchParams["sort"]; labelKey: string }> = [
   { value: "distance", labelKey: "structures.filters.sort.distance" },
