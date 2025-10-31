@@ -162,7 +162,7 @@
           "hint": "Clicca sulla mappa per posizionare il segnaposto oppure inserisci manualmente le coordinate.",
           "loading": "Caricamento della mappa in corso…",
           "error": "Impossibile caricare Google Maps. Controlla la connessione o riprova più tardi.",
-          "missingKey": "Configura la variabile VITE_GOOGLE_MAPS_API_KEY per abilitare la mappa interattiva.",
+          "missingKey": "La mappa interattiva richiede la variabile VITE_GOOGLE_MAPS_API_KEY. Senza chiave viene mostrata una mappa di anteprima incorporata.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
           "ariaLabel": "Mappa di Google per scegliere le coordinate"
         },

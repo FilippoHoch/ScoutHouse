@@ -273,7 +273,8 @@ export const StructureDetailsPage = () => {
     try {
       let saved: Contact;
       if (editingContact) {
-        const { contact_id, ...updatePayload } = payload;
+        const { contact_id: contactIdToOmit, ...updatePayload } = payload;
+        void contactIdToOmit;
         saved = await updateStructureContact(
           structure.id,
           editingContact.id,
