@@ -6,7 +6,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-revision: str = "20240320_0011_structure_open_periods_and_fields"
+revision: str = "20240320_0011"
 down_revision: str | None = "20240701_0012"
 branch_labels = None
 depends_on = None
