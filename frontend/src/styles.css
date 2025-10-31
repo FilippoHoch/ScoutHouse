@@ -1100,6 +1100,88 @@ table tbody tr:hover {
   font-size: 0.9rem;
 }
 
+.structure-contact-picker {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.structure-contact-picker__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.structure-contact-picker__selected {
+  color: var(--color-muted-strong);
+  font-weight: 500;
+}
+
+.structure-contact-picker__form {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.structure-contact-picker__search {
+  display: grid;
+  gap: var(--space-xs);
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.structure-contact-picker__search span {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.structure-contact-picker__search input {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  padding: 0.65rem 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted-strong);
+}
+
+.structure-contact-picker__search input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.structure-contact-picker__form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.structure-contact-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.structure-contact-picker__list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(241, 245, 249, 0.6);
+}
+
+.structure-contact-picker__match {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  color: var(--color-muted-strong);
+}
+
 .structure-contact-actions {
   display: flex;
   flex-wrap: wrap;

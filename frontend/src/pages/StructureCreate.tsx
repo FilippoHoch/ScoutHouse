@@ -1,4 +1,11 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -154,6 +161,11 @@ export const StructureCreatePage = () => {
   const [contactAllowDuplicate, setContactAllowDuplicate] = useState(false);
   const [contactCheckingDuplicates, setContactCheckingDuplicates] = useState(false);
   const [contactStatusMessage, setContactStatusMessage] = useState<string | null>(null);
+  const [isContactPickerOpen, setIsContactPickerOpen] = useState(false);
+  const [contactPickerQuery, setContactPickerQuery] = useState("");
+  const [contactPickerLoading, setContactPickerLoading] = useState(false);
+  const [contactPickerError, setContactPickerError] = useState<string | null>(null);
+  const [contactPickerResults, setContactPickerResults] = useState<Contact[]>([]);
   const [openPeriods, setOpenPeriods] = useState<OpenPeriodFormRow[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -271,6 +283,22 @@ export const StructureCreatePage = () => {
         contactNotes.trim()
     );
 
+  const selectedContactSummary = useMemo(() => {
+    if (contactId === null) {
+      return null;
+    }
+    const parts = [contactFirstName, contactLastName]
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts.length === 0 && contactEmail.trim()) {
+      parts.push(contactEmail.trim());
+    }
+    if (parts.length === 0 && contactPhone.trim()) {
+      parts.push(contactPhone.trim());
+    }
+    return parts.join(" ") || t("structures.create.form.contact.picker.unknownContact");
+  }, [contactEmail, contactFirstName, contactId, contactLastName, contactPhone, t]);
+
   const sanitizeContactField = (value: string) => {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : undefined;
@@ -349,6 +377,7 @@ export const StructureCreatePage = () => {
     setContactPhone(match.phone ?? "");
     setContactNotes(match.notes ?? "");
     setContactPreferredChannel(match.preferred_channel);
+    setContactIsPrimary(match.is_primary);
     setContactAllowDuplicate(true);
     setContactDuplicates([]);
     setContactStatusMessage(
@@ -360,6 +389,68 @@ export const StructureCreatePage = () => {
     setContactAllowDuplicate(true);
     setContactStatusMessage(null);
     setContactDuplicates([]);
+  };
+
+  const runContactPickerSearch = useCallback(async (queryValue: string) => {
+    setContactPickerLoading(true);
+    setContactPickerError(null);
+    try {
+      const trimmed = queryValue.trim();
+      const params = {
+        first_name: trimmed || null,
+        last_name: trimmed || null,
+        email: trimmed.includes("@") ? trimmed : null,
+        phone: trimmed ? trimmed : null,
+        limit: 20
+      } as const;
+      const results = await searchContacts(params);
+      setContactPickerResults(results);
+    } catch (error) {
+      setContactPickerError(t("structures.create.form.contact.picker.error"));
+    } finally {
+      setContactPickerLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    if (!isContactPickerOpen) {
+      return;
+    }
+    void runContactPickerSearch(contactPickerQuery);
+  }, [contactPickerQuery, isContactPickerOpen, runContactPickerSearch]);
+
+  const handleContactPickerOpen = () => {
+    setIsContactPickerOpen(true);
+    setContactPickerError(null);
+  };
+
+  const handleContactPickerClose = () => {
+    setIsContactPickerOpen(false);
+    setContactPickerError(null);
+  };
+
+  const handleContactPickerSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await runContactPickerSearch(contactPickerQuery);
+  };
+
+  const handleContactPickerSelect = (contact: Contact) => {
+    handleContactUseExisting(contact);
+    setIsContactPickerOpen(false);
+  };
+
+  const handleContactPickerClear = () => {
+    setContactId(null);
+    setContactFirstName("");
+    setContactLastName("");
+    setContactRole("");
+    setContactEmail("");
+    setContactPhone("");
+    setContactNotes("");
+    setContactPreferredChannel("email");
+    setContactIsPrimary(true);
+    setContactAllowDuplicate(false);
+    setContactStatusMessage(null);
   };
 
   const clearFieldError = (field: FieldErrorKey) => {
@@ -1983,6 +2074,40 @@ export const StructureCreatePage = () => {
                       </div>
                       <div className="structure-contact-section">
                         <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionExisting")}
+                        </span>
+                        <div className="structure-contact-picker">
+                          <div className="structure-contact-picker__actions">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={handleContactPickerOpen}
+                            >
+                              {t("structures.create.form.contact.picker.open")}
+                            </Button>
+                            {contactId !== null && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleContactPickerClear}
+                              >
+                                {t("structures.create.form.contact.picker.clearSelection")}
+                              </Button>
+                            )}
+                          </div>
+                          {contactId !== null && selectedContactSummary && (
+                            <p className="structure-contact-helper structure-contact-picker__selected">
+                              {t("structures.create.form.contact.picker.selected", {
+                                name: selectedContactSummary
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
                           {t("structures.create.form.contact.sectionNotes")}
                         </span>
                         <label className="structure-contact-field structure-contact-field--full">
@@ -2056,6 +2181,77 @@ export const StructureCreatePage = () => {
                           >
                             {t("structures.create.form.contact.createAnyway")}
                           </Button>
+                        </div>
+                      )}
+                      {isContactPickerOpen && (
+                        <div className="modal" role="presentation">
+                          <div
+                            className="modal-content"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="structure-contact-picker-title"
+                          >
+                            <header className="modal-header">
+                              <h3 id="structure-contact-picker-title">
+                                {t("structures.create.form.contact.picker.title")}
+                              </h3>
+                            </header>
+                            <div className="modal-body">
+                              <form
+                                className="structure-contact-picker__form"
+                                onSubmit={handleContactPickerSubmit}
+                              >
+                                <label className="structure-contact-picker__search">
+                                  <span>{t("structures.create.form.contact.picker.searchLabel")}</span>
+                                  <input
+                                    type="text"
+                                    value={contactPickerQuery}
+                                    onChange={(event) => setContactPickerQuery(event.target.value)}
+                                    placeholder={t(
+                                      "structures.create.form.contact.picker.searchPlaceholder"
+                                    )}
+                                  />
+                                </label>
+                                <div className="structure-contact-picker__form-actions">
+                                  <Button type="submit" size="sm" variant="primary">
+                                    {t("structures.create.form.contact.picker.search")}
+                                  </Button>
+                                </div>
+                              </form>
+                              {contactPickerLoading ? (
+                                <p>{t("structures.create.form.contact.picker.loading")}</p>
+                              ) : contactPickerError ? (
+                                <p className="error-text">{contactPickerError}</p>
+                              ) : contactPickerResults.length === 0 ? (
+                                <p>{t("structures.create.form.contact.picker.noResults")}</p>
+                              ) : (
+                                <ul className="structure-contact-picker__list">
+                                  {contactPickerResults.map((contact) => (
+                                    <li key={contact.id}>
+                                      <div className="structure-contact-picker__match">
+                                        <strong>{contact.name}</strong>
+                                        {contact.email && <span> · {contact.email}</span>}
+                                        {contact.phone && <span> · {contact.phone}</span>}
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() => handleContactPickerSelect(contact)}
+                                      >
+                                        {t("structures.create.form.contact.picker.choose")}
+                                      </Button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                            <div className="modal-actions">
+                              <Button type="button" variant="ghost" onClick={handleContactPickerClose}>
+                                {t("structures.create.form.contact.picker.close")}
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
