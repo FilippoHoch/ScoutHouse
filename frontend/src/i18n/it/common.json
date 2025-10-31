@@ -494,7 +494,9 @@
         "title": "Posizione",
         "coordinates": "Coordinates: {{lat}}, {{lon}}",
         "altitude": "Altitudine: {{alt}} m s.l.m.",
-        "placeholder": "Questa è una mappa di esempio. Integra un provider di mappe in futuro.",
+        "placeholder": "La mappa mostra la posizione indicativa della struttura su Google Maps.",
+        "mapTitle": "Mappa di Google Maps per {{name}}",
+        "mapAriaLabel": "Mappa incorporata di Google Maps per {{name}}",
         "unavailable": "Le coordinate non sono disponibili per questa struttura."
       },
       "openPeriods": {

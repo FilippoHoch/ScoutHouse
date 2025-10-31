@@ -1983,6 +1983,14 @@ table tbody tr:hover {
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0.03));
 }
 
+.structure-details__map-embed {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
 .structure-details__map-coordinates {
   margin: 0;
   font-weight: 600;

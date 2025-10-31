@@ -210,9 +210,35 @@ export const StructureDetailsPage = () => {
           alt: altitudeValue.toFixed(0)
         })
       : null;
+  const mapDisplayName = structure.name ?? t("structures.details.location.title");
+  const googleMapsEmbedUrl = hasCoordinates
+    ? (() => {
+        const lat = structure.latitude?.toFixed(6);
+        const lng = structure.longitude?.toFixed(6);
+        if (!lat || !lng) {
+          return null;
+        }
+
+        const params = new URLSearchParams({
+          q: `${lat},${lng}`,
+          z: "15",
+          t: "m",
+          output: "embed",
+          iwloc: "near"
+        });
+
+        return `https://maps.google.com/maps?${params.toString()}`;
+      })()
+    : null;
   const googleMapsUrl = hasCoordinates
     ? `https://www.google.com/maps?q=${structure.latitude},${structure.longitude}`
     : null;
+  const googleMapsEmbedTitle = t("structures.details.location.mapTitle", {
+    name: mapDisplayName
+  });
+  const googleMapsEmbedAriaLabel = t("structures.details.location.mapAriaLabel", {
+    name: mapDisplayName
+  });
   const kitchenLabel = structure.has_kitchen
     ? t("structures.details.overview.hasKitchen.yes")
     : t("structures.details.overview.hasKitchen.no");
@@ -1003,6 +1029,17 @@ export const StructureDetailsPage = () => {
             >
               {hasCoordinates ? (
                 <>
+                  {googleMapsEmbedUrl && (
+                    <iframe
+                      className="structure-details__map-embed"
+                      src={googleMapsEmbedUrl}
+                      title={googleMapsEmbedTitle}
+                      aria-label={googleMapsEmbedAriaLabel}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  )}
                   <p className="structure-details__map-coordinates">
                     {t("structures.details.location.coordinates", {
                       lat: structure.latitude?.toFixed(4),
