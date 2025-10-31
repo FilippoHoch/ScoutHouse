@@ -30,6 +30,7 @@
   --space-md: 0.75rem;
   --space-lg: 1.25rem;
   --space-xl: 2rem;
+  --space-xxl: 3rem;
 }
 
 *,
@@ -272,6 +273,16 @@ main {
   padding: var(--space-xl) var(--space-xl) calc(var(--space-xl) * 1.5);
   max-width: 1180px;
   margin: 0 auto;
+}
+
+body.layout-wide header nav,
+body.layout-wide main {
+  max-width: 1380px;
+}
+
+body.layout-wide main {
+  padding-left: var(--space-xxl);
+  padding-right: var(--space-xxl);
 }
 
 .page-header {
@@ -887,8 +898,16 @@ table tbody tr:hover {
 
 @media (min-width: 1024px) {
   .structure-create-grid {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1.1fr);
     align-items: flex-start;
+    gap: calc(var(--space-xl) * 1.1);
+  }
+}
+
+@media (min-width: 1440px) {
+  .structure-create-grid {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 1.2fr);
+    gap: calc(var(--space-xl) * 1.25);
   }
 }
 
@@ -896,6 +915,13 @@ table tbody tr:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
+  padding: calc(var(--space-xl) * 1.35);
+}
+
+@media (min-width: 1280px) {
+  .structure-create-card {
+    padding: calc(var(--space-xl) * 1.6);
+  }
 }
 
 .structure-create-header {
@@ -915,13 +941,13 @@ table tbody tr:hover {
 .structure-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: calc(var(--space-lg) * 1.2);
 }
 
 .structure-form-section {
   border: 1px solid rgba(59, 130, 246, 0.12);
   border-radius: var(--radius-lg);
-  padding: var(--space-lg);
+  padding: calc(var(--space-xl) * 1.05);
   background: var(--color-surface-muted);
 }
 
@@ -939,7 +965,7 @@ table tbody tr:hover {
   display: grid;
   gap: var(--space-lg);
   margin-top: var(--space-lg);
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .structure-form-field {

@@ -117,6 +117,13 @@ export const StructureCreatePage = () => {
   const queryClient = useQueryClient();
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+  useEffect(() => {
+    document.body.classList.add("layout-wide");
+    return () => {
+      document.body.classList.remove("layout-wide");
+    };
+  }, []);
+
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [province, setProvince] = useState("");
