@@ -52,6 +52,12 @@ def quote_to_xlsx(quote: Quote) -> bytes:
     return buffer.getvalue()
 
 
+def _format_cell_value(value: Any) -> Any:
+    if isinstance(value, list):
+        return "; ".join(str(item) for item in value)
+    return value
+
+
 def rows_to_csv_stream(
     rows: Sequence[dict[str, Any]],
     headers: Sequence[str],
@@ -63,7 +69,8 @@ def rows_to_csv_stream(
     buffer.seek(0)
     buffer.truncate(0)
     for row in rows:
-        writer.writerow(row)
+        filtered = {_header: _format_cell_value(row.get(_header)) for _header in headers}
+        writer.writerow(filtered)
         yield buffer.getvalue().encode("utf-8")
         buffer.seek(0)
         buffer.truncate(0)
@@ -90,7 +97,7 @@ def rows_to_xlsx_stream(
 
     sheet.append(list(headers))
     for row in rows:
-        sheet.append([row.get(header) for header in headers])
+        sheet.append([_format_cell_value(row.get(header)) for header in headers])
 
     for column in range(1, len(headers) + 1):
         sheet.column_dimensions[get_column_letter(column)].width = 20

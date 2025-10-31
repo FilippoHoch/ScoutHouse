@@ -1,4 +1,4 @@
-name,slug,province,address,latitude,longitude,type,beds,bathrooms,showers,indoor_activity_rooms,has_kitchen,website_url,notes
+name,slug,province,address,latitude,longitude,type,beds,bathrooms,showers,indoor_activity_rooms,has_kitchen,website_urls,notes
 Casa Alpina,casa-alpina,BS,"Via Panoramica 12, Ponte di Legno",46.2542,10.5071,house,52,6,10,70,true,https://example.org/casa-alpina,"Ampia sala mensa"
 Baita del Sole,baita-del-sole,TN,"Località Passo Tonale",46.2573,10.5801,house,40,4,6,55,true,https://example.org/baita-del-sole,
 Campo Bosco San Francesco,campo-bosco-san-francesco,BS,"Via del Bosco 8, Gussago",45.5953,10.1661,mixed,120,12,18,160,true,https://example.org/campo-bosco,"Ottimo per grandi eventi"

@@ -1,4 +1,3 @@
-{"timestamp": "2025-10-30T16:46:05.844368+00:00", "level": "INFO", "logger": "app.sentry", "message": "Sentry DSN not configured; skipping error tracking setup", "taskName": null}
 {
   "openapi": "3.1.0",
   "info": {
@@ -642,6 +641,44 @@
         }
       }
     },
+    "/api/v1/templates/structure-open-periods.xlsx": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Get Structure Open Periods Template Xlsx",
+        "operationId": "get_structure_open_periods_template_xlsx_api_v1_templates_structure_open_periods_xlsx_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/templates/structure-open-periods.csv": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Get Structure Open Periods Template Csv",
+        "operationId": "get_structure_open_periods_template_csv_api_v1_templates_structure_open_periods_csv_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/structures/": {
       "get": {
         "tags": [
@@ -1245,6 +1282,124 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContactRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/structures/contacts/search": {
+      "get": {
+        "tags": [
+          "structures"
+        ],
+        "summary": "Search Contacts",
+        "operationId": "search_contacts_api_v1_structures_contacts_search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "first_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "First Name"
+            }
+          },
+          {
+            "name": "last_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last Name"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Email"
+            }
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Phone"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContactRead"
+                  },
+                  "title": "Response Search Contacts Api V1 Structures Contacts Search Get"
                 }
               }
             }
@@ -3317,10 +3472,29 @@
       },
       "ContactCreate": {
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Name"
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "role": {
             "anyOf": [
@@ -3387,12 +3561,20 @@
               }
             ],
             "title": "Gdpr Consent At"
+          },
+          "contact_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Id"
           }
         },
         "type": "object",
-        "required": [
-          "name"
-        ],
         "title": "ContactCreate"
       },
       "ContactPreferredChannel": {
@@ -3406,10 +3588,29 @@
       },
       "ContactRead": {
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Name"
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "role": {
             "anyOf": [
@@ -3481,9 +3682,17 @@
             "type": "integer",
             "title": "Id"
           },
+          "contact_id": {
+            "type": "integer",
+            "title": "Contact Id"
+          },
           "structure_id": {
             "type": "integer",
             "title": "Structure Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
           },
           "created_at": {
             "type": "string",
@@ -3498,9 +3707,10 @@
         },
         "type": "object",
         "required": [
-          "name",
           "id",
+          "contact_id",
           "structure_id",
+          "name",
           "created_at",
           "updated_at"
         ],
@@ -3508,7 +3718,7 @@
       },
       "ContactUpdate": {
         "properties": {
-          "name": {
+          "first_name": {
             "anyOf": [
               {
                 "type": "string",
@@ -3518,7 +3728,19 @@
                 "type": "null"
               }
             ],
-            "title": "Name"
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "role": {
             "anyOf": [
@@ -4014,20 +4236,6 @@
               }
             ],
             "title": "Notes"
-          },
-          "units": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StructureUnit"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Units"
           }
         },
         "type": "object",
@@ -4204,20 +4412,6 @@
               }
             ],
             "title": "Notes"
-          },
-          "units": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StructureUnit"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Units"
           }
         },
         "type": "object",
@@ -4276,20 +4470,6 @@
               }
             ],
             "title": "Notes"
-          },
-          "units": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/StructureUnit"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Units"
           }
         },
         "type": "object",
@@ -6152,10 +6332,10 @@
           "water_sources": {
             "anyOf": [
               {
-                "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/WaterSource"
-                }
+                },
+                "type": "array"
               },
               {
                 "type": "null"
@@ -6225,18 +6405,14 @@
             "title": "Pit Latrine Allowed",
             "default": false
           },
-          "website_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Website Url"
+          "website_urls": {
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "format": "uri"
+            },
+            "type": "array",
+            "title": "Website Urls"
           },
           "notes_logistics": {
             "anyOf": [
@@ -6660,10 +6836,10 @@
           "water_sources": {
             "anyOf": [
               {
-                "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/WaterSource"
-                }
+                },
+                "type": "array"
               },
               {
                 "type": "null"
@@ -6733,18 +6909,14 @@
             "title": "Pit Latrine Allowed",
             "default": false
           },
-          "website_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Website Url"
+          "website_urls": {
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "format": "uri"
+            },
+            "type": "array",
+            "title": "Website Urls"
           },
           "notes_logistics": {
             "anyOf": [
@@ -7233,10 +7405,10 @@
           "water_sources": {
             "anyOf": [
               {
-                "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/WaterSource"
-                }
+                },
+                "type": "array"
               },
               {
                 "type": "null"
@@ -7306,18 +7478,14 @@
             "title": "Pit Latrine Allowed",
             "default": false
           },
-          "website_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Website Url"
+          "website_urls": {
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "format": "uri"
+            },
+            "type": "array",
+            "title": "Website Urls"
           },
           "notes_logistics": {
             "anyOf": [

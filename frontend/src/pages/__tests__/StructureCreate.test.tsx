@@ -55,7 +55,7 @@ const createdStructure: Structure = {
   weekend_only: false,
   has_field_poles: false,
   pit_latrine_allowed: false,
-  website_url: "https://example.org/base-bosco",
+  website_urls: ["https://example.org/base-bosco"],
   notes_logistics: null,
   notes: null,
   created_at: "2024-05-01T10:00:00Z",
@@ -98,6 +98,10 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
     await user.type(screen.getByLabelText(/Provincia/i), "bs");
 
+    await user.type(screen.getByLabelText(/Siti o link di riferimento/i), "https://base.example.org");
+    await user.click(screen.getByRole("button", { name: /Aggiungi un altro link/i }));
+    await user.type(screen.getByLabelText(/Link 2/i), "https://info.example.org");
+
     const slugInput = screen.getByLabelText(/Slug/i) as HTMLInputElement;
     expect(slugInput.value).toBe("base-bosco");
 
@@ -127,6 +131,10 @@ describe("StructureCreatePage", () => {
       fire_policy: null,
       open_periods: []
     });
+    expect(payload.website_urls).toEqual([
+      "https://base.example.org",
+      "https://info.example.org"
+    ]);
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });

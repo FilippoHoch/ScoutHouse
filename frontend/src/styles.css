@@ -1010,6 +1010,37 @@ table tbody tr:hover {
   resize: vertical;
 }
 
+.structure-website-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.structure-website-list__row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.structure-website-list__row input {
+  flex: 1;
+}
+
+.structure-website-actions {
+  margin-top: var(--space-xs);
+}
+
+.structure-website-links {
+  margin: 0;
+  padding-left: var(--space-md);
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.structure-website-links a {
+  color: var(--color-primary);
+  word-break: break-word;
+}
+
 .structure-contact-card {
   display: grid;
   gap: var(--space-lg);

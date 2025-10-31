@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 import re
+from collections.abc import Iterable
 
 from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_validator
 
@@ -97,9 +98,31 @@ class StructureBase(BaseModel):
     weekend_only: bool = False
     has_field_poles: bool = False
     pit_latrine_allowed: bool = False
-    website_url: AnyHttpUrl | None = None
+    website_urls: list[AnyHttpUrl] = Field(default_factory=list)
     notes_logistics: str | None = None
     notes: str | None = None
+
+    @field_validator("website_urls", mode="before")
+    @classmethod
+    def normalize_website_urls(cls, value: object) -> list[str] | object:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            value = [value]
+        if isinstance(value, Iterable):
+            seen: set[str] = set()
+            normalized: list[str] = []
+            for item in value:
+                if item in (None, ""):
+                    continue
+                text = str(item).strip()
+                if not text:
+                    continue
+                if text not in seen:
+                    seen.add(text)
+                    normalized.append(text)
+            return normalized
+        return value
 
     @field_validator("slug")
     @classmethod

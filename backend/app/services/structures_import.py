@@ -47,7 +47,7 @@ HEADERS = [
     "weekend_only",
     "has_field_poles",
     "pit_latrine_allowed",
-    "website_url",
+    "website_urls",
     "notes_logistics",
     "notes",
 ]
@@ -94,7 +94,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "weekend_only": False,
         "has_field_poles": False,
         "pit_latrine_allowed": False,
-        "website_url": "https://example.org/casa-alpina",
+        "website_urls": "https://example.org/casa-alpina",
         "notes_logistics": "Accesso anche con pullman",
         "notes": "Spazi esterni ampi",
     },
@@ -125,7 +125,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "weekend_only": True,
         "has_field_poles": True,
         "pit_latrine_allowed": True,
-        "website_url": "https://example.org/terreno",
+        "website_urls": "https://example.org/terreno",
         "notes_logistics": "Campo estivo disponibile da giugno a agosto",
         "notes": "Ideale per campi estivi",
     },
@@ -191,7 +191,7 @@ class StructureImportRow:
     weekend_only: bool | None
     has_field_poles: bool | None
     pit_latrine_allowed: bool | None
-    website_url: str | None
+    website_urls: list[str]
     notes_logistics: str | None
     notes: str | None
 
@@ -375,6 +375,40 @@ def _validate_url(value: object) -> str | None:
     return text
 
 
+def _parse_website_urls(value: object) -> tuple[list[str], list[str]]:
+    if value is None:
+        return [], []
+
+    if isinstance(value, (list, tuple)):
+        raw_items = value
+    else:
+        text = _normalise_text(value)
+        if not text:
+            return [], []
+        raw_items = re.split(r"[\n;]")
+
+    urls: list[str] = []
+    errors: list[str] = []
+    seen: set[str] = set()
+
+    for item in raw_items:
+        candidate = _normalise_text(item)
+        if not candidate:
+            continue
+        try:
+            validated = _validate_url(candidate)
+        except ValueError as exc:
+            errors.append(f"{candidate}: {exc}")
+            continue
+        if validated is None:
+            continue
+        if validated not in seen:
+            seen.add(validated)
+            urls.append(validated)
+
+    return urls, errors
+
+
 def _validate_latitude(value: Decimal | None) -> Decimal | None:
     if value is None:
         return None
@@ -452,7 +486,7 @@ def _process_rows(
         weekend_only_raw = values[23]
         has_field_poles_raw = values[24]
         pit_latrine_allowed_raw = values[25]
-        website_url_raw = values[26]
+        website_urls_raw = values[26]
         notes_logistics_raw = values[27]
         notes_raw = values[28]
 
@@ -706,13 +740,11 @@ def _process_rows(
             )
             pit_latrine_allowed = None
 
-        try:
-            website_url = _validate_url(website_url_raw)
-        except ValueError as exc:
+        website_urls, url_errors = _parse_website_urls(website_urls_raw)
+        for message in url_errors:
             row_errors.append(
-                RowError(row=index, field="website_url", message=str(exc), source_format=source_format)
+                RowError(row=index, field="website_urls", message=message, source_format=source_format)
             )
-            website_url = None
 
         notes_logistics = _normalise_text(notes_logistics_raw) or None
         notes = _normalise_text(notes_raw) or None
@@ -810,7 +842,7 @@ def _process_rows(
                 weekend_only=weekend_only,
                 has_field_poles=has_field_poles,
                 pit_latrine_allowed=pit_latrine_allowed,
-                website_url=website_url,
+                website_urls=website_urls,
                 notes_logistics=notes_logistics,
                 notes=notes,
             )

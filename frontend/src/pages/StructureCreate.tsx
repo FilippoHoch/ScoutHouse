@@ -51,7 +51,7 @@ type FieldErrorKey =
   | "indoor_bathrooms"
   | "indoor_showers"
   | "indoor_activity_rooms"
-  | "website_url"
+  | "website_urls"
   | "land_area_m2"
   | "open_periods";
 
@@ -150,7 +150,7 @@ export const StructureCreatePage = () => {
   const [nearestBusStop, setNearestBusStop] = useState("");
   const [weekendOnly, setWeekendOnly] = useState(false);
   const [hasFieldPoles, setHasFieldPoles] = useState(false);
-  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [websiteUrls, setWebsiteUrls] = useState<string[]>([""]);
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
   const [addContact, setAddContact] = useState(false);
@@ -736,10 +736,32 @@ export const StructureCreatePage = () => {
     setApiError(null);
   };
 
-  const handleWebsiteUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setWebsiteUrl(event.target.value);
+  const handleWebsiteUrlChange = (index: number, value: string) => {
+    setWebsiteUrls((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
     setApiError(null);
-    clearFieldError("website_url");
+    clearFieldError("website_urls");
+  };
+
+  const handleAddWebsiteUrl = () => {
+    setWebsiteUrls((current) => [...current, ""]);
+    setApiError(null);
+    clearFieldError("website_urls");
+  };
+
+  const handleRemoveWebsiteUrl = (index: number) => {
+    setWebsiteUrls((current) => {
+      if (current.length === 1) {
+        return [""];
+      }
+      const next = current.filter((_, position) => position !== index);
+      return next.length > 0 ? next : [""];
+    });
+    setApiError(null);
+    clearFieldError("website_urls");
   };
 
   const handleNotesLogisticsChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -799,7 +821,7 @@ export const StructureCreatePage = () => {
     const trimmedIndoorShowers = indoorShowers.trim();
     const trimmedIndoorActivityRooms = indoorActivityRooms.trim();
     const trimmedLandArea = landArea.trim();
-    const trimmedWebsiteUrl = websiteUrl.trim();
+    const trimmedWebsiteUrls = websiteUrls.map((value) => value.trim());
 
     const errors: FieldErrors = {};
 
@@ -911,14 +933,18 @@ export const StructureCreatePage = () => {
       }
     }
 
-    if (trimmedWebsiteUrl) {
+    for (const candidate of trimmedWebsiteUrls) {
+      if (!candidate) {
+        continue;
+      }
       try {
-        const url = new URL(trimmedWebsiteUrl);
+        const url = new URL(candidate);
         if (!url.protocol.startsWith("http")) {
           throw new Error("invalid protocol");
         }
       } catch {
-        errors.website_url = t("structures.create.errors.websiteInvalid");
+        errors.website_urls = t("structures.create.errors.websiteInvalid");
+        break;
       }
     }
 
@@ -957,7 +983,7 @@ export const StructureCreatePage = () => {
     const trimmedIndoorActivityRooms = indoorActivityRooms.trim();
     const trimmedLandArea = landArea.trim();
     const trimmedNearestBusStop = nearestBusStop.trim();
-    const trimmedWebsiteUrl = websiteUrl.trim();
+    const trimmedWebsiteUrls = websiteUrls.map((value) => value.trim());
     const trimmedNotesLogistics = notesLogistics.trim();
     const trimmedNotes = notes.trim();
 
@@ -1037,8 +1063,9 @@ export const StructureCreatePage = () => {
       payload.pit_latrine_allowed = false;
     }
 
-    if (trimmedWebsiteUrl) {
-      payload.website_url = trimmedWebsiteUrl;
+    const nonEmptyWebsiteUrls = trimmedWebsiteUrls.filter((value) => value);
+    if (nonEmptyWebsiteUrls.length > 0) {
+      payload.website_urls = nonEmptyWebsiteUrls;
     }
 
     if (trimmedNotesLogistics) {
@@ -1118,7 +1145,7 @@ export const StructureCreatePage = () => {
     ? "structure-indoor-activity-rooms-error"
     : undefined;
   const landAreaErrorId = fieldErrors.land_area_m2 ? "structure-land-area-error" : undefined;
-  const websiteErrorId = fieldErrors.website_url ? "structure-website-url-error" : undefined;
+  const websiteErrorId = fieldErrors.website_urls ? "structure-website-url-error" : undefined;
   const openPeriodsErrorId = fieldErrors.open_periods
     ? "structure-open-periods-error"
     : undefined;
@@ -1989,24 +2016,53 @@ export const StructureCreatePage = () => {
               </p>
               <div className="structure-field-grid">
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-website">
+                  <label htmlFor="structure-website-0" id="structure-website-label">
                     {t("structures.create.form.website")}
-                    <input
-                      id="structure-website"
-                      value={websiteUrl}
-                      onChange={handleWebsiteUrlChange}
-                      type="url"
-                      placeholder="https://"
-                      aria-describedby={websiteDescribedBy}
-                      aria-invalid={fieldErrors.website_url ? "true" : undefined}
-                    />
                   </label>
+                  <div className="structure-website-list">
+                    {websiteUrls.map((value, index) => {
+                      const inputId = `structure-website-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.websiteEntryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <input
+                            id={inputId}
+                            type="url"
+                            value={value}
+                            onChange={(event) => handleWebsiteUrlChange(index, event.target.value)}
+                            placeholder="https://"
+                            aria-describedby={websiteDescribedBy}
+                            aria-invalid={fieldErrors.website_urls ? "true" : undefined}
+                            aria-label={ariaLabel}
+                          />
+                          {websiteUrls.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveWebsiteUrl(index)}
+                            >
+                              {t("structures.create.form.websiteRemove")}
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button type="button" variant="secondary" size="sm" onClick={handleAddWebsiteUrl}>
+                      {t("structures.create.form.websiteAdd")}
+                    </Button>
+                  </div>
                   <span className="helper-text" id={websiteHintId}>
                     {t("structures.create.form.websiteHint")}
                   </span>
-                  {fieldErrors.website_url && (
+                  {fieldErrors.website_urls && (
                     <p className="error-text" id={websiteErrorId!}>
-                      {fieldErrors.website_url}
+                      {fieldErrors.website_urls}
                     </p>
                   )}
                 </div>

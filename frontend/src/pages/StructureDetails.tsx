@@ -526,10 +526,16 @@ export const StructureDetailsPage = () => {
                 )}
                 <dt>{t("structures.details.overview.website")}</dt>
                 <dd>
-                  {structure.website_url ? (
-                    <a href={structure.website_url} target="_blank" rel="noopener noreferrer">
-                      {structure.website_url}
-                    </a>
+                  {structure.website_urls.length > 0 ? (
+                    <ul className="structure-website-links">
+                      {structure.website_urls.map((url) => (
+                        <li key={url}>
+                          <a href={url} target="_blank" rel="noopener noreferrer">
+                            {url}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   ) : (
                     t("structures.details.overview.websiteFallback")
                   )}
@@ -702,10 +708,16 @@ export const StructureDetailsPage = () => {
                 {actionError && <p className="error">{actionError}</p>}
                 <div className="structure-contacts__website">
                   <h4>{t("structures.contacts.website.title")}</h4>
-                  {structure.website_url ? (
-                    <a href={structure.website_url} target="_blank" rel="noopener noreferrer">
-                      {structure.website_url}
-                    </a>
+                  {structure.website_urls.length > 0 ? (
+                    <ul className="structure-website-links">
+                      {structure.website_urls.map((url) => (
+                        <li key={url}>
+                          <a href={url} target="_blank" rel="noopener noreferrer">
+                            {url}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   ) : (
                     <p>{t("structures.contacts.website.empty")}</p>
                   )}

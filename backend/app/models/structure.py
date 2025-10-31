@@ -152,7 +152,7 @@ class Structure(Base):
         server_default=expression.false(),
         default=False,
     )
-    website_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    website_urls: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     notes_logistics: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
