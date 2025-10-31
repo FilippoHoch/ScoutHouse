@@ -23,6 +23,7 @@ from sqlalchemy.sql import expression
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.types import TypeDecorator
+from sqlalchemy.sql.sqltypes import JSON
 
 from app.core.db import Base
 from app.models.availability import StructureSeasonAvailability
@@ -247,6 +248,7 @@ class StructureOpenPeriod(Base):
     date_start: Mapped[date | None] = mapped_column(Date, nullable=True)
     date_end: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    units: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
 
     structure: Mapped[Structure] = relationship(
         Structure,

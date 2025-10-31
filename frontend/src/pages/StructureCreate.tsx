@@ -19,6 +19,7 @@ import {
   StructureOpenPeriodKind,
   StructureOpenPeriodInput,
   StructureOpenPeriodSeason,
+  Unit,
   WaterSource
 } from "../shared/types";
 import { Button, InlineMessage, SectionHeader, Surface } from "../shared/ui/designSystem";
@@ -54,6 +55,7 @@ type OpenPeriodFormRow = {
   dateStart: string;
   dateEnd: string;
   notes: string;
+  units: Unit[];
 };
 
 const openPeriodSeasonOptions: StructureOpenPeriodSeason[] = [
@@ -62,6 +64,8 @@ const openPeriodSeasonOptions: StructureOpenPeriodSeason[] = [
   "summer",
   "autumn"
 ];
+
+const openPeriodUnitOptions: Unit[] = ["LC", "EG", "RS", "ALL"];
 
 const openPeriodKindOptions: StructureOpenPeriodKind[] = ["season", "range"];
 
@@ -73,7 +77,8 @@ const createOpenPeriodRow = (kind: StructureOpenPeriodKind = "season"): OpenPeri
   season: "",
   dateStart: "",
   dateEnd: "",
-  notes: ""
+  notes: "",
+  units: []
 });
 
 const parseCoordinateValue = (value: string): number | null => {
@@ -524,6 +529,13 @@ export const StructureCreatePage = () => {
     );
   };
 
+  const handleOpenPeriodUnitsChange = (key: string, value: Unit[]) => {
+    setOpenPeriods((prev) =>
+      prev.map((row) => (row.key === key ? { ...row, units: value } : row))
+    );
+    clearFieldError("open_periods");
+  };
+
   const handleWaterSourceChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const selected = Array.from(event.target.selectedOptions, (option) => option.value as WaterSource);
     setWaterSources(selected);
@@ -743,6 +755,10 @@ export const StructureCreatePage = () => {
             break;
           }
         }
+        if (period.units.length === 0) {
+          errors.open_periods = t("structures.create.errors.openPeriodsUnitsRequired");
+          break;
+        }
       }
     }
 
@@ -895,6 +911,9 @@ export const StructureCreatePage = () => {
       const trimmedNotesValue = period.notes.trim();
       if (trimmedNotesValue) {
         base.notes = trimmedNotesValue;
+      }
+      if (period.units.length > 0) {
+        base.units = period.units as Unit[];
       }
       return base;
     });
@@ -1536,7 +1555,6 @@ export const StructureCreatePage = () => {
                   id="structure-open_periods"
                   role="group"
                   aria-describedby={openPeriodsDescribedBy}
-                  aria-invalid={fieldErrors.open_periods ? "true" : undefined}
                 >
                   <div className="structure-open-periods-header">
                     <span className="form-label">
@@ -1554,6 +1572,7 @@ export const StructureCreatePage = () => {
                           <th scope="col">{t("structures.create.form.openPeriods.columns.season")}</th>
                           <th scope="col">{t("structures.create.form.openPeriods.columns.start")}</th>
                           <th scope="col">{t("structures.create.form.openPeriods.columns.end")}</th>
+                          <th scope="col">{t("structures.create.form.openPeriods.columns.units")}</th>
                           <th scope="col">{t("structures.create.form.openPeriods.columns.notes")}</th>
                           <th scope="col" className="structure-open-periods-actions-column">
                             <span className="sr-only">
@@ -1565,7 +1584,7 @@ export const StructureCreatePage = () => {
                       <tbody>
                         {openPeriods.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="structure-open-periods-empty">
+                            <td colSpan={7} className="structure-open-periods-empty">
                               {t("structures.create.form.openPeriods.empty")}
                             </td>
                           </tr>
@@ -1650,6 +1669,51 @@ export const StructureCreatePage = () => {
                                 ) : (
                                   <span className="structure-open-periods-placeholder">—</span>
                                 )}
+                              </td>
+                              <td>
+                                <div className="structure-open-periods-units">
+                                  {openPeriodUnitOptions.map((option) => {
+                                    const label = t(
+                                      `structures.create.form.openPeriods.unitsOptions.${option}`
+                                    );
+                                    const isChecked = period.units.includes(option);
+                                    return (
+                                      <label
+                                        key={`${period.key}-${option}`}
+                                        className="structure-open-periods-unit-option"
+                                      >
+                                        <input
+                                          id={`structure-open-period-${period.key}-units-${option}`}
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={(event) => {
+                                            let nextUnits: Unit[];
+                                            if (event.target.checked) {
+                                              if (option === "ALL") {
+                                                nextUnits = ["ALL"];
+                                              } else {
+                                                nextUnits = Array.from(
+                                                  new Set(
+                                                    [
+                                                      ...period.units.filter((unit) => unit !== "ALL"),
+                                                      option
+                                                    ]
+                                                  )
+                                                ) as Unit[];
+                                              }
+                                            } else if (option === "ALL") {
+                                              nextUnits = period.units.filter((unit) => unit !== "ALL");
+                                            } else {
+                                              nextUnits = period.units.filter((unit) => unit !== option);
+                                            }
+                                            handleOpenPeriodUnitsChange(period.key, nextUnits);
+                                          }}
+                                        />
+                                        <span>{label}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
                               </td>
                               <td>
                                 <input
@@ -1803,159 +1867,181 @@ export const StructureCreatePage = () => {
 
                 {addContact && (
                   <div className="structure-form-field" data-span="full">
-                    {contactStatusMessage && (
-                      <InlineMessage>{contactStatusMessage}</InlineMessage>
-                    )}
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "1rem",
-                        marginTop: contactStatusMessage ? "1rem" : 0
-                      }}
-                    >
-                      <label>
-                        {t("structures.create.form.contact.firstName")}
-                        <input
-                          type="text"
-                          value={contactFirstName}
-                          onChange={(event) => setContactFirstName(event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        {t("structures.create.form.contact.lastName")}
-                        <input
-                          type="text"
-                          value={contactLastName}
-                          onChange={(event) => setContactLastName(event.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "1rem",
-                        marginTop: "1rem"
-                      }}
-                    >
-                      <label>
-                        {t("structures.create.form.contact.role")}
-                        <input
-                          type="text"
-                          value={contactRole}
-                          onChange={(event) => setContactRole(event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        {t("structures.create.form.contact.email")}
-                        <input
-                          type="email"
-                          value={contactEmail}
-                          onChange={(event) => setContactEmail(event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        {t("structures.create.form.contact.phone")}
-                        <input
-                          type="tel"
-                          value={contactPhone}
-                          onChange={(event) => setContactPhone(event.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "1rem",
-                        marginTop: "1rem"
-                      }}
-                    >
-                      <label>
-                        {t("structures.create.form.contact.preferredChannel")}
-                        <select
-                          value={contactPreferredChannel}
-                          onChange={(event) =>
-                            setContactPreferredChannel(
-                              event.target.value as ContactPreferredChannel
-                            )
-                          }
-                        >
-                          <option value="email">{t("structures.contacts.channels.email")}</option>
-                          <option value="phone">{t("structures.contacts.channels.phone")}</option>
-                          <option value="other">{t("structures.contacts.channels.other")}</option>
-                        </select>
-                      </label>
-                      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <input
-                          type="checkbox"
-                          checked={contactIsPrimary}
-                          onChange={(event) => setContactIsPrimary(event.target.checked)}
-                        />
-                        {t("structures.create.form.contact.isPrimary")}
-                      </label>
-                    </div>
-                    <div style={{ marginTop: "1rem" }}>
-                      <label>
-                        {t("structures.create.form.contact.notes")}
-                        <textarea
-                          value={contactNotes}
-                          onChange={(event) => setContactNotes(event.target.value)}
-                          rows={3}
-                        />
-                      </label>
-                    </div>
-                    <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "1rem" }}>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleContactDuplicateSearch}
-                        disabled={contactCheckingDuplicates}
-                      >
-                        {contactCheckingDuplicates
-                          ? t("structures.create.form.contact.searching")
-                          : t("structures.create.form.contact.search")}
-                      </Button>
-                      {contactCheckingDuplicates && (
-                        <span className="helper-text">
-                          {t("structures.create.form.contact.searchingHelp")}
+                    <div className="structure-contact-card">
+                      <div className="structure-contact-card__intro">
+                        <h4>{t("structures.create.form.contact.cardTitle")}</h4>
+                        <p>{t("structures.create.form.contact.cardSubtitle")}</p>
+                      </div>
+                      {contactStatusMessage && (
+                        <InlineMessage>{contactStatusMessage}</InlineMessage>
+                      )}
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionPerson")}
                         </span>
+                        <div className="structure-contact-grid">
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.firstName")}
+                            </span>
+                            <input
+                              type="text"
+                              value={contactFirstName}
+                              onChange={(event) => setContactFirstName(event.target.value)}
+                            />
+                          </label>
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.lastName")}
+                            </span>
+                            <input
+                              type="text"
+                              value={contactLastName}
+                              onChange={(event) => setContactLastName(event.target.value)}
+                            />
+                          </label>
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.role")}
+                            </span>
+                            <input
+                              type="text"
+                              value={contactRole}
+                              onChange={(event) => setContactRole(event.target.value)}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionReachability")}
+                        </span>
+                        <div className="structure-contact-grid">
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.email")}
+                            </span>
+                            <input
+                              type="email"
+                              value={contactEmail}
+                              onChange={(event) => setContactEmail(event.target.value)}
+                            />
+                          </label>
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.phone")}
+                            </span>
+                            <input
+                              type="tel"
+                              value={contactPhone}
+                              onChange={(event) => setContactPhone(event.target.value)}
+                            />
+                          </label>
+                          <label className="structure-contact-field">
+                            <span className="structure-contact-label">
+                              {t("structures.create.form.contact.preferredChannel")}
+                            </span>
+                            <select
+                              value={contactPreferredChannel}
+                              onChange={(event) =>
+                                setContactPreferredChannel(
+                                  event.target.value as ContactPreferredChannel
+                                )
+                              }
+                            >
+                              <option value="email">{t("structures.contacts.channels.email")}</option>
+                              <option value="phone">{t("structures.contacts.channels.phone")}</option>
+                              <option value="other">{t("structures.contacts.channels.other")}</option>
+                            </select>
+                          </label>
+                          <label className="structure-contact-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={contactIsPrimary}
+                              onChange={(event) => setContactIsPrimary(event.target.checked)}
+                            />
+                            <span>{t("structures.create.form.contact.isPrimary")}</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionNotes")}
+                        </span>
+                        <label className="structure-contact-field structure-contact-field--full">
+                          <span className="structure-contact-label">
+                            {t("structures.create.form.contact.notes")}
+                          </span>
+                          <textarea
+                            value={contactNotes}
+                            onChange={(event) => setContactNotes(event.target.value)}
+                            rows={3}
+                          />
+                        </label>
+                      </div>
+                      <div className="structure-contact-section">
+                        <span className="structure-contact-section__title">
+                          {t("structures.create.form.contact.sectionActions")}
+                        </span>
+                        <p className="structure-contact-helper">
+                          {t("structures.create.form.contact.searchHelper")}
+                        </p>
+                        <div className="structure-contact-actions">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={handleContactDuplicateSearch}
+                            disabled={contactCheckingDuplicates}
+                          >
+                            {contactCheckingDuplicates
+                              ? t("structures.create.form.contact.searching")
+                              : t("structures.create.form.contact.search")}
+                          </Button>
+                          {contactCheckingDuplicates && (
+                            <span className="structure-contact-helper">
+                              {t("structures.create.form.contact.searchingHelp")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {contactDuplicates.length > 0 && (
+                        <div className="structure-contact-duplicates">
+                          <p className="structure-contact-duplicates__title">
+                            {t("structures.create.form.contact.duplicatesIntro", {
+                              count: contactDuplicates.length
+                            })}
+                          </p>
+                          <ul className="structure-contact-duplicates__list">
+                            {contactDuplicates.map((candidate) => (
+                              <li key={candidate.id}>
+                                <div className="structure-contact-duplicates__match">
+                                  <strong>{candidate.name}</strong>
+                                  {candidate.email && ` · ${candidate.email}`}
+                                  {candidate.phone && ` · ${candidate.phone}`}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleContactUseExisting(candidate)}
+                                >
+                                  {t("structures.create.form.contact.useExisting")}
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleContactCreateAnyway}
+                          >
+                            {t("structures.create.form.contact.createAnyway")}
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    {contactDuplicates.length > 0 && (
-                      <div style={{ marginTop: "1rem" }}>
-                        <p>{t("structures.create.form.contact.duplicatesIntro", { count: contactDuplicates.length })}</p>
-                        <ul style={{ paddingLeft: "1.25rem" }}>
-                          {contactDuplicates.map((candidate) => (
-                            <li key={candidate.id} style={{ marginBottom: "0.5rem" }}>
-                              <div>
-                                <strong>{candidate.name}</strong>
-                                {candidate.email && ` · ${candidate.email}`}
-                                {candidate.phone && ` · ${candidate.phone}`}
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleContactUseExisting(candidate)}
-                              >
-                                {t("structures.create.form.contact.useExisting")}
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleContactCreateAnyway}
-                        >
-                          {t("structures.create.form.contact.createAnyway")}
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>

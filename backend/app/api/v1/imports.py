@@ -332,23 +332,50 @@ async def import_structure_open_periods(
             select(StructureOpenPeriod).where(StructureOpenPeriod.structure_id.in_(structure_ids))
         ).scalars()
 
-    existing_keys: set[tuple[int, StructureOpenPeriodKind, StructureOpenPeriodSeason | None, date | None, date | None]] = {
+    existing_keys: set[
+        tuple[
+            int,
+            StructureOpenPeriodKind,
+            StructureOpenPeriodSeason | None,
+            date | None,
+            date | None,
+            tuple[str, ...],
+        ]
+    ] = {
         (
             period.structure_id,
             period.kind,
             period.season,
             period.date_start,
             period.date_end,
+            tuple(period.units or ()),
         )
         for period in existing_periods
     }
 
-    duplicate_keys: set[tuple[int, StructureOpenPeriodKind, StructureOpenPeriodSeason | None, date | None, date | None]] = set()
+    duplicate_keys: set[
+        tuple[
+            int,
+            StructureOpenPeriodKind,
+            StructureOpenPeriodSeason | None,
+            date | None,
+            date | None,
+            tuple[str, ...],
+        ]
+    ] = set()
     for row in parsed.rows:
         structure = structures.get(row.structure_slug)
         if structure is None:
             continue
-        key = (structure.id, row.kind, row.season, row.date_start, row.date_end)
+        row_units = tuple(unit.value for unit in row.units) if row.units else tuple()
+        key = (
+            structure.id,
+            row.kind,
+            row.season,
+            row.date_start,
+            row.date_end,
+            row_units,
+        )
         if key in existing_keys:
             duplicate_keys.add(key)
         else:
@@ -361,7 +388,15 @@ async def import_structure_open_periods(
             if structure is None:
                 action = "missing_structure"
             else:
-                key = (structure.id, row.kind, row.season, row.date_start, row.date_end)
+                row_units = tuple(unit.value for unit in row.units) if row.units else tuple()
+                key = (
+                    structure.id,
+                    row.kind,
+                    row.season,
+                    row.date_start,
+                    row.date_end,
+                    row_units,
+                )
                 action = "skip" if key in duplicate_keys else "create"
             preview.append({"slug": row.structure_slug, "action": action})
         return {
@@ -386,7 +421,15 @@ async def import_structure_open_periods(
         structure = structures.get(row.structure_slug)
         if structure is None:
             continue
-        key = (structure.id, row.kind, row.season, row.date_start, row.date_end)
+        row_units = tuple(unit.value for unit in row.units) if row.units else tuple()
+        key = (
+            structure.id,
+            row.kind,
+            row.season,
+            row.date_start,
+            row.date_end,
+            row_units,
+        )
         if key in seen_keys:
             continue
         period = StructureOpenPeriod(
@@ -396,6 +439,7 @@ async def import_structure_open_periods(
             date_start=row.date_start,
             date_end=row.date_end,
             notes=row.notes,
+            units=[unit.value for unit in row.units] if row.units else None,
         )
         db.add(period)
         seen_keys.add(key)

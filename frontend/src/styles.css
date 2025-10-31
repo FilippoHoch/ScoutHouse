@@ -984,6 +984,174 @@ table tbody tr:hover {
   resize: vertical;
 }
 
+.structure-contact-card {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-sm);
+}
+
+.structure-contact-card__intro {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.structure-contact-card__intro h4 {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--color-muted-strong);
+}
+
+.structure-contact-card__intro p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  max-width: 48ch;
+}
+
+.structure-contact-section {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.structure-contact-section__title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted-strong);
+}
+
+.structure-contact-grid {
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.structure-contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.structure-contact-field--full {
+  grid-column: 1 / -1;
+}
+
+.structure-contact-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.structure-contact-field input,
+.structure-contact-field select,
+.structure-contact-field textarea {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  padding: 0.65rem 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted-strong);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.structure-contact-field input:focus,
+.structure-contact-field select:focus,
+.structure-contact-field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.structure-contact-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.structure-contact-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(59, 130, 246, 0.35);
+  background: rgba(219, 234, 254, 0.4);
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.structure-contact-checkbox input {
+  width: auto;
+  height: auto;
+  accent-color: var(--color-primary);
+}
+
+.structure-contact-helper {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.structure-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.structure-contact-duplicates {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  background: rgba(219, 234, 254, 0.55);
+}
+
+.structure-contact-duplicates__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-primary-strong);
+}
+
+.structure-contact-duplicates__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.structure-contact-duplicates__list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+
+.structure-contact-duplicates__match {
+  color: var(--color-muted-strong);
+}
+
+@media (max-width: 640px) {
+  .structure-contact-card {
+    padding: var(--space-lg);
+  }
+}
+
 .structure-open-periods-field {
   display: flex;
   flex-direction: column;
@@ -1018,10 +1186,27 @@ table tbody tr:hover {
   overflow: hidden;
 }
 
+.google-map-picker[data-state="embed"] {
+  display: flex;
+  flex-direction: column;
+}
+
 .google-map-picker-canvas {
   width: 100%;
   height: 100%;
   min-height: 320px;
+}
+
+.google-map-picker-embed {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+}
+
+.google-map-picker-embed iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
 .google-map-picker-status {
@@ -1034,6 +1219,13 @@ table tbody tr:hover {
   text-align: center;
   background: rgba(255, 255, 255, 0.92);
   color: var(--color-muted-strong);
+}
+
+.google-map-picker[data-state="embed"] .google-map-picker-status {
+  position: static;
+  background: none;
+  padding: var(--space-md);
+  color: var(--color-muted);
 }
 
 .google-map-picker-status p {
@@ -1088,6 +1280,19 @@ table tbody tr:hover {
 .structure-open-periods-table input[type="date"],
 .structure-open-periods-table input[type="text"] {
   width: 100%;
+}
+
+.structure-open-periods-units {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.structure-open-periods-unit-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
 }
 
 .structure-open-periods-empty {

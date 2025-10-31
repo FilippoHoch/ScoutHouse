@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -17,6 +18,7 @@ from app.models.structure import (
     StructureType,
     WaterSource,
 )
+from app.models.availability import StructureUnit
 
 HEADERS = [
     "name",
@@ -54,6 +56,7 @@ OPEN_PERIOD_HEADERS = [
     "structure_slug",
     "kind",
     "season",
+    "units",
     "date_start",
     "date_end",
     "notes",
@@ -134,6 +137,7 @@ OPEN_PERIOD_TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "structure_slug": "casa-alpina",
         "kind": "season",
         "season": "summer",
+        "units": "ALL",
         "date_start": None,
         "date_end": None,
         "notes": "Chiuso a ferragosto",
@@ -142,6 +146,7 @@ OPEN_PERIOD_TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "structure_slug": "terreno-pianura",
         "kind": "range",
         "season": None,
+        "units": "EG,RS",
         "date_start": date(2025, 6, 1),
         "date_end": date(2025, 8, 31),
         "notes": "Campo estivo",
@@ -205,6 +210,7 @@ class StructureOpenPeriodImportRow:
     structure_slug: str
     kind: StructureOpenPeriodKind
     season: StructureOpenPeriodSeason | None
+    units: list[StructureUnit] | None
     date_start: date | None
     date_end: date | None
     notes: str | None
@@ -224,6 +230,26 @@ def _normalise_text(value: object) -> str:
     if isinstance(value, str):
         return value.strip()
     return str(value).strip()
+
+
+def _parse_units(value: object) -> tuple[list[StructureUnit] | None, list[str]]:
+    text = _normalise_text(value)
+    if not text:
+        return None, []
+    separators = re.compile(r"[;,]")
+    candidates = [item.strip().upper() for item in separators.split(text) if item.strip()]
+    units: list[StructureUnit] = []
+    invalid: list[str] = []
+    for candidate in candidates:
+        try:
+            units.append(StructureUnit(candidate))
+        except ValueError:
+            invalid.append(candidate)
+    if invalid:
+        return None, invalid
+    if not units:
+        return None, []
+    return units, []
 
 
 def _normalise_decimal(value: object) -> Decimal | None:
@@ -801,7 +827,7 @@ def _process_open_period_rows(
         if processed_rows > max_rows:
             raise ValueError(f"Too many rows. Maximum allowed is {max_rows}")
 
-        slug_raw, kind_raw, season_raw, date_start_raw, date_end_raw, notes_raw = values
+        slug_raw, kind_raw, season_raw, units_raw, date_start_raw, date_end_raw, notes_raw = values
 
         row_errors: list[RowError] = []
 
@@ -823,6 +849,7 @@ def _process_open_period_rows(
             kind = StructureOpenPeriodKind.SEASON
 
         season: StructureOpenPeriodSeason | None = None
+        units: list[StructureUnit] | None = None
         date_start: date | None = None
         date_end: date | None = None
 
@@ -835,6 +862,19 @@ def _process_open_period_rows(
                     RowError(row=index, field="season", message=str(exc), source_format=source_format)
                 )
                 season = None
+
+        units_parsed, unit_errors = _parse_units(units_raw)
+        if unit_errors:
+            row_errors.append(
+                RowError(
+                    row=index,
+                    field="units",
+                    message=f"Invalid units: {', '.join(unit_errors)}",
+                    source_format=source_format,
+                )
+            )
+        else:
+            units = units_parsed
 
         date_start_text = _normalise_text(date_start_raw)
         if date_start_text:
@@ -919,6 +959,7 @@ def _process_open_period_rows(
                 structure_slug=structure_slug,
                 kind=kind,
                 season=season,
+                units=units,
                 date_start=date_start,
                 date_end=date_end,
                 notes=notes,

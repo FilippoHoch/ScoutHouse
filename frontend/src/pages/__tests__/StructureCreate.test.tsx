@@ -166,6 +166,13 @@ describe("StructureCreatePage", () => {
       ) as HTMLSelectElement;
     await user.selectOptions(seasonSelect, "summer");
 
+    const rows = openPeriodsWithin.getAllByRole("row");
+    const seasonRow = rows[1];
+    const rangeRow = rows[2];
+    await user.click(within(seasonRow).getByRole("checkbox", { name: "Tutte le branche" }));
+    await user.click(within(rangeRow).getByRole("checkbox", { name: "E/G" }));
+    await user.click(within(rangeRow).getByRole("checkbox", { name: "R/S" }));
+
     const notesInputs = openPeriodsWithin.getAllByPlaceholderText(/Note facoltative/i);
     await user.type(notesInputs[0], "Chiuso settimana 33");
     await user.type(notesInputs[1], "Campo EG");
@@ -179,12 +186,18 @@ describe("StructureCreatePage", () => {
     await waitFor(() => expect(createStructure).toHaveBeenCalled());
     const payload = vi.mocked(createStructure).mock.calls[0][0];
     expect(payload.open_periods).toEqual([
-      { kind: "season", season: "summer", notes: "Chiuso settimana 33" },
+      {
+        kind: "season",
+        season: "summer",
+        notes: "Chiuso settimana 33",
+        units: ["ALL"]
+      },
       {
         kind: "range",
         date_start: "2025-08-01",
         date_end: "2025-08-15",
-        notes: "Campo EG"
+        notes: "Campo EG",
+        units: ["EG", "RS"]
       }
     ]);
   });
