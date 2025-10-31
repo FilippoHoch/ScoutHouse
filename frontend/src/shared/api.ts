@@ -310,6 +310,35 @@ export async function getStructureContacts(structureId: number): Promise<Contact
   return apiFetch<Contact[]>(`/api/v1/structures/${structureId}/contacts`, { auth: true });
 }
 
+export async function searchContacts(params: {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  limit?: number;
+}): Promise<Contact[]> {
+  const query = new URLSearchParams();
+  if (params.first_name) {
+    query.set("first_name", params.first_name);
+  }
+  if (params.last_name) {
+    query.set("last_name", params.last_name);
+  }
+  if (params.email) {
+    query.set("email", params.email);
+  }
+  if (params.phone) {
+    query.set("phone", params.phone);
+  }
+  if (params.limit) {
+    query.set("limit", String(params.limit));
+  }
+
+  const queryString = query.toString();
+  const url = `/api/v1/structures/contacts/search${queryString ? `?${queryString}` : ""}`;
+  return apiFetch<Contact[]>(url, { auth: true });
+}
+
 export async function createStructureContact(
   structureId: number,
   dto: ContactCreateDto

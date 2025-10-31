@@ -173,6 +173,24 @@
         "website": "Sito o link di riferimento",
         "websiteHint": "Inserisci un URL utile per approfondimenti o contatti.",
         "notes": "Note aggiuntive",
+        "contact": {
+          "enable": "Aggiungi un contatto principale",
+          "enableHint": "Puoi collegare subito un referente oppure farlo in un secondo momento.",
+          "firstName": "Nome",
+          "lastName": "Cognome",
+          "role": "Ruolo",
+          "email": "Email",
+          "phone": "Telefono",
+          "preferredChannel": "Canale preferito",
+          "isPrimary": "Segna come contatto primario",
+          "notes": "Note",
+          "search": "Cerca contatti esistenti",
+          "searching": "Ricerca in corso…",
+          "searchingHelp": "Controllo duplicati",
+          "duplicatesIntro": "Sono stati trovati {{count}} contatti simili:",
+          "useExisting": "Usa questo contatto",
+          "createAnyway": "Crea comunque un nuovo contatto"
+        },
         "sections": {
           "general": {
             "title": "Informazioni principali",
@@ -205,6 +223,10 @@
           "extras": {
             "title": "Link e note",
             "description": "Aggiungi riferimenti utili e informazioni aggiuntive."
+          },
+          "contact": {
+            "title": "Contatti e sito",
+            "description": "Gestisci il sito di riferimento e collega un contatto utile."
           }
         },
         "submit": "Crea struttura",
@@ -302,6 +324,14 @@
         "openPeriodsRangeRequired": "Indica sia data di inizio che data di fine per gli intervalli.",
         "openPeriodsRangeOrder": "La data di fine deve essere successiva o uguale alla data di inizio."
       },
+      "contact": {
+        "minimumDetails": "Compila almeno nome, cognome, email, telefono o note per cercare duplicati.",
+        "duplicatesFound": "Sono stati trovati possibili duplicati ({{count}}).",
+        "noMatches": "Nessun contatto esistente trovato con i dati indicati.",
+        "searchFailed": "Impossibile cercare contatti esistenti.",
+        "usingExisting": "Verrà utilizzato il contatto {{name}}.",
+        "saveFailed": "Struttura creata ma impossibile collegare il contatto. Aggiungilo dalle impostazioni della struttura."
+      },
       "sidebar": {
         "title": "Suggerimenti rapidi",
         "items": {
@@ -346,7 +376,9 @@
       "actions": {
         "edit": "Modifica",
         "delete": "Elimina",
-        "makePrimary": "Imposta come primario"
+        "makePrimary": "Imposta come primario",
+        "useExisting": "Usa questo contatto",
+        "createAnyway": "Crea comunque un nuovo contatto"
       },
       "primary": {
         "yes": "Sì",
@@ -358,7 +390,8 @@
       "form": {
         "createTitle": "Nuovo contatto",
         "editTitle": "Modifica contatto",
-        "name": "Nome",
+        "firstName": "Nome",
+        "lastName": "Cognome",
         "role": "Ruolo",
         "email": "Email",
         "phone": "Telefono",
@@ -368,14 +401,25 @@
         "create": "Crea contatto",
         "save": "Aggiorna contatto",
         "saving": "Salvataggio…",
-        "cancel": "Annulla"
+        "cancel": "Annulla",
+        "searchExisting": "Cerca contatti esistenti",
+        "searching": "Ricerca in corso…",
+        "searchingHelp": "Controllo duplicati",
+        "duplicatesIntro": "Abbiamo trovato {{count}} contatti che potrebbero corrispondere:"
       },
       "errors": {
-        "nameRequired": "Inserisci un nome.",
+        "minimumDetails": "Inserisci almeno nome, cognome, email, telefono o note.",
+        "duplicatesFound": "Sono stati trovati possibili duplicati ({{count}}).",
+        "noMatches": "Nessun contatto esistente trovato con i dati indicati.",
+        "searchFailed": "Impossibile cercare contatti esistenti.",
         "saveFailed": "Impossibile salvare il contatto.",
         "deleteFailed": "Impossibile eliminare il contatto."
       },
-      "confirmDelete": "Eliminare il contatto {{name}}?"
+      "confirmDelete": "Eliminare il contatto {{name}}?",
+      "website": {
+        "title": "Sito web della struttura",
+        "empty": "Nessun sito web registrato"
+      }
     },
     "details": {
       "overview": {

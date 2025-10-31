@@ -353,7 +353,8 @@ def _rows_to_csv_bytes(rows: list[dict[str, Any]], headers: tuple[str, ...]) -> 
     writer = csv.DictWriter(buffer, fieldnames=list(headers))
     writer.writeheader()
     for row in rows:
-        writer.writerow(row)
+        filtered = {header: row.get(header) for header in headers}
+        writer.writerow(filtered)
     return buffer.getvalue().encode("utf-8")
 
 

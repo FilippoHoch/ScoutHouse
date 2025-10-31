@@ -188,7 +188,11 @@ def test_confirmed_import_upserts_rows() -> None:
     response = upload_file(client, workbook, dry_run=False)
     assert response.status_code == 200, response.text
     result = response.json()
-    assert result == {"created": 1, "updated": 1, "skipped": 0}
+    assert result["created"] == 1
+    assert result["updated"] == 1
+    assert result["skipped"] == 0
+    assert result["source_format"] == "xlsx"
+    assert result["errors"] == []
 
     updated = client.get("/api/v1/structures/by-slug/casa-alpina")
     assert updated.status_code == 200

@@ -23,7 +23,7 @@ from sqlalchemy.sql import expression
 from app.core.db import Base
 from app.models.availability import StructureSeasonAvailability
 from app.models.cost_option import StructureCostOption
-from app.models.contact import Contact
+from app.models.contact import Contact, StructureContact
 
 
 class StructureType(str, Enum):
@@ -174,12 +174,15 @@ class Structure(Base):
         lazy="selectin",
         order_by="StructureCostOption.id",
     )
-    contacts: Mapped[list[Contact]] = relationship(
-        Contact,
+    contacts: Mapped[list[StructureContact]] = relationship(
+        StructureContact,
         back_populates="structure",
         cascade="all, delete-orphan",
         lazy="selectin",
-        order_by="Contact.name",
+        order_by=(
+            StructureContact.is_primary.desc(),
+            StructureContact.id,
+        ),
     )
     open_periods: Mapped[list["StructureOpenPeriod"]] = relationship(
         "StructureOpenPeriod",

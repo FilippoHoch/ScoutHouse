@@ -3,8 +3,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { ApiError, createStructure } from "../shared/api";
 import {
+  ApiError,
+  createStructure,
+  createStructureContact,
+  searchContacts
+} from "../shared/api";
+import {
+  Contact,
+  ContactCreateDto,
+  ContactPreferredChannel,
   FirePolicy,
   StructureCreateDto,
   StructureType,
@@ -123,6 +131,21 @@ export const StructureCreatePage = () => {
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
+  const [addContact, setAddContact] = useState(false);
+  const [contactFirstName, setContactFirstName] = useState("");
+  const [contactLastName, setContactLastName] = useState("");
+  const [contactRole, setContactRole] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactNotes, setContactNotes] = useState("");
+  const [contactPreferredChannel, setContactPreferredChannel] =
+    useState<ContactPreferredChannel>("email");
+  const [contactIsPrimary, setContactIsPrimary] = useState(true);
+  const [contactId, setContactId] = useState<number | null>(null);
+  const [contactDuplicates, setContactDuplicates] = useState<Contact[]>([]);
+  const [contactAllowDuplicate, setContactAllowDuplicate] = useState(false);
+  const [contactCheckingDuplicates, setContactCheckingDuplicates] = useState(false);
+  const [contactStatusMessage, setContactStatusMessage] = useState<string | null>(null);
   const [openPeriods, setOpenPeriods] = useState<OpenPeriodFormRow[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -199,6 +222,122 @@ export const StructureCreatePage = () => {
       "land_area_m2",
       "open_periods"
     ]);
+  };
+
+  const resetContactSection = () => {
+    setContactFirstName("");
+    setContactLastName("");
+    setContactRole("");
+    setContactEmail("");
+    setContactPhone("");
+    setContactNotes("");
+    setContactPreferredChannel("email");
+    setContactIsPrimary(true);
+    setContactId(null);
+    setContactDuplicates([]);
+    setContactAllowDuplicate(false);
+    setContactCheckingDuplicates(false);
+    setContactStatusMessage(null);
+  };
+
+  const contactHasDetails = () =>
+    Boolean(
+      contactFirstName.trim() ||
+        contactLastName.trim() ||
+        contactEmail.trim() ||
+        contactPhone.trim() ||
+        contactNotes.trim()
+    );
+
+  const sanitizeContactField = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
+
+  const buildContactPayload = (overrideId: number | null = null): ContactCreateDto => {
+    const payload: ContactCreateDto = {
+      contact_id: overrideId ?? contactId ?? undefined,
+      first_name: sanitizeContactField(contactFirstName),
+      last_name: sanitizeContactField(contactLastName),
+      role: sanitizeContactField(contactRole),
+      email: sanitizeContactField(contactEmail),
+      phone: sanitizeContactField(contactPhone),
+      notes: sanitizeContactField(contactNotes),
+      preferred_channel: contactPreferredChannel,
+      is_primary: contactIsPrimary
+    };
+
+    return Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
+    ) as ContactCreateDto;
+  };
+
+  const checkContactDuplicates = async (respectAllowance = true): Promise<boolean> => {
+    if (!addContact || contactId !== null || !contactHasDetails()) {
+      return true;
+    }
+
+    if (respectAllowance && contactAllowDuplicate) {
+      return true;
+    }
+
+    setContactCheckingDuplicates(true);
+    setContactStatusMessage(null);
+
+    try {
+      const matches = await searchContacts({
+        first_name: sanitizeContactField(contactFirstName),
+        last_name: sanitizeContactField(contactLastName),
+        email: sanitizeContactField(contactEmail),
+        phone: sanitizeContactField(contactPhone),
+        limit: 5
+      });
+      setContactDuplicates(matches);
+      if (matches.length > 0) {
+        setContactStatusMessage(
+          t("structures.create.contact.duplicatesFound", { count: matches.length })
+        );
+        return false;
+      }
+      setContactStatusMessage(t("structures.create.contact.noMatches"));
+      return true;
+    } catch (error) {
+      setContactStatusMessage(t("structures.create.contact.searchFailed"));
+      return false;
+    } finally {
+      setContactCheckingDuplicates(false);
+    }
+  };
+
+  const handleContactDuplicateSearch = async () => {
+    if (!contactHasDetails()) {
+      setContactStatusMessage(t("structures.create.contact.minimumDetails"));
+      return;
+    }
+    setContactAllowDuplicate(false);
+    await checkContactDuplicates(false);
+  };
+
+  const handleContactUseExisting = (match: Contact) => {
+    setContactId(match.contact_id);
+    setContactFirstName(match.first_name ?? "");
+    setContactLastName(match.last_name ?? "");
+    setContactRole(match.role ?? "");
+    setContactEmail(match.email ?? "");
+    setContactPhone(match.phone ?? "");
+    setContactNotes(match.notes ?? "");
+    setContactPreferredChannel(match.preferred_channel);
+    setContactAllowDuplicate(true);
+    setContactDuplicates([]);
+    setContactStatusMessage(
+      t("structures.create.contact.usingExisting", { name: match.name })
+    );
+  };
+
+  const handleContactCreateAnyway = () => {
+    setContactAllowDuplicate(true);
+    setContactStatusMessage(null);
+    setContactDuplicates([]);
   };
 
   const clearFieldError = (field: FieldErrorKey) => {
@@ -451,6 +590,19 @@ export const StructureCreatePage = () => {
     setApiError(null);
   };
 
+  const handleAddContactToggle = (event: ChangeEvent<HTMLInputElement>) => {
+    const enabled = event.target.checked;
+    setAddContact(enabled);
+    if (!enabled) {
+      resetContactSection();
+    } else {
+      setContactAllowDuplicate(false);
+      setContactDuplicates([]);
+      setContactStatusMessage(null);
+      setContactIsPrimary(true);
+    }
+  };
+
   const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const nextType = event.target.value as StructureType | "";
     setType(nextType);
@@ -622,6 +774,13 @@ export const StructureCreatePage = () => {
       return;
     }
 
+    if (addContact && contactHasDetails()) {
+      const duplicatesOk = await checkContactDuplicates();
+      if (!duplicatesOk) {
+        return;
+      }
+    }
+
     const trimmedProvince = province.trim();
     const trimmedAddress = address.trim();
     const trimmedLatitude = latitude.trim();
@@ -741,6 +900,15 @@ export const StructureCreatePage = () => {
 
     try {
       const created = await createMutation.mutateAsync(payload);
+
+      if (addContact && (contactHasDetails() || contactId !== null)) {
+        try {
+          await createStructureContact(created.id, buildContactPayload());
+        } catch (contactError) {
+          window.alert(t("structures.create.contact.saveFailed"));
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["structures"] });
       navigate(`/structures/${created.slug}`);
     } catch (error) {
@@ -1576,6 +1744,26 @@ export const StructureCreatePage = () => {
               </p>
               <div className="structure-field-grid">
                 <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-notes">
+                    {t("structures.create.form.notes")}
+                    <textarea
+                      id="structure-notes"
+                      value={notes}
+                      onChange={handleNotesChange}
+                      rows={3}
+                    />
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.contact.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.contact.description")}
+              </p>
+              <div className="structure-field-grid">
+                <div className="structure-form-field" data-span="full">
                   <label htmlFor="structure-website">
                     {t("structures.create.form.website")}
                     <input
@@ -1599,16 +1787,177 @@ export const StructureCreatePage = () => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-notes">
-                    {t("structures.create.form.notes")}
-                    <textarea
-                      id="structure-notes"
-                      value={notes}
-                      onChange={handleNotesChange}
-                      rows={3}
+                  <label htmlFor="structure-add-contact" className="checkbox-field">
+                    <input
+                      id="structure-add-contact"
+                      type="checkbox"
+                      checked={addContact}
+                      onChange={handleAddContactToggle}
                     />
+                    {t("structures.create.form.contact.enable")}
                   </label>
+                  <span className="helper-text">
+                    {t("structures.create.form.contact.enableHint")}
+                  </span>
                 </div>
+
+                {addContact && (
+                  <div className="structure-form-field" data-span="full">
+                    {contactStatusMessage && (
+                      <InlineMessage>{contactStatusMessage}</InlineMessage>
+                    )}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: "1rem",
+                        marginTop: contactStatusMessage ? "1rem" : 0
+                      }}
+                    >
+                      <label>
+                        {t("structures.create.form.contact.firstName")}
+                        <input
+                          type="text"
+                          value={contactFirstName}
+                          onChange={(event) => setContactFirstName(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        {t("structures.create.form.contact.lastName")}
+                        <input
+                          type="text"
+                          value={contactLastName}
+                          onChange={(event) => setContactLastName(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: "1rem",
+                        marginTop: "1rem"
+                      }}
+                    >
+                      <label>
+                        {t("structures.create.form.contact.role")}
+                        <input
+                          type="text"
+                          value={contactRole}
+                          onChange={(event) => setContactRole(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        {t("structures.create.form.contact.email")}
+                        <input
+                          type="email"
+                          value={contactEmail}
+                          onChange={(event) => setContactEmail(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        {t("structures.create.form.contact.phone")}
+                        <input
+                          type="tel"
+                          value={contactPhone}
+                          onChange={(event) => setContactPhone(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: "1rem",
+                        marginTop: "1rem"
+                      }}
+                    >
+                      <label>
+                        {t("structures.create.form.contact.preferredChannel")}
+                        <select
+                          value={contactPreferredChannel}
+                          onChange={(event) =>
+                            setContactPreferredChannel(
+                              event.target.value as ContactPreferredChannel
+                            )
+                          }
+                        >
+                          <option value="email">{t("structures.contacts.channels.email")}</option>
+                          <option value="phone">{t("structures.contacts.channels.phone")}</option>
+                          <option value="other">{t("structures.contacts.channels.other")}</option>
+                        </select>
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <input
+                          type="checkbox"
+                          checked={contactIsPrimary}
+                          onChange={(event) => setContactIsPrimary(event.target.checked)}
+                        />
+                        {t("structures.create.form.contact.isPrimary")}
+                      </label>
+                    </div>
+                    <div style={{ marginTop: "1rem" }}>
+                      <label>
+                        {t("structures.create.form.contact.notes")}
+                        <textarea
+                          value={contactNotes}
+                          onChange={(event) => setContactNotes(event.target.value)}
+                          rows={3}
+                        />
+                      </label>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "1rem" }}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleContactDuplicateSearch}
+                        disabled={contactCheckingDuplicates}
+                      >
+                        {contactCheckingDuplicates
+                          ? t("structures.create.form.contact.searching")
+                          : t("structures.create.form.contact.search")}
+                      </Button>
+                      {contactCheckingDuplicates && (
+                        <span className="helper-text">
+                          {t("structures.create.form.contact.searchingHelp")}
+                        </span>
+                      )}
+                    </div>
+                    {contactDuplicates.length > 0 && (
+                      <div style={{ marginTop: "1rem" }}>
+                        <p>{t("structures.create.form.contact.duplicatesIntro", { count: contactDuplicates.length })}</p>
+                        <ul style={{ paddingLeft: "1.25rem" }}>
+                          {contactDuplicates.map((candidate) => (
+                            <li key={candidate.id} style={{ marginBottom: "0.5rem" }}>
+                              <div>
+                                <strong>{candidate.name}</strong>
+                                {candidate.email && ` · ${candidate.email}`}
+                                {candidate.phone && ` · ${candidate.phone}`}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleContactUseExisting(candidate)}
+                              >
+                                {t("structures.create.form.contact.useExisting")}
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleContactCreateAnyway}
+                        >
+                          {t("structures.create.form.contact.createAnyway")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </fieldset>
 

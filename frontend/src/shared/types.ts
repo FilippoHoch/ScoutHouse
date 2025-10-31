@@ -71,7 +71,10 @@ export interface CostOption {
 
 export interface Contact {
   id: number;
+  contact_id: number;
   structure_id: number;
+  first_name: string | null;
+  last_name: string | null;
   name: string;
   role: string | null;
   email: string | null;
@@ -85,7 +88,9 @@ export interface Contact {
 }
 
 export interface ContactCreateDto {
-  name: string;
+  contact_id?: number | null;
+  first_name?: string | null;
+  last_name?: string | null;
   role?: string | null;
   email?: string | null;
   phone?: string | null;

@@ -46,7 +46,8 @@ def add_contact(client: TestClient, structure_id: int) -> dict:
     response = client.post(
         f"/api/v1/structures/{structure_id}/contacts",
         json={
-            "name": "Responsabile Casa",
+            "first_name": "Responsabile",
+            "last_name": "Casa",
             "email": "responsabile@example.com",
             "phone": "+39 045 1234567",
             "preferred_channel": "phone",
