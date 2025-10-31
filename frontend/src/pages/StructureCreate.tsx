@@ -23,7 +23,10 @@ import {
   WaterSource
 } from "../shared/types";
 import { Button, InlineMessage, SectionHeader, Surface } from "../shared/ui/designSystem";
-import { GoogleMapPicker } from "../shared/ui/GoogleMapPicker";
+import {
+  GoogleMapPicker,
+  GOOGLE_MAP_DEFAULT_CENTER
+} from "../shared/ui/GoogleMapPicker";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -177,6 +180,20 @@ export const StructureCreatePage = () => {
       lon: selectedCoordinates.lng.toFixed(6)
     });
   }, [selectedCoordinates, t]);
+
+  const previewMapUrl = useMemo(() => {
+    const target = selectedCoordinates ?? GOOGLE_MAP_DEFAULT_CENTER;
+    const altitude = selectedCoordinates ? 600 : 1200;
+    const tilt = selectedCoordinates ? 67 : 45;
+    const lat = target.lat.toFixed(6);
+    const lng = target.lng.toFixed(6);
+    return `https://earth.google.com/web/embed/@${lat},${lng},${altitude}a,${tilt}d,60y,0h,0t,0r`;
+  }, [selectedCoordinates]);
+
+  const previewMapPlaceholder = t("structures.create.preview.mapPlaceholder");
+  const previewMapTitle = t("structures.create.preview.mapTitle");
+  const previewMapAriaLabel = t("structures.create.preview.mapAriaLabel");
+  const previewMapHasSelection = Boolean(selectedCoordinates);
 
   const createMutation = useMutation({
     mutationFn: (dto: StructureCreateDto) => createStructure(dto)
@@ -2155,6 +2172,25 @@ export const StructureCreatePage = () => {
           <Surface className="structure-create-sidebar-card">
             <h3>{t("structures.create.preview.title")}</h3>
             <div className="structure-preview-card">
+              <div
+                className="structure-preview-map"
+                data-has-selection={previewMapHasSelection ? "true" : "false"}
+              >
+                <iframe
+                  src={previewMapUrl}
+                  title={previewMapTitle}
+                  aria-label={previewMapAriaLabel}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                <span
+                  className="structure-preview-map-placeholder"
+                  aria-hidden={previewMapHasSelection ? "true" : "false"}
+                >
+                  {previewMapPlaceholder}
+                </span>
+              </div>
               <span className="structure-preview-badge">{previewTypeLabel}</span>
               <h4>{previewName}</h4>
               <p className="structure-preview-subtitle">{previewProvince}</p>

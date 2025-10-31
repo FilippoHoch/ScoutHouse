@@ -162,7 +162,7 @@
           "hint": "Clicca sulla mappa per posizionare il segnaposto oppure inserisci manualmente le coordinate.",
           "loading": "Caricamento della mappa in corso…",
           "error": "Impossibile caricare Google Maps. Controlla la connessione o riprova più tardi.",
-          "missingKey": "La mappa interattiva richiede la variabile VITE_GOOGLE_MAPS_API_KEY. Senza chiave viene mostrata una mappa di anteprima incorporata.",
+          "missingKey": "Clicca sulla mappa per posizionare il segnaposto oppure trascinalo per regolare con precisione le coordinate.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
           "ariaLabel": "Mappa di Google per scegliere le coordinate"
         },
@@ -368,7 +368,10 @@
         "urlLabel": "URL: {{url}}",
         "urlPlaceholder": "L'URL verrà mostrato qui appena inserisci lo slug.",
         "coordinatesLabel": "Coordinate: {{lat}}, {{lon}}",
-        "coordinatesPlaceholder": "Inserisci latitudine e longitudine per completare l'anteprima."
+        "coordinatesPlaceholder": "Inserisci latitudine e longitudine per completare l'anteprima.",
+        "mapTitle": "Vista satellitare 3D",
+        "mapAriaLabel": "Vista satellitare 3D della struttura",
+        "mapPlaceholder": "La vista mostra Gussago (BS) come riferimento. Seleziona una posizione per aggiornare la mappa."
       }
     },
     "contacts": {
