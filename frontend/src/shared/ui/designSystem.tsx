@@ -1,5 +1,5 @@
-import type { ReactElement, ReactNode } from "react";
-import { ComponentPropsWithoutRef, ElementType, ForwardedRef, forwardRef } from "react";
+import type { ReactNode } from "react";
+import { ComponentPropsWithoutRef, ElementType, forwardRef } from "react";
 import { Link, LinkProps } from "react-router-dom";
 
 const cx = (...classes: Array<string | false | null | undefined>) =>
@@ -179,11 +179,7 @@ export const SectionHeader = forwardRef<HTMLDivElement, SectionHeaderProps>(
 
 SectionHeader.displayName = "SectionHeader";
 
-function withRef<T, P>(Component: (props: P, ref: ForwardedRef<T>) => ReactElement | null) {
-  return forwardRef<T, P>(Component);
-}
-
-export const InlineActions = withRef<HTMLDivElement, ComponentPropsWithoutRef<"div">>(
+export const InlineActions = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<"div">>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cx("inline-actions", className)} {...props} />
   )
@@ -191,7 +187,7 @@ export const InlineActions = withRef<HTMLDivElement, ComponentPropsWithoutRef<"d
 
 InlineActions.displayName = "InlineActions";
 
-export const InlineFields = withRef<HTMLDivElement, ComponentPropsWithoutRef<"div">>(
+export const InlineFields = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<"div">>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cx("inline-fields", className)} {...props} />
   )

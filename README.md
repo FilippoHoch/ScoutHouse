@@ -50,8 +50,9 @@ the optional
 calculations. Authentication adds `JWT_SECRET`, `ACCESS_TTL_MIN`,
 `REFRESH_TTL_DAYS`, `ALLOW_REGISTRATION` (disabled by default),
 `CORS_ALLOWED_ORIGINS`, and `SECURE_COOKIES`. The frontend `.env` exposes the
-`VITE_API_URL` used to talk to the API and `VITE_BASE_COORDS` for the default
-map reference point.
+`VITE_API_URL` used to talk to the API, `VITE_BASE_COORDS` for the default
+map reference point, and an optional `VITE_GOOGLE_MAPS_API_KEY` to enable the
+embedded picker.
 
 ### Local development (without Docker)
 

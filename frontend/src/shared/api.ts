@@ -251,7 +251,9 @@ async function authenticatedDownload(path: string, accept: string): Promise<Resp
   return response;
 }
 
-function buildQuery(params: Record<string, string | number | undefined>): string {
+function buildQuery(
+  params: Record<string, string | number | boolean | undefined>
+): string {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value === undefined || value === "" || Number.isNaN(value)) {
