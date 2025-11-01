@@ -73,7 +73,6 @@ class StructureOpenPeriodRead(StructureOpenPeriodBase):
 
 class StructureBase(BaseModel):
     name: str = Field(..., min_length=1)
-    slug: str
     province: str | None = Field(default=None, max_length=2)
     address: str | None = None
     latitude: float | None = Field(default=None)
@@ -123,13 +122,6 @@ class StructureBase(BaseModel):
                     seen.add(text)
                     normalized.append(text)
             return normalized
-        return value
-
-    @field_validator("slug")
-    @classmethod
-    def validate_slug(cls, value: str) -> str:
-        if not SLUG_PATTERN.match(value):
-            raise ValueError("Slug must be lowercase alphanumeric with hyphens")
         return value
 
     @field_validator("province")
@@ -233,11 +225,29 @@ class StructureBase(BaseModel):
 
 
 class StructureCreate(StructureBase):
+    slug: str | None = None
     open_periods: list[StructureOpenPeriodCreate] = Field(default_factory=list)
+
+    @field_validator("slug")
+    @classmethod
+    def validate_slug(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not SLUG_PATTERN.match(value):
+            raise ValueError("Slug must be lowercase alphanumeric with hyphens")
+        return value
 
 
 class StructureUpdate(StructureBase):
+    slug: str
     open_periods: list[StructureOpenPeriodUpdate] = Field(default_factory=list)
+
+    @field_validator("slug")
+    @classmethod
+    def validate_slug(cls, value: str) -> str:
+        if not SLUG_PATTERN.match(value):
+            raise ValueError("Slug must be lowercase alphanumeric with hyphens")
+        return value
 
 
 class StructureAvailabilityBase(BaseModel):
@@ -307,6 +317,7 @@ class StructureCostOptionRead(StructureCostOptionBase):
 
 
 class StructureRead(StructureBase):
+    slug: str
     id: int
     created_at: datetime
     estimated_cost: Decimal | None = None

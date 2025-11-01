@@ -37,7 +37,6 @@ def test_structures_flow() -> None:
 
     payload = {
         "name": "Scout Training Center",
-        "slug": "scout-training-center",
         "province": "mi",
         "type": "house",
         "address": "Via Scout 1, Milano",
@@ -98,7 +97,7 @@ def test_structures_flow() -> None:
     assert list_resp.status_code == 200
     data = list_resp.json()
     assert len(data) == 1
-    assert data[0]["slug"] == payload["slug"]
+    assert data[0]["slug"] == "scout-training-center"
     assert data[0]["altitude"] == pytest.approx(payload["altitude"], rel=1e-3)
 
     slug_resp = client.get("/api/v1/structures/by-slug/scout-training-center")
@@ -113,17 +112,17 @@ def test_unique_slug_validation() -> None:
 
     payload = {
         "name": "Casa del Nord",
-        "slug": "casa-del-nord",
         "province": "MI",
         "type": "house",
     }
 
     first = client.post("/api/v1/structures/", json=payload)
     assert first.status_code == 201
+    assert first.json()["slug"] == "casa-del-nord"
 
     duplicate = client.post("/api/v1/structures/", json=payload)
-    assert duplicate.status_code == 400
-    assert duplicate.json()["detail"] == "Slug already exists"
+    assert duplicate.status_code == 201
+    assert duplicate.json()["slug"] == "casa-del-nord-2"
 
 
 def test_field_validation_errors() -> None:
@@ -131,7 +130,6 @@ def test_field_validation_errors() -> None:
 
     invalid_payload = {
         "name": "Invalid Structure",
-        "slug": "INVALID SLUG",
         "province": "Lombardia",
         "type": "house",
         "latitude": 123.0,

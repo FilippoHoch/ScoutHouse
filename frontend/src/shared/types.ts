@@ -159,7 +159,7 @@ export interface Structure {
 
 export interface StructureCreateDto {
   name: string;
-  slug: string;
+  slug?: string;
   province?: string;
   address?: string;
   latitude?: number;

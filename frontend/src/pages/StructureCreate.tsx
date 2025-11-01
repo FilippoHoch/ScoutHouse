@@ -41,14 +41,12 @@ import {
   GOOGLE_MAP_DEFAULT_CENTER
 } from "../shared/ui/GoogleMapPicker";
 
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
 const waterSourceOptions: WaterSource[] = ["none", "fountain", "tap", "river"];
 const firePolicyOptions: FirePolicy[] = ["allowed", "with_permit", "forbidden"];
 
 type FieldErrorKey =
   | "name"
-  | "slug"
   | "province"
   | "latitude"
   | "longitude"
@@ -132,7 +130,6 @@ export const StructureCreatePage = () => {
   }, []);
 
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
   const [province, setProvince] = useState("");
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("");
@@ -184,7 +181,6 @@ export const StructureCreatePage = () => {
   const [openPeriods, setOpenPeriods] = useState<OpenPeriodFormRow[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
-  const [slugDirty, setSlugDirty] = useState(false);
 
   const selectedCoordinates = useMemo(() => {
     const latNumber = parseCoordinateValue(latitude);
@@ -207,6 +203,8 @@ export const StructureCreatePage = () => {
       lon: selectedCoordinates.lng.toFixed(6)
     });
   }, [selectedCoordinates, t]);
+
+  const derivedSlug = useMemo(() => toSlug(name), [name]);
 
   const previewMapUrl = useMemo(() => {
     const target = selectedCoordinates ?? GOOGLE_MAP_DEFAULT_CENTER;
@@ -502,16 +500,6 @@ export const StructureCreatePage = () => {
     setName(value);
     setApiError(null);
     clearFieldError("name");
-    if (!slugDirty) {
-      setSlug(toSlug(value));
-    }
-  };
-
-  const handleSlugChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSlug(toSlug(event.target.value));
-    setSlugDirty(true);
-    setApiError(null);
-    clearFieldError("slug");
   };
 
   const handleProvinceChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -826,7 +814,6 @@ export const StructureCreatePage = () => {
 
   const validate = (): boolean => {
     const trimmedName = name.trim();
-    const trimmedSlug = slug.trim();
     const trimmedProvince = province.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
@@ -842,10 +829,6 @@ export const StructureCreatePage = () => {
 
     if (!trimmedName) {
       errors.name = t("structures.create.errors.nameRequired");
-    }
-
-    if (!trimmedSlug || !slugPattern.test(trimmedSlug)) {
-      errors.slug = t("structures.create.errors.slugInvalid");
     }
 
     if (!type) {
@@ -1011,7 +994,6 @@ export const StructureCreatePage = () => {
 
     const payload: StructureCreateDto = {
       name: name.trim(),
-      slug: slug.trim(),
       type: type as StructureType,
       has_kitchen: hasKitchen,
       hot_water: hotWater,
@@ -1153,14 +1135,15 @@ export const StructureCreatePage = () => {
 
   const slugHintId = "structure-slug-hint";
   const slugPreviewId = "structure-slug-preview";
-  const slugErrorId = fieldErrors.slug ? "structure-slug-error" : undefined;
-  const slugDescribedBy = [slugHintId, slugErrorId, slugPreviewId].filter(Boolean).join(" ") || undefined;
 
   const provinceErrorId = fieldErrors.province ? "structure-province-error" : undefined;
   const latitudeErrorId = fieldErrors.latitude ? "structure-latitude-error" : undefined;
   const longitudeErrorId = fieldErrors.longitude ? "structure-longitude-error" : undefined;
   const altitudeErrorId = fieldErrors.altitude ? "structure-altitude-error" : undefined;
   const nameErrorId = fieldErrors.name ? "structure-name-error" : undefined;
+  const nameDescribedBy = [nameErrorId, slugHintId, slugPreviewId]
+    .filter(Boolean)
+    .join(" ") || undefined;
   const typeErrorId = fieldErrors.type ? "structure-type-error" : undefined;
   const indoorBedsErrorId = fieldErrors.indoor_beds ? "structure-indoor-beds-error" : undefined;
   const indoorBathroomsErrorId = fieldErrors.indoor_bathrooms
@@ -1225,15 +1208,14 @@ export const StructureCreatePage = () => {
   const showOutdoorSection = type !== "house";
 
   const trimmedName = name.trim();
-  const trimmedSlug = slug.trim();
   const trimmedProvince = province.trim();
   const trimmedAddress = address.trim();
   const trimmedLatitude = latitude.trim();
   const trimmedLongitude = longitude.trim();
   const trimmedAltitude = altitude.trim();
 
-  const slugPreviewMessage = trimmedSlug
-    ? t("structures.create.form.slugPreviewLabel", { url: `/structures/${trimmedSlug}` })
+  const slugPreviewMessage = derivedSlug
+    ? t("structures.create.form.slugPreviewLabel", { url: `/structures/${derivedSlug}` })
     : t("structures.create.form.slugPreviewPlaceholder");
 
   const previewName = trimmedName || t("structures.create.preview.namePlaceholder");
@@ -1242,8 +1224,8 @@ export const StructureCreatePage = () => {
     : t("structures.create.preview.typeFallback");
   const previewProvince = trimmedProvince || t("structures.create.preview.provinceFallback");
   const previewAddress = trimmedAddress || t("structures.create.preview.addressFallback");
-  const previewUrlLabel = trimmedSlug
-    ? t("structures.create.preview.urlLabel", { url: `/structures/${trimmedSlug}` })
+  const previewUrlLabel = derivedSlug
+    ? t("structures.create.preview.urlLabel", { url: `/structures/${derivedSlug}` })
     : t("structures.create.preview.urlPlaceholder");
   const previewCoordinatesLabel =
     trimmedLatitude && trimmedLongitude
@@ -1290,27 +1272,7 @@ export const StructureCreatePage = () => {
                       placeholder={t("structures.create.form.namePlaceholder")}
                       required
                       aria-invalid={fieldErrors.name ? "true" : undefined}
-                      aria-describedby={nameErrorId || undefined}
-                    />
-                  </label>
-                  {fieldErrors.name && (
-                    <p className="error-text" id={nameErrorId!}>
-                      {fieldErrors.name}
-                    </p>
-                  )}
-                </div>
-
-                <div className="structure-form-field">
-                  <label htmlFor="structure-slug">
-                    {t("structures.create.form.slug")}
-                    <input
-                      id="structure-slug"
-                      value={slug}
-                      onChange={handleSlugChange}
-                      autoComplete="off"
-                      required
-                      aria-invalid={fieldErrors.slug ? "true" : undefined}
-                      aria-describedby={slugDescribedBy}
+                      aria-describedby={nameDescribedBy}
                     />
                   </label>
                   <div className="structure-form-footnote">
@@ -1321,9 +1283,9 @@ export const StructureCreatePage = () => {
                       {slugPreviewMessage}
                     </span>
                   </div>
-                  {fieldErrors.slug && (
-                    <p className="error-text" id={slugErrorId}>
-                      {fieldErrors.slug}
+                  {fieldErrors.name && (
+                    <p className="error-text" id={nameErrorId!}>
+                      {fieldErrors.name}
                     </p>
                   )}
                 </div>

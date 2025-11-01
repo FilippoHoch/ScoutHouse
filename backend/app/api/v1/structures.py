@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import re
+import unicodedata
 from datetime import date
 from enum import Enum
 from typing import Annotated, Any
@@ -64,12 +66,39 @@ from app.services.attachments import (
     get_s3_client,
 )
 
+SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
 router = APIRouter()
 
 
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+
+
+def _slugify(value: str) -> str:
+    normalized = (
+        unicodedata.normalize("NFKD", value)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
+    slug = SLUG_RE.sub("-", normalized.lower()).strip("-")
+    return slug or "structure"
+
+
+def _generate_unique_slug(db: Session, base_slug: str) -> str:
+    slug = base_slug
+    counter = 2
+    while (
+        db.execute(
+            select(Structure.id).where(func.lower(Structure.slug) == slug.lower())
+        ).scalar_one_or_none()
+        is not None
+    ):
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+    return slug
 
 
 def _ensure_storage_ready() -> tuple[str, Any]:
@@ -608,16 +637,12 @@ def create_structure(
     request: Request,
     current_user: Annotated[User, Depends(require_admin)],
 ) -> Structure:
-    existing = db.execute(
-        select(Structure).where(Structure.slug == structure_in.slug)
-    ).scalar_one_or_none()
-    if existing is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Slug already exists",
-        )
+    requested_slug = structure_in.slug or ""
+    base_slug = _slugify(requested_slug or structure_in.name)
+    slug = _generate_unique_slug(db, base_slug)
 
-    payload = structure_in.model_dump(mode="json", exclude={"open_periods"})
+    payload = structure_in.model_dump(mode="json", exclude={"open_periods", "slug"})
+    payload["slug"] = slug
     structure = Structure(**payload)
     structure.open_periods = [
         StructureOpenPeriod(

@@ -142,7 +142,7 @@
         "name": "Nome",
         "namePlaceholder": "Es. Base scout Pian delle Betulle",
         "slug": "Slug",
-        "slugHint": "Lo slug verrà usato nell'URL della struttura e deve essere univoco.",
+        "slugHint": "L'URL pubblico viene generato automaticamente dal nome e, se necessario, reso univoco.",
         "slugPreviewLabel": "L'URL pubblico sarà {{url}}",
         "slugPreviewPlaceholder": "L'URL verrà generato automaticamente dal nome.",
         "type": "Tipologia",
@@ -349,7 +349,6 @@
       },
       "errors": {
         "nameRequired": "Inserisci un nome per la struttura.",
-        "slugInvalid": "Inserisci uno slug valido (solo lettere, numeri e trattini).",
         "typeRequired": "Seleziona una tipologia.",
         "provinceInvalid": "La provincia deve contenere esattamente due lettere.",
         "latitudeInvalid": "La latitudine deve essere compresa tra -90 e 90.",

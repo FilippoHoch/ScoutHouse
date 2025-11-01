@@ -104,8 +104,9 @@ describe("StructureCreatePage", () => {
     await user.click(screen.getByRole("button", { name: /Aggiungi un altro link/i }));
     await user.type(screen.getByLabelText(/Link 2/i), "https://info.example.org");
 
-    const slugInput = screen.getByLabelText(/Slug/i) as HTMLInputElement;
-    expect(slugInput.value).toBe("base-bosco");
+    expect(
+      screen.getByText("L'URL pubblico sarà /structures/base-bosco")
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
@@ -114,7 +115,6 @@ describe("StructureCreatePage", () => {
     const payload = vi.mocked(createStructure).mock.calls[0][0];
     expect(payload).toMatchObject({
       name: "Base Bosco",
-      slug: "base-bosco",
       type: "house",
       province: "BS",
       has_kitchen: false,
@@ -134,6 +134,7 @@ describe("StructureCreatePage", () => {
       altitude: 350,
       open_periods: []
     });
+    expect(payload.slug).toBeUndefined();
     expect(payload.website_urls).toEqual([
       "https://base.example.org",
       "https://info.example.org"
@@ -254,7 +255,6 @@ describe("StructureCreatePage", () => {
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
     expect(await screen.findByText(/Inserisci un nome per la struttura/i)).toBeInTheDocument();
-    expect(screen.getByText(/Inserisci uno slug valido/i)).toBeInTheDocument();
     expect(screen.getByText(/Seleziona una tipologia/i)).toBeInTheDocument();
     expect(createStructure).not.toHaveBeenCalled();
     expect(invalidateSpy).not.toHaveBeenCalled();
