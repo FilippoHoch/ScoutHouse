@@ -982,10 +982,6 @@ table tbody tr:hover {
   color: var(--color-muted-strong);
 }
 
-.structure-water-sources-select {
-  min-height: 9.5rem;
-}
-
 .structure-form-field input,
 .structure-form-field select,
 .structure-form-field textarea {
@@ -1457,6 +1453,33 @@ table tbody tr:hover {
 }
 
 .structure-form-field.checkbox-field input[type="checkbox"] {
+  width: auto;
+  height: auto;
+}
+
+.structure-checkbox-list {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: var(--space-md);
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.structure-checkbox-list:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.structure-checkbox-list__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 500;
+  color: var(--color-muted-strong);
+}
+
+.structure-checkbox-list__option input[type="checkbox"] {
   width: auto;
   height: auto;
 }
