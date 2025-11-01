@@ -2190,26 +2190,6 @@ export const StructureCreatePage = () => {
             </fieldset>
 
             <fieldset className="structure-form-section">
-              <legend>{t("structures.create.form.sections.extras.title")}</legend>
-              <p className="helper-text">
-                {t("structures.create.form.sections.extras.description")}
-              </p>
-              <div className="structure-field-grid">
-                <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-notes">
-                    {t("structures.create.form.notes")}
-                    <textarea
-                      id="structure-notes"
-                      value={notes}
-                      onChange={handleNotesChange}
-                      rows={3}
-                    />
-                  </label>
-                </div>
-              </div>
-            </fieldset>
-
-            <fieldset className="structure-form-section">
               <legend>{t("structures.create.photos.title")}</legend>
               <p className="helper-text">
                 {t("structures.create.photos.description")}
@@ -2412,6 +2392,21 @@ export const StructureCreatePage = () => {
                       {fieldErrors.website_urls}
                     </p>
                   )}
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-notes">
+                    {t("structures.create.form.notes")}
+                    <textarea
+                      id="structure-notes"
+                      value={notes}
+                      onChange={handleNotesChange}
+                      rows={3}
+                    />
+                  </label>
+                  <span className="helper-text">
+                    {t("structures.create.form.notesHint")}
+                  </span>
                 </div>
 
                 <div className="structure-form-field" data-span="full">

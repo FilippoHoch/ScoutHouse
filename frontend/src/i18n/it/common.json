@@ -191,13 +191,14 @@
           "entryLabel": "Email {{index}}"
         },
         "website": "Siti o link di riferimento",
-        "websiteHint": "Inserisci uno o più URL utili per approfondimenti o contatti.",
+        "websiteHint": "Inserisci uno o più URL utili per approfondimenti, documentazione o moduli.",
         "websiteAdd": "Aggiungi un altro link",
         "websiteRemove": "Rimuovi questo link",
         "websiteEntryLabel": "Link {{index}}",
         "websiteValidStatus": "Link valido.",
         "websiteInvalidStatus": "Questo link non sembra valido. Puoi comunque procedere, ma controlla che sia corretto.",
         "notes": "Note aggiuntive",
+        "notesHint": "Condividi informazioni pratiche e includi indicazioni sulle prenotazioni: tempi di risposta, modalità o costi.",
         "contact": {
           "enable": "Aggiungi contatto",
           "enableHint": "Il primo contatto verrà impostato come primario. Potrai modificarlo o aggiungerne altri in seguito.",
@@ -274,13 +275,9 @@
             "title": "Foto",
             "description": "Prepara le immagini che saranno allegate alla scheda della struttura."
           },
-          "extras": {
-            "title": "Link e note",
-            "description": "Aggiungi riferimenti utili e informazioni aggiuntive."
-          },
           "contact": {
-            "title": "Contatti e sito",
-            "description": "Gestisci il sito di riferimento e collega un contatto utile."
+            "title": "Contatti, link e note",
+            "description": "Raccogli i link utili, aggiungi note sulla prenotazione e collega un contatto di riferimento."
           }
         },
         "submit": "Crea struttura",
