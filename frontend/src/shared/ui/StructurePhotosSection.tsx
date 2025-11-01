@@ -2,6 +2,7 @@ import {
   ChangeEvent,
   DragEvent,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState
@@ -38,6 +39,7 @@ export const StructurePhotosSection = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const queryKey = useMemo(
     () => ["structure-photos", structureId],
@@ -177,6 +179,37 @@ export const StructurePhotosSection = ({
 
   const photos = photosQuery.data ?? [];
 
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [structureId]);
+
+  useEffect(() => {
+    setActiveIndex((current) => {
+      if (photos.length === 0) {
+        return 0;
+      }
+      return Math.min(current, photos.length - 1);
+    });
+  }, [photos.length]);
+
+  const handlePrevious = () => {
+    if (photos.length <= 1) {
+      return;
+    }
+    setActiveIndex((current) => (current === 0 ? photos.length - 1 : current - 1));
+  };
+
+  const handleNext = () => {
+    if (photos.length <= 1) {
+      return;
+    }
+    setActiveIndex((current) => (current === photos.length - 1 ? 0 : current + 1));
+  };
+
+  const handleThumbnailClick = (index: number) => {
+    setActiveIndex(index);
+  };
+
   const renderBody = () => {
     if (structureId === null) {
       return <p className="structure-photos__placeholder">{t("structures.photos.errors.invalidStructure")}</p>;
@@ -190,17 +223,48 @@ export const StructurePhotosSection = ({
     if (photos.length === 0) {
       return <p className="structure-photos__placeholder">{t("structures.photos.state.empty")}</p>;
     }
+    const activePhoto = photos[activeIndex];
+    if (!activePhoto) {
+      return null;
+    }
     return (
-      <div className="structure-photos__grid">
-        {photos.map((photo) => (
-          <figure key={photo.id} className="structure-photos__item">
-            <img src={photo.url} alt={photo.filename} />
+      <div
+        className="structure-photos__carousel"
+        role="region"
+        aria-label={t("structures.photos.carousel.label")}
+      >
+        <div className="structure-photos__preview">
+          <button
+            type="button"
+            className="structure-photos__nav structure-photos__nav--previous"
+            onClick={handlePrevious}
+            disabled={photos.length <= 1}
+          >
+            <span className="sr-only">{t("structures.photos.carousel.previous")}</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+              <path d="M12.707 15.707a1 1 0 0 1-1.414 0l-5-5a1 1 0 0 1 0-1.414l5-5a1 1 0 1 1 1.414 1.414L8.414 10l4.293 4.293a1 1 0 0 1 0 1.414z" />
+            </svg>
+          </button>
+          <figure className="structure-photos__preview-item">
+            <img src={activePhoto.url} alt={activePhoto.filename} />
             <figcaption>
-              <span className="structure-photos__filename">{photo.filename}</span>
+              <div className="structure-photos__preview-meta">
+                <span className="structure-photos__filename" title={activePhoto.filename}>
+                  {activePhoto.filename}
+                </span>
+                {photos.length > 1 && (
+                  <span className="structure-photos__counter">
+                    {t("structures.photos.carousel.counter", {
+                      current: activeIndex + 1,
+                      total: photos.length
+                    })}
+                  </span>
+                )}
+              </div>
               {canDelete && (
                 <button
                   type="button"
-                  onClick={() => deleteMutation.mutate(photo.id)}
+                  onClick={() => deleteMutation.mutate(activePhoto.id)}
                   disabled={deleteMutation.isPending}
                 >
                   {t("structures.photos.actions.delete")}
@@ -208,7 +272,37 @@ export const StructurePhotosSection = ({
               )}
             </figcaption>
           </figure>
-        ))}
+          <button
+            type="button"
+            className="structure-photos__nav structure-photos__nav--next"
+            onClick={handleNext}
+            disabled={photos.length <= 1}
+          >
+            <span className="sr-only">{t("structures.photos.carousel.next")}</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+              <path d="M7.293 4.293a1 1 0 0 1 1.414 0L13.707 9.293a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414-1.414L11.586 10 7.293 5.707a1 1 0 0 1 0-1.414z" />
+            </svg>
+          </button>
+        </div>
+        {photos.length > 1 && (
+          <ul className="structure-photos__thumbnails">
+            {photos.map((photo, index) => (
+              <li key={photo.id} className="structure-photos__thumbnail-item">
+                <button
+                  type="button"
+                  className={`structure-photos__thumbnail-button ${
+                    index === activeIndex ? "is-active" : ""
+                  }`}
+                  onClick={() => handleThumbnailClick(index)}
+                  aria-current={index === activeIndex}
+                  aria-label={t("structures.photos.carousel.select", { index: index + 1 })}
+                >
+                  <img src={photo.url} alt="" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     );
   };
