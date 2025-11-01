@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.security import decode_token, hash_token
 from app.models import EventMember, EventMemberRole, RefreshToken, User
@@ -42,6 +43,15 @@ def get_current_user(
 
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin required")
+    return user
+
+
+def require_structure_editor(user: User = Depends(get_current_user)) -> User:
+    settings = get_settings()
+    if settings.allow_non_admin_structure_edit:
+        return user
     if not user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin required")
     return user
@@ -94,5 +104,6 @@ __all__ = [
     "get_current_user",
     "get_refresh_token_from_cookie",
     "require_admin",
+    "require_structure_editor",
     "require_event_member",
 ]

@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
 
+from app.core.config import get_settings  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import EventMemberRole  # noqa: E402
@@ -56,6 +57,21 @@ def test_structure_creation_requires_admin() -> None:
     admin_client = get_client(authenticated=True, is_admin=True)
     created = admin_client.post("/api/v1/structures/", json=payload)
     assert created.status_code == 201
+
+
+def test_structure_creation_allowed_for_non_admin_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ALLOW_NON_ADMIN_STRUCTURE_EDIT", "true")
+    get_settings.cache_clear()
+    try:
+        client = get_client(authenticated=True, is_admin=False)
+        payload = {"name": "User Test", "slug": "user-test", "province": "MI", "type": "house"}
+
+        created = client.post("/api/v1/structures/", json=payload)
+        assert created.status_code == 201
+    finally:
+        get_settings.cache_clear()
 
 
 def test_event_visibility_requires_membership() -> None:

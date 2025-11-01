@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.config import get_settings
 from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
-from app.deps import get_current_user, require_admin
+from app.deps import get_current_user, require_admin, require_structure_editor
 from app.models import (
     Attachment,
     AttachmentOwnerType,
@@ -73,6 +73,7 @@ router = APIRouter()
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+StructureEditor = Annotated[User, Depends(require_structure_editor)]
 
 
 SLUG_SANITIZE_RE = re.compile(r"[^a-z0-9]+")
@@ -673,7 +674,7 @@ def create_structure(
     structure_in: StructureCreate,
     db: DbSession,
     request: Request,
-    current_user: Annotated[User, Depends(require_admin)],
+    current_user: StructureEditor,
 ) -> StructureRead:
     website_warnings = _check_website_urls(structure_in.website_urls)
     base_slug = structure_in.slug or _slugify(structure_in.name)
@@ -719,7 +720,7 @@ def update_structure(
     structure_in: StructureUpdate,
     db: DbSession,
     request: Request,
-    current_user: Annotated[User, Depends(require_admin)],
+    current_user: StructureEditor,
 ) -> Structure:
     structure = _get_structure_or_404(
         db,
