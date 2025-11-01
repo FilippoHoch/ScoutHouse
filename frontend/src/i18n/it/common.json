@@ -138,6 +138,19 @@
     "create": {
       "title": "Nuova struttura",
       "description": "Compila il modulo per aggiungere una nuova struttura al catalogo.",
+      "photos": {
+        "title": "Foto",
+        "description": "Carica alcune immagini rappresentative: verranno inviate dopo aver creato la struttura.",
+        "queueHint": "Le foto selezionate saranno caricate automaticamente al termine della creazione.",
+        "queueEmpty": "Nessuna foto selezionata al momento.",
+        "remove": "Rimuovi",
+        "uploadFailed": "Caricamento delle foto non riuscito. Potrai aggiungerle in seguito dalla pagina della struttura.",
+        "size": {
+          "mb": "{{value}} MB",
+          "kb": "{{value}} kB",
+          "bytes": "{{value}} B"
+        }
+      },
       "form": {
         "name": "Nome",
         "namePlaceholder": "Es. Base scout Pian delle Betulle",
@@ -249,6 +262,10 @@
           "operations": {
             "title": "Operatività",
             "description": "Specifica disponibilità stagionale e note organizzative importanti."
+          },
+          "photos": {
+            "title": "Foto",
+            "description": "Prepara le immagini che saranno allegate alla scheda della struttura."
           },
           "extras": {
             "title": "Link e note",
@@ -379,6 +396,7 @@
           "details": "Aggiungi più dettagli possibili nell'indirizzo per aiutare chi deve arrivare.",
           "services": "Descrivi chiaramente quali servizi interni ed esterni sono disponibili.",
           "accessibility": "Indica come arrivare e se ci sono limiti per pullman o mezzi alti.",
+          "photos": "Aggiungi almeno una foto per rendere la scheda più completa.",
           "operations": "Note logistiche precise aiutano chi organizza l'uscita.",
           "coordinates": "Se conosci le coordinate inseriscile: saranno utili per la pianificazione degli spostamenti."
         }

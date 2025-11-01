@@ -5,7 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, createStructure } from "../../shared/api";
+import {
+  ApiError,
+  confirmAttachmentUpload,
+  createStructure,
+  createStructurePhoto,
+  signAttachmentUpload
+} from "../../shared/api";
 import type { Structure } from "../../shared/types";
 import { StructureCreatePage } from "../StructureCreate";
 
@@ -23,7 +29,10 @@ vi.mock("../../shared/api", async () => {
   const actual = await vi.importActual<typeof import("../../shared/api")>("../../shared/api");
   return {
     ...actual,
-    createStructure: vi.fn()
+    createStructure: vi.fn(),
+    createStructurePhoto: vi.fn(),
+    signAttachmentUpload: vi.fn(),
+    confirmAttachmentUpload: vi.fn()
   };
 });
 
@@ -79,6 +88,9 @@ describe("StructureCreatePage", () => {
   beforeEach(() => {
     mockNavigate.mockReset();
     vi.mocked(createStructure).mockReset();
+    vi.mocked(createStructurePhoto).mockReset();
+    vi.mocked(signAttachmentUpload).mockReset();
+    vi.mocked(confirmAttachmentUpload).mockReset();
   });
 
   it("creates a structure and navigates to its detail page", async () => {
@@ -258,5 +270,72 @@ describe("StructureCreatePage", () => {
     expect(screen.getByText(/Seleziona una tipologia/i)).toBeInTheDocument();
     expect(createStructure).not.toHaveBeenCalled();
     expect(invalidateSpy).not.toHaveBeenCalled();
+  });
+
+  it("uploads queued photos after creating the structure", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+    vi.mocked(signAttachmentUpload).mockResolvedValue({
+      url: "https://s3.example.com/upload",
+      fields: { key: "attachments/structure/1/abc/facciata.jpg" }
+    });
+    vi.mocked(confirmAttachmentUpload).mockResolvedValue({
+      id: 10,
+      owner_type: "structure",
+      owner_id: 1,
+      filename: "facciata.jpg",
+      mime: "image/jpeg",
+      size: 1024,
+      created_by: "user",
+      created_by_name: "User",
+      created_at: new Date().toISOString()
+    });
+    vi.mocked(createStructurePhoto).mockResolvedValue({
+      id: 5,
+      structure_id: 1,
+      attachment_id: 10,
+      filename: "facciata.jpg",
+      mime: "image/jpeg",
+      size: 1024,
+      position: 0,
+      url: "https://example.com/facciata.jpg",
+      created_at: new Date().toISOString()
+    });
+
+    const fetchMock = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }) as Response);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.type(screen.getByLabelText(/Provincia/i), "BS");
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    const file = new File(["content"], "facciata.jpg", { type: "image/jpeg" });
+    await user.upload(input, file);
+
+    expect(await screen.findByText("facciata.jpg")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(signAttachmentUpload).toHaveBeenCalled());
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://s3.example.com/upload",
+      expect.objectContaining({ method: "POST" })
+    );
+    await waitFor(() => expect(confirmAttachmentUpload).toHaveBeenCalled());
+    await waitFor(() => expect(createStructurePhoto).toHaveBeenCalledWith(1, { attachment_id: 10 }));
+
+    fetchMock.mockRestore();
   });
 });

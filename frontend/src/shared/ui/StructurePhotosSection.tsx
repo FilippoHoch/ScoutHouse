@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { StructurePhoto } from "../types";
+import { isImageFile } from "../utils/image";
 import {
   AttachmentConfirmRequest,
   AttachmentUploadRequest,
@@ -26,16 +27,6 @@ interface StructurePhotosSectionProps {
   canUpload: boolean;
   canDelete: boolean;
 }
-
-const ACCEPTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-
-const isImage = (file: File) => {
-  if (file.type) {
-    return file.type.startsWith("image/");
-  }
-  const lowered = file.name.toLowerCase();
-  return ACCEPTED_EXTENSIONS.some((ext) => lowered.endsWith(ext));
-};
 
 export const StructurePhotosSection = ({
   structureId,
@@ -64,7 +55,7 @@ export const StructurePhotosSection = ({
       if (structureId === null) {
         throw new Error("missing-structure");
       }
-      if (!isImage(file)) {
+      if (!isImageFile(file)) {
         throw new Error("invalid-type");
       }
 
@@ -126,7 +117,7 @@ export const StructurePhotosSection = ({
 
   const handleUpload = useCallback(
     async (file: File) => {
-      if (!isImage(file)) {
+      if (!isImageFile(file)) {
         setError(t("structures.photos.errors.invalidType"));
         return;
       }

@@ -2269,6 +2269,44 @@ table tbody tr:hover {
   cursor: not-allowed;
 }
 
+.structure-photos__queue-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.structure-photos__queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.structure-photos__queue li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0.5rem 0.75rem;
+}
+
+.structure-photos__queue li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.structure-photos__queue-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.structure-photos__queue-size {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
 .inline-metrics {
   display: flex;
   flex-wrap: wrap;

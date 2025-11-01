@@ -1,9 +1,11 @@
 import {
   ChangeEvent,
+  DragEvent,
   FormEvent,
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,9 +14,14 @@ import { useTranslation } from "react-i18next";
 
 import {
   ApiError,
+  AttachmentConfirmRequest,
+  AttachmentUploadRequest,
+  confirmAttachmentUpload,
   createStructure,
   createStructureContact,
-  searchContacts
+  createStructurePhoto,
+  searchContacts,
+  signAttachmentUpload
 } from "../shared/api";
 import {
   Contact,
@@ -40,6 +47,7 @@ import {
   GoogleMapPicker,
   GOOGLE_MAP_DEFAULT_CENTER
 } from "../shared/ui/GoogleMapPicker";
+import { isImageFile } from "../shared/utils/image";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -182,9 +190,13 @@ export const StructureCreatePage = () => {
   const [contactPickerError, setContactPickerError] = useState<string | null>(null);
   const [contactPickerResults, setContactPickerResults] = useState<Contact[]>([]);
   const [openPeriods, setOpenPeriods] = useState<OpenPeriodFormRow[]>([]);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoDropActive, setPhotoDropActive] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [slugDirty, setSlugDirty] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedCoordinates = useMemo(() => {
     const latNumber = parseCoordinateValue(latitude);
@@ -315,6 +327,154 @@ export const StructureCreatePage = () => {
         contactPhone.trim() ||
         contactNotes.trim()
     );
+
+  const addPhotoFiles = useCallback(
+    (files: File[]) => {
+      if (files.length === 0) {
+        return;
+      }
+      let hasInvalid = false;
+      let hasValid = false;
+      setPhotoFiles((previous) => {
+        let changed = false;
+        const next = [...previous];
+        for (const file of files) {
+          if (!isImageFile(file)) {
+            hasInvalid = true;
+            continue;
+          }
+          const duplicate = next.some(
+            (existing) =>
+              existing.name === file.name &&
+              existing.size === file.size &&
+              existing.lastModified === file.lastModified
+          );
+          if (duplicate) {
+            continue;
+          }
+          next.push(file);
+          changed = true;
+          hasValid = true;
+        }
+        return changed ? next : previous;
+      });
+      if (hasInvalid) {
+        setPhotoError(t("structures.photos.errors.invalidType"));
+      } else if (hasValid) {
+        setPhotoError(null);
+      }
+    },
+    [t]
+  );
+
+  const handlePhotoInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    addPhotoFiles(files);
+    event.target.value = "";
+  };
+
+  const handlePhotoDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setPhotoDropActive(false);
+    const files = event.dataTransfer.files ? Array.from(event.dataTransfer.files) : [];
+    addPhotoFiles(files);
+  };
+
+  const handlePhotoDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!photoDropActive) {
+      setPhotoDropActive(true);
+    }
+  };
+
+  const handlePhotoDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (photoDropActive) {
+      setPhotoDropActive(false);
+    }
+  };
+
+  const handlePhotoRemove = (index: number) => {
+    setPhotoFiles((previous) => {
+      const next = previous.filter((_, itemIndex) => itemIndex !== index);
+      if (next.length === 0) {
+        setPhotoError(null);
+      }
+      return next;
+    });
+  };
+
+  const uploadQueuedPhotos = useCallback(
+    async (structureId: number) => {
+      if (photoFiles.length === 0) {
+        return;
+      }
+      for (const file of photoFiles) {
+        const payload: AttachmentUploadRequest = {
+          owner_type: "structure",
+          owner_id: structureId,
+          filename: file.name,
+          mime: file.type || "image/jpeg"
+        };
+        const signature = await signAttachmentUpload(payload);
+        const key = signature.fields.key;
+        if (!key) {
+          throw new Error("missing-key");
+        }
+        const formData = new FormData();
+        Object.entries(signature.fields).forEach(([name, value]) => {
+          formData.append(name, value);
+        });
+        formData.append("file", file);
+
+        const response = await fetch(signature.url, {
+          method: "POST",
+          body: formData
+        });
+        if (!response.ok) {
+          throw new Error("upload-failed");
+        }
+
+        const confirmPayload: AttachmentConfirmRequest = {
+          ...payload,
+          size: file.size,
+          key
+        };
+        const attachment = await confirmAttachmentUpload(confirmPayload);
+        await createStructurePhoto(structureId, { attachment_id: attachment.id });
+      }
+      setPhotoFiles([]);
+      setPhotoError(null);
+    },
+    [
+      photoFiles,
+      confirmAttachmentUpload,
+      createStructurePhoto,
+      signAttachmentUpload
+    ]
+  );
+
+  const formatQueuedPhotoSize = useCallback(
+    (size: number) => {
+      if (size >= 1024 * 1024) {
+        const value = new Intl.NumberFormat("it-IT", {
+          maximumFractionDigits: 1
+        }).format(size / (1024 * 1024));
+        return t("structures.create.photos.size.mb", { value });
+      }
+      if (size >= 1024) {
+        const value = new Intl.NumberFormat("it-IT", {
+          maximumFractionDigits: 0
+        }).format(size / 1024);
+        return t("structures.create.photos.size.kb", { value });
+      }
+      return t("structures.create.photos.size.bytes", { value: size });
+    },
+    [t]
+  );
 
   const selectedContactSummary = useMemo(() => {
     if (contactId === null) {
@@ -1132,6 +1292,13 @@ export const StructureCreatePage = () => {
         }
       }
 
+      try {
+        await uploadQueuedPhotos(created.id);
+      } catch (photoUploadError) {
+        console.error("Unable to upload structure photos", photoUploadError);
+        window.alert(t("structures.create.photos.uploadFailed"));
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["structures"] });
       navigate(`/structures/${created.slug}`);
     } catch (error) {
@@ -1261,6 +1428,7 @@ export const StructureCreatePage = () => {
     t("structures.create.sidebar.items.details"),
     t("structures.create.sidebar.items.services"),
     t("structures.create.sidebar.items.accessibility"),
+    t("structures.create.sidebar.items.photos"),
     t("structures.create.sidebar.items.operations")
   ];
 
@@ -2047,6 +2215,72 @@ export const StructureCreatePage = () => {
                       rows={3}
                     />
                   </label>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.photos.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.photos.description")}
+              </p>
+              <div className="structure-field-grid">
+                <div className="structure-form-field" data-span="full">
+                  <div className="structure-photos">
+                    <div
+                      className={`structure-photos__dropzone ${photoDropActive ? "is-active" : ""}`}
+                      onDragOver={handlePhotoDragOver}
+                      onDragLeave={handlePhotoDragLeave}
+                      onDrop={handlePhotoDrop}
+                    >
+                      <p>{t("structures.photos.upload.prompt")}</p>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        {t("structures.photos.upload.button")}
+                      </Button>
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: "none" }}
+                        onChange={handlePhotoInputChange}
+                      />
+                    </div>
+                    {photoError && <p className="error-text">{photoError}</p>}
+                    <div className="structure-photos__queue-wrapper">
+                      <p className="helper-text">
+                        {t("structures.create.photos.queueHint")}
+                      </p>
+                      {photoFiles.length === 0 ? (
+                        <p className="helper-text">
+                          {t("structures.create.photos.queueEmpty")}
+                        </p>
+                      ) : (
+                        <ul className="structure-photos__queue">
+                          {photoFiles.map((file, index) => (
+                            <li key={`${file.name}-${file.size}-${file.lastModified}`}>
+                              <span className="structure-photos__queue-name">{file.name}</span>
+                              <span className="structure-photos__queue-size">
+                                {formatQueuedPhotoSize(file.size)}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handlePhotoRemove(index)}
+                              >
+                                {t("structures.create.photos.remove")}
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </fieldset>
