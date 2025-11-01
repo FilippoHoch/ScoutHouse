@@ -199,6 +199,34 @@ describe("StructureCreatePage", () => {
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
   });
 
+  it("provides immediate feedback about website URL validity", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    const websiteField = screen.getByLabelText(/Siti o link di riferimento/i);
+    await user.type(websiteField, "www.scouthouse");
+    await user.tab();
+
+    expect(
+      screen.getByText(/questo link non sembra valido\. puoi comunque procedere/i)
+    ).toBeInTheDocument();
+
+    await user.click(websiteField);
+    await user.clear(websiteField);
+    await user.type(websiteField, "https://scouthouse.example");
+    await user.tab();
+
+    expect(screen.getByText(/Link valido/i)).toBeInTheDocument();
+  });
+
   it("serialises open periods when provided", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
