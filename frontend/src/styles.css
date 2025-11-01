@@ -1452,6 +1452,10 @@ table tbody tr:hover {
   border-bottom: 1px solid var(--color-border);
 }
 
+.structure-open-periods-table td {
+  vertical-align: top;
+}
+
 .structure-open-periods-table th {
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -1471,9 +1475,10 @@ table tbody tr:hover {
 }
 
 .structure-open-periods-units {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem 1rem;
+  align-items: start;
 }
 
 .structure-open-periods-unit-option {
@@ -1483,15 +1488,19 @@ table tbody tr:hover {
   font-size: 0.875rem;
 }
 
+.structure-open-periods-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  color: var(--color-muted);
+}
+
 .structure-open-periods-empty {
   text-align: center;
   padding: 2rem;
   color: var(--color-muted);
   font-style: italic;
-}
-
-.structure-open-periods-placeholder {
-  color: var(--color-muted);
 }
 
 .structure-open-periods-actions-column {
