@@ -1,7 +1,7 @@
 """Add contact emails to structures
 
 Revision ID: 20240920_0017
-Revises: 20240905_0016_structure_altitude
+Revises: 20240905_0016
 Create Date: 2024-09-20
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "20240920_0017"
-down_revision = "20240905_0016_structure_altitude"
+down_revision = "20240905_0016"
 branch_labels = None
 depends_on = None
 
