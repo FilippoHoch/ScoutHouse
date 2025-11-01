@@ -1096,6 +1096,7 @@ export const StructureCreatePage = () => {
     const trimmedAddress = address.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
+    const trimmedAltitude = altitude.trim();
     const trimmedIndoorBeds = indoorBeds.trim();
     const trimmedIndoorBathrooms = indoorBathrooms.trim();
     const trimmedIndoorShowers = indoorShowers.trim();
@@ -1273,6 +1274,9 @@ export const StructureCreatePage = () => {
   const longitudeErrorId = fieldErrors.longitude ? "structure-longitude-error" : undefined;
   const altitudeErrorId = fieldErrors.altitude ? "structure-altitude-error" : undefined;
   const nameErrorId = fieldErrors.name ? "structure-name-error" : undefined;
+  const nameDescribedBy = [slugHintId, slugPreviewId, nameErrorId]
+    .filter(Boolean)
+    .join(" ") || undefined;
   const typeErrorId = fieldErrors.type ? "structure-type-error" : undefined;
   const indoorBedsErrorId = fieldErrors.indoor_beds ? "structure-indoor-beds-error" : undefined;
   const indoorBathroomsErrorId = fieldErrors.indoor_bathrooms
@@ -1368,7 +1372,7 @@ export const StructureCreatePage = () => {
                       placeholder={t("structures.create.form.namePlaceholder")}
                       required
                       aria-invalid={fieldErrors.name ? "true" : undefined}
-                      aria-describedby={nameErrorId || undefined}
+                      aria-describedby={nameDescribedBy}
                     />
                   </label>
                   {fieldErrors.name && (
@@ -1376,12 +1380,6 @@ export const StructureCreatePage = () => {
                       {fieldErrors.name}
                     </p>
                   )}
-                </div>
-
-                <div className="structure-form-field">
-                  <span className="field-label" id="structure-slug-label">
-                    {t("structures.create.form.slug")}
-                  </span>
                   <div
                     className="structure-form-footnote"
                     aria-live="polite"
