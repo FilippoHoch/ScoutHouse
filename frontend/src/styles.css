@@ -1353,11 +1353,6 @@ table tbody tr:hover {
   overflow: hidden;
 }
 
-.google-map-picker[data-state^="fallback"] {
-  display: flex;
-  flex-direction: column;
-}
-
 .google-map-picker-canvas {
   width: 100%;
   height: 100%;
@@ -1389,40 +1384,22 @@ table tbody tr:hover {
   opacity: 0.75;
 }
 
-.google-map-picker[data-state="fallback-loading"] .google-map-picker-canvas {
-  filter: grayscale(15%);
-  opacity: 0.85;
+
+.google-map-picker[data-state="missing-key"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.google-map-picker[data-state="fallback-ready"] .google-map-picker-status,
-.google-map-picker[data-state="fallback-error"] .google-map-picker-status {
-  position: absolute;
+.google-map-picker[data-state="missing-key"] .google-map-picker-canvas {
+  display: none;
 }
 
-.google-map-picker-helper {
-  padding: var(--space-md);
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0.04));
+.google-map-picker[data-state="missing-key"] .google-map-picker-status {
+  position: static;
+  inset: auto;
+  background: transparent;
   color: var(--color-muted-strong);
-  font-size: 0.9rem;
-}
-
-.google-map-picker-helper p {
-  margin: 0;
-}
-
-.google-map-picker-marker {
-  display: grid;
-  place-items: center;
-}
-
-.google-map-picker-marker span {
-  display: block;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  border: 3px solid #fff;
-  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.35);
 }
 
 .structure-map-field {
