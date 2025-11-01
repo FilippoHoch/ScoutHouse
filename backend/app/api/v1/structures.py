@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from datetime import date
 from enum import Enum
 import re
 import unicodedata
 from typing import Annotated, Any
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
@@ -75,6 +76,47 @@ AdminUser = Annotated[User, Depends(require_admin)]
 
 
 SLUG_SANITIZE_RE = re.compile(r"[^a-z0-9]+")
+
+_WEBSITE_CHECK_TIMEOUT = 5.0
+
+
+def _website_responds(client: httpx.Client, url: str) -> bool:
+    try:
+        response = client.head(url, headers={"User-Agent": "ScoutHouse/website-check"})
+    except httpx.HTTPError:
+        response = None
+
+    if response is None or response.status_code >= 400:
+        try:
+            response = client.get(url, headers={"User-Agent": "ScoutHouse/website-check"})
+        except httpx.HTTPError:
+            return False
+
+    if response.status_code < 400:
+        return True
+    if response.status_code in {401, 403}:
+        return True
+    return False
+
+
+def _check_website_urls(urls: Iterable[str]) -> list[str]:
+    candidates = [str(url) for url in urls if url]
+    if not candidates:
+        return []
+
+    warnings: list[str] = []
+    try:
+        with httpx.Client(timeout=_WEBSITE_CHECK_TIMEOUT, follow_redirects=True) as client:
+            for url in candidates:
+                try:
+                    if not _website_responds(client, url):
+                        warnings.append(url)
+                except httpx.HTTPError:
+                    warnings.append(url)
+    except httpx.HTTPError:
+        return []
+
+    return warnings
 
 
 def _ensure_storage_ready() -> tuple[str, Any]:
@@ -632,7 +674,8 @@ def create_structure(
     db: DbSession,
     request: Request,
     current_user: Annotated[User, Depends(require_admin)],
-) -> Structure:
+) -> StructureRead:
+    website_warnings = _check_website_urls(structure_in.website_urls)
     base_slug = structure_in.slug or _slugify(structure_in.name)
     unique_slug = _generate_unique_slug(db, base_slug)
 
@@ -664,7 +707,10 @@ def create_structure(
 
     db.commit()
     db.refresh(structure)
-    return structure
+    response = StructureRead.model_validate(structure)
+    if website_warnings:
+        response = response.model_copy(update={"warnings": website_warnings})
+    return response
 
 
 @router.put("/{structure_id}", response_model=StructureRead)

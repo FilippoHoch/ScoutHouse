@@ -1246,6 +1246,16 @@ export const StructureCreatePage = () => {
     try {
       const created = await createMutation.mutateAsync(payload);
 
+      if (Array.isArray(created.warnings) && created.warnings.length > 0) {
+        const formatted = created.warnings.map((url) => `• ${url}`).join("\n");
+        window.alert(
+          t("structures.create.warnings.websiteUnreachable", {
+            count: created.warnings.length,
+            urls: formatted
+          })
+        );
+      }
+
       if (addContact && (contactHasDetails() || contactId !== null)) {
         try {
           await createStructureContact(created.id, buildContactPayload());

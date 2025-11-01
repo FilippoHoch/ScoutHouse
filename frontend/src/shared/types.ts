@@ -155,6 +155,7 @@ export interface Structure {
   cost_options?: CostOption[] | null;
   contacts?: Contact[] | null;
   open_periods?: StructureOpenPeriod[] | null;
+  warnings?: string[] | null;
 }
 
 export interface StructureCreateDto {

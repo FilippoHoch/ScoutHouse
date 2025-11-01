@@ -315,6 +315,7 @@ class StructureRead(StructureBase):
     cost_options: list[StructureCostOptionRead] | None = None
     contacts: list[ContactRead] | None = None
     open_periods: list[StructureOpenPeriodRead] | None = None
+    warnings: list[str] | None = None
 
     model_config = {
         "from_attributes": True,
