@@ -146,6 +146,7 @@ export interface Structure {
   has_field_poles: boolean;
   pit_latrine_allowed: boolean;
   website_urls: string[];
+  contact_emails: string[];
   notes_logistics: string | null;
   notes: string | null;
   created_at: string;
@@ -187,6 +188,7 @@ export interface StructureCreateDto {
   has_field_poles?: boolean;
   pit_latrine_allowed?: boolean;
   website_urls?: string[];
+  contact_emails?: string[];
   notes_logistics?: string | null;
   notes?: string | null;
   open_periods?: StructureOpenPeriodInput[];

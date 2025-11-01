@@ -575,6 +575,20 @@ export const StructureDetailsPage = () => {
                     t("structures.details.overview.websiteFallback")
                   )}
                 </dd>
+                <dt>{t("structures.details.overview.contactEmails")}</dt>
+                <dd>
+                  {structure.contact_emails && structure.contact_emails.length > 0 ? (
+                    <ul className="structure-website-links">
+                      {structure.contact_emails.map((email) => (
+                        <li key={email}>
+                          <a href={`mailto:${email}`}>{email}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    t("structures.details.overview.contactEmailsFallback")
+                  )}
+                </dd>
                 {structure.notes && (
                   <>
                     <dt>{t("structures.details.overview.notes")}</dt>
@@ -762,6 +776,20 @@ export const StructureDetailsPage = () => {
                     </ul>
                   ) : (
                     <p>{t("structures.contacts.website.empty")}</p>
+                  )}
+                </div>
+                <div className="structure-contacts__emails">
+                  <h4>{t("structures.contacts.emails.title")}</h4>
+                  {structure.contact_emails.length > 0 ? (
+                    <ul className="structure-website-links">
+                      {structure.contact_emails.map((email) => (
+                        <li key={email}>
+                          <a href={`mailto:${email}`}>{email}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>{t("structures.contacts.emails.empty")}</p>
                   )}
                 </div>
                 {contacts.length === 0 ? (

@@ -49,6 +49,7 @@ HEADERS = [
     "has_field_poles",
     "pit_latrine_allowed",
     "website_urls",
+    "contact_emails",
     "notes_logistics",
     "notes",
 ]
@@ -62,6 +63,9 @@ OPEN_PERIOD_HEADERS = [
     "date_end",
     "notes",
 ]
+
+
+EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 TemplateFormat = Literal["xlsx", "csv"]
@@ -97,6 +101,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "has_field_poles": False,
         "pit_latrine_allowed": False,
         "website_urls": "https://example.org/casa-alpina",
+        "contact_emails": "contatti@example.org",
         "notes_logistics": "Accesso anche con pullman",
         "notes": "Spazi esterni ampi",
     },
@@ -129,6 +134,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "has_field_poles": True,
         "pit_latrine_allowed": True,
         "website_urls": "https://example.org/terreno",
+        "contact_emails": "info@example.org",
         "notes_logistics": "Campo estivo disponibile da giugno a agosto",
         "notes": "Ideale per campi estivi",
     },
@@ -196,6 +202,7 @@ class StructureImportRow:
     has_field_poles: bool | None
     pit_latrine_allowed: bool | None
     website_urls: list[str]
+    contact_emails: list[str]
     notes_logistics: str | None
     notes: str | None
 
@@ -413,6 +420,50 @@ def _parse_website_urls(value: object) -> tuple[list[str], list[str]]:
     return urls, errors
 
 
+def _validate_email(value: object) -> str | None:
+    text = _normalise_text(value)
+    if not text:
+        return None
+    if not EMAIL_PATTERN.fullmatch(text):
+        raise ValueError("must be a valid email address")
+    return text
+
+
+def _parse_contact_emails(value: object) -> tuple[list[str], list[str]]:
+    if value is None:
+        return [], []
+
+    if isinstance(value, (list, tuple)):
+        raw_items = value
+    else:
+        text = _normalise_text(value)
+        if not text:
+            return [], []
+        raw_items = re.split(r"[\n;]", text)
+
+    emails: list[str] = []
+    errors: list[str] = []
+    seen: set[str] = set()
+
+    for item in raw_items:
+        candidate = _normalise_text(item)
+        if not candidate:
+            continue
+        try:
+            validated = _validate_email(candidate)
+        except ValueError as exc:
+            errors.append(f"{candidate}: {exc}")
+            continue
+        if validated is None:
+            continue
+        marker = validated.lower()
+        if marker not in seen:
+            seen.add(marker)
+            emails.append(validated)
+
+    return emails, errors
+
+
 def _validate_latitude(value: Decimal | None) -> Decimal | None:
     if value is None:
         return None
@@ -500,8 +551,9 @@ def _process_rows(
         has_field_poles_raw = values[25]
         pit_latrine_allowed_raw = values[26]
         website_urls_raw = values[27]
-        notes_logistics_raw = values[28]
-        notes_raw = values[29]
+        contact_emails_raw = values[28]
+        notes_logistics_raw = values[29]
+        notes_raw = values[30]
 
         row_errors: list[RowError] = []
         row_warnings: list[RowError] = []
@@ -767,6 +819,12 @@ def _process_rows(
                 RowError(row=index, field="website_urls", message=message, source_format=source_format)
             )
 
+        contact_emails, email_errors = _parse_contact_emails(contact_emails_raw)
+        for message in email_errors:
+            row_errors.append(
+                RowError(row=index, field="contact_emails", message=message, source_format=source_format)
+            )
+
         notes_logistics = _normalise_text(notes_logistics_raw) or None
         notes = _normalise_text(notes_raw) or None
 
@@ -865,6 +923,7 @@ def _process_rows(
                 has_field_poles=has_field_poles,
                 pit_latrine_allowed=pit_latrine_allowed,
                 website_urls=website_urls,
+                contact_emails=contact_emails,
                 notes_logistics=notes_logistics,
                 notes=notes,
             )

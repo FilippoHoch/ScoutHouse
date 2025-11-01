@@ -115,3 +115,26 @@ def test_website_urls_split_from_text_field() -> None:
         "https://example.org/due",
         "https://example.org/tre",
     ]
+
+
+def test_contact_emails_split_and_validated() -> None:
+    data = _build_csv(
+        [
+            {
+                "name": "Casa Digitale",
+                "slug": "casa-digitale",
+                "province": "MI",
+                "type": "house",
+                "contact_emails": "info@example.org; support@example.org\nINFO@example.org",
+            }
+        ]
+    )
+
+    result = parse_structures_csv(data)
+
+    assert not result.errors
+    assert len(result.rows) == 1
+    assert result.rows[0].contact_emails == [
+        "info@example.org",
+        "support@example.org",
+    ]

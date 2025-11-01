@@ -59,6 +59,7 @@ const structureWithDetails: Structure = {
   has_field_poles: true,
   pit_latrine_allowed: true,
   website_urls: [],
+  contact_emails: [],
   notes_logistics: null,
   notes: null,
   created_at: new Date("2024-05-01T00:00:00Z").toISOString(),
@@ -108,6 +109,10 @@ describe("StructureDetailsPage tabs", () => {
     await user.click(screen.getByRole("button", { name: /Costi/i }));
     expect(screen.getByText(/per_person_day/i)).toBeInTheDocument();
     expect(screen.getByText(/Deposit:/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Contatti/i }));
+    expect(screen.getByText(/Nessun link registrato/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nessuna email registrata/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Allegati/i }));
     expect(screen.getByText(/Accedi per visualizzare gli allegati/)).toBeInTheDocument();

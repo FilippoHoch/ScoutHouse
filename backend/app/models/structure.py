@@ -159,6 +159,7 @@ class Structure(Base):
         default=False,
     )
     website_urls: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    contact_emails: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     notes_logistics: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

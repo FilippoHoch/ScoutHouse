@@ -68,6 +68,7 @@ const createdStructure: Structure = {
   has_field_poles: false,
   pit_latrine_allowed: false,
   website_urls: ["https://example.org/base-bosco"],
+  contact_emails: [],
   notes_logistics: null,
   notes: null,
   created_at: "2024-05-01T10:00:00Z",
@@ -123,6 +124,13 @@ describe("StructureCreatePage", () => {
     await user.click(screen.getByRole("button", { name: /Aggiungi un altro link/i }));
     await user.type(screen.getByLabelText(/Link 2/i), "https://info.example.org");
 
+    await user.type(
+      screen.getByLabelText(/Email di riferimento/i),
+      "info@base.example.org"
+    );
+    await user.click(screen.getByRole("button", { name: /Aggiungi un'altra email/i }));
+    await user.type(screen.getByLabelText(/Email 2/i), "contatti@base.example.org");
+
     expect(screen.queryByRole("textbox", { name: /Slug/i })).not.toBeInTheDocument();
     await waitFor(() =>
       expect(
@@ -160,6 +168,10 @@ describe("StructureCreatePage", () => {
     expect(payload.website_urls).toEqual([
       "https://base.example.org",
       "https://info.example.org"
+    ]);
+    expect(payload.contact_emails).toEqual([
+      "info@base.example.org",
+      "contatti@base.example.org"
     ]);
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));

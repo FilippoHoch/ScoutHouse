@@ -190,6 +190,11 @@
         "websiteAdd": "Aggiungi un altro link",
         "websiteRemove": "Rimuovi questo link",
         "websiteEntryLabel": "Link {{index}}",
+        "contactEmails": "Email di riferimento",
+        "contactEmailsHint": "Inserisci uno o più indirizzi email utili per la struttura.",
+        "contactEmailsAdd": "Aggiungi un'altra email",
+        "contactEmailsRemove": "Rimuovi questa email",
+        "contactEmailsEntryLabel": "Email {{index}}",
         "notes": "Note aggiuntive",
         "contact": {
           "enable": "Aggiungi contatto",
@@ -373,6 +378,7 @@
         "altitudeInvalid": "L'altitudine deve essere compresa tra -500 e 9000 metri.",
         "numberInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
         "websiteInvalid": "Inserisci URL validi che inizino con http o https.",
+        "contactEmailInvalid": "Inserisci indirizzi email validi.",
         "saveFailed": "Impossibile creare la struttura.",
         "decimalInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
         "openPeriodsSeasonRequired": "Seleziona una stagione per i periodi stagionali.",
@@ -456,6 +462,10 @@
       "website": {
         "title": "Siti web della struttura",
         "empty": "Nessun link registrato"
+      },
+      "emails": {
+        "title": "Email generali",
+        "empty": "Nessuna email registrata"
       }
     },
     "details": {
@@ -468,6 +478,8 @@
         "indoorActivityRooms": "Sale attività interne",
         "website": "Siti di riferimento",
         "websiteFallback": "Non disponibili",
+        "contactEmails": "Email generali",
+        "contactEmailsFallback": "Non disponibili",
         "notes": "Note",
         "pitLatrineAllowed": "Latrina a fossa",
         "pitLatrineYes": "Consentita",

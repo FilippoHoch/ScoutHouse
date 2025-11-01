@@ -58,6 +58,7 @@ def test_structures_flow() -> None:
         "access_by_car": True,
         "access_by_public_transport": True,
         "website_urls": ["https://example.org/scout-center"],
+        "contact_emails": ["info@scout-center.example"],
         "notes_logistics": "Ingresso pullman",
         "notes": "Struttura con ampi spazi verdi.",
         "open_periods": [
@@ -93,6 +94,7 @@ def test_structures_flow() -> None:
     assert created["access_by_car"] is True
     assert created["access_by_public_transport"] is True
     assert created["website_urls"] == payload["website_urls"]
+    assert created["contact_emails"] == payload["contact_emails"]
     assert created["notes_logistics"] == payload["notes_logistics"]
     assert created["notes"] == payload["notes"]
     assert len(created["open_periods"]) == 2

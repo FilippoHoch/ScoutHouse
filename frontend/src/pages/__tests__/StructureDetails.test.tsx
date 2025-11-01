@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -59,6 +60,7 @@ const sampleStructure: Structure = {
   has_field_poles: false,
   pit_latrine_allowed: false,
   website_urls: ["https://example.org/casa-alpina"],
+  contact_emails: ["info@casa-alpina.org"],
   notes_logistics: "Contattare il custode",
   notes: null,
   created_at: new Date("2024-01-01T00:00:00Z").toISOString(),
@@ -109,6 +111,7 @@ describe("StructureDetailsPage", () => {
   });
 
   it("renders structure details when found", async () => {
+    const user = userEvent.setup();
     const Wrapper = createWrapper("/structures/casa-alpina");
 
     render(
@@ -121,6 +124,8 @@ describe("StructureDetailsPage", () => {
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
     const mapLink = screen.getByRole("link", { name: /Google Maps/i });
     expect(mapLink).toHaveAttribute("href", "https://www.google.com/maps?q=45.6,10.16");
+    const contactEmailLink = screen.getByRole("link", { name: "info@casa-alpina.org" });
+    expect(contactEmailLink).toHaveAttribute("href", "mailto:info@casa-alpina.org");
     const mapTitle = i18n.t("structures.details.location.mapTitle", {
       name: sampleStructure.name
     });
@@ -145,6 +150,11 @@ describe("StructureDetailsPage", () => {
     });
     expect(screen.getByText(altitudeLabel)).toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Contatti/i }));
+    expect(
+      screen.getAllByRole("link", { name: "info@casa-alpina.org" })
+    ).toHaveLength(2);
   });
 
   it("shows not found state for missing structure", async () => {
