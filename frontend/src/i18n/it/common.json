@@ -173,13 +173,11 @@
         "altitudeHint": "Inserisci l'altitudine in metri sul livello del mare (opzionale).",
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
         "map": {
-          "title": "Seleziona sulla mappa",
-          "hint": "Clicca sulla mappa per posizionare il segnaposto oppure inserisci manualmente le coordinate.",
-          "loading": "Caricamento della mappa in corso…",
-          "error": "Impossibile caricare Google Maps. Controlla la connessione o riprova più tardi.",
-          "missingKey": "Google Maps non è disponibile. Inserisci manualmente le coordinate oppure contatta l'amministratore per configurare la chiave API.",
+          "title": "Anteprima su Google Maps",
+          "hint": "La mappa mostra la posizione indicativa basata sulle coordinate inserite. Aggiorna i campi sopra per modificare l'anteprima.",
+          "empty": "Inserisci coordinate valide per visualizzare l'anteprima della mappa.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
-          "ariaLabel": "Mappa di Google per scegliere le coordinate"
+          "ariaLabel": "Mappa incorporata di Google per anteprima delle coordinate"
         },
         "indoorActivityRooms": "Sale attività interne",
         "indoorActivityRoomsHint": "Numero di stanze interne utilizzabili per attività o riunioni.",

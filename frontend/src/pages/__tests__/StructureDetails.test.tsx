@@ -7,6 +7,10 @@ import { ApiError, getStructureBySlug, getStructurePhotos } from "../../shared/a
 import type { Structure } from "../../shared/types";
 import { StructureDetailsPage } from "../StructureDetails";
 import i18n from "../../i18n";
+import {
+  createGoogleMapsEmbedUrl,
+  createGoogleMapsViewUrl
+} from "../../shared/utils/googleMaps";
 
 vi.mock("../../shared/api", async () => {
   const actual = await vi.importActual<typeof import("../../shared/api")>("../../shared/api");
@@ -120,20 +124,19 @@ describe("StructureDetailsPage", () => {
 
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
     const mapLink = screen.getByRole("link", { name: /Google Maps/i });
-    expect(mapLink).toHaveAttribute("href", "https://www.google.com/maps?q=45.6,10.16");
+    const expectedViewUrl = createGoogleMapsViewUrl({
+      lat: sampleStructure.latitude!,
+      lng: sampleStructure.longitude!
+    });
+    expect(mapLink).toHaveAttribute("href", expectedViewUrl);
     const mapTitle = i18n.t("structures.details.location.mapTitle", {
       name: sampleStructure.name
     });
     const mapEmbed = screen.getByTitle(mapTitle);
-    const expectedEmbedUrl = `https://maps.google.com/maps?${
-      new URLSearchParams({
-        q: `${sampleStructure.latitude?.toFixed(6)},${sampleStructure.longitude?.toFixed(6)}`,
-        z: "15",
-        t: "m",
-        output: "embed",
-        iwloc: "near"
-      }).toString()
-    }`;
+    const expectedEmbedUrl = createGoogleMapsEmbedUrl({
+      lat: sampleStructure.latitude!,
+      lng: sampleStructure.longitude!
+    });
     expect(mapEmbed).toHaveAttribute("src", expectedEmbedUrl);
     const coordinatesLabel = i18n.t("structures.details.location.coordinates", {
       lat: sampleStructure.latitude?.toFixed(4),

@@ -24,6 +24,10 @@ import type {
 import { useAuth } from "../shared/auth";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import { StructurePhotosSection } from "../shared/ui/StructurePhotosSection";
+import {
+  createGoogleMapsEmbedUrl,
+  createGoogleMapsViewUrl
+} from "../shared/utils/googleMaps";
 
 const formatCurrency = (value: number, currency: string) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency }).format(value);
@@ -211,27 +215,14 @@ export const StructureDetailsPage = () => {
         })
       : null;
   const mapDisplayName = structure.name ?? t("structures.details.location.title");
-  const googleMapsEmbedUrl = hasCoordinates
-    ? (() => {
-        const lat = structure.latitude?.toFixed(6);
-        const lng = structure.longitude?.toFixed(6);
-        if (!lat || !lng) {
-          return null;
-        }
-
-        const params = new URLSearchParams({
-          q: `${lat},${lng}`,
-          z: "15",
-          t: "m",
-          output: "embed",
-          iwloc: "near"
-        });
-
-        return `https://maps.google.com/maps?${params.toString()}`;
-      })()
+  const googleMapsCoordinates = hasCoordinates
+    ? { lat: structure.latitude as number, lng: structure.longitude as number }
     : null;
-  const googleMapsUrl = hasCoordinates
-    ? `https://www.google.com/maps?q=${structure.latitude},${structure.longitude}`
+  const googleMapsEmbedUrl = googleMapsCoordinates
+    ? createGoogleMapsEmbedUrl(googleMapsCoordinates)
+    : null;
+  const googleMapsUrl = googleMapsCoordinates
+    ? createGoogleMapsViewUrl(googleMapsCoordinates)
     : null;
   const googleMapsEmbedTitle = t("structures.details.location.mapTitle", {
     name: mapDisplayName

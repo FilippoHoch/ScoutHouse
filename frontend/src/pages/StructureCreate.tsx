@@ -43,7 +43,7 @@ import {
   StatusBadge,
   Surface
 } from "../shared/ui/designSystem";
-import { GoogleMapPicker } from "../shared/ui/GoogleMapPicker";
+import { GoogleMapEmbed } from "../shared/ui/GoogleMapEmbed";
 import { isImageFile } from "../shared/utils/image";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -125,8 +125,6 @@ export const StructureCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
   useEffect(() => {
     document.body.classList.add("layout-wide");
     return () => {
@@ -654,13 +652,6 @@ export const StructureCreatePage = () => {
     setAltitude(event.target.value);
     setApiError(null);
     clearFieldError("altitude");
-  };
-
-  const handleMapCoordinatesChange = (coordinates: { lat: number; lng: number }) => {
-    setLatitude(coordinates.lat.toFixed(6));
-    setLongitude(coordinates.lng.toFixed(6));
-    setApiError(null);
-    clearFieldErrorsGroup(["latitude", "longitude"]);
   };
 
   const handleIndoorBedsChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -2637,16 +2628,11 @@ export const StructureCreatePage = () => {
                     <span className="structure-map-field-title">
                       {t("structures.create.form.map.title")}
                     </span>
-                    <GoogleMapPicker
-                      apiKey={googleMapsApiKey}
-                      value={selectedCoordinates}
-                      onChange={handleMapCoordinatesChange}
-                      labels={{
-                        loading: t("structures.create.form.map.loading"),
-                        loadError: t("structures.create.form.map.error"),
-                        missingKey: t("structures.create.form.map.missingKey")
-                      }}
+                    <GoogleMapEmbed
+                      coordinates={selectedCoordinates}
+                      title={t("structures.create.form.map.title")}
                       ariaLabel={t("structures.create.form.map.ariaLabel")}
+                      emptyLabel={t("structures.create.form.map.empty")}
                     />
                     <span className="helper-text">
                       {t("structures.create.form.map.hint")}
