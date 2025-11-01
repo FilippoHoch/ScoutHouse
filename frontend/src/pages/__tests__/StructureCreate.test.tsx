@@ -10,12 +10,14 @@ import {
   confirmAttachmentUpload,
   createStructure,
   createStructurePhoto,
-  signAttachmentUpload
+  signAttachmentUpload,
+  checkStructureWebsiteUrl
 } from "../../shared/api";
 import type { Structure } from "../../shared/types";
 import { StructureCreatePage } from "../StructureCreate";
 
 const mockNavigate = vi.fn();
+const confirmSpy = vi.spyOn(window, "confirm");
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -32,7 +34,8 @@ vi.mock("../../shared/api", async () => {
     createStructure: vi.fn(),
     createStructurePhoto: vi.fn(),
     signAttachmentUpload: vi.fn(),
-    confirmAttachmentUpload: vi.fn()
+    confirmAttachmentUpload: vi.fn(),
+    checkStructureWebsiteUrl: vi.fn()
   };
 });
 
@@ -91,6 +94,9 @@ describe("StructureCreatePage", () => {
     vi.mocked(createStructurePhoto).mockReset();
     vi.mocked(signAttachmentUpload).mockReset();
     vi.mocked(confirmAttachmentUpload).mockReset();
+    vi.mocked(checkStructureWebsiteUrl).mockReset();
+    confirmSpy.mockReset();
+    confirmSpy.mockReturnValue(true);
   });
 
   it("creates a structure and navigates to its detail page", async () => {
@@ -104,6 +110,7 @@ describe("StructureCreatePage", () => {
     const Wrapper = createWrapper(queryClient);
     const user = userEvent.setup();
     vi.mocked(createStructure).mockResolvedValue(createdStructure);
+    vi.mocked(checkStructureWebsiteUrl).mockResolvedValue({ ok: true, status_code: 200 });
 
     render(<StructureCreatePage />, { wrapper: Wrapper });
 
@@ -121,6 +128,7 @@ describe("StructureCreatePage", () => {
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
+    await waitFor(() => expect(checkStructureWebsiteUrl).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(createStructure).toHaveBeenCalled());
 
     const payload = vi.mocked(createStructure).mock.calls[0][0];
@@ -153,6 +161,56 @@ describe("StructureCreatePage", () => {
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
+    expect(confirmSpy).not.toHaveBeenCalled();
+  });
+
+  it("prompts for confirmation when a website is unreachable", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+    vi.mocked(checkStructureWebsiteUrl)
+      .mockResolvedValueOnce({ ok: false, status_code: 503 })
+      .mockResolvedValue({ ok: true, status_code: 200 });
+    confirmSpy.mockReturnValue(true);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.type(screen.getByLabelText(/Provincia/i), "BS");
+    await user.type(screen.getByLabelText(/Siti o link di riferimento/i), "https://base.example.org");
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(checkStructureWebsiteUrl).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(confirmSpy.mock.calls[0][0]).toContain("Non siamo riusciti a raggiungere");
+  });
+
+  it("aborts submission when confirmation is declined", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(checkStructureWebsiteUrl).mockResolvedValue({ ok: false, status_code: 500 });
+    confirmSpy.mockReturnValue(false);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.type(screen.getByLabelText(/Provincia/i), "BS");
+    await user.type(screen.getByLabelText(/Siti o link di riferimento/i), "https://base.example.org");
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(checkStructureWebsiteUrl).toHaveBeenCalledTimes(1));
+    expect(createStructure).not.toHaveBeenCalled();
   });
 
   it("serialises open periods when provided", async () => {

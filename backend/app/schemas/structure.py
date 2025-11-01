@@ -360,6 +360,15 @@ class StructureSearchResponse(BaseModel):
     base_coords: dict[str, float]
 
 
+class StructureWebsiteCheckRequest(BaseModel):
+    url: AnyHttpUrl
+
+
+class StructureWebsiteCheckResponse(BaseModel):
+    ok: bool
+    status_code: int | None = None
+
+
 __all__ = [
     "StructureBase",
     "StructureCreate",
@@ -376,4 +385,6 @@ __all__ = [
     "StructureOpenPeriodRead",
     "StructureOpenPeriodCreate",
     "StructureOpenPeriodUpdate",
+    "StructureWebsiteCheckRequest",
+    "StructureWebsiteCheckResponse",
 ]

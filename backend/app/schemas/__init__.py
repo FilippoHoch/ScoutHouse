@@ -32,6 +32,8 @@ from .structure import (
     StructureSearchItem,
     StructureSearchResponse,
     StructureUpdate,
+    StructureWebsiteCheckRequest,
+    StructureWebsiteCheckResponse,
 )
 from .structure_photo import StructurePhotoCreate, StructurePhotoRead
 from .contact import ContactCreate, ContactRead, ContactUpdate
@@ -77,6 +79,8 @@ __all__ = [
     "StructureSearchItem",
     "StructureSearchResponse",
     "StructureUpdate",
+    "StructureWebsiteCheckRequest",
+    "StructureWebsiteCheckResponse",
     "StructurePhotoCreate",
     "StructurePhotoRead",
     "ContactCreate",

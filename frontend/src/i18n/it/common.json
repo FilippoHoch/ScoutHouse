@@ -381,6 +381,9 @@
         "openPeriodsRangeOrder": "La data di fine deve essere successiva o uguale alla data di inizio.",
         "openPeriodsUnitsRequired": "Seleziona almeno una branca per ogni periodo."
       },
+      "confirm": {
+        "websiteUnreachable": "{{count, plural, one {Non siamo riusciti a raggiungere il link indicato:\n{{urls}}\nVuoi continuare comunque?} other {Non siamo riusciti a raggiungere i link indicati:\n{{urls}}\nVuoi continuare comunque?}}"
+      },
       "contact": {
         "minimumDetails": "Compila almeno nome, cognome, email, telefono o note per cercare duplicati.",
         "duplicatesFound": "Sono stati trovati possibili duplicati ({{count}}).",

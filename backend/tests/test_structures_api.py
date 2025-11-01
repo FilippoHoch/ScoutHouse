@@ -1,6 +1,8 @@
 import os
 from collections.abc import Generator
 
+import httpx
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -341,3 +343,121 @@ def test_search_supports_extended_filters() -> None:
     assert date_response.status_code == 200
     date_slugs = {item["slug"] for item in date_response.json()["items"]}
     assert date_slugs == {"campo-pianura"}
+
+
+def test_check_structure_website_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = get_client(authenticated=True)
+
+    class DummyResponse:
+        def __init__(self, status_code: int) -> None:
+            self.status_code = status_code
+
+    class DummyClient:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        async def __aenter__(self) -> "DummyClient":
+            return self
+
+        async def __aexit__(self, exc_type: object, exc: object, tb: object) -> bool:
+            return False
+
+        async def head(self, url: str) -> DummyResponse:
+            return DummyResponse(204)
+
+        async def get(self, url: str) -> DummyResponse:  # pragma: no cover - defensive
+            raise AssertionError("GET should not be called when HEAD succeeds")
+
+    monkeypatch.setattr(httpx, "AsyncClient", DummyClient)
+
+    response = client.post(
+        "/api/v1/structures/check-website",
+        json={"url": "https://example.org"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"ok": True, "status_code": 204}
+
+
+def test_check_structure_website_falls_back_to_get(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = get_client(authenticated=True)
+
+    class DummyResponse:
+        def __init__(self, status_code: int) -> None:
+            self.status_code = status_code
+
+    class DummyClient:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            self.head_called = False
+
+        async def __aenter__(self) -> "DummyClient":
+            return self
+
+        async def __aexit__(self, exc_type: object, exc: object, tb: object) -> bool:
+            return False
+
+        async def head(self, url: str) -> DummyResponse:
+            self.head_called = True
+            return DummyResponse(405)
+
+        async def get(self, url: str) -> DummyResponse:
+            assert self.head_called is True
+            return DummyResponse(200)
+
+    monkeypatch.setattr(httpx, "AsyncClient", DummyClient)
+
+    response = client.post(
+        "/api/v1/structures/check-website",
+        json={"url": "https://example.org"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"ok": True, "status_code": 200}
+
+
+def test_check_structure_website_handles_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = get_client(authenticated=True)
+
+    class ErrorClient:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        async def __aenter__(self) -> "ErrorClient":
+            return self
+
+        async def __aexit__(self, exc_type: object, exc: object, tb: object) -> bool:
+            return False
+
+        async def head(self, url: str) -> None:
+            raise httpx.ConnectTimeout(
+                "timeout",
+                request=httpx.Request("HEAD", str(url)),
+            )
+
+        async def get(self, url: str) -> None:  # pragma: no cover - defensive
+            raise AssertionError("GET should not be called after network error")
+
+    monkeypatch.setattr(httpx, "AsyncClient", ErrorClient)
+
+    response = client.post(
+        "/api/v1/structures/check-website",
+        json={"url": "https://example.org"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"ok": False, "status_code": None}
+
+
+def test_check_structure_website_requires_authentication() -> None:
+    client = get_client()
+    response = client.post(
+        "/api/v1/structures/check-website",
+        json={"url": "https://example.org"},
+    )
+    assert response.status_code == 401
+
+
+def test_check_structure_website_requires_admin_role() -> None:
+    client = get_client(authenticated=True, is_admin=False)
+    response = client.post(
+        "/api/v1/structures/check-website",
+        json={"url": "https://example.org"},
+    )
+    assert response.status_code == 403

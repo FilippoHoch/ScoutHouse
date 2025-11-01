@@ -191,6 +191,15 @@ export interface StructureCreateDto {
   open_periods?: StructureOpenPeriodInput[];
 }
 
+export interface StructureWebsiteCheckRequest {
+  url: string;
+}
+
+export interface StructureWebsiteCheckResponse {
+  ok: boolean;
+  status_code: number | null;
+}
+
 export interface StructureSearchItem {
   id: number;
   slug: string;

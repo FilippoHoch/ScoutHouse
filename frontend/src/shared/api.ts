@@ -31,6 +31,8 @@ import {
   Structure,
   StructurePhoto,
   StructureCreateDto,
+  StructureWebsiteCheckRequest,
+  StructureWebsiteCheckResponse,
   StructureSearchParams,
   StructureSearchResponse,
   StructureImportDryRunResponse,
@@ -330,6 +332,16 @@ export async function createStructure(dto: StructureCreateDto): Promise<Structur
     method: "POST",
     body: JSON.stringify(dto),
     auth: true
+  });
+}
+
+export async function checkStructureWebsiteUrl(
+  payload: StructureWebsiteCheckRequest
+): Promise<StructureWebsiteCheckResponse> {
+  return apiFetch<StructureWebsiteCheckResponse>("/api/v1/structures/check-website", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload)
   });
 }
 

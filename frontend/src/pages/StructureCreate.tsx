@@ -16,6 +16,7 @@ import {
   ApiError,
   AttachmentConfirmRequest,
   AttachmentUploadRequest,
+  checkStructureWebsiteUrl,
   confirmAttachmentUpload,
   createStructure,
   createStructureContact,
@@ -1147,6 +1148,37 @@ export const StructureCreatePage = () => {
     const trimmedWebsiteUrls = websiteUrls.map((value) => value.trim());
     const trimmedNotesLogistics = notesLogistics.trim();
     const trimmedNotes = notes.trim();
+    const nonEmptyWebsiteUrls = trimmedWebsiteUrls.filter((value) => value);
+
+    if (nonEmptyWebsiteUrls.length > 0) {
+      const checkResults = await Promise.all(
+        nonEmptyWebsiteUrls.map(async (url) => {
+          try {
+            const result = await checkStructureWebsiteUrl({ url });
+            return { url, ok: result.ok };
+          } catch (error) {
+            console.warn("Unable to verify website URL", url, error);
+            return { url, ok: false };
+          }
+        })
+      );
+
+      const unreachableUrls = checkResults
+        .filter((result) => !result.ok)
+        .map((result) => result.url);
+
+      if (unreachableUrls.length > 0) {
+        const message = t("structures.create.confirm.websiteUnreachable", {
+          count: unreachableUrls.length,
+          urls: unreachableUrls.join("\n"),
+        });
+        const proceed =
+          typeof window === "undefined" ? true : window.confirm(message);
+        if (!proceed) {
+          return;
+        }
+      }
+    }
 
     const payload: StructureCreateDto = {
       name: name.trim(),
@@ -1229,7 +1261,6 @@ export const StructureCreatePage = () => {
       payload.pit_latrine_allowed = false;
     }
 
-    const nonEmptyWebsiteUrls = trimmedWebsiteUrls.filter((value) => value);
     if (nonEmptyWebsiteUrls.length > 0) {
       payload.website_urls = nonEmptyWebsiteUrls;
     }

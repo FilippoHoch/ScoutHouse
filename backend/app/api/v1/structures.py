@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+import httpx
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
@@ -52,6 +53,8 @@ from app.schemas import (
     StructureSearchItem,
     StructureSearchResponse,
     StructureUpdate,
+    StructureWebsiteCheckRequest,
+    StructureWebsiteCheckResponse,
 )
 from app.services.audit import record_audit
 from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
@@ -70,6 +73,34 @@ router = APIRouter()
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+
+
+async def _probe_structure_website(url: str) -> tuple[bool, int | None]:
+    timeout = httpx.Timeout(5.0, connect=5.0)
+    headers = {"User-Agent": "ScoutHouseBot/1.0 (+https://scouthouse.example)"}
+    try:
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True, headers=headers) as client:
+            response = await client.head(url)
+            status_code = response.status_code
+            if status_code in {405, 501} or status_code >= 400:
+                response = await client.get(url)
+                status_code = response.status_code
+        return status_code < 400, status_code
+    except httpx.RequestError:
+        return False, None
+
+
+@router.post(
+    "/check-website",
+    response_model=StructureWebsiteCheckResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def check_structure_website(
+    payload: StructureWebsiteCheckRequest,
+    current_user: AdminUser,
+) -> StructureWebsiteCheckResponse:
+    ok, status_code = await _probe_structure_website(payload.url)
+    return StructureWebsiteCheckResponse(ok=ok, status_code=status_code)
 
 
 def _ensure_storage_ready() -> tuple[str, Any]:
