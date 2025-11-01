@@ -43,7 +43,7 @@ import {
   StatusBadge,
   Surface
 } from "../shared/ui/designSystem";
-import { GoogleMapEmbed } from "../shared/ui/GoogleMapEmbed";
+import { GoogleMapEmbed, type GoogleMapEmbedCoordinates } from "../shared/ui/GoogleMapEmbed";
 import { isImageFile } from "../shared/utils/image";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -243,6 +243,13 @@ export const StructureCreatePage = () => {
     });
   };
 
+  const handleMapCoordinatesChange = (next: GoogleMapEmbedCoordinates) => {
+    setLatitude(next.lat.toFixed(6));
+    setLongitude(next.lng.toFixed(6));
+    setApiError(null);
+    clearFieldErrorsGroup(["latitude", "longitude"]);
+  };
+
   const resetIndoorFields = () => {
     setIndoorBeds("");
     setIndoorBathrooms("");
@@ -419,12 +426,7 @@ export const StructureCreatePage = () => {
       setPhotoFiles([]);
       setPhotoError(null);
     },
-    [
-      photoFiles,
-      confirmAttachmentUpload,
-      createStructurePhoto,
-      signAttachmentUpload
-    ]
+    [photoFiles]
   );
 
   const formatQueuedPhotoSize = useCallback(
@@ -2821,6 +2823,7 @@ export const StructureCreatePage = () => {
                       title={t("structures.create.form.map.title")}
                       ariaLabel={t("structures.create.form.map.ariaLabel")}
                       emptyLabel={t("structures.create.form.map.empty")}
+                      onCoordinatesChange={handleMapCoordinatesChange}
                     />
                     <span className="helper-text">
                       {t("structures.create.form.map.hint")}

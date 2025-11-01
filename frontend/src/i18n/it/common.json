@@ -174,8 +174,8 @@
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
         "map": {
           "title": "Anteprima su Google Maps",
-          "hint": "La mappa mostra la posizione indicativa basata sulle coordinate inserite. Aggiorna i campi sopra per modificare l'anteprima.",
-          "empty": "Inserisci coordinate valide per visualizzare l'anteprima della mappa.",
+          "hint": "Fai clic sulla mappa per posizionare il segnaposto oppure inserisci manualmente le coordinate nei campi dedicati.",
+          "empty": "Fai clic sulla mappa per scegliere un punto e impostare automaticamente le coordinate.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
           "ariaLabel": "Mappa incorporata di Google per anteprima delle coordinate"
         },
