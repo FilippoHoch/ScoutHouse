@@ -1096,6 +1096,7 @@ export const StructureCreatePage = () => {
     const trimmedAddress = address.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
+    const trimmedAltitude = altitude.trim();
     const trimmedIndoorBeds = indoorBeds.trim();
     const trimmedIndoorBathrooms = indoorBathrooms.trim();
     const trimmedIndoorShowers = indoorShowers.trim();
