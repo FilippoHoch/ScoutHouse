@@ -755,6 +755,20 @@ export const StructureDetailsPage = () => {
                     <p>{t("structures.contacts.website.empty")}</p>
                   )}
                 </div>
+                <div className="structure-contacts__emails">
+                  <h4>{t("structures.contacts.emails.title")}</h4>
+                  {structure.contact_emails.length > 0 ? (
+                    <ul className="structure-website-links">
+                      {structure.contact_emails.map((email) => (
+                        <li key={email}>
+                          <a href={`mailto:${email}`}>{email}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>{t("structures.contacts.emails.empty")}</p>
+                  )}
+                </div>
                 {contacts.length === 0 ? (
                   <p className="structure-details__placeholder">{t("structures.contacts.empty")}</p>
                 ) : (

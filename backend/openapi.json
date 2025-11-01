@@ -6566,6 +6566,14 @@
             "title": "Pit Latrine Allowed",
             "default": false
           },
+          "contact_emails": {
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "type": "array",
+            "title": "Contact Emails"
+          },
           "website_urls": {
             "items": {
               "type": "string",
@@ -7150,6 +7158,14 @@
             "type": "boolean",
             "title": "Pit Latrine Allowed",
             "default": false
+          },
+          "contact_emails": {
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "type": "array",
+            "title": "Contact Emails"
           },
           "website_urls": {
             "items": {
@@ -7741,6 +7757,14 @@
             "type": "boolean",
             "title": "Pit Latrine Allowed",
             "default": false
+          },
+          "contact_emails": {
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "type": "array",
+            "title": "Contact Emails"
           },
           "website_urls": {
             "items": {

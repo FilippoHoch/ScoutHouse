@@ -1823,7 +1823,8 @@ table tbody tr:hover {
   justify-content: flex-end;
 }
 
-.structure-contacts__website {
+.structure-contacts__website,
+.structure-contacts__emails {
   display: grid;
   gap: var(--space-xs);
   padding: var(--space-lg);
@@ -1832,13 +1833,15 @@ table tbody tr:hover {
   box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.15);
 }
 
-.structure-contacts__website h4 {
+.structure-contacts__website h4,
+.structure-contacts__emails h4 {
   margin: 0;
   color: var(--color-muted-strong);
   font-size: 1rem;
 }
 
-.structure-contacts__website p {
+.structure-contacts__website p,
+.structure-contacts__emails p {
   margin: 0;
   color: var(--color-muted);
 }

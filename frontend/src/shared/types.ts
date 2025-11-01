@@ -145,6 +145,7 @@ export interface Structure {
   weekend_only: boolean;
   has_field_poles: boolean;
   pit_latrine_allowed: boolean;
+  contact_emails: string[];
   website_urls: string[];
   notes_logistics: string | null;
   notes: string | null;
@@ -186,6 +187,7 @@ export interface StructureCreateDto {
   weekend_only?: boolean;
   has_field_poles?: boolean;
   pit_latrine_allowed?: boolean;
+  contact_emails?: string[];
   website_urls?: string[];
   notes_logistics?: string | null;
   notes?: string | null;

@@ -6,7 +6,7 @@ from typing import Any
 import re
 from collections.abc import Iterable
 
-from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_validator
+from pydantic import AnyHttpUrl, BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.cost_option import StructureCostModel
@@ -99,9 +99,34 @@ class StructureBase(BaseModel):
     weekend_only: bool = False
     has_field_poles: bool = False
     pit_latrine_allowed: bool = False
+    contact_emails: list[EmailStr] = Field(default_factory=list)
     website_urls: list[AnyHttpUrl] = Field(default_factory=list)
     notes_logistics: str | None = None
     notes: str | None = None
+
+    @field_validator("contact_emails", mode="before")
+    @classmethod
+    def normalize_contact_emails(cls, value: object) -> list[str] | object:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            value = [value]
+        if isinstance(value, Iterable):
+            seen: set[str] = set()
+            normalized: list[str] = []
+            for item in value:
+                if item in (None, ""):
+                    continue
+                text = str(item).strip()
+                if not text:
+                    continue
+                lowered = text.lower()
+                if lowered in seen:
+                    continue
+                seen.add(lowered)
+                normalized.append(text)
+            return normalized
+        return value
 
     @field_validator("website_urls", mode="before")
     @classmethod

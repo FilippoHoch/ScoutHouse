@@ -67,6 +67,7 @@ const createdStructure: Structure = {
   weekend_only: false,
   has_field_poles: false,
   pit_latrine_allowed: false,
+  contact_emails: ["info@example.org", "booking@example.org"],
   website_urls: ["https://example.org/base-bosco"],
   notes_logistics: null,
   notes: null,
@@ -119,6 +120,10 @@ describe("StructureCreatePage", () => {
     await user.type(screen.getByLabelText(/Provincia/i), "bs");
     await user.type(screen.getByLabelText(/Altitudine/i), "350");
 
+    await user.type(screen.getByLabelText(/Email di riferimento/i), "info@example.org");
+    await user.click(screen.getByRole("button", { name: /Aggiungi un'altra email/i }));
+    await user.type(screen.getByLabelText(/Email 2/i), "booking@example.org");
+
     await user.type(screen.getByLabelText(/Siti o link di riferimento/i), "https://base.example.org");
     await user.click(screen.getByRole("button", { name: /Aggiungi un altro link/i }));
     await user.type(screen.getByLabelText(/Link 2/i), "https://info.example.org");
@@ -155,6 +160,7 @@ describe("StructureCreatePage", () => {
       water_sources: null,
       fire_policy: null,
       altitude: 350,
+      contact_emails: ["info@example.org", "booking@example.org"],
       open_periods: []
     });
     expect(payload.website_urls).toEqual([

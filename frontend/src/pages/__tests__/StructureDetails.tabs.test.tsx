@@ -58,6 +58,7 @@ const structureWithDetails: Structure = {
   weekend_only: false,
   has_field_poles: true,
   pit_latrine_allowed: true,
+  contact_emails: [],
   website_urls: [],
   notes_logistics: null,
   notes: null,

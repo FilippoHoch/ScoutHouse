@@ -10,6 +10,7 @@ from typing import Iterator, Literal, Sequence
 from urllib.parse import urlparse
 
 from openpyxl import Workbook, load_workbook
+from pydantic import EmailStr, TypeAdapter
 
 from app.models.structure import (
     FirePolicy,
@@ -19,6 +20,8 @@ from app.models.structure import (
     WaterSource,
 )
 from app.models.availability import StructureUnit
+
+EMAIL_ADAPTER = TypeAdapter(EmailStr)
 
 HEADERS = [
     "name",
@@ -48,6 +51,7 @@ HEADERS = [
     "weekend_only",
     "has_field_poles",
     "pit_latrine_allowed",
+    "contact_emails",
     "website_urls",
     "notes_logistics",
     "notes",
@@ -96,6 +100,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "weekend_only": False,
         "has_field_poles": False,
         "pit_latrine_allowed": False,
+        "contact_emails": "info@example.org",
         "website_urls": "https://example.org/casa-alpina",
         "notes_logistics": "Accesso anche con pullman",
         "notes": "Spazi esterni ampi",
@@ -128,6 +133,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "weekend_only": True,
         "has_field_poles": True,
         "pit_latrine_allowed": True,
+        "contact_emails": "prenotazioni@example.org;info@example.org",
         "website_urls": "https://example.org/terreno",
         "notes_logistics": "Campo estivo disponibile da giugno a agosto",
         "notes": "Ideale per campi estivi",
@@ -195,6 +201,7 @@ class StructureImportRow:
     weekend_only: bool | None
     has_field_poles: bool | None
     pit_latrine_allowed: bool | None
+    contact_emails: list[str]
     website_urls: list[str]
     notes_logistics: str | None
     notes: str | None
@@ -413,6 +420,40 @@ def _parse_website_urls(value: object) -> tuple[list[str], list[str]]:
     return urls, errors
 
 
+def _parse_contact_emails(value: object) -> tuple[list[str], list[str]]:
+    if value is None:
+        return [], []
+
+    if isinstance(value, (list, tuple)):
+        raw_items = value
+    else:
+        text = _normalise_text(value)
+        if not text:
+            return [], []
+        raw_items = re.split(r"[\n;,]", text)
+
+    emails: list[str] = []
+    errors: list[str] = []
+    seen: set[str] = set()
+
+    for item in raw_items:
+        candidate = _normalise_text(item)
+        if not candidate:
+            continue
+        lowered = candidate.lower()
+        if lowered in seen:
+            continue
+        try:
+            validated = EMAIL_ADAPTER.validate_python(candidate)
+        except ValueError as exc:
+            errors.append(f"{candidate}: {exc}")
+            continue
+        seen.add(lowered)
+        emails.append(str(validated))
+
+    return emails, errors
+
+
 def _validate_latitude(value: Decimal | None) -> Decimal | None:
     if value is None:
         return None
@@ -499,9 +540,10 @@ def _process_rows(
         weekend_only_raw = values[24]
         has_field_poles_raw = values[25]
         pit_latrine_allowed_raw = values[26]
-        website_urls_raw = values[27]
-        notes_logistics_raw = values[28]
-        notes_raw = values[29]
+        contact_emails_raw = values[27]
+        website_urls_raw = values[28]
+        notes_logistics_raw = values[29]
+        notes_raw = values[30]
 
         row_errors: list[RowError] = []
         row_warnings: list[RowError] = []
@@ -761,6 +803,12 @@ def _process_rows(
             )
             pit_latrine_allowed = None
 
+        contact_emails, email_errors = _parse_contact_emails(contact_emails_raw)
+        for message in email_errors:
+            row_errors.append(
+                RowError(row=index, field="contact_emails", message=message, source_format=source_format)
+            )
+
         website_urls, url_errors = _parse_website_urls(website_urls_raw)
         for message in url_errors:
             row_errors.append(
@@ -864,6 +912,7 @@ def _process_rows(
                 weekend_only=weekend_only,
                 has_field_poles=has_field_poles,
                 pit_latrine_allowed=pit_latrine_allowed,
+                contact_emails=contact_emails,
                 website_urls=website_urls,
                 notes_logistics=notes_logistics,
                 notes=notes,
