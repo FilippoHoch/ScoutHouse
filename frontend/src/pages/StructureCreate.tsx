@@ -2319,9 +2319,14 @@ export const StructureCreatePage = () => {
                     })}
                   </div>
                   <div className="structure-website-actions">
-                    <button type="button" onClick={handleAddContactEmail}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddContactEmail}
+                    >
                       {t("structures.create.form.contactEmails.add")}
-                    </button>
+                    </Button>
                   </div>
                   <span className="helper-text" id={contactEmailsHintId}>
                     {t("structures.create.form.contactEmails.hint")}
