@@ -390,7 +390,7 @@
         "searchFailed": "Impossibile cercare contatti esistenti.",
         "usingExisting": "Verrà utilizzato il contatto {{name}}.",
         "saveFailed": "Struttura creata ma impossibile collegare il contatto. Aggiungilo dalle impostazioni della struttura."
-      },
+      }
     },
     "contacts": {
       "tab": "Contatti",
