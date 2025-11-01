@@ -177,7 +177,7 @@
           "hint": "Clicca sulla mappa per posizionare il segnaposto oppure inserisci manualmente le coordinate.",
           "loading": "Caricamento della mappa in corso…",
           "error": "Impossibile caricare Google Maps. Controlla la connessione o riprova più tardi.",
-          "missingKey": "Clicca sulla mappa per posizionare il segnaposto oppure trascinalo per regolare con precisione le coordinate.",
+          "missingKey": "Google Maps non è disponibile. Inserisci manualmente le coordinate oppure contatta l'amministratore per configurare la chiave API.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
           "ariaLabel": "Mappa di Google per scegliere le coordinate"
         },
