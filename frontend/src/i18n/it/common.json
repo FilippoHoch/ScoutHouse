@@ -562,6 +562,13 @@
       },
       "actions": {
         "delete": "Elimina"
+      },
+      "carousel": {
+        "label": "Galleria foto della struttura",
+        "previous": "Foto precedente",
+        "next": "Foto successiva",
+        "counter": "{{current}} di {{total}}",
+        "select": "Vai alla foto {{index}}"
       }
     },
     "filters": {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -58,7 +58,7 @@ describe("StructurePhotosSection", () => {
     expect(await screen.findByText(/Nessuna foto caricata/i)).toBeInTheDocument();
   });
 
-  it("displays photos in a grid", async () => {
+  it("displays photos in a carousel preview", async () => {
     mockedGetPhotos.mockResolvedValue([
       {
         id: 1,
@@ -78,7 +78,58 @@ describe("StructurePhotosSection", () => {
       { wrapper: Wrapper }
     );
 
-    expect(await screen.findByAltText("panorama.jpg")).toBeInTheDocument();
+    const region = await screen.findByRole("region", { name: /Galleria foto della struttura/i });
+    expect(region).toBeInTheDocument();
+
+    const preview = within(region).getByRole("img", { name: "panorama.jpg" });
+    expect(preview).toBeInTheDocument();
+
+    const nextButton = within(region).getByRole("button", { name: /Foto successiva/i });
+    expect(nextButton).toBeDisabled();
+  });
+
+  it("allows navigating between photos", async () => {
+    const user = userEvent.setup();
+    mockedGetPhotos.mockResolvedValue([
+      {
+        id: 1,
+        structure_id: 42,
+        attachment_id: 99,
+        filename: "panorama.jpg",
+        mime: "image/jpeg",
+        size: 2048,
+        position: 0,
+        url: "https://example.com/panorama.jpg",
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        structure_id: 42,
+        attachment_id: 101,
+        filename: "bosco.jpg",
+        mime: "image/jpeg",
+        size: 1024,
+        position: 1,
+        url: "https://example.com/bosco.jpg",
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+    render(
+      <StructurePhotosSection structureId={42} canUpload={false} canDelete={false} />, 
+      { wrapper: Wrapper }
+    );
+
+    const region = await screen.findByRole("region", { name: /Galleria foto della struttura/i });
+    const nextButton = within(region).getByRole("button", { name: /Foto successiva/i });
+    expect(nextButton).not.toBeDisabled();
+
+    await user.click(nextButton);
+    expect(within(region).getByRole("img", { name: "bosco.jpg" })).toBeInTheDocument();
+
+    const firstThumb = await within(region).findByRole("button", { name: /Vai alla foto 1/i });
+    await user.click(firstThumb);
+    expect(within(region).getByRole("img", { name: "panorama.jpg" })).toBeInTheDocument();
   });
 
   it("validates file type before uploading", async () => {
