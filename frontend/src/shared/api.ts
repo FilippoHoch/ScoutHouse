@@ -103,14 +103,23 @@ function mergeHeaders(base: Record<string, string>, extra?: HeadersInit): Record
   return headers;
 }
 
+const WARNING_HEADER = "X-Scout-Warnings";
+
 export interface ApiFetchOptions extends RequestInit {
   auth?: boolean;
   skipRefresh?: boolean;
   contentType?: string | null;
+  onWarnings?: (warnings: string[]) => void;
 }
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
-  const { auth = false, skipRefresh = false, contentType = "application/json", ...init } = options;
+  const {
+    auth = false,
+    skipRefresh = false,
+    contentType = "application/json",
+    onWarnings,
+    ...init
+  } = options;
 
   const baseHeaders = contentType === null ? {} : { "Content-Type": contentType };
 
@@ -155,6 +164,20 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
       body = await response.text();
     }
     throw new ApiError(response.status, body);
+  }
+
+  if (onWarnings) {
+    const headerValue = response.headers.get(WARNING_HEADER);
+    if (headerValue) {
+      try {
+        const parsed = JSON.parse(headerValue);
+        if (Array.isArray(parsed)) {
+          onWarnings(parsed.map((item) => String(item)));
+        }
+      } catch (error) {
+        onWarnings([headerValue]);
+      }
+    }
   }
 
   if (response.status === 204) {
@@ -325,12 +348,24 @@ export async function getStructureBySlug(
   return apiFetch<Structure>(`/api/v1/structures/by-slug/${slug}${query}`);
 }
 
-export async function createStructure(dto: StructureCreateDto): Promise<Structure> {
-  return apiFetch<Structure>("/api/v1/structures", {
+export interface StructureCreateResult {
+  structure: Structure;
+  warnings: string[];
+}
+
+export async function createStructure(dto: StructureCreateDto): Promise<StructureCreateResult> {
+  let warnings: string[] = [];
+
+  const structure = await apiFetch<Structure>("/api/v1/structures", {
     method: "POST",
     body: JSON.stringify(dto),
-    auth: true
+    auth: true,
+    onWarnings: (messages) => {
+      warnings = messages;
+    }
   });
+
+  return { structure, warnings };
 }
 
 export async function getStructureContacts(structureId: number): Promise<Contact[]> {

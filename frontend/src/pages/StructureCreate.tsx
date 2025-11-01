@@ -1122,7 +1122,7 @@ export const StructureCreatePage = () => {
     });
 
     try {
-      const created = await createMutation.mutateAsync(payload);
+      const { structure: created, warnings } = await createMutation.mutateAsync(payload);
 
       if (addContact && (contactHasDetails() || contactId !== null)) {
         try {
@@ -1130,6 +1130,15 @@ export const StructureCreatePage = () => {
         } catch (contactError) {
           window.alert(t("structures.create.contact.saveFailed"));
         }
+      }
+
+      if (warnings.length > 0) {
+        const urls = warnings.join("\n");
+        window.alert(
+          t("structures.create.warnings.websiteUnreachable", {
+            urls
+          })
+        );
       }
 
       await queryClient.invalidateQueries({ queryKey: ["structures"] });

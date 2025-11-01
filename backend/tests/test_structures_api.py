@@ -1,6 +1,8 @@
 import os
 from collections.abc import Generator
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -19,6 +21,14 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def disable_url_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.api.v1.structures.find_unreachable_urls",
+        lambda urls: [],
+    )
 
 
 def get_client(*, authenticated: bool = False, is_admin: bool = True) -> TestClient:
@@ -141,6 +151,40 @@ def test_field_validation_errors() -> None:
 
     response = client.post("/api/v1/structures/", json=invalid_payload)
     assert response.status_code == 422
+
+
+def test_structure_creation_emits_warning(monkeypatch: pytest.MonkeyPatch) -> None:
+    warned_urls: list[str] = []
+
+    def fake_check(urls: list[str]) -> list[str]:
+        warned_urls.extend(urls)
+        return urls
+
+    monkeypatch.setattr(
+        "app.api.v1.structures.find_unreachable_urls",
+        fake_check,
+        raising=True,
+    )
+
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Base con link",
+        "slug": "base-con-link",
+        "type": "house",
+        "website_urls": ["https://non-risponde.example"],
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+
+    assert response.status_code == 201
+    header = response.headers.get("X-Scout-Warnings")
+    assert header is not None
+    expected_warning = payload["website_urls"][0]
+    if not expected_warning.endswith("/"):
+        expected_warning = f"{expected_warning}/"
+    assert json.loads(header) == [expected_warning]
+    assert warned_urls == [expected_warning]
 
 
 def test_get_structure_by_slug_not_found() -> None:

@@ -75,10 +75,13 @@ const createWrapper = (queryClient: QueryClient) =>
     </MemoryRouter>
   );
 
+const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+
 describe("StructureCreatePage", () => {
   beforeEach(() => {
     mockNavigate.mockReset();
     vi.mocked(createStructure).mockReset();
+    alertSpy.mockClear();
   });
 
   it("creates a structure and navigates to its detail page", async () => {
@@ -91,7 +94,7 @@ describe("StructureCreatePage", () => {
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
     const Wrapper = createWrapper(queryClient);
     const user = userEvent.setup();
-    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+    vi.mocked(createStructure).mockResolvedValue({ structure: createdStructure, warnings: [] });
 
     render(<StructureCreatePage />, { wrapper: Wrapper });
 
@@ -143,6 +146,35 @@ describe("StructureCreatePage", () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
   });
 
+  it("shows a warning when website links cannot be reached", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    const unreachableUrl = "https://unreachable.example";
+
+    vi.mocked(createStructure).mockResolvedValue({
+      structure: createdStructure,
+      warnings: [unreachableUrl]
+    });
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.type(screen.getByLabelText(/Siti o link di riferimento/i), unreachableUrl);
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+    expect(alertSpy).toHaveBeenCalled();
+    expect(alertSpy.mock.calls[0][0]).toContain(unreachableUrl);
+  });
+
   it("serialises open periods when provided", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -152,7 +184,7 @@ describe("StructureCreatePage", () => {
     });
     const Wrapper = createWrapper(queryClient);
     const user = userEvent.setup();
-    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+    vi.mocked(createStructure).mockResolvedValue({ structure: createdStructure, warnings: [] });
 
     render(<StructureCreatePage />, { wrapper: Wrapper });
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from datetime import date
 from enum import Enum
@@ -63,6 +64,7 @@ from app.services.attachments import (
     ensure_bucket,
     get_s3_client,
 )
+from app.services.url_monitor import find_unreachable_urls
 
 router = APIRouter()
 
@@ -70,6 +72,15 @@ router = APIRouter()
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+
+WARNING_HEADER = "X-Scout-Warnings"
+
+
+def _apply_warning_header(response: Response, warnings: Sequence[str]) -> None:
+    if not warnings:
+        return
+
+    response.headers[WARNING_HEADER] = json.dumps(list(warnings))
 
 
 def _ensure_storage_ready() -> tuple[str, Any]:
@@ -606,6 +617,7 @@ def create_structure(
     structure_in: StructureCreate,
     db: DbSession,
     request: Request,
+    response: Response,
     current_user: Annotated[User, Depends(require_admin)],
 ) -> Structure:
     existing = db.execute(
@@ -630,6 +642,8 @@ def create_structure(
         )
         for period in structure_in.open_periods
     ]
+    warnings = find_unreachable_urls(list(structure.website_urls or []))
+    _apply_warning_header(response, warnings)
     db.add(structure)
     db.flush()
 
@@ -654,6 +668,7 @@ def update_structure(
     structure_in: StructureUpdate,
     db: DbSession,
     request: Request,
+    response: Response,
     current_user: Annotated[User, Depends(require_admin)],
 ) -> Structure:
     structure = _get_structure_or_404(
@@ -682,6 +697,9 @@ def update_structure(
         setattr(structure, key, value)
 
     _sync_open_periods(structure, structure_in.open_periods, db)
+
+    warnings = find_unreachable_urls(list(structure.website_urls or []))
+    _apply_warning_header(response, warnings)
 
     db.flush()
     db.refresh(structure)
