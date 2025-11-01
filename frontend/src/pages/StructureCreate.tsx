@@ -2093,6 +2093,58 @@ export const StructureCreatePage = () => {
               </p>
               <div className="structure-field-grid">
                 <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-website-0" id="structure-website-label">
+                    {t("structures.create.form.website")}
+                  </label>
+                  <div className="structure-website-list">
+                    {websiteUrls.map((value, index) => {
+                      const inputId = `structure-website-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.websiteEntryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <input
+                            id={inputId}
+                            type="url"
+                            value={value}
+                            onChange={(event) => handleWebsiteUrlChange(index, event.target.value)}
+                            placeholder="https://"
+                            aria-describedby={websiteDescribedBy}
+                            aria-invalid={fieldErrors.website_urls ? "true" : undefined}
+                            aria-label={ariaLabel}
+                          />
+                          {websiteUrls.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveWebsiteUrl(index)}
+                            >
+                              {t("structures.create.form.websiteRemove")}
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button type="button" variant="secondary" size="sm" onClick={handleAddWebsiteUrl}>
+                      {t("structures.create.form.websiteAdd")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={websiteHintId}>
+                    {t("structures.create.form.websiteHint")}
+                  </span>
+                  {fieldErrors.website_urls && (
+                    <p className="error-text" id={websiteErrorId!}>
+                      {fieldErrors.website_urls}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field" data-span="full">
                   <label htmlFor="structure-notes">
                     {t("structures.create.form.notes")}
                     <textarea
@@ -2178,58 +2230,6 @@ export const StructureCreatePage = () => {
                 {t("structures.create.form.sections.contact.description")}
               </p>
               <div className="structure-field-grid">
-                <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-website-0" id="structure-website-label">
-                    {t("structures.create.form.website")}
-                  </label>
-                  <div className="structure-website-list">
-                    {websiteUrls.map((value, index) => {
-                      const inputId = `structure-website-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? undefined
-                          : t("structures.create.form.websiteEntryLabel", { index: index + 1 });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <input
-                            id={inputId}
-                            type="url"
-                            value={value}
-                            onChange={(event) => handleWebsiteUrlChange(index, event.target.value)}
-                            placeholder="https://"
-                            aria-describedby={websiteDescribedBy}
-                            aria-invalid={fieldErrors.website_urls ? "true" : undefined}
-                            aria-label={ariaLabel}
-                          />
-                          {websiteUrls.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveWebsiteUrl(index)}
-                            >
-                              {t("structures.create.form.websiteRemove")}
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="structure-website-actions">
-                    <Button type="button" variant="secondary" size="sm" onClick={handleAddWebsiteUrl}>
-                      {t("structures.create.form.websiteAdd")}
-                    </Button>
-                  </div>
-                  <span className="helper-text" id={websiteHintId}>
-                    {t("structures.create.form.websiteHint")}
-                  </span>
-                  {fieldErrors.website_urls && (
-                    <p className="error-text" id={websiteErrorId!}>
-                      {fieldErrors.website_urls}
-                    </p>
-                  )}
-                </div>
-
                 <div className="structure-form-field" data-span="full">
                   {!addContact ? (
                     <>
