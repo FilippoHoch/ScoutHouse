@@ -43,10 +43,7 @@ import {
   StatusBadge,
   Surface
 } from "../shared/ui/designSystem";
-import {
-  GoogleMapPicker,
-  GOOGLE_MAP_DEFAULT_CENTER
-} from "../shared/ui/GoogleMapPicker";
+import { GoogleMapPicker } from "../shared/ui/GoogleMapPicker";
 import { isImageFile } from "../shared/utils/image";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -216,28 +213,6 @@ export const StructureCreatePage = () => {
       lon: selectedCoordinates.lng.toFixed(6)
     });
   }, [selectedCoordinates, t]);
-
-  const previewMapUrl = useMemo(() => {
-    const target = selectedCoordinates ?? GOOGLE_MAP_DEFAULT_CENTER;
-    const lat = target.lat.toFixed(6);
-    const lng = target.lng.toFixed(6);
-    const zoom = selectedCoordinates ? 15 : 8;
-
-    const params = new URLSearchParams({
-      q: `${lat},${lng}`,
-      z: zoom.toString(),
-      t: "m",
-      output: "embed",
-      iwloc: "near"
-    });
-
-    return `https://maps.google.com/maps?${params.toString()}`;
-  }, [selectedCoordinates]);
-
-  const previewMapPlaceholder = t("structures.create.preview.mapPlaceholder");
-  const previewMapTitle = t("structures.create.preview.mapTitle");
-  const previewMapAriaLabel = t("structures.create.preview.mapAriaLabel");
-  const previewMapHasSelection = Boolean(selectedCoordinates);
 
   const createMutation = useMutation({
     mutationFn: (dto: StructureCreateDto) => createStructure(dto)
@@ -1361,46 +1336,11 @@ export const StructureCreatePage = () => {
   const showIndoorSection = type !== "land";
   const showOutdoorSection = type !== "house";
 
-  const trimmedName = name.trim();
   const trimmedSlug = slug.trim();
-  const trimmedProvince = province.trim();
-  const trimmedAddress = address.trim();
-  const trimmedLatitude = latitude.trim();
-  const trimmedLongitude = longitude.trim();
-  const trimmedAltitude = altitude.trim();
 
   const slugPreviewMessage = trimmedSlug
     ? t("structures.create.form.slugPreviewLabel", { url: `/structures/${trimmedSlug}` })
     : t("structures.create.form.slugPreviewPlaceholder");
-
-  const previewName = trimmedName || t("structures.create.preview.namePlaceholder");
-  const previewTypeLabel = type
-    ? t(`structures.types.${type}`)
-    : t("structures.create.preview.typeFallback");
-  const previewProvince = trimmedProvince || t("structures.create.preview.provinceFallback");
-  const previewAddress = trimmedAddress || t("structures.create.preview.addressFallback");
-  const previewUrlLabel = trimmedSlug
-    ? t("structures.create.preview.urlLabel", { url: `/structures/${trimmedSlug}` })
-    : t("structures.create.preview.urlPlaceholder");
-  const previewCoordinatesLabel =
-    trimmedLatitude && trimmedLongitude
-      ? t("structures.create.preview.coordinatesLabel", {
-          lat: trimmedLatitude,
-          lon: trimmedLongitude
-        })
-      : t("structures.create.preview.coordinatesPlaceholder");
-  const previewAltitudeLabel = trimmedAltitude
-    ? t("structures.create.preview.altitudeLabel", { alt: trimmedAltitude })
-    : null;
-
-  const sidebarTips = [
-    t("structures.create.sidebar.items.fields"),
-    t("structures.create.sidebar.items.details"),
-    t("structures.create.sidebar.items.services"),
-    t("structures.create.sidebar.items.accessibility"),
-    t("structures.create.sidebar.items.photos"),
-    t("structures.create.sidebar.items.operations")
-  ];
 
   return (
     <section aria-labelledby="structure-create-title" className="structure-create">
@@ -2732,53 +2672,6 @@ export const StructureCreatePage = () => {
             </div>
           </form>
         </Surface>
-
-        <aside className="structure-create-sidebar">
-          <Surface className="structure-create-sidebar-card">
-            <div>
-              <h3>{t("structures.create.sidebar.title")}</h3>
-              <ul className="structure-create-sidebar-list">
-                {sidebarTips.map((tip, index) => (
-                  <li key={index}>{tip}</li>
-                ))}
-              </ul>
-            </div>
-          </Surface>
-
-          <Surface className="structure-create-sidebar-card">
-            <h3>{t("structures.create.preview.title")}</h3>
-            <div className="structure-preview-card">
-              <div
-                className="structure-preview-map"
-                data-has-selection={previewMapHasSelection ? "true" : "false"}
-              >
-                <iframe
-                  src={previewMapUrl}
-                  title={previewMapTitle}
-                  aria-label={previewMapAriaLabel}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-                <span
-                  className="structure-preview-map-placeholder"
-                  aria-hidden={previewMapHasSelection ? "true" : "false"}
-                >
-                  {previewMapPlaceholder}
-                </span>
-              </div>
-              <span className="structure-preview-badge">{previewTypeLabel}</span>
-              <h4>{previewName}</h4>
-              <p className="structure-preview-subtitle">{previewProvince}</p>
-              <p className="structure-preview-address">{previewAddress}</p>
-              <p className="structure-preview-url">{previewUrlLabel}</p>
-              <p className="structure-preview-hint">{previewCoordinatesLabel}</p>
-              {previewAltitudeLabel && (
-                <p className="structure-preview-hint">{previewAltitudeLabel}</p>
-              )}
-            </div>
-          </Surface>
-        </aside>
       </div>
     </section>
   );

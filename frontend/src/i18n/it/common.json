@@ -391,33 +391,6 @@
         "usingExisting": "Verrà utilizzato il contatto {{name}}.",
         "saveFailed": "Struttura creata ma impossibile collegare il contatto. Aggiungilo dalle impostazioni della struttura."
       },
-      "sidebar": {
-        "title": "Suggerimenti rapidi",
-        "items": {
-          "fields": "Compila i campi obbligatori contrassegnati con * per procedere.",
-          "details": "Aggiungi più dettagli possibili nell'indirizzo per aiutare chi deve arrivare.",
-          "services": "Descrivi chiaramente quali servizi interni ed esterni sono disponibili.",
-          "accessibility": "Indica come arrivare e se ci sono limiti per pullman o mezzi alti.",
-          "photos": "Aggiungi almeno una foto per rendere la scheda più completa.",
-          "operations": "Note logistiche precise aiutano chi organizza l'uscita.",
-          "coordinates": "Se conosci le coordinate inseriscile: saranno utili per la pianificazione degli spostamenti."
-        }
-      },
-      "preview": {
-        "title": "Anteprima scheda",
-        "namePlaceholder": "Nome struttura",
-        "typeFallback": "Tipologia da definire",
-        "provinceFallback": "Provincia non impostata",
-        "addressFallback": "Indirizzo non specificato",
-        "urlLabel": "URL: {{url}}",
-        "urlPlaceholder": "L'URL verrà mostrato qui appena inserisci lo slug.",
-        "coordinatesLabel": "Coordinate: {{lat}}, {{lon}}",
-        "altitudeLabel": "Altitudine: {{alt}} m s.l.m.",
-        "coordinatesPlaceholder": "Inserisci latitudine e longitudine per completare l'anteprima.",
-        "mapTitle": "Vista satellitare 3D",
-        "mapAriaLabel": "Vista satellitare 3D della struttura",
-        "mapPlaceholder": "La vista mostra Gussago (BS) come riferimento. Seleziona una posizione per aggiornare la mappa."
-      }
     },
     "contacts": {
       "tab": "Contatti",
