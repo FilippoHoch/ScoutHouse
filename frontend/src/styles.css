@@ -991,17 +991,8 @@ table tbody tr:hover {
   color: var(--color-muted-strong);
 }
 
-.structure-water-sources-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-sm);
-  margin-top: var(--space-xs);
-}
-
-.structure-water-sources-options .checkbox-field {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--space-xs);
+.structure-water-sources-select {
+  min-height: 9.5rem;
 }
 
 .structure-form-field input,

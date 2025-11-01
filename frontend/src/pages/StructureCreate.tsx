@@ -673,25 +673,14 @@ export const StructureCreatePage = () => {
     clearFieldError("open_periods");
   };
 
-  const handleWaterSourcesChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const option = event.target.value as WaterSource;
-    const { checked } = event.target;
-    setWaterSources((prev) => {
-      if (checked) {
-        if (option === "none") {
-          return ["none"];
-        }
-        const withoutNone = prev.filter((item) => item !== "none");
-        if (withoutNone.includes(option)) {
-          return withoutNone;
-        }
-        return [...withoutNone, option];
-      }
-      if (option === "none") {
-        return [];
-      }
-      return prev.filter((item) => item !== option);
-    });
+  const handleWaterSourcesChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const selectedValues = Array.from(event.target.selectedOptions).map(
+      (option) => option.value as WaterSource
+    );
+    const nextValues = selectedValues.includes("none")
+      ? ["none"]
+      : selectedValues;
+    setWaterSources(nextValues);
     setApiError(null);
   };
 
@@ -1201,9 +1190,9 @@ export const StructureCreatePage = () => {
   const landAreaHintId = "structure-land-area-hint";
   const landAreaDescribedBy = [landAreaHintId, landAreaErrorId].filter(Boolean).join(" ") || undefined;
   const waterSourcesLabelId = "structure-water-sources-label";
-  const waterSourcesGroupId = "structure-water-sources-group";
   const waterSourcesHintId = "structure-water-sources-hint";
-  const hasOtherWaterSourcesSelected = waterSources.some((source) => source !== "none");
+  const waterSourcesSelectId = "structure-water-sources";
+  const waterSourcesSelectSize = Math.min(4, waterSourceOptions.length);
   const websiteHintId = "structure-website-hint";
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
   const openPeriodsHintId = "structure-open-periods-hint";
@@ -1560,38 +1549,25 @@ export const StructureCreatePage = () => {
                   </div>
 
                   <div className="structure-form-field">
-                    <span id={waterSourcesLabelId}>
+                    <label id={waterSourcesLabelId} htmlFor={waterSourcesSelectId}>
                       {t("structures.create.form.waterSource")}
-                    </span>
-                    <div
-                      id={waterSourcesGroupId}
-                      role="group"
+                    </label>
+                    <select
+                      id={waterSourcesSelectId}
+                      multiple
+                      className="structure-water-sources-select"
+                      value={waterSources}
+                      onChange={handleWaterSourcesChange}
                       aria-labelledby={waterSourcesLabelId}
                       aria-describedby={waterSourcesHintId}
-                      className="structure-water-sources-options"
+                      size={waterSourcesSelectSize}
                     >
-                      {waterSourceOptions.map((option) => {
-                        const inputId = `structure-water-source-${option}`;
-                        const isNoneOption = option === "none";
-                        const isChecked = waterSources.includes(option);
-                        const shouldDisable = isNoneOption
-                          ? hasOtherWaterSourcesSelected && !isChecked
-                          : false;
-                        return (
-                          <label key={option} htmlFor={inputId} className="checkbox-field">
-                            <input
-                              id={inputId}
-                              type="checkbox"
-                              value={option}
-                              checked={isChecked}
-                              onChange={handleWaterSourcesChange}
-                              disabled={shouldDisable}
-                            />
-                            {t(`structures.create.form.waterSourceOptions.${option}`)}
-                          </label>
-                        );
-                      })}
-                    </div>
+                      {waterSourceOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.waterSourceOptions.${option}`)}
+                        </option>
+                      ))}
+                    </select>
                     <span className="helper-text" id={waterSourcesHintId}>
                       {t("structures.create.form.waterSourceHint")}
                     </span>
