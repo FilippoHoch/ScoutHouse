@@ -270,8 +270,8 @@
             "description": "Aggiungi riferimenti utili e informazioni aggiuntive."
           },
           "contact": {
-            "title": "Contatti e sito",
-            "description": "Gestisci il sito di riferimento e collega un contatto utile."
+            "title": "Contatti",
+            "description": "Collega un contatto utile per facilitare le comunicazioni."
           }
         },
         "submit": "Crea struttura",
