@@ -116,8 +116,12 @@ describe("StructureCreatePage", () => {
     await user.click(screen.getByRole("button", { name: /Aggiungi un altro link/i }));
     await user.type(screen.getByLabelText(/Link 2/i), "https://info.example.org");
 
-    const slugInput = screen.getByLabelText(/Slug/i) as HTMLInputElement;
-    expect(slugInput.value).toBe("base-bosco");
+    expect(screen.queryByRole("textbox", { name: /Slug/i })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByText(/L'URL pubblico sarà \/structures\/base-bosco/i)
+      ).toBeInTheDocument()
+    );
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
@@ -266,7 +270,6 @@ describe("StructureCreatePage", () => {
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
     expect(await screen.findByText(/Inserisci un nome per la struttura/i)).toBeInTheDocument();
-    expect(screen.getByText(/Inserisci uno slug valido/i)).toBeInTheDocument();
     expect(screen.getByText(/Seleziona una tipologia/i)).toBeInTheDocument();
     expect(createStructure).not.toHaveBeenCalled();
     expect(invalidateSpy).not.toHaveBeenCalled();
