@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     mail_from_address: str = Field(
         "no-reply@scouthouse.local", alias="MAIL_FROM_ADDRESS"
     )
+    allow_non_admin_structure_edit: bool = Field(
+        False, alias="ALLOW_NON_ADMIN_STRUCTURE_EDIT"
+    )
     smtp_host: str | None = Field(default=None, alias="SMTP_HOST")
     smtp_port: int = Field(587, alias="SMTP_PORT")
     smtp_username: str | None = Field(default=None, alias="SMTP_USERNAME")
