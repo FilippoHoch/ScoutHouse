@@ -991,6 +991,11 @@ table tbody tr:hover {
   color: var(--color-muted-strong);
 }
 
+.structure-form-field .field-label {
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
 .structure-water-sources-select {
   min-height: 9.5rem;
 }

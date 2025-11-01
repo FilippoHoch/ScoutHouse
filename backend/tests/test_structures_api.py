@@ -108,7 +108,7 @@ def test_structures_flow() -> None:
     assert len(slug_data["open_periods"]) == 2
 
 
-def test_unique_slug_validation() -> None:
+def test_unique_slug_generation() -> None:
     client = get_client(authenticated=True)
 
     payload = {
@@ -120,10 +120,11 @@ def test_unique_slug_validation() -> None:
 
     first = client.post("/api/v1/structures/", json=payload)
     assert first.status_code == 201
+    assert first.json()["slug"] == "casa-del-nord"
 
     duplicate = client.post("/api/v1/structures/", json=payload)
-    assert duplicate.status_code == 400
-    assert duplicate.json()["detail"] == "Slug already exists"
+    assert duplicate.status_code == 201
+    assert duplicate.json()["slug"] == "casa-del-nord-2"
 
 
 def test_field_validation_errors() -> None:

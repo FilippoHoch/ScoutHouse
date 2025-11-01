@@ -49,14 +49,12 @@ import {
 } from "../shared/ui/GoogleMapPicker";
 import { isImageFile } from "../shared/utils/image";
 
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
 const waterSourceOptions: WaterSource[] = ["none", "fountain", "tap", "river"];
 const firePolicyOptions: FirePolicy[] = ["allowed", "with_permit", "forbidden"];
 
 type FieldErrorKey =
   | "name"
-  | "slug"
   | "province"
   | "latitude"
   | "longitude"
@@ -195,7 +193,6 @@ export const StructureCreatePage = () => {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
-  const [slugDirty, setSlugDirty] = useState(false);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedCoordinates = useMemo(() => {
@@ -652,16 +649,7 @@ export const StructureCreatePage = () => {
     setName(value);
     setApiError(null);
     clearFieldError("name");
-    if (!slugDirty) {
-      setSlug(toSlug(value));
-    }
-  };
-
-  const handleSlugChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSlug(toSlug(event.target.value));
-    setSlugDirty(true);
-    setApiError(null);
-    clearFieldError("slug");
+    setSlug(toSlug(value));
   };
 
   const handleProvinceChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -965,7 +953,6 @@ export const StructureCreatePage = () => {
 
   const validate = (): boolean => {
     const trimmedName = name.trim();
-    const trimmedSlug = slug.trim();
     const trimmedProvince = province.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
@@ -981,10 +968,6 @@ export const StructureCreatePage = () => {
 
     if (!trimmedName) {
       errors.name = t("structures.create.errors.nameRequired");
-    }
-
-    if (!trimmedSlug || !slugPattern.test(trimmedSlug)) {
-      errors.slug = t("structures.create.errors.slugInvalid");
     }
 
     if (!type) {
@@ -1299,8 +1282,6 @@ export const StructureCreatePage = () => {
 
   const slugHintId = "structure-slug-hint";
   const slugPreviewId = "structure-slug-preview";
-  const slugErrorId = fieldErrors.slug ? "structure-slug-error" : undefined;
-  const slugDescribedBy = [slugHintId, slugErrorId, slugPreviewId].filter(Boolean).join(" ") || undefined;
 
   const provinceErrorId = fieldErrors.province ? "structure-province-error" : undefined;
   const latitudeErrorId = fieldErrors.latitude ? "structure-latitude-error" : undefined;
@@ -1448,19 +1429,14 @@ export const StructureCreatePage = () => {
                 </div>
 
                 <div className="structure-form-field">
-                  <label htmlFor="structure-slug">
+                  <span className="field-label" id="structure-slug-label">
                     {t("structures.create.form.slug")}
-                    <input
-                      id="structure-slug"
-                      value={slug}
-                      onChange={handleSlugChange}
-                      autoComplete="off"
-                      required
-                      aria-invalid={fieldErrors.slug ? "true" : undefined}
-                      aria-describedby={slugDescribedBy}
-                    />
-                  </label>
-                  <div className="structure-form-footnote">
+                  </span>
+                  <div
+                    className="structure-form-footnote"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
                     <span className="helper-text" id={slugHintId}>
                       {t("structures.create.form.slugHint")}
                     </span>
@@ -1468,11 +1444,6 @@ export const StructureCreatePage = () => {
                       {slugPreviewMessage}
                     </span>
                   </div>
-                  {fieldErrors.slug && (
-                    <p className="error-text" id={slugErrorId}>
-                      {fieldErrors.slug}
-                    </p>
-                  )}
                 </div>
 
                 <div className="structure-form-field">

@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import date
 from enum import Enum
+import re
+import unicodedata
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -70,6 +72,9 @@ router = APIRouter()
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_admin)]
+
+
+SLUG_SANITIZE_RE = re.compile(r"[^a-z0-9]+")
 
 
 def _ensure_storage_ready() -> tuple[str, Any]:
@@ -172,6 +177,26 @@ def _serialize_photo(
         url=url,
         created_at=photo.created_at,
     )
+
+
+def _slugify(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    without_marks = "".join(char for char in normalized if not unicodedata.combining(char))
+    slug = SLUG_SANITIZE_RE.sub("-", without_marks.lower()).strip("-")
+    return slug or "structure"
+
+
+def _generate_unique_slug(db: Session, base_slug: str) -> str:
+    slug = base_slug or "structure"
+    counter = 2
+    while (
+        db.execute(select(Structure.id).where(func.lower(Structure.slug) == slug.lower()))
+        .scalar_one_or_none()
+        is not None
+    ):
+        slug = f"{base_slug}-{counter}" if base_slug else f"structure-{counter}"
+        counter += 1
+    return slug
 
 
 def _sync_open_periods(
@@ -608,17 +633,11 @@ def create_structure(
     request: Request,
     current_user: Annotated[User, Depends(require_admin)],
 ) -> Structure:
-    existing = db.execute(
-        select(Structure).where(Structure.slug == structure_in.slug)
-    ).scalar_one_or_none()
-    if existing is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Slug already exists",
-        )
+    base_slug = structure_in.slug or _slugify(structure_in.name)
+    unique_slug = _generate_unique_slug(db, base_slug)
 
-    payload = structure_in.model_dump(mode="json", exclude={"open_periods"})
-    structure = Structure(**payload)
+    payload = structure_in.model_dump(mode="json", exclude={"open_periods", "slug"})
+    structure = Structure(**payload, slug=unique_slug)
     structure.open_periods = [
         StructureOpenPeriod(
             kind=period.kind,
