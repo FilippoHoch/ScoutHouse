@@ -1018,11 +1018,30 @@ table tbody tr:hover {
 .structure-website-list__row {
   display: flex;
   gap: var(--space-sm);
-  align-items: center;
+  align-items: flex-start;
 }
 
-.structure-website-list__row input {
+.structure-website-list__input {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.structure-website-list__input input {
+  flex: 1;
+}
+
+.structure-website-list__status {
+  font-size: 0.875rem;
+}
+
+.structure-website-list__status--valid {
+  color: var(--color-secondary);
+}
+
+.structure-website-list__status--invalid {
+  color: var(--color-danger);
 }
 
 .structure-website-actions {

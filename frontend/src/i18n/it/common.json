@@ -190,6 +190,8 @@
         "websiteAdd": "Aggiungi un altro link",
         "websiteRemove": "Rimuovi questo link",
         "websiteEntryLabel": "Link {{index}}",
+        "websiteValidStatus": "Link valido.",
+        "websiteInvalidStatus": "Questo link non sembra valido. Puoi comunque procedere, ma controlla che sia corretto.",
         "notes": "Note aggiuntive",
         "contact": {
           "enable": "Aggiungi contatto",

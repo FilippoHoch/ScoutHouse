@@ -161,7 +161,10 @@ export const StructureCreatePage = () => {
   const [nearestBusStop, setNearestBusStop] = useState("");
   const [weekendOnly, setWeekendOnly] = useState(false);
   const [hasFieldPoles, setHasFieldPoles] = useState(false);
+  type WebsiteUrlStatus = "idle" | "valid" | "invalid";
+
   const [websiteUrls, setWebsiteUrls] = useState<string[]>([""]);
+  const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
   const [addContact, setAddContact] = useState(false);
@@ -852,10 +855,29 @@ export const StructureCreatePage = () => {
     setApiError(null);
   };
 
+  const evaluateWebsiteUrlStatus = (value: string): WebsiteUrlStatus => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "idle";
+    }
+
+    try {
+      const url = new URL(trimmed);
+      return url.protocol === "http:" || url.protocol === "https:" ? "valid" : "invalid";
+    } catch (error) {
+      return "invalid";
+    }
+  };
+
   const handleWebsiteUrlChange = (index: number, value: string) => {
     setWebsiteUrls((current) => {
       const next = [...current];
       next[index] = value;
+      return next;
+    });
+    setWebsiteUrlStatuses((current) => {
+      const next = [...current];
+      next[index] = "idle";
       return next;
     });
     setApiError(null);
@@ -864,6 +886,7 @@ export const StructureCreatePage = () => {
 
   const handleAddWebsiteUrl = () => {
     setWebsiteUrls((current) => [...current, ""]);
+    setWebsiteUrlStatuses((current) => [...current, "idle"]);
     setApiError(null);
     clearFieldError("website_urls");
   };
@@ -876,8 +899,23 @@ export const StructureCreatePage = () => {
       const next = current.filter((_, position) => position !== index);
       return next.length > 0 ? next : [""];
     });
+    setWebsiteUrlStatuses((current) => {
+      if (current.length === 1) {
+        return ["idle"];
+      }
+      const next = current.filter((_, position) => position !== index);
+      return next.length > 0 ? next : ["idle"];
+    });
     setApiError(null);
     clearFieldError("website_urls");
+  };
+
+  const handleWebsiteUrlBlur = (index: number) => {
+    setWebsiteUrlStatuses((current) => {
+      const next = [...current];
+      next[index] = evaluateWebsiteUrlStatus(websiteUrls[index] ?? "");
+      return next;
+    });
   };
 
   const handleNotesLogisticsChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -1096,6 +1134,7 @@ export const StructureCreatePage = () => {
     const trimmedAddress = address.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
+    const trimmedAltitude = altitude.trim();
     const trimmedIndoorBeds = indoorBeds.trim();
     const trimmedIndoorBathrooms = indoorBathrooms.trim();
     const trimmedIndoorShowers = indoorShowers.trim();
@@ -2189,18 +2228,43 @@ export const StructureCreatePage = () => {
                         index === 0
                           ? undefined
                           : t("structures.create.form.websiteEntryLabel", { index: index + 1 });
+                      const status = websiteUrlStatuses[index] ?? "idle";
+                      const statusId = status === "idle" ? undefined : `${inputId}-status`;
+                      const inputDescribedBy =
+                        [websiteDescribedBy, statusId].filter(Boolean).join(" ") || undefined;
                       return (
                         <div className="structure-website-list__row" key={inputId}>
-                          <input
-                            id={inputId}
-                            type="url"
-                            value={value}
-                            onChange={(event) => handleWebsiteUrlChange(index, event.target.value)}
-                            placeholder="https://"
-                            aria-describedby={websiteDescribedBy}
-                            aria-invalid={fieldErrors.website_urls ? "true" : undefined}
-                            aria-label={ariaLabel}
-                          />
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              type="url"
+                              value={value}
+                              onChange={(event) => handleWebsiteUrlChange(index, event.target.value)}
+                              onBlur={() => handleWebsiteUrlBlur(index)}
+                              placeholder="https://"
+                              aria-describedby={inputDescribedBy}
+                              aria-invalid={fieldErrors.website_urls ? "true" : undefined}
+                              aria-label={ariaLabel}
+                            />
+                            {status === "valid" && (
+                              <span
+                                className="structure-website-list__status structure-website-list__status--valid"
+                                id={statusId}
+                                role="status"
+                              >
+                                {t("structures.create.form.websiteValidStatus")}
+                              </span>
+                            )}
+                            {status === "invalid" && (
+                              <span
+                                className="structure-website-list__status structure-website-list__status--invalid"
+                                id={statusId}
+                                role="status"
+                              >
+                                {t("structures.create.form.websiteInvalidStatus")}
+                              </span>
+                            )}
+                          </div>
                           {websiteUrls.length > 1 && (
                             <Button
                               type="button"
