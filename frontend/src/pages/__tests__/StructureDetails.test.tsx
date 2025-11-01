@@ -62,6 +62,7 @@ const sampleStructure: Structure = {
   weekend_only: false,
   has_field_poles: false,
   pit_latrine_allowed: false,
+  contact_emails: ["info@casa-alpina.it"],
   website_urls: ["https://example.org/casa-alpina"],
   notes_logistics: "Contattare il custode",
   notes: null,

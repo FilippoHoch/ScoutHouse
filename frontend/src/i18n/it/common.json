@@ -183,6 +183,13 @@
         "indoorActivityRoomsHint": "Numero di stanze interne utilizzabili per attività o riunioni.",
         "hasKitchen": "Cucina attrezzata disponibile",
         "hasKitchenHint": "Spunta se la struttura mette a disposizione una cucina utilizzabile.",
+        "contactEmails": {
+          "label": "Email di riferimento",
+          "hint": "Inserisci uno o più indirizzi email dell'associazione o della struttura.",
+          "add": "Aggiungi un'altra email",
+          "remove": "Rimuovi questa email",
+          "entryLabel": "Email {{index}}"
+        },
         "website": "Siti o link di riferimento",
         "websiteHint": "Inserisci uno o più URL utili per approfondimenti o contatti.",
         "websiteAdd": "Aggiungi un altro link",
@@ -372,6 +379,7 @@
         "longitudeInvalid": "La longitudine deve essere compresa tra -180 e 180.",
         "altitudeInvalid": "L'altitudine deve essere compresa tra -500 e 9000 metri.",
         "numberInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
+        "contactEmailInvalid": "Inserisci indirizzi email validi.",
         "websiteInvalid": "Inserisci URL validi che inizino con http o https.",
         "saveFailed": "Impossibile creare la struttura.",
         "decimalInvalid": "Inserisci un numero valido maggiore o uguale a zero.",
@@ -456,6 +464,10 @@
       "website": {
         "title": "Siti web della struttura",
         "empty": "Nessun link registrato"
+      },
+      "emails": {
+        "title": "Email di riferimento",
+        "empty": "Nessuna email registrata"
       }
     },
     "details": {

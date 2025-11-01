@@ -73,6 +73,7 @@ describe("Structure contacts management", () => {
           updated_at: new Date("2024-03-02T09:00:00Z").toISOString()
         }
       ],
+      contact_emails: ["info@base.test"],
       website_urls: []
     };
 
@@ -141,6 +142,8 @@ describe("Structure contacts management", () => {
     fireEvent.click(contactsTab);
 
     await waitFor(() => expect(screen.getByText("Mario Rossi")).toBeInTheDocument());
+    const emailLink = screen.getByRole("link", { name: "info@base.test" });
+    expect(emailLink).toHaveAttribute("href", "mailto:info@base.test");
 
     fireEvent.click(screen.getByRole("button", { name: "Nuovo contatto" }));
 

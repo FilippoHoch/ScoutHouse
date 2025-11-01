@@ -61,6 +61,7 @@ type FieldErrorKey =
   | "indoor_bathrooms"
   | "indoor_showers"
   | "indoor_activity_rooms"
+  | "contact_emails"
   | "website_urls"
   | "land_area_m2"
   | "open_periods";
@@ -121,6 +122,11 @@ function toSlug(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+const isValidEmail = (value: string): boolean => {
+  const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return pattern.test(value);
+};
+
 export const StructureCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -161,6 +167,7 @@ export const StructureCreatePage = () => {
   const [hasFieldPoles, setHasFieldPoles] = useState(false);
   type WebsiteUrlStatus = "idle" | "valid" | "invalid";
 
+  const [contactEmails, setContactEmails] = useState<string[]>([""]);
   const [websiteUrls, setWebsiteUrls] = useState<string[]>([""]);
   const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
   const [notesLogistics, setNotesLogistics] = useState("");
@@ -852,6 +859,34 @@ export const StructureCreatePage = () => {
     setApiError(null);
   };
 
+  const handleContactEmailChange = (index: number, value: string) => {
+    setContactEmails((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+    clearFieldError("contact_emails");
+  };
+
+  const handleAddContactEmail = () => {
+    setContactEmails((current) => [...current, ""]);
+    setApiError(null);
+    clearFieldError("contact_emails");
+  };
+
+  const handleRemoveContactEmail = (index: number) => {
+    setContactEmails((current) => {
+      if (current.length === 1) {
+        return [""];
+      }
+      const next = current.filter((_, position) => position !== index);
+      return next.length > 0 ? next : [""];
+    });
+    setApiError(null);
+    clearFieldError("contact_emails");
+  };
+
   const evaluateWebsiteUrlStatus = (value: string): WebsiteUrlStatus => {
     const trimmed = value.trim();
     if (!trimmed) {
@@ -973,6 +1008,7 @@ export const StructureCreatePage = () => {
     const trimmedIndoorActivityRooms = indoorActivityRooms.trim();
     const trimmedLandArea = landArea.trim();
     const trimmedWebsiteUrls = websiteUrls.map((value) => value.trim());
+    const trimmedContactEmails = contactEmails.map((value) => value.trim());
 
     const errors: FieldErrors = {};
 
@@ -1087,6 +1123,16 @@ export const StructureCreatePage = () => {
       }
     }
 
+    for (const candidate of trimmedContactEmails) {
+      if (!candidate) {
+        continue;
+      }
+      if (!isValidEmail(candidate)) {
+        errors.contact_emails = t("structures.create.errors.contactEmailInvalid");
+        break;
+      }
+    }
+
     for (const candidate of trimmedWebsiteUrls) {
       if (!candidate) {
         continue;
@@ -1139,6 +1185,7 @@ export const StructureCreatePage = () => {
     const trimmedLandArea = landArea.trim();
     const trimmedNearestBusStop = nearestBusStop.trim();
     const trimmedWebsiteUrls = websiteUrls.map((value) => value.trim());
+    const trimmedContactEmails = contactEmails.map((value) => value.trim());
     const trimmedNotesLogistics = notesLogistics.trim();
     const trimmedNotes = notes.trim();
 
@@ -1226,6 +1273,11 @@ export const StructureCreatePage = () => {
     const nonEmptyWebsiteUrls = trimmedWebsiteUrls.filter((value) => value);
     if (nonEmptyWebsiteUrls.length > 0) {
       payload.website_urls = nonEmptyWebsiteUrls;
+    }
+
+    const nonEmptyContactEmails = trimmedContactEmails.filter((value) => value);
+    if (nonEmptyContactEmails.length > 0) {
+      payload.contact_emails = nonEmptyContactEmails;
     }
 
     if (trimmedNotesLogistics) {
@@ -1324,6 +1376,9 @@ export const StructureCreatePage = () => {
     ? "structure-indoor-activity-rooms-error"
     : undefined;
   const landAreaErrorId = fieldErrors.land_area_m2 ? "structure-land-area-error" : undefined;
+  const contactEmailsErrorId = fieldErrors.contact_emails
+    ? "structure-contact-emails-error"
+    : undefined;
   const websiteErrorId = fieldErrors.website_urls ? "structure-website-url-error" : undefined;
   const openPeriodsErrorId = fieldErrors.open_periods
     ? "structure-open-periods-error"
@@ -1364,6 +1419,9 @@ export const StructureCreatePage = () => {
   const waterSourcesLabelId = "structure-water-sources-label";
   const waterSourcesHintId = "structure-water-sources-hint";
   const waterSourcesOptionIdPrefix = "structure-water-source";
+  const contactEmailsHintId = "structure-contact-emails-hint";
+  const contactEmailsDescribedBy =
+    [contactEmailsHintId, contactEmailsErrorId].filter(Boolean).join(" ") || undefined;
   const websiteHintId = "structure-website-hint";
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
   const openPeriodsHintId = "structure-open-periods-hint";
@@ -2223,6 +2281,57 @@ export const StructureCreatePage = () => {
                 {t("structures.create.form.sections.contact.description")}
               </p>
               <div className="structure-field-grid">
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-contact-email-0" id="structure-contact-email-label">
+                    {t("structures.create.form.contactEmails.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {contactEmails.map((value, index) => {
+                      const inputId = `structure-contact-email-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.contactEmails.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              type="email"
+                              value={value}
+                              onChange={(event) => handleContactEmailChange(index, event.target.value)}
+                              aria-describedby={contactEmailsDescribedBy}
+                              aria-invalid={fieldErrors.contact_emails ? "true" : undefined}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {contactEmails.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveContactEmail(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.contactEmails.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <button type="button" onClick={handleAddContactEmail}>
+                      {t("structures.create.form.contactEmails.add")}
+                    </button>
+                  </div>
+                  <span className="helper-text" id={contactEmailsHintId}>
+                    {t("structures.create.form.contactEmails.hint")}
+                  </span>
+                  {fieldErrors.contact_emails && (
+                    <p className="error-text" id={contactEmailsErrorId!}>
+                      {fieldErrors.contact_emails}
+                    </p>
+                  )}
+                </div>
                 <div className="structure-form-field" data-span="full">
                   <label htmlFor="structure-website-0" id="structure-website-label">
                     {t("structures.create.form.website")}
