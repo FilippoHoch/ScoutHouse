@@ -121,6 +121,20 @@ describe("StructureDetailsPage", () => {
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
     const mapLink = screen.getByRole("link", { name: /Google Maps/i });
     expect(mapLink).toHaveAttribute("href", "https://www.google.com/maps?q=45.6,10.16");
+    const mapTitle = i18n.t("structures.details.location.mapTitle", {
+      name: sampleStructure.name
+    });
+    const mapEmbed = screen.getByTitle(mapTitle);
+    const expectedEmbedUrl = `https://maps.google.com/maps?${
+      new URLSearchParams({
+        q: `${sampleStructure.latitude?.toFixed(6)},${sampleStructure.longitude?.toFixed(6)}`,
+        z: "15",
+        t: "m",
+        output: "embed",
+        iwloc: "near"
+      }).toString()
+    }`;
+    expect(mapEmbed).toHaveAttribute("src", expectedEmbedUrl);
     const coordinatesLabel = i18n.t("structures.details.location.coordinates", {
       lat: sampleStructure.latitude?.toFixed(4),
       lon: sampleStructure.longitude?.toFixed(4)
