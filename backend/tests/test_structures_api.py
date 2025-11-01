@@ -21,6 +21,11 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
+@pytest.fixture(autouse=True)
+def stub_website_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("app.api.v1.structures._check_website_urls", lambda urls: [])
+
+
 def get_client(*, authenticated: bool = False, is_admin: bool = True) -> TestClient:
     client = TestClient(app)
     if authenticated:
@@ -106,6 +111,31 @@ def test_structures_flow() -> None:
     slug_data = slug_resp.json()
     assert slug_data["id"] == created["id"]
     assert len(slug_data["open_periods"]) == 2
+
+
+def test_create_structure_returns_website_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = get_client(authenticated=True)
+
+    monkeypatch.setattr(
+        "app.api.v1.structures._check_website_urls",
+        lambda urls: [str(url) for url in urls],
+    )
+
+    payload = {
+        "name": "Casa del Bosco",
+        "slug": "casa-del-bosco",
+        "province": "MI",
+        "type": "house",
+        "website_urls": [
+            "https://example.org/presentazione",
+            "https://example.org/informazioni",
+        ],
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 201, response.text
+    data = response.json()
+    assert data["warnings"] == payload["website_urls"]
 
 
 def test_unique_slug_generation() -> None:

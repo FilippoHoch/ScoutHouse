@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   ApiError,
@@ -16,6 +16,8 @@ import type { Structure } from "../../shared/types";
 import { StructureCreatePage } from "../StructureCreate";
 
 const mockNavigate = vi.fn();
+
+let alertMock: ReturnType<typeof vi.spyOn>;
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -91,6 +93,11 @@ describe("StructureCreatePage", () => {
     vi.mocked(createStructurePhoto).mockReset();
     vi.mocked(signAttachmentUpload).mockReset();
     vi.mocked(confirmAttachmentUpload).mockReset();
+    alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    alertMock.mockRestore();
   });
 
   it("creates a structure and navigates to its detail page", async () => {
@@ -157,6 +164,39 @@ describe("StructureCreatePage", () => {
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
+  });
+
+  it("alerts when the API reports unreachable websites", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue({
+      ...createdStructure,
+      warnings: ["https://non-risponde.example"]
+    });
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.type(
+      screen.getByLabelText(/Siti o link di riferimento/i),
+      "https://base.example.org"
+    );
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+    expect(alertMock).toHaveBeenCalledTimes(1);
+    expect(alertMock).toHaveBeenCalledWith(
+      expect.stringContaining("https://non-risponde.example")
+    );
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
   });
 
   it("serialises open periods when provided", async () => {
