@@ -48,6 +48,31 @@ const orderOptions: Array<{ value: StructureSearchParams["order"]; labelKey: str
 ];
 const pageSizeOptions = [6, 12, 20];
 
+type SeasonLike = Season | StructureOpenPeriodSeason;
+
+const getStructureTypeLabel = (t: TFunction, type: StructureType) =>
+  t(`structures.types.${type}`, type);
+
+const getSeasonLabel = (t: TFunction, season: SeasonLike) =>
+  t(`structures.form.openPeriods.season.${season}`, season);
+
+const getUnitLabel = (t: TFunction, unit: Unit) =>
+  t(`structures.form.openPeriods.unitsOptions.${unit}`, unit);
+
+const getCostBandLabel = (t: TFunction, costBand: CostBand) =>
+  t(`structures.costBands.${costBand}`, costBand);
+
+const getFirePolicyLabel = (t: TFunction, policy: FirePolicy) =>
+  t(`structures.filters.firePolicy.options.${policy}`, policy);
+
+const formatDateForDisplay = (value: string, locale: string) => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat(locale).format(parsed);
+};
+
 const envBaseCoords = (() => {
   const raw = import.meta.env.VITE_BASE_COORDS;
   if (typeof raw !== "string") {
@@ -123,8 +148,8 @@ const formatCurrency = (value: number) =>
 const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction }) => {
   const hasSeasons = item.seasons.length > 0;
   const hasUnits = item.units.length > 0;
-  const typeLabel = t(`structures.types.${item.type}`, item.type);
-  const costBandLabel = item.cost_band ? t(`structures.costBands.${item.cost_band}`, item.cost_band) : null;
+  const typeLabel = getStructureTypeLabel(t, item.type);
+  const costBandLabel = item.cost_band ? getCostBandLabel(t, item.cost_band) : null;
   const fireLabel = item.fire_policy ? t(`structures.cards.icons.fire.${item.fire_policy}`) : null;
   const quickIcons: Array<{ icon: string; label: string }> = [];
   if (fireLabel) {
@@ -227,7 +252,7 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
 };
 
 export const StructuresPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [form, setForm] = useState<FilterFormState>(initialFormState);
   const [filters, setFilters] = useState<StructureSearchParams>({
     sort: initialFormState.sort,
@@ -402,22 +427,37 @@ export const StructuresPage = () => {
       chips.push({ key: "province", label: t("structures.filters.active.province", { value: filters.province }) });
     }
     if (filters.type) {
-      chips.push({ key: "type", label: t("structures.filters.active.type", { value: filters.type }) });
+      chips.push({
+        key: "type",
+        label: t("structures.filters.active.type", { value: getStructureTypeLabel(t, filters.type) }),
+      });
     }
     if (filters.season) {
-      chips.push({ key: "season", label: t("structures.filters.active.season", { value: filters.season }) });
+      chips.push({
+        key: "season",
+        label: t("structures.filters.active.season", { value: getSeasonLabel(t, filters.season) }),
+      });
     }
     if (filters.unit) {
-      chips.push({ key: "unit", label: t("structures.filters.active.unit", { value: filters.unit }) });
+      chips.push({
+        key: "unit",
+        label: t("structures.filters.active.unit", { value: getUnitLabel(t, filters.unit) }),
+      });
     }
     if (filters.cost_band) {
-      chips.push({ key: "cost_band", label: t("structures.filters.active.costBand", { value: filters.cost_band }) });
+      chips.push({
+        key: "cost_band",
+        label: t("structures.filters.active.costBand", { value: getCostBandLabel(t, filters.cost_band) }),
+      });
     }
     if (typeof filters.max_km === "number") {
       chips.push({ key: "max_km", label: t("structures.filters.active.maxDistance", { value: filters.max_km }) });
     }
     if (filters.fire) {
-      chips.push({ key: "fire", label: t("structures.filters.active.fire", { value: filters.fire }) });
+      chips.push({
+        key: "fire",
+        label: t("structures.filters.active.fire", { value: getFirePolicyLabel(t, filters.fire) }),
+      });
     }
     if (typeof filters.min_land_area === "number") {
       chips.push({ key: "min_land_area", label: t("structures.filters.active.minLandArea", { value: filters.min_land_area }) });
@@ -432,13 +472,21 @@ export const StructuresPage = () => {
       chips.push({ key: "hot_water", label: t("structures.filters.active.hotWater") });
     }
     if (filters.open_in_season) {
-      chips.push({ key: "open_in_season", label: t("structures.filters.active.openIn", { value: filters.open_in_season }) });
+      chips.push({
+        key: "open_in_season",
+        label: t("structures.filters.active.openIn", { value: getSeasonLabel(t, filters.open_in_season) }),
+      });
     }
     if (filters.open_on_date) {
-      chips.push({ key: "open_on_date", label: t("structures.filters.active.openOn", { value: filters.open_on_date }) });
+      chips.push({
+        key: "open_on_date",
+        label: t("structures.filters.active.openOn", {
+          value: formatDateForDisplay(filters.open_on_date, i18n.language),
+        }),
+      });
     }
     return chips;
-  }, [filters, t]);
+  }, [filters, t, i18n.language]);
 
   const summaryText = useMemo(() => {
     if (!data) {
@@ -514,7 +562,7 @@ export const StructuresPage = () => {
                 <option value="">{allOptionLabel}</option>
                 {structureTypes.map((structureType) => (
                   <option key={structureType} value={structureType}>
-                    {structureType}
+                    {getStructureTypeLabel(t, structureType)}
                   </option>
                 ))}
               </select>
@@ -528,7 +576,7 @@ export const StructuresPage = () => {
                 <option value="">{allOptionLabel}</option>
                 {seasons.map((season) => (
                   <option key={season} value={season}>
-                    {season}
+                    {getSeasonLabel(t, season)}
                   </option>
                 ))}
               </select>
@@ -542,7 +590,7 @@ export const StructuresPage = () => {
                 <option value="">{allOptionLabel}</option>
                 {units.map((unit) => (
                   <option key={unit} value={unit}>
-                    {unit}
+                    {getUnitLabel(t, unit)}
                   </option>
                 ))}
               </select>
@@ -558,7 +606,7 @@ export const StructuresPage = () => {
                 <option value="">{allOptionLabel}</option>
                 {seasons.map((season) => (
                   <option key={`open-${season}`} value={season}>
-                    {season}
+                    {getSeasonLabel(t, season)}
                   </option>
                 ))}
               </select>
@@ -597,7 +645,7 @@ export const StructuresPage = () => {
                 <option value="">{allOptionLabel}</option>
                 {costBands.map((band) => (
                   <option key={band} value={band}>
-                    {band}
+                    {getCostBandLabel(t, band)}
                   </option>
                 ))}
               </select>
