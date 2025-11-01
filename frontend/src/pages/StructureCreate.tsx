@@ -1690,23 +1690,23 @@ export const StructureCreatePage = () => {
                   <div className="structure-form-field">
                     <label id={waterSourcesLabelId} htmlFor={waterSourcesSelectId}>
                       {t("structures.create.form.waterSource")}
+                      <select
+                        id={waterSourcesSelectId}
+                        multiple
+                        className="structure-water-sources-select"
+                        value={waterSources}
+                        onChange={handleWaterSourcesChange}
+                        aria-labelledby={waterSourcesLabelId}
+                        aria-describedby={waterSourcesHintId}
+                        size={waterSourcesSelectSize}
+                      >
+                        {waterSourceOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {t(`structures.create.form.waterSourceOptions.${option}`)}
+                          </option>
+                        ))}
+                      </select>
                     </label>
-                    <select
-                      id={waterSourcesSelectId}
-                      multiple
-                      className="structure-water-sources-select"
-                      value={waterSources}
-                      onChange={handleWaterSourcesChange}
-                      aria-labelledby={waterSourcesLabelId}
-                      aria-describedby={waterSourcesHintId}
-                      size={waterSourcesSelectSize}
-                    >
-                      {waterSourceOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {t(`structures.create.form.waterSourceOptions.${option}`)}
-                        </option>
-                      ))}
-                    </select>
                     <span className="helper-text" id={waterSourcesHintId}>
                       {t("structures.create.form.waterSourceHint")}
                     </span>
