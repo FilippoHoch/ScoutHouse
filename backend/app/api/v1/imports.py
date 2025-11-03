@@ -43,7 +43,6 @@ router = APIRouter()
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 ALLOWED_MIME_TYPES: dict[str, TemplateFormat] = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
-    "application/vnd.ms-excel": "xlsx",
     "application/csv": "csv",
     "text/csv": "csv",
 }
@@ -52,6 +51,10 @@ ALLOWED_EXTENSIONS: dict[str, TemplateFormat] = {
     ".csv": "csv",
 }
 PARSE_TIMEOUT_SECONDS = 10
+
+UNSUPPORTED_XLS_MESSAGE = (
+    "XLS files (Excel 97-2003) are not supported. Please upload a CSV or XLSX template."
+)
 
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentAdmin = Annotated[User, Depends(require_admin)]
@@ -79,17 +82,26 @@ def _lookup_existing_structures(db: Session, slugs: list[str]) -> dict[str, Stru
 def _detect_source_format(file: UploadFile) -> TemplateFormat:
     if file.content_type:
         content_type = file.content_type.split(";", 1)[0].strip().lower()
+        if content_type == "application/vnd.ms-excel":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=UNSUPPORTED_XLS_MESSAGE,
+            )
         if content_type in ALLOWED_MIME_TYPES:
             return ALLOWED_MIME_TYPES[content_type]
 
     extension = Path(file.filename or "").suffix.lower()
+    if extension == ".xls":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=UNSUPPORTED_XLS_MESSAGE,
+        )
     if extension in ALLOWED_EXTENSIONS:
         return ALLOWED_EXTENSIONS[extension]
 
-    accepted = ".csv, .xlsx"
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail=f"Invalid file type. Please upload a CSV or XLSX file ({accepted}).",
+        detail="Invalid file type. Please upload a CSV or XLSX template.",
     )
 
 
