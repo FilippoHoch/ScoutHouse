@@ -1164,7 +1164,7 @@ def parse_structures_file(
         return parse_structures_xlsx(data, max_rows=max_rows)
     if source_format == "csv":
         return parse_structures_csv(data, max_rows=max_rows)
-    raise ValueError("Unsupported format")
+    raise ValueError("Unsupported file format. Only CSV and XLSX templates are supported.")
 
 
 def parse_structure_open_periods_xlsx(
@@ -1244,7 +1244,7 @@ def parse_structure_open_periods_file(
         return parse_structure_open_periods_xlsx(data, max_rows=max_rows)
     if source_format == "csv":
         return parse_structure_open_periods_csv(data, max_rows=max_rows)
-    raise ValueError("Unsupported format")
+    raise ValueError("Unsupported file format. Only CSV and XLSX templates are supported.")
 
 
 def build_structures_template_workbook() -> bytes:
