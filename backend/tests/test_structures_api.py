@@ -115,6 +115,22 @@ def test_structures_flow() -> None:
     assert len(slug_data["open_periods"]) == 2
 
 
+def test_create_structure_accepts_uppercase_type() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Casa Bosco",
+        "slug": "casa-bosco",
+        "province": "mi",
+        "type": "HOUSE",
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["type"] == "house"
+
+
 def test_create_structure_returns_website_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
     client = get_client(authenticated=True)
 

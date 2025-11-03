@@ -37,6 +37,17 @@ class StructureType(str, Enum):
     LAND = "land"
     MIXED = "mixed"
 
+    @classmethod
+    def _missing_(cls, value: object) -> "StructureType | None":  # pragma: no cover - exercised via Pydantic
+        """Allow case-insensitive matching for backwards compatibility with legacy payloads."""
+
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            for member in cls:
+                if member.value == normalized:
+                    return member
+        return None
+
 
 class FirePolicy(str, Enum):
     ALLOWED = "allowed"
