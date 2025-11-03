@@ -93,6 +93,38 @@ def test_search_filters_by_season_and_unit() -> None:
     assert set(data["items"][0]["units"]) == {"LC", "EG"}
 
 
+def test_search_filters_all_units_match_each_branch() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    universal_structure = create_structure(
+        client,
+        {
+            "name": "Universal Base",
+            "slug": "universal-base",
+            "province": "MI",
+            "type": "house",
+        },
+    )
+
+    add_availability(
+        client,
+        universal_structure["id"],
+        {"season": "summer", "units": ["ALL"], "capacity_min": 10, "capacity_max": 50},
+    )
+
+    for unit in ["LC", "EG", "RS"]:
+        response = client.get(
+            "/api/v1/structures/search",
+            params={"season": "summer", "unit": unit},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["slug"] == "universal-base"
+        assert data["items"][0]["seasons"] == ["summer"]
+        assert data["items"][0]["units"] == ["ALL"]
+
+
 def test_search_filters_by_cost_band() -> None:
     client = get_client(authenticated=True, is_admin=True)
 
