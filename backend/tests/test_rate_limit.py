@@ -1,9 +1,31 @@
 import os
+from email.utils import parsedate_to_datetime
 from uuid import uuid4
 from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
+
+
+def _assert_rate_limit_headers(response) -> None:
+    retry_after = response.headers.get("Retry-After")
+    assert retry_after is not None
+    assert retry_after.strip()
+    try:
+        float(retry_after)
+    except ValueError:
+        parsedate_to_datetime(retry_after)
+
+    limit = response.headers.get("X-RateLimit-Limit")
+    assert limit is not None
+
+    remaining = response.headers.get("X-RateLimit-Remaining")
+    assert remaining is not None
+    assert int(remaining) <= 0
+
+    reset = response.headers.get("X-RateLimit-Reset")
+    assert reset is not None
+    float(reset)
 
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
@@ -50,6 +72,7 @@ def test_login_rate_limit_triggered() -> None:
         headers={TEST_RATE_LIMIT_HEADER: "login-limit"},
     )
     assert blocked.status_code == 429
+    _assert_rate_limit_headers(blocked)
 
 
 def test_forgot_password_rate_limit() -> None:
@@ -70,6 +93,7 @@ def test_forgot_password_rate_limit() -> None:
         headers={TEST_RATE_LIMIT_HEADER: "forgot-limit"},
     )
     assert blocked.status_code == 429
+    _assert_rate_limit_headers(blocked)
 
 
 def test_refresh_rate_limit() -> None:
@@ -95,3 +119,4 @@ def test_refresh_rate_limit() -> None:
         headers={TEST_RATE_LIMIT_HEADER: "refresh-limit"},
     )
     assert blocked.status_code == 429
+    _assert_rate_limit_headers(blocked)
