@@ -490,11 +490,11 @@
       "meta": {
         "slug": "Slug",
         "created": "Creata il",
-        "estimatedDailyCost": "Estimated daily cost"
+        "estimatedDailyCost": "Costo medio stimato"
       },
       "location": {
         "title": "Posizione",
-        "coordinates": "Coordinates: {{lat}}, {{lon}}",
+        "coordinates": "Coordinate: {{lat}}, {{lon}}",
         "altitude": "Altitudine: {{alt}} m s.l.m.",
         "placeholder": "La mappa mostra la posizione indicativa della struttura su Google Maps.",
         "mapTitle": "Mappa di Google Maps per {{name}}",
