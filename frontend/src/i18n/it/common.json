@@ -329,7 +329,7 @@
           },
           "kind": {
             "season": "Stagione",
-            "range": "Intervallo date"
+            "range": "Intervallo di date"
           },
           "season": {
             "winter": "Inverno",

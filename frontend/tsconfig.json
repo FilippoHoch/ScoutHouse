@@ -16,7 +16,10 @@
       "vite/client",
       "@testing-library/jest-dom/vitest",
       "google.maps"
-    ]
+    ],
+    "paths": {
+      "@react-leaflet/core/lib/*": ["./node_modules/@react-leaflet/core/lib/*"]
+    }
   },
   "include": ["src"],
   "references": []
