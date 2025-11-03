@@ -604,13 +604,24 @@ def search_structures(
     if sort == "name":
         items_with_distance.sort(key=lambda item: item[0].name.lower(), reverse=reverse)
     elif sort == "distance":
-        def distance_key(item: tuple[Structure, float | None, CostBand | None, float | None, list[StructureSeason], list[StructureUnit]]) -> float:
+        order_multiplier = -1.0 if reverse else 1.0
+
+        def distance_key(
+            item: tuple[
+                Structure,
+                float | None,
+                CostBand | None,
+                float | None,
+                list[StructureSeason],
+                list[StructureUnit],
+            ]
+        ) -> float:
             distance = item[1]
             if distance is None:
-                return float("inf") if not reverse else float("-inf")
-            return distance
+                return float("inf")
+            return order_multiplier * distance
 
-        items_with_distance.sort(key=distance_key, reverse=reverse)
+        items_with_distance.sort(key=distance_key)
     else:  # created_at
         items_with_distance.sort(key=lambda item: item[0].created_at, reverse=reverse)
 

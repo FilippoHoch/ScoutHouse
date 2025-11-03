@@ -101,6 +101,47 @@ def test_search_pagination_and_sorting() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    "order, expected_first_three",
+    [
+        (
+            "asc",
+            [
+                "campo-base-gussago",
+                "rifugio-panorama",
+                "campo-delta",
+            ],
+        ),
+        (
+            "desc",
+            [
+                "campo-delta",
+                "rifugio-panorama",
+                "campo-base-gussago",
+            ],
+        ),
+    ],
+)
+def test_distance_sorting_places_missing_coords_last(
+    order: str, expected_first_three: list[str]
+) -> None:
+    client = get_client(authenticated=True, is_admin=True)
+    seed_sample_structures(client)
+
+    response = client.get(
+        "/api/v1/structures/search",
+        params={"sort": "distance", "order": order},
+    )
+    assert response.status_code == 200
+
+    items = response.json()["items"]
+    slugs = [item["slug"] for item in items]
+
+    assert slugs[:3] == expected_first_three
+    assert slugs[-1] == "magazzino-senza-coordinate"
+    assert items[-1]["distance_km"] is None
+
+
 def test_distance_filter_and_sorting() -> None:
     client = get_client(authenticated=True, is_admin=True)
     seed_sample_structures(client)
@@ -125,7 +166,7 @@ def test_distance_filter_and_sorting() -> None:
     )
     assert within_radius.status_code == 200
     within_slugs = [item["slug"] for item in within_radius.json()["items"]]
-    assert within_slugs == ["campo-base-gussago", "rifugio-panorama"]
+    assert sorted(within_slugs) == ["campo-base-gussago", "rifugio-panorama"]
 
     tight_radius = client.get(
         "/api/v1/structures/search",
