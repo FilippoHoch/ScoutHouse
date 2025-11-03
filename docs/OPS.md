@@ -49,7 +49,7 @@ Il container `backup` esegue giornalmente `pg_dump` generando file compressi
 `scouthouse_%Y-%m-%d_%H%M.sql.gz`. Destinazioni supportate:
 
 - Volume locale `backup_data` (predefinito).
-- Bucket S3/MinIO quando `AWS_S3_BUCKET` è impostato; utilizzare una regola di
+- Bucket S3/MinIO quando `S3_BUCKET` è impostato; utilizzare una regola di
   retention a 14 giorni lato bucket.
 
 Per ripristinare da un backup locale:
@@ -70,7 +70,7 @@ Aggiornare il path al file desiderato. In scenari S3 scaricare il dump con
 | `SENTRY_DSN`                | DSN Sentry (vuoto → disabilitato).                            |
 | `SENTRY_TRACES_SAMPLE_RATE` | Sample rate per performance traces (0.0 – 1.0).               |
 | `BACKUP_CRON`               | Programmazione cron del job di backup.                        |
-| `AWS_*`                     | Credenziali e configurazione per upload su S3/MinIO.          |
+| `S3_*`                      | Credenziali e configurazione per upload su S3/MinIO.           |
 | `DATABASE_URL`              | Connessione al database (usata anche dal job di backup).      |
 | `MAIL_DRIVER`               | Driver email (`console`, `smtp`, `sendgrid`).                 |
 | `MAIL_FROM_NAME`            | Nome mittente visualizzato nelle email.                       |
