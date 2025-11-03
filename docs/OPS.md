@@ -93,7 +93,8 @@ Il backend dispone di tre provider:
 
 - In sviluppo e test mantenere `DEV_MAIL_BLOCK_EXTERNAL=true` per evitare invii accidentali.
 - Gli admin possono usare `GET /api/v1/mail/preview` e `POST /api/v1/mail/test` per verificare i template senza toccare la configurazione globale.
-- Le email sono inviate in background tramite FastAPI `BackgroundTasks`; in caso di backend esterno (es. Celery) sostituire l'implementazione mantenendo la funzione di scheduling.
+- Le email sono messe in coda su RQ (`app.tasks.queue`) come job `send_email_job`; un worker separato si occupa dell'invio effettivo.
+- Se Redis non è disponibile al momento dell'enqueue, il backend effettua un fallback segnalando un `warning` e la richiesta continua senza consegna.
 
 ## Verifiche rapide
 
