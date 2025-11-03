@@ -17,6 +17,8 @@ def _availability_matches(
         return False
     if unit is not None:
         units = {item if isinstance(item, str) else item.value for item in availability.units}
+        if StructureUnit.ALL.value in units:
+            return True
         if unit.value not in units:
             return False
     return True
