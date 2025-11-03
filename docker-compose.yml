@@ -57,6 +57,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${DB_APP_USER:-scout}:${DB_APP_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-scouthouse}
       CORS_ALLOWED_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173"]'
+      # Migrations are run by the dedicated `migrate` service before the API starts.
       RUN_DB_MIGRATIONS: "false"
     volumes:
       - ./backend/app:/app/app

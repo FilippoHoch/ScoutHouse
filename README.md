@@ -251,8 +251,11 @@ The compose configuration wires the services as follows:
 - Adminer on http://localhost:8080 for inspecting the database
 
 Hot reload is enabled through bind mounts for both the frontend and backend
-services. The backend container automatically applies Alembic migrations before
-starting Uvicorn.
+services. Database migrations are executed by the dedicated `migrate` service
+whenever you run `docker compose up`, and the API container waits for the
+process to complete before booting. The `RUN_DB_MIGRATIONS` flag is therefore
+disabled in the `api` service to avoid re-running the same Alembic upgrade on
+each restart.
 
 ### Observability and backups
 
