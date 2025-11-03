@@ -136,6 +136,26 @@ def test_distance_filter_and_sorting() -> None:
     assert tight_slugs == ["campo-base-gussago"]
 
 
+def test_distance_sort_desc_places_missing_coords_last() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+    seed_sample_structures(client)
+
+    response = client.get(
+        "/api/v1/structures/search",
+        params={"sort": "distance", "order": "desc"},
+    )
+    assert response.status_code == 200
+    items = response.json()["items"]
+
+    assert [item["slug"] for item in items] == [
+        "campo-delta",
+        "rifugio-panorama",
+        "campo-base-gussago",
+        "magazzino-senza-coordinate",
+    ]
+    assert items[-1]["distance_km"] is None
+
+
 def test_search_filters_by_query_and_province() -> None:
     client = get_client(authenticated=True, is_admin=True)
     seed_sample_structures(client)
