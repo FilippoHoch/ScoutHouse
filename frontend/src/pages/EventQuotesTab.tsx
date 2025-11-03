@@ -36,11 +36,11 @@ interface EventQuotesTabProps {
 
 const scenarioOrder: QuoteScenario[] = ["best", "realistic", "worst"];
 
-function computeNights(startDate: string, endDate: string): number {
+export function computeNights(startDate: string, endDate: string): number {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  return Math.max(diff, 1);
+  return Math.max(diff, 0);
 }
 
 function getCandidateStructures(candidates: EventCandidate[] | null | undefined) {
