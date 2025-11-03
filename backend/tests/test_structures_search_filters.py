@@ -123,6 +123,81 @@ def test_search_filters_all_unit_matches_any() -> None:
         assert data["items"][0]["slug"] == "universal-base"
 
 
+def test_search_filters_all_unit_matches_alongside_specific_units() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    universal = create_structure(
+        client,
+        {
+            "name": "Universal Outpost",
+            "slug": "universal-outpost",
+            "province": "BS",
+            "type": "house",
+        },
+    )
+
+    lc_specific = create_structure(
+        client,
+        {
+            "name": "Lake Camp",
+            "slug": "lake-camp",
+            "province": "VR",
+            "type": "mixed",
+        },
+    )
+
+    eg_specific = create_structure(
+        client,
+        {
+            "name": "Eagle Nest",
+            "slug": "eagle-nest",
+            "province": "TN",
+            "type": "house",
+        },
+    )
+
+    rs_specific = create_structure(
+        client,
+        {
+            "name": "River Shelter",
+            "slug": "river-shelter",
+            "province": "CN",
+            "type": "house",
+        },
+    )
+
+    add_availability(
+        client,
+        universal["id"],
+        {"season": "summer", "units": ["ALL"], "capacity_min": 10, "capacity_max": 60},
+    )
+    add_availability(
+        client,
+        lc_specific["id"],
+        {"season": "summer", "units": ["LC"], "capacity_min": 12, "capacity_max": 40},
+    )
+    add_availability(
+        client,
+        eg_specific["id"],
+        {"season": "summer", "units": ["EG"], "capacity_min": 8, "capacity_max": 30},
+    )
+    add_availability(
+        client,
+        rs_specific["id"],
+        {"season": "summer", "units": ["RS"], "capacity_min": 15, "capacity_max": 50},
+    )
+
+    for unit in ("LC", "EG", "RS"):
+        response = client.get(
+            "/api/v1/structures/search",
+            params={"season": "summer", "unit": unit},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] >= 1
+        assert "universal-outpost" in {item["slug"] for item in data["items"]}
+
+
 def test_search_filters_by_cost_band() -> None:
     client = get_client(authenticated=True, is_admin=True)
 
