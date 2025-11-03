@@ -344,8 +344,9 @@ metadata such as `indoor_beds`, `indoor_bathrooms`, `indoor_showers`,
 `indoor_activity_rooms`, `has_kitchen`, `hot_water`, outdoor accessibility flags
 (`access_by_car`, `access_by_coach`, `access_by_public_transport`),
 `pit_latrine_allowed`, `website_urls`, `notes_logistics`, free-form `notes`, and
-an array of `open_periods`. Any authenticated user can create a structure; admin
-privileges are not required.
+an array of `open_periods`. La creazione è riservata agli utenti amministratori
+salvo esplicita abilitazione del flag `ALLOW_NON_ADMIN_STRUCTURE_EDIT=true`, che
+estende il permesso anche agli altri utenti autenticati.
 
 Validation rules:
 
@@ -393,9 +394,10 @@ curl -X POST http://localhost:8000/api/v1/structures/ \
 
 ## Availability and cost management
 
-Authenticated users can manage seasonal availability and cost options; admin
-privileges are not required. Requests must include a bearer token obtained via
-the standard login flow.
+La gestione di disponibilità stagionali e opzioni di costo richiede un utente
+amministratore, a meno che l'istanza non esponga `ALLOW_NON_ADMIN_STRUCTURE_EDIT=true`
+per consentire l'editing a tutti gli utenti autenticati. Le richieste devono
+includere un bearer token ottenuto tramite il normale flusso di login.
 
 ### POST `/api/v1/structures/{id}/availabilities`
 
