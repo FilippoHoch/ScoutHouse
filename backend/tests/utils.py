@@ -47,19 +47,30 @@ def create_user(
         return user
 
 
-def ensure_user(*, is_admin: bool = False) -> User:
+def ensure_user(
+    *,
+    is_admin: bool = False,
+    email: str = TEST_USER_EMAIL,
+    name: str = "Test User",
+) -> User:
     return create_user(
-        email=TEST_USER_EMAIL,
-        name="Test User",
+        email=email,
+        name=name,
         is_admin=is_admin,
     )
 
 
-def auth_headers(client: TestClient, *, is_admin: bool = False) -> dict[str, str]:
-    ensure_user(is_admin=is_admin)
+def auth_headers(
+    client: TestClient,
+    *,
+    is_admin: bool = False,
+    email: str = TEST_USER_EMAIL,
+    name: str = "Test User",
+) -> dict[str, str]:
+    ensure_user(is_admin=is_admin, email=email, name=name)
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD},
+        json={"email": email, "password": TEST_USER_PASSWORD},
         headers={TEST_RATE_LIMIT_HEADER: str(uuid4())},
     )
     assert response.status_code == 200, response.text

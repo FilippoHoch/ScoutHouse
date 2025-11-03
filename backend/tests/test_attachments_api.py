@@ -411,7 +411,7 @@ def test_structure_attachment_requires_admin(monkeypatch: pytest.MonkeyPatch) ->
 
 def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     client = TestClient(app)
-    admin_headers = auth_headers(client, is_admin=True)
+    editor_headers = auth_headers(client, is_admin=True)
 
     fake_s3 = _install_fake_storage(monkeypatch)
 
@@ -423,7 +423,7 @@ def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
             "province": "BG",
             "type": "house",
         },
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert structure_resp.status_code == 201, structure_resp.text
     structure_id = structure_resp.json()["id"]
@@ -436,7 +436,7 @@ def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
             "filename": "facciata.jpg",
             "mime": "image/jpeg",
         },
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert sign.status_code == 200, sign.text
     upload_key = sign.json()["fields"]["key"]
@@ -452,7 +452,7 @@ def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
             "size": 1024,
             "key": upload_key,
         },
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert confirm.status_code == 201, confirm.text
     attachment_id = confirm.json()["id"]
@@ -460,7 +460,7 @@ def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     create_photo = client.post(
         f"/api/v1/structures/{structure_id}/photos",
         json={"attachment_id": attachment_id},
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert create_photo.status_code == 201, create_photo.text
     photo_payload = create_photo.json()
@@ -473,7 +473,7 @@ def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
 
     delete = client.delete(
         f"/api/v1/structures/{structure_id}/photos/{photo_id}",
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert delete.status_code == 204, delete.text
     assert any(key == upload_key for _, key in fake_s3.deleted)
@@ -485,7 +485,7 @@ def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_structure_photo_requires_image(monkeypatch: pytest.MonkeyPatch) -> None:
     client = TestClient(app)
-    admin_headers = auth_headers(client, is_admin=True)
+    editor_headers = auth_headers(client, is_admin=True)
 
     fake_s3 = _install_fake_storage(monkeypatch)
 
@@ -497,7 +497,7 @@ def test_structure_photo_requires_image(monkeypatch: pytest.MonkeyPatch) -> None
             "province": "TO",
             "type": "house",
         },
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert structure_resp.status_code == 201, structure_resp.text
     structure_id = structure_resp.json()["id"]
@@ -510,7 +510,7 @@ def test_structure_photo_requires_image(monkeypatch: pytest.MonkeyPatch) -> None
             "filename": "listino.pdf",
             "mime": "application/pdf",
         },
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert sign.status_code == 200
     upload_key = sign.json()["fields"]["key"]
@@ -529,7 +529,7 @@ def test_structure_photo_requires_image(monkeypatch: pytest.MonkeyPatch) -> None
             "size": 2048,
             "key": upload_key,
         },
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert confirm.status_code == 201
     attachment_id = confirm.json()["id"]
@@ -537,13 +537,89 @@ def test_structure_photo_requires_image(monkeypatch: pytest.MonkeyPatch) -> None
     create_photo = client.post(
         f"/api/v1/structures/{structure_id}/photos",
         json={"attachment_id": attachment_id},
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert create_photo.status_code == 400
     assert create_photo.json()["detail"] == "Attachment is not an image"
 
     delete_attachment_resp = client.delete(
         f"/api/v1/attachments/{attachment_id}",
-        headers=admin_headers,
+        headers=editor_headers,
     )
     assert delete_attachment_resp.status_code == 204
+
+
+def test_structure_photo_allowed_for_non_admin_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = TestClient(app)
+    admin_headers = auth_headers(client, is_admin=True)
+
+    fake_s3 = _install_fake_storage(monkeypatch)
+
+    structure_resp = client.post(
+        "/api/v1/structures/",
+        json={
+            "name": "Base Foto",
+            "slug": "base-foto",
+            "province": "TN",
+            "type": "house",
+        },
+        headers=admin_headers,
+    )
+    assert structure_resp.status_code == 201, structure_resp.text
+    structure_id = structure_resp.json()["id"]
+
+    sign = client.post(
+        "/api/v1/attachments/sign-put",
+        json={
+            "owner_type": "structure",
+            "owner_id": structure_id,
+            "filename": "prospetto.jpg",
+            "mime": "image/jpeg",
+        },
+        headers=admin_headers,
+    )
+    assert sign.status_code == 200, sign.text
+    upload_key = sign.json()["fields"]["key"]
+    fake_s3.add_head(upload_key, {"ContentLength": 1024, "ContentType": "image/jpeg"})
+
+    confirm = client.post(
+        "/api/v1/attachments/confirm",
+        json={
+            "owner_type": "structure",
+            "owner_id": structure_id,
+            "filename": "prospetto.jpg",
+            "mime": "image/jpeg",
+            "size": 1024,
+            "key": upload_key,
+        },
+        headers=admin_headers,
+    )
+    assert confirm.status_code == 201, confirm.text
+    attachment_id = confirm.json()["id"]
+
+    monkeypatch.setenv("ALLOW_NON_ADMIN_STRUCTURE_EDIT", "true")
+    get_settings.cache_clear()
+    try:
+        editor_headers = auth_headers(
+            client,
+            email="editor@example.com",
+            name="Editor User",
+        )
+
+        create_photo = client.post(
+            f"/api/v1/structures/{structure_id}/photos",
+            json={"attachment_id": attachment_id},
+            headers=editor_headers,
+        )
+        assert create_photo.status_code == 201, create_photo.text
+        photo_id = create_photo.json()["id"]
+
+        delete = client.delete(
+            f"/api/v1/structures/{structure_id}/photos/{photo_id}",
+            headers=editor_headers,
+        )
+        assert delete.status_code == 204, delete.text
+    finally:
+        get_settings.cache_clear()
