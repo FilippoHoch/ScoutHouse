@@ -1,4 +1,5 @@
 import os
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Generator
 from uuid import uuid4
@@ -10,6 +11,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, SessionLocal, engine  # noqa: E402
+from app.core.security import hash_token  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import PasswordResetToken  # noqa: E402
 
@@ -110,3 +112,27 @@ def test_password_reset_flow(monkeypatch: pytest.MonkeyPatch) -> None:
         record = db.query(PasswordResetToken).first()
         assert record is not None
         assert record.used is True
+
+
+def test_reset_password_with_expired_token_returns_400() -> None:
+    user = ensure_user()
+    raw_token = "expired-token"
+    expired_at = datetime.now(UTC) - timedelta(minutes=5)
+
+    with SessionLocal() as db:
+        record = PasswordResetToken(
+            user_id=user.id,
+            token_hash=hash_token(raw_token),
+            expires_at=expired_at.replace(tzinfo=None),
+            used=False,
+        )
+        db.add(record)
+        db.commit()
+
+    client = get_client()
+    response = client.post(
+        "/api/v1/auth/reset-password",
+        json={"token": raw_token, "password": "irrelevant"},
+    )
+
+    assert response.status_code == 400
