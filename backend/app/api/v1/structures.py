@@ -1327,7 +1327,7 @@ def create_structure_photo(
     structure_id: int,
     payload: StructurePhotoCreate,
     db: DbSession,
-    _: AdminUser,
+    _: StructureEditor,
 ) -> StructurePhotoRead:
     _get_structure_or_404(db, structure_id)
 
@@ -1394,7 +1394,7 @@ def delete_structure_photo(
     structure_id: int,
     photo_id: int,
     db: DbSession,
-    _: AdminUser,
+    _: StructureEditor,
 ) -> None:
     row = (
         db.execute(
