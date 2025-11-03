@@ -15,8 +15,9 @@ traccia delle verifiche fatte con le strutture.
   distanza dalla base di riferimento.
 - Accesso rapido alla scheda dettagliata con contatti, disponibilità stagionali
   e documenti allegati.
-- Possibilità di aggiungere nuove strutture per tutti gli utenti autenticati
-  (non è richiesto il ruolo admin).
+- Possibilità di aggiungere nuove strutture riservata agli amministratori, a
+  meno che l'istanza non abiliti esplicitamente l'opzione
+  `ALLOW_NON_ADMIN_STRUCTURE_EDIT=true`.
 
 ### Dati anagrafici richiesti
 Ogni struttura deve poter memorizzare le informazioni chiave elencate di seguito.

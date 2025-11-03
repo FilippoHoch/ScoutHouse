@@ -138,6 +138,7 @@
     "create": {
       "title": "Nuova struttura",
       "description": "Compila il modulo per aggiungere una nuova struttura al catalogo.",
+      "permissionNotice": "Per impostazione predefinita solo gli amministratori possono creare o modificare strutture. Abilita la variabile di configurazione `ALLOW_NON_ADMIN_STRUCTURE_EDIT=true` se vuoi consentire l'operazione anche agli altri utenti autenticati.",
       "photos": {
         "title": "Foto",
         "description": "Carica alcune immagini rappresentative: verranno inviate dopo aver creato la struttura.",

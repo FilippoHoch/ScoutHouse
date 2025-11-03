@@ -49,11 +49,12 @@ the optional
 `DEFAULT_BASE_LAT`/`DEFAULT_BASE_LON` coordinates used for distance
 calculations. Authentication adds `JWT_SECRET`, `ACCESS_TTL_MIN`,
 `REFRESH_TTL_DAYS`, `ALLOW_REGISTRATION` (disabled by default),
-`CORS_ALLOWED_ORIGINS`, and `SECURE_COOKIES`. The frontend `.env` exposes the
-`VITE_API_URL` used to talk to the API, `VITE_BASE_COORDS` for the default
-map reference point, and an optional `VITE_GOOGLE_MAPS_API_KEY` to unlock the
-fully interactive Google Maps picker (without it a read-only embedded preview
-is shown).
+`ALLOW_NON_ADMIN_STRUCTURE_EDIT` (disabled by default; when `true` permits
+structure edits to any authenticated user), `CORS_ALLOWED_ORIGINS`, and
+`SECURE_COOKIES`. The frontend `.env` exposes the `VITE_API_URL` used to talk to
+the API, `VITE_BASE_COORDS` for the default map reference point, and an
+optional `VITE_GOOGLE_MAPS_API_KEY` to unlock the fully interactive Google Maps
+picker (without it a read-only embedded preview is shown).
 
 ### Local development (without Docker)
 
@@ -78,6 +79,11 @@ Useful backend commands:
 User registration is disabled unless you explicitly opt-in. For local testing,
 set `ALLOW_REGISTRATION=true` in `backend/.env`, restart the API, and use
 `POST /api/v1/auth/register` to create an account.
+
+Structure creation and updates remain restricted to administrators unless you
+set `ALLOW_NON_ADMIN_STRUCTURE_EDIT=true` in `backend/.env` before starting the
+API. When the flag stays `false` (default), non-admin users receive `403` when
+calling the relevant endpoints or using the `/structures/new` form.
 
 #### Testing password reset in development
 
@@ -153,7 +159,8 @@ The API exposes:
 - `GET /api/v1/structures/` → legacy list of all structures
 - `GET/POST/PATCH/DELETE /api/v1/structures/{id}/contacts` → gestisci i contatti
   di riferimento della struttura con canale preferito e flag “primario”
-- `POST /api/v1/structures/` → create a new structure record
+- `POST /api/v1/structures/` → create a new structure record (admins only unless
+  `ALLOW_NON_ADMIN_STRUCTURE_EDIT=true`)
 - `GET /api/v1/templates/structures.xlsx` e `GET /api/v1/templates/structures.csv` → scarica i template generati a runtime
 - `POST /api/v1/import/structures?dry_run=true|false` → import strutture da CSV o XLSX con anteprima errori e upsert per slug
 - `GET /api/v1/export/structures?format=csv|xlsx|json` → export strutture in streaming con filtri opzionali
@@ -193,8 +200,10 @@ detail view for each entry. The structure detail screen includes a dedicated
 **Contatti** tab where you can add, edit, promote, or remove contact records and
 trigger quick email/phone actions. Sign in to access protected areas:
 `/events`, `/events/:id`, and `/structures/new` are guarded client-side and
-automatically refresh access tokens when the API returns `401`. The `/events`
-area introduces a creation wizard (determine details, participants/budget,
+automatically refresh access tokens when the API returns `401`. Accessing
+`/structures/new` still requires admin rights unless the backend enables
+`ALLOW_NON_ADMIN_STRUCTURE_EDIT=true`. The `/events` area introduces a creation
+wizard (determine details, participants/budget,
 suggestions) and an event dashboard with candidate management, conflict
 indicators, quick links to contact the selected structure reference, and
 polling-powered summaries.

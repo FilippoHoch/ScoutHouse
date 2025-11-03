@@ -44,6 +44,7 @@ import {
   Surface
 } from "../shared/ui/designSystem";
 import { GoogleMapEmbed, type GoogleMapEmbedCoordinates } from "../shared/ui/GoogleMapEmbed";
+import { useAuth } from "../shared/auth";
 import { isImageFile } from "../shared/utils/image";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -131,6 +132,7 @@ export const StructureCreatePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const auth = useAuth();
   useEffect(() => {
     document.body.classList.add("layout-wide");
     return () => {
@@ -198,6 +200,7 @@ export const StructureCreatePage = () => {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
+  const showPermissionNotice = Boolean(auth.user && !auth.user.is_admin);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedCoordinates = useMemo(() => {
@@ -1447,6 +1450,9 @@ export const StructureCreatePage = () => {
           <SectionHeader className="structure-create-header">
             <h2 id="structure-create-title">{t("structures.create.title")}</h2>
             <p className="helper-text">{t("structures.create.description")}</p>
+            {showPermissionNotice && (
+              <InlineMessage>{t("structures.create.permissionNotice")}</InlineMessage>
+            )}
           </SectionHeader>
           <form className="structure-form" onSubmit={handleSubmit} noValidate>
             <fieldset className="structure-form-section">

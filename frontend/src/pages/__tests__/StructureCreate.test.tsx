@@ -19,6 +19,18 @@ const mockNavigate = vi.fn();
 
 let alertMock: ReturnType<typeof vi.spyOn>;
 
+const useAuthMock = vi.fn(() => ({
+  user: {
+    id: "1",
+    email: "admin@example.test",
+    name: "Admin",
+    is_admin: true,
+    created_at: "2024-01-01T00:00:00Z"
+  },
+  accessToken: "token",
+  status: "authenticated"
+}));
+
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return {
@@ -37,6 +49,10 @@ vi.mock("../../shared/api", async () => {
     confirmAttachmentUpload: vi.fn()
   };
 });
+
+vi.mock("../../shared/auth", () => ({
+  useAuth: () => useAuthMock()
+}));
 
 const createdStructure: Structure = {
   id: 1,
@@ -94,6 +110,18 @@ describe("StructureCreatePage", () => {
     vi.mocked(createStructurePhoto).mockReset();
     vi.mocked(signAttachmentUpload).mockReset();
     vi.mocked(confirmAttachmentUpload).mockReset();
+    useAuthMock.mockReset();
+    useAuthMock.mockImplementation(() => ({
+      user: {
+        id: "1",
+        email: "admin@example.test",
+        name: "Admin",
+        is_admin: true,
+        created_at: "2024-01-01T00:00:00Z"
+      },
+      accessToken: "token",
+      status: "authenticated"
+    }));
     alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
   });
 
@@ -170,6 +198,34 @@ describe("StructureCreatePage", () => {
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
+  });
+
+  it("shows a permission notice to non-admin users when structure edits are restricted", () => {
+    useAuthMock.mockImplementation(() => ({
+      user: {
+        id: "2",
+        email: "user@example.test",
+        name: "User",
+        is_admin: false,
+        created_at: "2024-01-01T00:00:00Z"
+      },
+      accessToken: "token",
+      status: "authenticated"
+    }));
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    expect(
+      screen.getByText(/solo gli amministratori possono creare o modificare strutture/i)
+    ).toBeInTheDocument();
   });
 
   it("alerts when the API reports unreachable websites", async () => {
