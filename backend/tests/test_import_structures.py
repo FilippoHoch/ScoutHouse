@@ -11,6 +11,7 @@ from openpyxl import Workbook
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
 
+from app.api.v1.imports import UNSUPPORTED_XLS_MESSAGE  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services.structures_import import HEADERS  # noqa: E402
@@ -213,6 +214,20 @@ def test_confirmed_import_upserts_rows() -> None:
     created_payload = created.json()
     assert created_payload["name"] == "Baite Unite"
     assert created_payload["province"] == "TO"
+
+
+def test_rejects_legacy_xls_files() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    response = upload_file(
+        client,
+        b"fake-xls-contents",
+        filename="structures.xls",
+        content_type="application/vnd.ms-excel",
+    )
+
+    assert response.status_code == 400, response.text
+    assert response.json() == {"detail": UNSUPPORTED_XLS_MESSAGE}
 
 
 def test_import_requires_admin() -> None:
