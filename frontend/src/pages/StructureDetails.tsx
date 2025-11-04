@@ -689,29 +689,27 @@ export const StructureDetailsPage = () => {
           <h2 id="structure-details-title">{structure.name}</h2>
           {structure.address && <p className="structure-details__address">{structure.address}</p>}
           <div className="structure-details__meta">
-            <div>
-              <span className="structure-details__meta-label">
-                {t("structures.details.meta.slug")}
-              </span>
-              <span className="structure-details__meta-value">{structure.slug}</span>
-            </div>
-            <div>
-              <span className="structure-details__meta-label">
-                {t("structures.details.meta.created")}
-              </span>
-              <span className="structure-details__meta-value">{createdAt}</span>
-            </div>
-            {structure.estimated_cost !== undefined && structure.estimated_cost !== null && (
-              <div className="structure-details__meta-highlight">
-                <span className="structure-details__meta-label">
-                  {t("structures.details.meta.estimatedDailyCost")}
-                </span>
-                <span className="structure-details__meta-value">
-                  €{structure.estimated_cost.toFixed(2)}
-                </span>
-                {costBandLabel && <span className="structure-details__meta-pill">{costBandLabel}</span>}
+            <dl className="structure-details__meta-list">
+              <div className="structure-details__meta-item">
+                <dt className="structure-details__meta-label">
+                  {t("structures.details.meta.created")}
+                </dt>
+                <dd className="structure-details__meta-value">{createdAt}</dd>
               </div>
-            )}
+              {structure.estimated_cost !== undefined && structure.estimated_cost !== null && (
+                <div className="structure-details__meta-item structure-details__meta-item--highlight">
+                  <dt className="structure-details__meta-label">
+                    {t("structures.details.meta.estimatedDailyCost")}
+                  </dt>
+                  <dd className="structure-details__meta-value structure-details__meta-value--emphasis">
+                    <span>€{structure.estimated_cost.toFixed(2)}</span>
+                    {costBandLabel && (
+                      <span className="structure-details__meta-pill">{costBandLabel}</span>
+                    )}
+                  </dd>
+                </div>
+              )}
+            </dl>
           </div>
         </div>
       </div>
@@ -870,24 +868,36 @@ export const StructureDetailsPage = () => {
                   </p>
                 ) : (
                   <ul className="cost-options">
-                    {costOptions.map((option: CostOption) => (
-                      <li key={option.id}>
-                        <strong>{option.model}</strong> — {formatCurrency(option.amount, option.currency)}
-                        <div className="cost-breakdown">
-                          {option.deposit !== null && (
-                            <span>Deposit: {formatCurrency(option.deposit, option.currency)}</span>
-                          )}
-                          {option.city_tax_per_night !== null && (
-                            <span>
-                              City tax: {formatCurrency(option.city_tax_per_night, option.currency)} per night
+                    {costOptions.map((option: CostOption) => {
+                      const costModelLabel = t(
+                        `structures.create.form.costOptions.models.${option.model}`,
+                        { defaultValue: option.model }
+                      );
+
+                      return (
+                        <li key={option.id}>
+                          <div className="cost-option__header">
+                            <span className="cost-option__model">{costModelLabel}</span>
+                            <span className="cost-option__amount">
+                              {formatCurrency(option.amount, option.currency)}
                             </span>
-                          )}
-                          {option.utilities_flat !== null && (
-                            <span>Utilities: {formatCurrency(option.utilities_flat, option.currency)}</span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
+                          </div>
+                          <div className="cost-breakdown">
+                            {option.deposit !== null && (
+                              <span>Deposit: {formatCurrency(option.deposit, option.currency)}</span>
+                            )}
+                            {option.city_tax_per_night !== null && (
+                              <span>
+                                City tax: {formatCurrency(option.city_tax_per_night, option.currency)} per night
+                              </span>
+                            )}
+                            {option.utilities_flat !== null && (
+                              <span>Utilities: {formatCurrency(option.utilities_flat, option.currency)}</span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
