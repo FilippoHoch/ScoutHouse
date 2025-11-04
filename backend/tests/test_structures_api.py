@@ -156,6 +156,25 @@ def test_create_structure_returns_website_warnings(monkeypatch: pytest.MonkeyPat
     assert data["warnings"] == payload["website_urls"]
 
 
+def test_create_structure_supports_land_type() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Campo Bosco",
+        "slug": "campo-bosco",
+        "province": "MI",
+        "type": "land",
+        "land_area_m2": 1200,
+        "shelter_on_field": True,
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["type"] == "land"
+    assert body["land_area_m2"] == pytest.approx(payload["land_area_m2"], rel=1e-3)
+
+
 def test_unique_slug_generation() -> None:
     client = get_client(authenticated=True)
 
