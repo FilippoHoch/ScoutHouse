@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -6,12 +5,13 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, Enum as SQLEnum, Integer, Numeric, String, Text
+from sqlalchemy import Date, DateTime, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import JSON
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:
     from .user import EventMember
@@ -38,7 +38,7 @@ class Event(Base):
     slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     branch: Mapped[EventBranch] = mapped_column(
-        SQLEnum(EventBranch, name="event_branch"), nullable=False
+        sqla_enum(EventBranch, name="event_branch"), nullable=False
     )
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -47,7 +47,7 @@ class Event(Base):
     )
     budget_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     status: Mapped[EventStatus] = mapped_column(
-        SQLEnum(EventStatus, name="event_status"),
+        sqla_enum(EventStatus, name="event_status"),
         nullable=False,
         default=EventStatus.DRAFT,
     )

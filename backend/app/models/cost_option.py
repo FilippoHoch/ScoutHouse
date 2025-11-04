@@ -4,12 +4,12 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import ForeignKey, Integer, Numeric, String, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
     from .structure import Structure
@@ -31,14 +31,18 @@ class StructureCostOption(Base):
         index=True,
     )
     model: Mapped[StructureCostModel] = mapped_column(
-        SQLEnum(StructureCostModel, name="structure_cost_model"),
+        sqla_enum(StructureCostModel, name="structure_cost_model"),
         nullable=False,
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="EUR")
     deposit: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
-    city_tax_per_night: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
-    utilities_flat: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    city_tax_per_night: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2), nullable=True
+    )
+    utilities_flat: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2), nullable=True
+    )
     age_rules: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     structure: Mapped["Structure"] = relationship(

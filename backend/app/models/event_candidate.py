@@ -1,15 +1,15 @@
-
 from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:
     from .user import User
@@ -37,7 +37,7 @@ class EventStructureCandidate(Base):
         ForeignKey("structures.id", ondelete="CASCADE"), nullable=False
     )
     status: Mapped[EventStructureCandidateStatus] = mapped_column(
-        SQLEnum(EventStructureCandidateStatus, name="event_candidate_status"),
+        sqla_enum(EventStructureCandidateStatus, name="event_candidate_status"),
         nullable=False,
         default=EventStructureCandidateStatus.TO_CONTACT,
     )
@@ -60,7 +60,9 @@ class EventStructureCandidate(Base):
     assigned_user_ref: Mapped[Optional["User"]] = relationship(
         "User", foreign_keys=[assigned_user_id]
     )
-    contact: Mapped[Optional["Contact"]] = relationship("Contact", back_populates="candidates")
+    contact: Mapped[Optional["Contact"]] = relationship(
+        "Contact", back_populates="candidates"
+    )
 
     @property
     def assigned_user_name(self) -> str | None:

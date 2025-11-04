@@ -8,7 +8,6 @@ from uuid import uuid4
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
@@ -19,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:
     from .event import Event
@@ -27,8 +27,12 @@ if TYPE_CHECKING:
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid4())
+    )
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -53,13 +57,19 @@ class User(Base):
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid4())
+    )
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     token_hash: Mapped[str] = mapped_column(Text, nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    revoked: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -85,7 +95,7 @@ class EventMember(Base):
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     role: Mapped[EventMemberRole] = mapped_column(
-        SQLEnum(EventMemberRole, name="event_member_role"), nullable=False
+        sqla_enum(EventMemberRole, name="event_member_role"), nullable=False
     )
 
     event: Mapped["Event"] = relationship("Event", back_populates="members")
@@ -95,13 +105,19 @@ class EventMember(Base):
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid4())
+    )
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     token_hash: Mapped[str] = mapped_column(Text, nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    used: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

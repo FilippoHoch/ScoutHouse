@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     Text,
@@ -18,6 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
     from .structure import Structure
@@ -91,7 +91,7 @@ class StructureContact(Base):
     )
     role: Mapped[str | None] = mapped_column(Text, nullable=True)
     preferred_channel: Mapped[ContactPreferredChannel] = mapped_column(
-        SQLEnum(ContactPreferredChannel, name="contact_preferred_channel"),
+        sqla_enum(ContactPreferredChannel, name="contact_preferred_channel"),
         nullable=False,
         default=ContactPreferredChannel.EMAIL,
     )
@@ -111,7 +111,9 @@ class StructureContact(Base):
         nullable=False,
     )
 
-    structure: Mapped["Structure"] = relationship("Structure", back_populates="contacts")
+    structure: Mapped["Structure"] = relationship(
+        "Structure", back_populates="contacts"
+    )
     contact: Mapped["Contact"] = relationship("Contact", back_populates="structures")
 
     @property

@@ -3,12 +3,13 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum as SQLEnum, Index
+from sqlalchemy import Index
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
     from .structure import Structure
@@ -38,7 +39,7 @@ class StructureSeasonAvailability(Base):
         index=True,
     )
     season: Mapped[StructureSeason] = mapped_column(
-        SQLEnum(StructureSeason, name="structure_season"),
+        sqla_enum(StructureSeason, name="structure_season"),
         nullable=False,
         index=True,
     )
