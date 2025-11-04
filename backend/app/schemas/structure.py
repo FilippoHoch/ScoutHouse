@@ -104,6 +104,23 @@ class StructureBase(BaseModel):
     notes_logistics: str | None = None
     notes: str | None = None
 
+    @field_validator("type", mode="before")
+    @classmethod
+    def normalize_type(cls, value: Any) -> StructureType:
+        if isinstance(value, StructureType):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            try:
+                return StructureType(normalized)
+            except ValueError as exc:
+                allowed_values = [member.value for member in StructureType]
+                raise ValueError(
+                    f"Invalid structure type. Allowed values: {allowed_values}"
+                ) from exc
+        allowed_values = [member.value for member in StructureType]
+        raise ValueError(f"Invalid structure type. Allowed values: {allowed_values}")
+
     @field_validator("contact_emails", mode="before")
     @classmethod
     def normalize_contact_emails(cls, value: object) -> list[str] | object:
