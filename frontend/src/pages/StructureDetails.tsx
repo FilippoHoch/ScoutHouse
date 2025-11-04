@@ -572,12 +572,12 @@ export const StructureDetailsPage = () => {
                     <dd>{structure.notes}</dd>
                   </>
                 )}
-                <dt>{t("structures.details.overview.pitLatrineAllowed")}</dt>
-                <dd>
-                  {structure.pit_latrine_allowed
-                    ? t("structures.details.overview.pitLatrineYes")
-                    : t("structures.details.overview.pitLatrineNo")}
-                </dd>
+                {structure.pit_latrine_allowed === true && (
+                  <>
+                    <dt>{t("structures.details.overview.pitLatrineAllowed")}</dt>
+                    <dd>{t("structures.details.overview.pitLatrineYes")}</dd>
+                  </>
+                )}
               </dl>
             </div>
 
