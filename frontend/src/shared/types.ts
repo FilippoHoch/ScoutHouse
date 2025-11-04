@@ -83,6 +83,17 @@ export interface CostOption {
   age_rules?: Record<string, unknown> | null;
 }
 
+export interface StructureCostOptionInput {
+  id?: number;
+  model: CostModel;
+  amount: number;
+  currency: string;
+  deposit?: number | null;
+  city_tax_per_night?: number | null;
+  utilities_flat?: number | null;
+  age_rules?: Record<string, unknown> | null;
+}
+
 export interface Contact {
   id: number;
   contact_id: number;

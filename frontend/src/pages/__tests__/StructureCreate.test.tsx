@@ -10,7 +10,8 @@ import {
   confirmAttachmentUpload,
   createStructure,
   createStructurePhoto,
-  signAttachmentUpload
+  signAttachmentUpload,
+  upsertStructureCostOptions
 } from "../../shared/api";
 import type { Structure } from "../../shared/types";
 import { StructureCreatePage } from "../StructureCreate";
@@ -34,7 +35,8 @@ vi.mock("../../shared/api", async () => {
     createStructure: vi.fn(),
     createStructurePhoto: vi.fn(),
     signAttachmentUpload: vi.fn(),
-    confirmAttachmentUpload: vi.fn()
+    confirmAttachmentUpload: vi.fn(),
+    upsertStructureCostOptions: vi.fn()
   };
 });
 
@@ -94,6 +96,7 @@ describe("StructureCreatePage", () => {
     vi.mocked(createStructurePhoto).mockReset();
     vi.mocked(signAttachmentUpload).mockReset();
     vi.mocked(confirmAttachmentUpload).mockReset();
+    vi.mocked(upsertStructureCostOptions).mockReset();
     alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
   });
 
@@ -299,6 +302,56 @@ describe("StructureCreatePage", () => {
         date_end: "2025-08-15",
         notes: "Campo EG",
         units: ["EG", "RS"]
+      }
+    ]);
+  });
+
+  it("saves cost options after creating the structure", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+    vi.mocked(upsertStructureCostOptions).mockResolvedValue([]);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+
+    await user.click(screen.getByRole("button", { name: /Aggiungi opzione di costo/i }));
+
+    await user.selectOptions(screen.getByLabelText(/Modello di costo/i), "per_person_day");
+    await user.type(screen.getByLabelText(/Importo principale/i), "12,50");
+
+    const currencyField = screen.getByLabelText(/Valuta/i);
+    await user.clear(currencyField);
+    await user.type(currencyField, "usd");
+
+    await user.type(screen.getByLabelText(/Caparra/i), "50");
+    await user.type(
+      screen.getByLabelText(/Tassa di soggiorno per notte/i),
+      "1,5"
+    );
+    await user.type(screen.getByLabelText(/Forfait utenze/i), "10");
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+
+    await waitFor(() => expect(upsertStructureCostOptions).toHaveBeenCalled());
+    expect(vi.mocked(upsertStructureCostOptions).mock.calls[0][1]).toEqual([
+      {
+        model: "per_person_day",
+        amount: 12.5,
+        currency: "USD",
+        deposit: 50,
+        city_tax_per_night: 1.5,
+        utilities_flat: 10
       }
     ]);
   });
