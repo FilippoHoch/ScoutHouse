@@ -1,4 +1,3 @@
-
 from .availability import StructureSeason, StructureSeasonAvailability, StructureUnit
 from .cost_option import StructureCostModel, StructureCostOption
 from .contact import Contact, ContactPreferredChannel, StructureContact

@@ -5,7 +5,6 @@ from enum import Enum
 
 from sqlalchemy import (
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
@@ -15,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 
 class AttachmentOwnerType(str, Enum):
@@ -27,7 +27,7 @@ class Attachment(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     owner_type: Mapped[AttachmentOwnerType] = mapped_column(
-        SQLEnum(AttachmentOwnerType, name="attachment_owner_type"), nullable=False
+        sqla_enum(AttachmentOwnerType, name="attachment_owner_type"), nullable=False
     )
     owner_id: Mapped[int] = mapped_column(Integer, nullable=False)
     storage_key: Mapped[str] = mapped_column(String(512), unique=True, nullable=False)

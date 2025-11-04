@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import CHAR, DateTime, Enum as SQLEnum, ForeignKey, Integer, func
+from sqlalchemy import CHAR, DateTime, ForeignKey, Integer, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 
 class QuoteScenario(str, Enum):
@@ -31,7 +32,7 @@ class Quote(Base):
         ForeignKey("structures.id", ondelete="CASCADE"), nullable=False, index=True
     )
     scenario: Mapped[QuoteScenario] = mapped_column(
-        SQLEnum(QuoteScenario, name="quote_scenario"),
+        sqla_enum(QuoteScenario, name="quote_scenario"),
         nullable=False,
         default=QuoteScenario.REALISTIC,
     )

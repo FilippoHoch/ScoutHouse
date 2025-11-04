@@ -10,7 +10,6 @@ from sqlalchemy import (
     Boolean,
     Date,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Index,
     Integer,
@@ -27,6 +26,7 @@ from app.core.db import Base
 from app.models.availability import StructureSeasonAvailability
 from app.models.cost_option import StructureCostOption
 from app.models.contact import Contact, StructureContact
+from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
     from .structure_photo import StructurePhoto
@@ -38,7 +38,9 @@ class StructureType(str, Enum):
     MIXED = "mixed"
 
     @classmethod
-    def _missing_(cls, value: object) -> "StructureType | None":  # pragma: no cover - exercised via Pydantic
+    def _missing_(
+        cls, value: object
+    ) -> "StructureType | None":  # pragma: no cover - exercised via Pydantic
         """Allow case-insensitive matching for backwards compatibility with legacy payloads."""
 
         if isinstance(value, str):
@@ -86,7 +88,7 @@ class Structure(Base):
     longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     altitude: Mapped[Decimal | None] = mapped_column(Numeric(7, 2), nullable=True)
     type: Mapped[StructureType] = mapped_column(
-        SQLEnum(StructureType, name="structure_type"),
+        sqla_enum(StructureType, name="structure_type"),
         nullable=False,
     )
     indoor_beds: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -123,7 +125,7 @@ class Structure(Base):
         default=False,
     )
     fire_policy: Mapped[FirePolicy | None] = mapped_column(
-        SQLEnum(FirePolicy, name="fire_policy"),
+        sqla_enum(FirePolicy, name="fire_policy"),
         nullable=True,
     )
     access_by_car: Mapped[bool] = mapped_column(
@@ -233,11 +235,11 @@ class StructureOpenPeriod(Base):
         index=True,
     )
     kind: Mapped[StructureOpenPeriodKind] = mapped_column(
-        SQLEnum(StructureOpenPeriodKind, name="structure_open_period_kind"),
+        sqla_enum(StructureOpenPeriodKind, name="structure_open_period_kind"),
         nullable=False,
     )
     season: Mapped[StructureOpenPeriodSeason | None] = mapped_column(
-        SQLEnum(StructureOpenPeriodSeason, name="structure_open_period_season"),
+        sqla_enum(StructureOpenPeriodSeason, name="structure_open_period_season"),
         nullable=True,
     )
     date_start: Mapped[date | None] = mapped_column(Date, nullable=True)

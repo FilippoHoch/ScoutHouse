@@ -90,7 +90,9 @@ def _website_responds(client: httpx.Client, url: str) -> bool:
 
     if response is None or response.status_code >= 400:
         try:
-            response = client.get(url, headers={"User-Agent": "ScoutHouse/website-check"})
+            response = client.get(
+                url, headers={"User-Agent": "ScoutHouse/website-check"}
+            )
         except httpx.HTTPError:
             return False
 
@@ -108,7 +110,9 @@ def _check_website_urls(urls: Iterable[str]) -> list[str]:
 
     warnings: list[str] = []
     try:
-        with httpx.Client(timeout=_WEBSITE_CHECK_TIMEOUT, follow_redirects=True) as client:
+        with httpx.Client(
+            timeout=_WEBSITE_CHECK_TIMEOUT, follow_redirects=True
+        ) as client:
             for url in candidates:
                 try:
                     if not _website_responds(client, url):
@@ -132,6 +136,7 @@ def _ensure_storage_ready() -> tuple[str, Any]:
     client = get_s3_client()
     return bucket, client
 
+
 DEFAULT_SORT_FIELD = "created_at"
 DEFAULT_SORT_ORDER = "desc"
 VALID_SORT_FIELDS = {"name", "created_at", "distance"}
@@ -151,7 +156,9 @@ def _serialize_units(raw_units: Sequence[str | StructureUnit]) -> list[Structure
     return units
 
 
-def _serialize_availability(availability: StructureSeasonAvailability) -> StructureAvailabilityRead:
+def _serialize_availability(
+    availability: StructureSeasonAvailability,
+) -> StructureAvailabilityRead:
     return StructureAvailabilityRead(
         id=availability.id,
         season=availability.season,
@@ -225,7 +232,9 @@ def _serialize_photo(
 
 def _slugify(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
-    without_marks = "".join(char for char in normalized if not unicodedata.combining(char))
+    without_marks = "".join(
+        char for char in normalized if not unicodedata.combining(char)
+    )
     slug = SLUG_SANITIZE_RE.sub("-", without_marks.lower()).strip("-")
     return slug or "structure"
 
@@ -234,13 +243,34 @@ def _generate_unique_slug(db: Session, base_slug: str) -> str:
     slug = base_slug or "structure"
     counter = 2
     while (
-        db.execute(select(Structure.id).where(func.lower(Structure.slug) == slug.lower()))
-        .scalar_one_or_none()
+        db.execute(
+            select(Structure.id).where(func.lower(Structure.slug) == slug.lower())
+        ).scalar_one_or_none()
         is not None
     ):
         slug = f"{base_slug}-{counter}" if base_slug else f"structure-{counter}"
         counter += 1
     return slug
+
+
+def _structure_payload(
+    structure_in: StructureCreate | StructureUpdate,
+    *,
+    include_slug: bool,
+) -> dict[str, Any]:
+    exclude: set[str] = {"open_periods"}
+    if not include_slug:
+        exclude.add("slug")
+
+    payload = structure_in.model_dump(exclude=exclude)
+    payload["contact_emails"] = [str(email) for email in structure_in.contact_emails]
+    payload["website_urls"] = [str(url) for url in structure_in.website_urls]
+    payload["water_sources"] = (
+        [source.value for source in structure_in.water_sources]
+        if structure_in.water_sources is not None
+        else None
+    )
+    return payload
 
 
 def _sync_open_periods(
@@ -301,13 +331,11 @@ def _build_structure_read(
             for availability in structure.availabilities
         ]
         update["cost_options"] = [
-            _serialize_cost_option(option)
-            for option in structure.cost_options
+            _serialize_cost_option(option) for option in structure.cost_options
         ]
 
     update["open_periods"] = [
-        _serialize_open_period(period)
-        for period in structure.open_periods
+        _serialize_open_period(period) for period in structure.open_periods
     ]
 
     if include_contacts:
@@ -315,7 +343,9 @@ def _build_structure_read(
             structure.contacts,
             key=lambda item: (not item.is_primary, item.name.lower()),
         )
-        update["contacts"] = [ContactRead.model_validate(contact) for contact in contacts]
+        update["contacts"] = [
+            ContactRead.model_validate(contact) for contact in contacts
+        ]
     else:
         update["contacts"] = None
 
@@ -361,7 +391,9 @@ def _serialize_contact(link: StructureContact) -> ContactRead:
     return ContactRead.model_validate(link)
 
 
-def _get_contact_or_404(db: Session, structure_id: int, contact_id: int) -> StructureContact:
+def _get_contact_or_404(
+    db: Session, structure_id: int, contact_id: int
+) -> StructureContact:
     link = (
         db.execute(
             select(StructureContact)
@@ -401,7 +433,9 @@ def get_structure_by_slug(
     request: Request,
     response: Response,
 ) -> StructureRead | Response:
-    include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
+    include_parts = {
+        part.strip().lower() for part in (include.split(",") if include else [])
+    }
     include_details = "details" in include_parts
     include_contacts = include_details or "contacts" in include_parts
 
@@ -415,9 +449,7 @@ def get_structure_by_slug(
         query = query.options(selectinload(Structure.contacts))
 
     structure = (
-        db.execute(query.where(Structure.slug == slug))
-        .unique()
-        .scalar_one_or_none()
+        db.execute(query.where(Structure.slug == slug)).unique().scalar_one_or_none()
     )
     if structure is None:
         raise HTTPException(
@@ -579,7 +611,10 @@ def search_structures(
             _serialize_availability(availability)
             for availability in structure.availabilities
         ]
-        seasons = sorted({availability.season for availability in availability_reads}, key=lambda item: item.value)
+        seasons = sorted(
+            {availability.season for availability in availability_reads},
+            key=lambda item: item.value,
+        )
         units = sorted(
             {
                 unit_value
@@ -615,7 +650,7 @@ def search_structures(
                 float | None,
                 list[StructureSeason],
                 list[StructureUnit],
-            ]
+            ],
         ) -> float:
             distance = item[1]
             if distance is None:
@@ -639,9 +674,15 @@ def search_structures(
             province=structure.province,
             type=structure.type,
             address=structure.address,
-            latitude=float(structure.latitude) if structure.latitude is not None else None,
-            longitude=float(structure.longitude) if structure.longitude is not None else None,
-            altitude=float(structure.altitude) if structure.altitude is not None else None,
+            latitude=float(structure.latitude)
+            if structure.latitude is not None
+            else None,
+            longitude=float(structure.longitude)
+            if structure.longitude is not None
+            else None,
+            altitude=float(structure.altitude)
+            if structure.altitude is not None
+            else None,
             distance_km=distance,
             estimated_cost=estimated_cost,
             cost_band=band,
@@ -692,7 +733,7 @@ def create_structure(
     base_slug = structure_in.slug or _slugify(structure_in.name)
     unique_slug = _generate_unique_slug(db, base_slug)
 
-    payload = structure_in.model_dump(exclude={"open_periods", "slug"})
+    payload = _structure_payload(structure_in, include_slug=False)
     structure = Structure(**payload, slug=unique_slug)
     structure.open_periods = [
         StructureOpenPeriod(
@@ -762,7 +803,7 @@ def update_structure(
 
     before_snapshot = StructureRead.model_validate(structure).model_dump()
 
-    payload = structure_in.model_dump(exclude={"open_periods"})
+    payload = _structure_payload(structure_in, include_slug=True)
     for key, value in payload.items():
         setattr(structure, key, value)
 
@@ -887,11 +928,12 @@ def create_structure_contact(
     if contact_id is not None:
         contact = db.get(Contact, contact_id)
         if contact is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+            )
         already_linked = (
             db.execute(
-                select(StructureContact)
-                .where(
+                select(StructureContact).where(
                     StructureContact.structure_id == structure.id,
                     StructureContact.contact_id == contact.id,
                 )
@@ -929,7 +971,9 @@ def create_structure_contact(
         structure_id=structure.id,
         contact_id=contact.id,
         role=payload.get("role"),
-        preferred_channel=payload.get("preferred_channel", ContactPreferredChannel.EMAIL),
+        preferred_channel=payload.get(
+            "preferred_channel", ContactPreferredChannel.EMAIL
+        ),
         is_primary=payload.get("is_primary", False),
         gdpr_consent_at=payload.get("gdpr_consent_at"),
     )
@@ -1027,7 +1071,9 @@ def update_structure_contact(
     return _serialize_contact(link)
 
 
-@router.delete("/{structure_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{structure_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def delete_structure_contact(
     structure_id: int,
     contact_id: int,
@@ -1132,7 +1178,9 @@ def upsert_structure_availabilities(
         for availability in structure.availabilities
     ]
 
-    existing = {availability.id: availability for availability in structure.availabilities}
+    existing = {
+        availability.id: availability for availability in structure.availabilities
+    }
     seen_ids: set[int] = set()
 
     for payload in availabilities_in:
@@ -1248,8 +1296,7 @@ def upsert_structure_cost_options(
     structure = _get_structure_or_404(db, structure_id, with_details=True)
 
     before_snapshot = [
-        _serialize_cost_option(option).model_dump()
-        for option in structure.cost_options
+        _serialize_cost_option(option).model_dump() for option in structure.cost_options
     ]
 
     existing = {option.id: option for option in structure.cost_options}
@@ -1308,25 +1355,19 @@ def upsert_structure_cost_options(
 
     db.commit()
 
-    return [
-        _serialize_cost_option(option)
-        for option in updated_structure.cost_options
-    ]
+    return [_serialize_cost_option(option) for option in updated_structure.cost_options]
 
 
 @router.get("/{structure_id}/photos", response_model=list[StructurePhotoRead])
 def list_structure_photos(structure_id: int, db: DbSession) -> list[StructurePhotoRead]:
     _get_structure_or_404(db, structure_id)
 
-    rows = (
-        db.execute(
-            select(StructurePhoto, Attachment)
-            .join(Attachment, StructurePhoto.attachment_id == Attachment.id)
-            .where(StructurePhoto.structure_id == structure_id)
-            .order_by(StructurePhoto.position, StructurePhoto.id)
-        )
-        .all()
-    )
+    rows = db.execute(
+        select(StructurePhoto, Attachment)
+        .join(Attachment, StructurePhoto.attachment_id == Attachment.id)
+        .where(StructurePhoto.structure_id == structure_id)
+        .order_by(StructurePhoto.position, StructurePhoto.id)
+    ).all()
     if not rows:
         return []
 
@@ -1408,24 +1449,23 @@ def create_structure_photo(
     return _serialize_photo(photo, attachment, bucket=bucket, client=client)
 
 
-@router.delete("/{structure_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{structure_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def delete_structure_photo(
     structure_id: int,
     photo_id: int,
     db: DbSession,
     _: AdminUser,
 ) -> None:
-    row = (
-        db.execute(
-            select(StructurePhoto, Attachment)
-            .join(Attachment, StructurePhoto.attachment_id == Attachment.id)
-            .where(
-                StructurePhoto.id == photo_id,
-                StructurePhoto.structure_id == structure_id,
-            )
+    row = db.execute(
+        select(StructurePhoto, Attachment)
+        .join(Attachment, StructurePhoto.attachment_id == Attachment.id)
+        .where(
+            StructurePhoto.id == photo_id,
+            StructurePhoto.structure_id == structure_id,
         )
-        .first()
-    )
+    ).first()
     if row is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Photo not found")
 

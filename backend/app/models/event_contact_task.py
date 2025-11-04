@@ -4,11 +4,12 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.core.db import Base
+from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:
     from .user import User
@@ -42,12 +43,12 @@ class EventContactTask(Base):
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     status: Mapped[EventContactTaskStatus] = mapped_column(
-        SQLEnum(EventContactTaskStatus, name="event_contact_task_status"),
+        sqla_enum(EventContactTaskStatus, name="event_contact_task_status"),
         nullable=False,
         default=EventContactTaskStatus.TODO,
     )
     outcome: Mapped[EventContactTaskOutcome] = mapped_column(
-        SQLEnum(EventContactTaskOutcome, name="event_contact_task_outcome"),
+        sqla_enum(EventContactTaskOutcome, name="event_contact_task_outcome"),
         nullable=False,
         default=EventContactTaskOutcome.PENDING,
     )
