@@ -7,7 +7,7 @@ from alembic import op
 from migrations.utils.postgres import add_enum_value_if_missing
 
 revision: str = "20241010_0018"
-down_revision: str | None = "20240920_0017_structure_contact_emails"
+down_revision: str | None = "20240920_0017"
 branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
 
