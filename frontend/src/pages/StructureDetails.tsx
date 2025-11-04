@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, Fragment, ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -18,12 +18,15 @@ import type {
   ContactPreferredChannel,
   CostOption,
   CostBand,
+  FirePolicy,
   Structure,
-  StructureOpenPeriod
+  StructureOpenPeriod,
+  WaterSource
 } from "../shared/types";
 import { useAuth } from "../shared/auth";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import { StructurePhotosSection } from "../shared/ui/StructurePhotosSection";
+import { Button } from "../shared/ui/designSystem";
 import {
   createGoogleMapsEmbedUrl,
   createGoogleMapsViewUrl
@@ -59,6 +62,12 @@ const initialContactForm: ContactFormState = {
   contactId: null
 };
 
+type LogisticsDetail = {
+  label: string;
+  value: ReactNode;
+  isFull?: boolean;
+};
+
 const sortContacts = (items: Contact[]): Contact[] =>
   [...items].sort((a, b) => {
     if (a.is_primary !== b.is_primary) {
@@ -92,6 +101,74 @@ export const StructureDetailsPage = () => {
       other: t("structures.contacts.channels.other")
     }),
     [t]
+  );
+
+  const fallbackLabels = useMemo(
+    () => ({
+      yes: t("structures.details.common.yes"),
+      no: t("structures.details.common.no"),
+      notAvailable: t("structures.details.overview.notAvailable"),
+    }),
+    [t]
+  );
+
+  const formatBoolean = (value: boolean | null | undefined) => {
+    if (value === null || value === undefined) {
+      return fallbackLabels.notAvailable;
+    }
+    return value ? fallbackLabels.yes : fallbackLabels.no;
+  };
+
+  const formatCount = (value: number | null | undefined) =>
+    value === null || value === undefined
+      ? fallbackLabels.notAvailable
+      : new Intl.NumberFormat("it-IT").format(value);
+
+  const formatLandArea = (value: number | null | undefined) =>
+    value === null || value === undefined
+      ? fallbackLabels.notAvailable
+      : t("structures.details.overview.landAreaValue", {
+          value: new Intl.NumberFormat("it-IT").format(value)
+        });
+
+  const formatOptionalText = (
+    value: string | null | undefined,
+    fallbackKey?: string
+  ) => {
+    if (value && value.trim().length > 0) {
+      return value;
+    }
+    if (fallbackKey) {
+      return t(fallbackKey);
+    }
+    return fallbackLabels.notAvailable;
+  };
+
+  const formatWaterSources = (sources: WaterSource[] | null | undefined) => {
+    if (!sources || sources.length === 0) {
+      return t("structures.details.overview.waterSources.none");
+    }
+    return sources
+      .map((source) => t(`structures.create.form.waterSourceOptions.${source}`))
+      .join(", ");
+  };
+
+  const formatFirePolicy = (policy: FirePolicy | null | undefined) => {
+    if (!policy) {
+      return fallbackLabels.notAvailable;
+    }
+    return t(`structures.create.form.firePolicyOptions.${policy}`);
+  };
+
+  const renderLogisticsDetails = (items: LogisticsDetail[]) => (
+    <dl className="structure-logistics-grid">
+      {items.map(({ label, value, isFull }) => (
+        <Fragment key={label}>
+          <dt className={isFull ? "structure-logistics-grid__full" : undefined}>{label}</dt>
+          <dd className={isFull ? "structure-logistics-grid__full" : undefined}>{value}</dd>
+        </Fragment>
+      ))}
+    </dl>
   );
 
   const formatDate = (value: string | null | undefined) => {
@@ -240,6 +317,129 @@ export const StructureDetailsPage = () => {
 
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
+
+  const indoorDetails: LogisticsDetail[] = [
+    {
+      label: t("structures.details.overview.hasKitchen.label"),
+      value: kitchenLabel
+    },
+    {
+      label: t("structures.details.overview.hotWater"),
+      value: formatBoolean(structure.hot_water)
+    },
+    {
+      label: t("structures.details.overview.beds"),
+      value: formatCount(structure.indoor_beds)
+    },
+    {
+      label: t("structures.details.overview.bathrooms"),
+      value: formatCount(structure.indoor_bathrooms)
+    },
+    {
+      label: t("structures.details.overview.showers"),
+      value: formatCount(structure.indoor_showers)
+    },
+    {
+      label: t("structures.details.overview.indoorActivityRooms"),
+      value: formatCount(structure.indoor_activity_rooms)
+    }
+  ];
+
+  const outdoorDetails: LogisticsDetail[] = [
+    {
+      label: t("structures.details.overview.landArea"),
+      value: formatLandArea(structure.land_area_m2)
+    },
+    {
+      label: t("structures.details.overview.shelterOnField"),
+      value: formatBoolean(structure.shelter_on_field)
+    },
+    {
+      label: t("structures.details.overview.hasFieldPoles"),
+      value: formatBoolean(structure.has_field_poles)
+    },
+    {
+      label: t("structures.details.overview.waterSources.label"),
+      value: formatWaterSources(structure.water_sources)
+    },
+    {
+      label: t("structures.details.overview.pitLatrineAllowed"),
+      value: formatBoolean(structure.pit_latrine_allowed)
+    },
+    {
+      label: t("structures.details.overview.electricityAvailable"),
+      value: formatBoolean(structure.electricity_available)
+    },
+    {
+      label: t("structures.details.overview.firePolicy"),
+      value: formatFirePolicy(structure.fire_policy)
+    }
+  ];
+
+  const accessibilityDetails: LogisticsDetail[] = [
+    {
+      label: t("structures.details.overview.accessByCar"),
+      value: formatBoolean(structure.access_by_car)
+    },
+    {
+      label: t("structures.details.overview.accessByCoach"),
+      value: formatBoolean(structure.access_by_coach)
+    },
+    {
+      label: t("structures.details.overview.coachTurningArea"),
+      value: formatBoolean(structure.coach_turning_area)
+    },
+    {
+      label: t("structures.details.overview.accessByPublicTransport"),
+      value: formatBoolean(structure.access_by_public_transport)
+    },
+    {
+      label: t("structures.details.overview.nearestBusStop"),
+      value: formatOptionalText(structure.nearest_bus_stop)
+    }
+  ];
+
+  const websiteValue = structure.website_urls.length > 0
+    ? (
+        <ul className="structure-website-links">
+          {structure.website_urls.map((url) => (
+            <li key={url}>
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                {url}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    : t("structures.details.overview.websiteFallback");
+
+  const operationsDetails: LogisticsDetail[] = [
+    {
+      label: t("structures.details.overview.website"),
+      value: websiteValue,
+      isFull: true
+    },
+    {
+      label: t("structures.details.overview.weekendOnly"),
+      value: formatBoolean(structure.weekend_only)
+    },
+    {
+      label: t("structures.details.overview.notesLogistics"),
+      value: formatOptionalText(
+        structure.notes_logistics,
+        "structures.details.overview.notesLogisticsFallback"
+      ),
+      isFull: true
+    },
+    {
+      label: t("structures.details.overview.notes"),
+      value: formatOptionalText(
+        structure.notes,
+        "structures.details.overview.notesFallback"
+      ),
+      isFull: true
+    }
+  ];
 
   const resetContactForm = () => {
     setEditingContact(null);
@@ -523,62 +723,24 @@ export const StructureDetailsPage = () => {
               <h3 className="structure-details-card__title">
                 {t("structures.details.overview.logistics")}
               </h3>
-              <dl className="structure-logistics-grid">
-                <dt>{t("structures.details.overview.hasKitchen.label")}</dt>
-                <dd>{kitchenLabel}</dd>
-                {structure.indoor_beds !== null && (
-                  <>
-                    <dt>{t("structures.details.overview.beds")}</dt>
-                    <dd>{structure.indoor_beds}</dd>
-                  </>
-                )}
-                {structure.indoor_bathrooms !== null && (
-                  <>
-                    <dt>{t("structures.details.overview.bathrooms")}</dt>
-                    <dd>{structure.indoor_bathrooms}</dd>
-                  </>
-                )}
-                {structure.indoor_showers !== null && (
-                  <>
-                    <dt>{t("structures.details.overview.showers")}</dt>
-                    <dd>{structure.indoor_showers}</dd>
-                  </>
-                )}
-                {structure.indoor_activity_rooms !== null && (
-                  <>
-                    <dt>{t("structures.details.overview.indoorActivityRooms")}</dt>
-                    <dd>{structure.indoor_activity_rooms}</dd>
-                  </>
-                )}
-                <dt>{t("structures.details.overview.website")}</dt>
-                <dd>
-                  {structure.website_urls.length > 0 ? (
-                    <ul className="structure-website-links">
-                      {structure.website_urls.map((url) => (
-                        <li key={url}>
-                          <a href={url} target="_blank" rel="noopener noreferrer">
-                            {url}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    t("structures.details.overview.websiteFallback")
-                  )}
-                </dd>
-                {structure.notes && (
-                  <>
-                    <dt>{t("structures.details.overview.notes")}</dt>
-                    <dd>{structure.notes}</dd>
-                  </>
-                )}
-                {structure.pit_latrine_allowed === true && (
-                  <>
-                    <dt>{t("structures.details.overview.pitLatrineAllowed")}</dt>
-                    <dd>{t("structures.details.overview.pitLatrineYes")}</dd>
-                  </>
-                )}
-              </dl>
+              <div className="structure-logistics-groups">
+                <section className="structure-logistics-group">
+                  <h4>{t("structures.create.form.sections.indoor.title")}</h4>
+                  {renderLogisticsDetails(indoorDetails)}
+                </section>
+                <section className="structure-logistics-group">
+                  <h4>{t("structures.create.form.sections.outdoor.title")}</h4>
+                  {renderLogisticsDetails(outdoorDetails)}
+                </section>
+                <section className="structure-logistics-group">
+                  <h4>{t("structures.create.form.sections.accessibility.title")}</h4>
+                  {renderLogisticsDetails(accessibilityDetails)}
+                </section>
+                <section className="structure-logistics-group">
+                  <h4>{t("structures.create.form.sections.operations.title")}</h4>
+                  {renderLogisticsDetails(operationsDetails)}
+                </section>
+              </div>
             </div>
 
             {structure.open_periods && structure.open_periods.length > 0 && (
@@ -731,12 +893,12 @@ export const StructureDetailsPage = () => {
               </div>
             )}
 
-            {activeTab === "contacts" && (
+                {activeTab === "contacts" && (
               <div className="detail-panel structure-contacts">
                 <div className="structure-contacts__actions">
-                  <button type="button" onClick={startCreateContact}>
+                  <Button onClick={startCreateContact}>
                     {t("structures.contacts.new")}
-                  </button>
+                  </Button>
                 </div>
                 {actionError && <p className="error">{actionError}</p>}
                 <div className="structure-contacts__website">
@@ -816,16 +978,28 @@ export const StructureDetailsPage = () => {
                             </td>
                             <td>
                               <div className="structure-contacts__table-actions">
-                                <button type="button" onClick={() => startEditContact(contact)}>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => startEditContact(contact)}
+                                >
                                   {t("structures.contacts.actions.edit")}
-                                </button>
-                                <button type="button" onClick={() => handleDeleteContact(contact)}>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  onClick={() => handleDeleteContact(contact)}
+                                >
                                   {t("structures.contacts.actions.delete")}
-                                </button>
+                                </Button>
                                 {!contact.is_primary && (
-                                  <button type="button" onClick={() => handleSetPrimary(contact)}>
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => handleSetPrimary(contact)}
+                                  >
                                     {t("structures.contacts.actions.makePrimary")}
-                                  </button>
+                                  </Button>
                                 )}
                               </div>
                             </td>
@@ -931,15 +1105,15 @@ export const StructureDetailsPage = () => {
                       />
                     </label>
                     <div className="structure-contacts__duplicate-actions">
-                      <button
-                        type="button"
+                      <Button
+                        variant="secondary"
                         onClick={handleSearchDuplicates}
                         disabled={savingContact || checkingDuplicates}
                       >
                         {checkingDuplicates
                           ? t("structures.contacts.form.searching")
                           : t("structures.contacts.form.searchExisting")}
-                      </button>
+                      </Button>
                       {checkingDuplicates && (
                         <span className="structure-contacts__status">
                           {t("structures.contacts.form.searchingHelp")}
@@ -961,37 +1135,38 @@ export const StructureDetailsPage = () => {
                                 {candidate.email && ` · ${candidate.email}`}
                                 {candidate.phone && ` · ${candidate.phone}`}
                               </div>
-                              <button
-                                type="button"
+                              <Button
+                                variant="secondary"
+                                size="sm"
                                 onClick={() => handleUseExisting(candidate)}
                                 disabled={savingContact}
                               >
                                 {t("structures.contacts.actions.useExisting")}
-                              </button>
+                              </Button>
                             </li>
                           ))}
                         </ul>
-                        <button
-                          type="button"
+                        <Button
+                          variant="secondary"
                           onClick={handleForceCreate}
                           disabled={savingContact}
                         >
                           {t("structures.contacts.actions.createAnyway")}
-                        </button>
+                        </Button>
                       </div>
                     )}
                     {formError && <p className="error">{formError}</p>}
                     <div className="structure-contacts__form-actions">
-                      <button type="submit" disabled={savingContact}>
+                      <Button type="submit" disabled={savingContact}>
                         {savingContact
                           ? t("structures.contacts.form.saving")
                           : editingContact
                           ? t("structures.contacts.form.save")
                           : t("structures.contacts.form.create")}
-                      </button>
-                      <button type="button" onClick={resetContactForm}>
+                      </Button>
+                      <Button variant="secondary" onClick={resetContactForm}>
                         {t("structures.contacts.form.cancel")}
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 )}

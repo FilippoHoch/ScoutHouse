@@ -1563,6 +1563,23 @@ table tbody tr:hover {
   gap: var(--space-md);
 }
 
+.structure-logistics-groups {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.structure-logistics-group {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.structure-logistics-group h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-muted-strong);
+}
+
 .structure-logistics-grid dt {
   font-weight: 600;
   color: var(--color-muted-strong);
@@ -1572,6 +1589,11 @@ table tbody tr:hover {
   margin: 0;
   color: var(--color-muted);
   word-break: break-word;
+  white-space: pre-line;
+}
+
+.structure-logistics-grid__full {
+  grid-column: 1 / -1;
 }
 
 .structure-open-periods-detail {

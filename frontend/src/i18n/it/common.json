@@ -499,6 +499,10 @@
       }
     },
     "details": {
+      "common": {
+        "yes": "Sì",
+        "no": "No"
+      },
       "overview": {
         "title": "Panoramica",
         "logistics": "Dettagli logistici",
@@ -516,7 +520,28 @@
           "label": "Cucina",
           "yes": "Cucina attrezzata disponibile",
           "no": "Cucina attrezzata non disponibile"
-        }
+        },
+        "hotWater": "Acqua calda",
+        "landArea": "Superficie esterna",
+        "landAreaValue": "{{value}} m²",
+        "shelterOnField": "Tettoia o rifugio sul campo",
+        "hasFieldPoles": "Pali già presenti sul campo",
+        "waterSources": {
+          "label": "Fonti d'acqua",
+          "none": "Nessuna fonte indicata"
+        },
+        "electricityAvailable": "Presa elettrica disponibile",
+        "firePolicy": "Regole per i fuochi",
+        "accessByCar": "Accesso con auto",
+        "accessByCoach": "Accesso con pullman",
+        "accessByPublicTransport": "Raggiungibile con mezzi pubblici",
+        "coachTurningArea": "Area manovra pullman",
+        "nearestBusStop": "Fermata più vicina",
+        "weekendOnly": "Solo fine settimana",
+        "notesLogistics": "Note logistiche",
+        "notesLogisticsFallback": "Nessuna nota logistica disponibile",
+        "notesFallback": "Nessuna nota disponibile",
+        "notAvailable": "Non disponibile"
       },
       "meta": {
         "slug": "Slug",
