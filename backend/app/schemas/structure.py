@@ -12,6 +12,7 @@ from app.models.availability import StructureSeason, StructureUnit
 from app.models.cost_option import StructureCostModel
 from app.models.structure import (
     FirePolicy,
+    normalize_structure_type,
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
     StructureType,
@@ -103,6 +104,11 @@ class StructureBase(BaseModel):
     website_urls: list[AnyHttpUrl] = Field(default_factory=list)
     notes_logistics: str | None = None
     notes: str | None = None
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def normalize_type(cls, value: Any) -> StructureType:
+        return normalize_structure_type(value)
 
     @field_validator("contact_emails", mode="before")
     @classmethod

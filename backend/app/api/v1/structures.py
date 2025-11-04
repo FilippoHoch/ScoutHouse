@@ -36,6 +36,7 @@ from app.models import (
     StructureUnit,
     User,
 )
+from app.models.structure import normalize_structure_type
 from app.schemas import (
     ContactCreate,
     ContactRead,
@@ -438,7 +439,7 @@ def search_structures(
     db: DbSession,
     q: str | None = Query(default=None, min_length=1),
     province: str | None = Query(default=None, min_length=2, max_length=2),
-    structure_type: StructureType | None = Query(default=None, alias="type"),
+    structure_type: str | None = Query(default=None, alias="type"),
     season: StructureSeason | None = Query(default=None),
     unit: StructureUnit | None = Query(default=None),
     cost_band: CostBand | None = Query(default=None),
@@ -484,8 +485,17 @@ def search_structures(
     if province:
         filters.append(func.upper(Structure.province) == province.upper())
 
-    if structure_type is not None:
-        filters.append(Structure.type == structure_type)
+    try:
+        parsed_structure_type = (
+            None
+            if structure_type is None
+            else normalize_structure_type(structure_type)
+        )
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if parsed_structure_type is not None:
+        filters.append(Structure.type == parsed_structure_type)
 
     access_conditions: list[Any] = []
     if access:

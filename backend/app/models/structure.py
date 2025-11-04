@@ -32,6 +32,10 @@ if TYPE_CHECKING:  # pragma: no cover
     from .structure_photo import StructurePhoto
 
 
+_STRUCTURE_TYPE_ALLOWED_VALUES: tuple[str, ...] = ("house", "land", "mixed")
+_STRUCTURE_TYPE_ALLOWED_VALUES_LIST: list[str] = list(_STRUCTURE_TYPE_ALLOWED_VALUES)
+
+
 class StructureType(str, Enum):
     HOUSE = "house"
     LAND = "land"
@@ -47,6 +51,29 @@ class StructureType(str, Enum):
                 if member.value == normalized:
                     return member
         return None
+
+
+def normalize_structure_type(value: object) -> StructureType:
+    """Normalize arbitrary values into a :class:`StructureType` instance.
+
+    Accepts either an existing enum value or a string with any casing/spacing.
+    Raises :class:`ValueError` with a consistent message when the value cannot be
+    interpreted as a valid structure type.
+    """
+
+    if isinstance(value, StructureType):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        try:
+            return StructureType(normalized)
+        except ValueError as exc:  # pragma: no cover - exercised via callers
+            raise ValueError(
+                f"Invalid structure type. Allowed values: {_STRUCTURE_TYPE_ALLOWED_VALUES_LIST}"
+            ) from exc
+    raise ValueError(
+        f"Invalid structure type. Allowed values: {_STRUCTURE_TYPE_ALLOWED_VALUES_LIST}"
+    )
 
 
 class FirePolicy(str, Enum):
