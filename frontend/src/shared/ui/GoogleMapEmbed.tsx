@@ -3,9 +3,10 @@ import type { LeafletMouseEvent } from "leaflet";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import markerIconRetina from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+const markerIconRetina = new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).toString();
+const markerIcon = new URL("leaflet/dist/images/marker-icon.png", import.meta.url).toString();
+const markerShadow = new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).toString();
 
 export type GoogleMapEmbedCoordinates = {
   lat: number;
