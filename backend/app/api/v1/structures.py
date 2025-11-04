@@ -692,7 +692,7 @@ def create_structure(
     base_slug = structure_in.slug or _slugify(structure_in.name)
     unique_slug = _generate_unique_slug(db, base_slug)
 
-    payload = structure_in.model_dump(mode="json", exclude={"open_periods", "slug"})
+    payload = structure_in.model_dump(exclude={"open_periods", "slug"})
     structure = Structure(**payload, slug=unique_slug)
     structure.open_periods = [
         StructureOpenPeriod(
@@ -762,7 +762,7 @@ def update_structure(
 
     before_snapshot = StructureRead.model_validate(structure).model_dump()
 
-    payload = structure_in.model_dump(mode="json", exclude={"open_periods"})
+    payload = structure_in.model_dump(exclude={"open_periods"})
     for key, value in payload.items():
         setattr(structure, key, value)
 
