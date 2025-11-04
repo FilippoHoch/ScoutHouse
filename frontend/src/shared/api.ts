@@ -28,9 +28,11 @@ import {
   Contact,
   ContactCreateDto,
   ContactUpdateDto,
+  CostOption,
   Structure,
   StructurePhoto,
   StructureCreateDto,
+  StructureCostOptionInput,
   StructureSearchParams,
   StructureSearchResponse,
   StructureImportDryRunResponse,
@@ -392,6 +394,17 @@ export async function updateStructureContact(
 export async function deleteStructureContact(structureId: number, contactId: number): Promise<void> {
   await apiFetch<void>(`/api/v1/structures/${structureId}/contacts/${contactId}`, {
     method: "DELETE",
+    auth: true
+  });
+}
+
+export async function upsertStructureCostOptions(
+  structureId: number,
+  costOptions: StructureCostOptionInput[]
+): Promise<CostOption[]> {
+  return apiFetch<CostOption[]>(`/api/v1/structures/${structureId}/cost-options`, {
+    method: "PUT",
+    body: JSON.stringify(costOptions),
     auth: true
   });
 }

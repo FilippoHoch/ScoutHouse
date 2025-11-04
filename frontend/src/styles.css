@@ -1472,6 +1472,54 @@ table tbody tr:hover {
   margin-top: var(--space-sm);
 }
 
+.structure-cost-options-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.structure-cost-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-top: var(--space-md);
+}
+
+.structure-cost-option-row {
+  display: grid;
+  gap: var(--space-md);
+  align-items: end;
+}
+
+@media (min-width: 768px) {
+  .structure-cost-option-row {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.structure-cost-option-field label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.structure-cost-option-field--currency input {
+  text-transform: uppercase;
+}
+
+.structure-cost-option-actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.structure-cost-options-actions {
+  margin-top: var(--space-md);
+}
+
+.structure-cost-options-empty {
+  margin-bottom: 0;
+}
+
 .structure-form-field.checkbox-field label {
   flex-direction: row;
   align-items: center;

@@ -21,9 +21,11 @@ import {
   createStructureContact,
   createStructurePhoto,
   searchContacts,
-  signAttachmentUpload
+  signAttachmentUpload,
+  upsertStructureCostOptions
 } from "../shared/api";
 import {
+  CostModel,
   Contact,
   ContactCreateDto,
   ContactPreferredChannel,
@@ -33,6 +35,7 @@ import {
   StructureOpenPeriodKind,
   StructureOpenPeriodInput,
   StructureOpenPeriodSeason,
+  StructureCostOptionInput,
   Unit,
   WaterSource
 } from "../shared/types";
@@ -64,7 +67,8 @@ type FieldErrorKey =
   | "contact_emails"
   | "website_urls"
   | "land_area_m2"
-  | "open_periods";
+  | "open_periods"
+  | "cost_options";
 
 type FieldErrors = Partial<Record<FieldErrorKey, string>>;
 
@@ -100,6 +104,30 @@ const createOpenPeriodRow = (kind: StructureOpenPeriodKind = "season"): OpenPeri
   dateEnd: "",
   notes: "",
   units: []
+});
+
+const costModelOptions: CostModel[] = ["per_person_day", "per_person_night", "forfait"];
+
+type CostOptionFormRow = {
+  key: string;
+  model: CostModel | "";
+  amount: string;
+  currency: string;
+  deposit: string;
+  cityTaxPerNight: string;
+  utilitiesFlat: string;
+};
+
+const createCostOptionKey = () => `co-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+
+const createCostOptionRow = (): CostOptionFormRow => ({
+  key: createCostOptionKey(),
+  model: "",
+  amount: "",
+  currency: "EUR",
+  deposit: "",
+  cityTaxPerNight: "",
+  utilitiesFlat: ""
 });
 
 const parseCoordinateValue = (value: string): number | null => {
@@ -193,6 +221,7 @@ export const StructureCreatePage = () => {
   const [contactPickerError, setContactPickerError] = useState<string | null>(null);
   const [contactPickerResults, setContactPickerResults] = useState<Contact[]>([]);
   const [openPeriods, setOpenPeriods] = useState<OpenPeriodFormRow[]>([]);
+  const [costOptions, setCostOptions] = useState<CostOptionFormRow[]>([]);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoDropActive, setPhotoDropActive] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -799,6 +828,44 @@ export const StructureCreatePage = () => {
     clearFieldError("open_periods");
   };
 
+  const handleAddCostOption = () => {
+    setCostOptions((prev) => [...prev, createCostOptionRow()]);
+    setApiError(null);
+    clearFieldError("cost_options");
+  };
+
+  const handleRemoveCostOption = (key: string) => {
+    setCostOptions((prev) => prev.filter((row) => row.key !== key));
+    setApiError(null);
+    clearFieldError("cost_options");
+    requestAnimationFrame(() => {
+      const addButton = document.getElementById("structure-cost-options-add");
+      if (addButton instanceof HTMLElement) {
+        addButton.focus();
+      }
+    });
+  };
+
+  const updateCostOption = (key: string, updates: Partial<CostOptionFormRow>) => {
+    setCostOptions((prev) =>
+      prev.map((row) => (row.key === key ? { ...row, ...updates } : row))
+    );
+    setApiError(null);
+    clearFieldError("cost_options");
+  };
+
+  const handleCostOptionModelChange = (key: string, value: CostModel | "") => {
+    updateCostOption(key, { model: value });
+  };
+
+  const handleCostOptionFieldChange = (
+    key: string,
+    field: "amount" | "currency" | "deposit" | "cityTaxPerNight" | "utilitiesFlat",
+    value: string
+  ) => {
+    updateCostOption(key, { [field]: value } as Partial<CostOptionFormRow>);
+  };
+
   const handleWaterSourceToggle = (option: WaterSource, checked: boolean) => {
     setWaterSources((prev) => {
       if (checked) {
@@ -1011,6 +1078,15 @@ export const StructureCreatePage = () => {
     const trimmedLandArea = landArea.trim();
     const trimmedWebsiteUrls = websiteUrls.map((value) => value.trim());
     const trimmedContactEmails = contactEmails.map((value) => value.trim());
+    const trimmedCostOptions = costOptions.map((option) => ({
+      key: option.key,
+      model: option.model,
+      amount: option.amount.trim(),
+      currency: option.currency.trim(),
+      deposit: option.deposit.trim(),
+      cityTaxPerNight: option.cityTaxPerNight.trim(),
+      utilitiesFlat: option.utilitiesFlat.trim()
+    }));
 
     const errors: FieldErrors = {};
 
@@ -1150,6 +1226,51 @@ export const StructureCreatePage = () => {
       }
     }
 
+    const isCostOptionEmpty = (option: typeof trimmedCostOptions[number]) =>
+      !option.model &&
+      !option.amount &&
+      !option.deposit &&
+      !option.cityTaxPerNight &&
+      !option.utilitiesFlat;
+
+    for (const option of trimmedCostOptions) {
+      if (isCostOptionEmpty(option)) {
+        continue;
+      }
+      if (!option.model) {
+        errors.cost_options = t("structures.create.errors.costOptionsModelRequired");
+        break;
+      }
+      if (!option.amount) {
+        errors.cost_options = t("structures.create.errors.costOptionsAmountRequired");
+        break;
+      }
+      const amountValue = Number.parseFloat(option.amount.replace(",", "."));
+      if (Number.isNaN(amountValue) || amountValue <= 0) {
+        errors.cost_options = t("structures.create.errors.costOptionsAmountInvalid");
+        break;
+      }
+      const currencyValue = option.currency ? option.currency.toUpperCase() : "";
+      if (!/^[A-Z]{3}$/.test(currencyValue)) {
+        errors.cost_options = t("structures.create.errors.costOptionsCurrencyInvalid");
+        break;
+      }
+      const extraFields = [option.deposit, option.cityTaxPerNight, option.utilitiesFlat];
+      for (const candidate of extraFields) {
+        if (!candidate) {
+          continue;
+        }
+        const parsed = Number.parseFloat(candidate.replace(",", "."));
+        if (Number.isNaN(parsed) || parsed < 0) {
+          errors.cost_options = t("structures.create.errors.costOptionsExtraInvalid");
+          break;
+        }
+      }
+      if (errors.cost_options) {
+        break;
+      }
+    }
+
     setFieldErrors(errors);
 
     if (Object.keys(errors).length > 0) {
@@ -1190,6 +1311,14 @@ export const StructureCreatePage = () => {
     const trimmedContactEmails = contactEmails.map((value) => value.trim());
     const trimmedNotesLogistics = notesLogistics.trim();
     const trimmedNotes = notes.trim();
+    const trimmedCostOptions = costOptions.map((option) => ({
+      model: option.model,
+      amount: option.amount.trim(),
+      currency: option.currency.trim(),
+      deposit: option.deposit.trim(),
+      cityTaxPerNight: option.cityTaxPerNight.trim(),
+      utilitiesFlat: option.utilitiesFlat.trim()
+    }));
 
     const payload: StructureCreateDto = {
       name: name.trim(),
@@ -1308,6 +1437,46 @@ export const StructureCreatePage = () => {
       return base;
     });
 
+    const costOptionPayloads: StructureCostOptionInput[] = trimmedCostOptions
+      .map((option) => {
+        const isEmpty =
+          !option.model &&
+          !option.amount &&
+          !option.deposit &&
+          !option.cityTaxPerNight &&
+          !option.utilitiesFlat;
+        if (isEmpty) {
+          return null;
+        }
+        const amountValue = Number.parseFloat(option.amount.replace(",", "."));
+        const currencyValue = option.currency ? option.currency.toUpperCase() : "EUR";
+        const payloadItem: StructureCostOptionInput = {
+          model: option.model as CostModel,
+          amount: amountValue,
+          currency: currencyValue
+        };
+        const parseOptional = (value: string) => {
+          if (!value) {
+            return null;
+          }
+          return Number.parseFloat(value.replace(",", "."));
+        };
+        const depositValue = parseOptional(option.deposit);
+        if (depositValue !== null) {
+          payloadItem.deposit = depositValue;
+        }
+        const cityTaxValue = parseOptional(option.cityTaxPerNight);
+        if (cityTaxValue !== null) {
+          payloadItem.city_tax_per_night = cityTaxValue;
+        }
+        const utilitiesValue = parseOptional(option.utilitiesFlat);
+        if (utilitiesValue !== null) {
+          payloadItem.utilities_flat = utilitiesValue;
+        }
+        return payloadItem;
+      })
+      .filter((item): item is StructureCostOptionInput => item !== null);
+
     try {
       const created = await createMutation.mutateAsync(payload);
 
@@ -1319,6 +1488,15 @@ export const StructureCreatePage = () => {
             urls: formatted
           })
         );
+      }
+
+      if (costOptionPayloads.length > 0) {
+        try {
+          await upsertStructureCostOptions(created.id, costOptionPayloads);
+        } catch (costError) {
+          console.error("Unable to save structure cost options", costError);
+          window.alert(t("structures.create.costs.saveFailed"));
+        }
       }
 
       if (addContact && (contactHasDetails() || contactId !== null)) {
@@ -1428,6 +1606,11 @@ export const StructureCreatePage = () => {
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
   const openPeriodsHintId = "structure-open-periods-hint";
   const openPeriodsDescribedBy = [openPeriodsHintId, openPeriodsErrorId]
+    .filter(Boolean)
+    .join(" ") || undefined;
+  const costOptionsErrorId = fieldErrors.cost_options ? "structure-cost-options-error" : undefined;
+  const costOptionsHintId = "structure-cost-options-hint";
+  const costOptionsDescribedBy = [costOptionsHintId, costOptionsErrorId]
     .filter(Boolean)
     .join(" ") || undefined;
 
@@ -2187,6 +2370,190 @@ export const StructureCreatePage = () => {
                   <span className="helper-text">
                     {t("structures.create.form.notesLogisticsHint")}
                   </span>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.costs.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.costs.description")}
+              </p>
+              <div className="structure-field-grid">
+                <div
+                  className="structure-form-field"
+                  data-span="full"
+                  id="structure-cost_options"
+                  role="group"
+                  aria-describedby={costOptionsDescribedBy}
+                >
+                  <div className="structure-cost-options-header">
+                    <span className="form-label">
+                      {t("structures.create.form.costOptions.title")}
+                    </span>
+                    <p className="helper-text" id={costOptionsHintId}>
+                      {t("structures.create.form.costOptions.hint")}
+                    </p>
+                  </div>
+                  {costOptions.length === 0 ? (
+                    <p className="helper-text structure-cost-options-empty">
+                      {t("structures.create.form.costOptions.empty")}
+                    </p>
+                  ) : (
+                    <div className="structure-cost-options-list">
+                      {costOptions.map((option) => {
+                        const modelId = `structure-cost-option-${option.key}-model`;
+                        const amountId = `structure-cost-option-${option.key}-amount`;
+                        const currencyId = `structure-cost-option-${option.key}-currency`;
+                        const depositId = `structure-cost-option-${option.key}-deposit`;
+                        const cityTaxId = `structure-cost-option-${option.key}-city-tax`;
+                        const utilitiesId = `structure-cost-option-${option.key}-utilities`;
+                        return (
+                          <div className="structure-cost-option-row" key={option.key}>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={modelId}>
+                                {t("structures.create.form.costOptions.model")}
+                                <select
+                                  id={modelId}
+                                  value={option.model}
+                                  onChange={(event) =>
+                                    handleCostOptionModelChange(
+                                      option.key,
+                                      event.target.value as CostModel | ""
+                                    )
+                                  }
+                                >
+                                  <option value="">
+                                    {t("structures.create.form.costOptions.modelPlaceholder")}
+                                  </option>
+                                  {costModelOptions.map((value) => (
+                                    <option key={value} value={value}>
+                                      {t(`structures.create.form.costOptions.models.${value}`)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={amountId}>
+                                {t("structures.create.form.costOptions.amount")}
+                                <input
+                                  id={amountId}
+                                  value={option.amount}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "amount",
+                                      event.target.value
+                                    )
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                />
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-field structure-cost-option-field--currency">
+                              <label htmlFor={currencyId}>
+                                {t("structures.create.form.costOptions.currency")}
+                                <input
+                                  id={currencyId}
+                                  value={option.currency}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "currency",
+                                      event.target.value.toUpperCase()
+                                    )
+                                  }
+                                  maxLength={3}
+                                />
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={depositId}>
+                                {t("structures.create.form.costOptions.deposit")}
+                                <input
+                                  id={depositId}
+                                  value={option.deposit}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "deposit",
+                                      event.target.value
+                                    )
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                />
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={cityTaxId}>
+                                {t("structures.create.form.costOptions.cityTax")}
+                                <input
+                                  id={cityTaxId}
+                                  value={option.cityTaxPerNight}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "cityTaxPerNight",
+                                      event.target.value
+                                    )
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                />
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={utilitiesId}>
+                                {t("structures.create.form.costOptions.utilities")}
+                                <input
+                                  id={utilitiesId}
+                                  value={option.utilitiesFlat}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "utilitiesFlat",
+                                      event.target.value
+                                    )
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                />
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-actions">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveCostOption(option.key)}
+                              >
+                                {t("structures.create.form.costOptions.remove")}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="structure-cost-options-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      id="structure-cost-options-add"
+                      onClick={handleAddCostOption}
+                    >
+                      {t("structures.create.form.costOptions.add")}
+                    </Button>
+                  </div>
+                  {fieldErrors.cost_options && (
+                    <p className="error-text" id={costOptionsErrorId!}>
+                      {fieldErrors.cost_options}
+                    </p>
+                  )}
                 </div>
               </div>
             </fieldset>

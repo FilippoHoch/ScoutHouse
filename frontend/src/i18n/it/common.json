@@ -271,6 +271,10 @@
             "title": "Operatività",
             "description": "Specifica disponibilità stagionale e note organizzative importanti."
           },
+          "costs": {
+            "title": "Costi e preventivi",
+            "description": "Aggiungi le opzioni di costo per aiutare i capi a stimare il preventivo."
+          },
           "photos": {
             "title": "Foto",
             "description": "Prepara le immagini che saranno allegate alla scheda della struttura."
@@ -315,6 +319,25 @@
         "weekendOnlyHint": "Spunta se la struttura accetta gruppi solo durante il weekend.",
         "notesLogistics": "Note logistiche",
         "notesLogisticsHint": "Indica istruzioni operative (chiavi, accessi, limitazioni) utili per i capi.",
+        "costOptions": {
+          "title": "Opzioni di costo",
+          "hint": "Imposta uno o più listini per descrivere come viene calcolato il costo della struttura.",
+          "empty": "Nessuna opzione di costo aggiunta.",
+          "add": "Aggiungi opzione di costo",
+          "remove": "Rimuovi",
+          "model": "Modello di costo",
+          "modelPlaceholder": "Seleziona modello",
+          "amount": "Importo principale",
+          "currency": "Valuta",
+          "deposit": "Caparra (facoltativa)",
+          "cityTax": "Tassa di soggiorno per notte (facoltativa)",
+          "utilities": "Forfait utenze (facoltativo)",
+          "models": {
+            "per_person_day": "Per persona al giorno",
+            "per_person_night": "Per persona a notte",
+            "forfait": "Forfait fisso"
+          }
+        },
         "openPeriods": {
           "title": "Periodi di apertura",
           "hint": "Aggiungi stagioni o intervalli di date in cui la struttura è disponibile alla prenotazione e specifica per quali branche.",
@@ -383,7 +406,12 @@
         "openPeriodsSeasonRequired": "Seleziona una stagione per i periodi stagionali.",
         "openPeriodsRangeRequired": "Indica sia data di inizio che data di fine per gli intervalli.",
         "openPeriodsRangeOrder": "La data di fine deve essere successiva o uguale alla data di inizio.",
-        "openPeriodsUnitsRequired": "Seleziona almeno una branca per ogni periodo."
+        "openPeriodsUnitsRequired": "Seleziona almeno una branca per ogni periodo.",
+        "costOptionsModelRequired": "Seleziona un modello per ogni opzione di costo compilata.",
+        "costOptionsAmountRequired": "Indica l'importo principale per ogni opzione di costo.",
+        "costOptionsAmountInvalid": "Inserisci importi validi maggiori di zero.",
+        "costOptionsCurrencyInvalid": "La valuta deve contenere tre lettere.",
+        "costOptionsExtraInvalid": "Inserisci importi validi maggiori o uguali a zero per caparra, tassa o utenze."
       },
       "warnings": {
         "websiteUnreachable": "Attenzione: {{count, plural, one {il seguente link non risponde} other {i seguenti link non rispondono}}:\n{{urls}}\nLa struttura è stata creata comunque."
@@ -395,6 +423,9 @@
         "searchFailed": "Impossibile cercare contatti esistenti.",
         "usingExisting": "Verrà utilizzato il contatto {{name}}.",
         "saveFailed": "Struttura creata ma impossibile collegare il contatto. Aggiungilo dalle impostazioni della struttura."
+      },
+      "costs": {
+        "saveFailed": "Struttura creata ma impossibile salvare i costi. Potrai aggiornarli dalla scheda struttura."
       }
     },
     "contacts": {
