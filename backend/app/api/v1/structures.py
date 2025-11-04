@@ -10,6 +10,7 @@ from typing import Annotated, Any
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
@@ -704,8 +705,15 @@ def create_structure(
         )
         for period in structure_in.open_periods
     ]
-    db.add(structure)
-    db.flush()
+    try:
+        db.add(structure)
+        db.flush()
+    except (DataError, IntegrityError) as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=422,
+            detail="Valore 'type' non valido per structure_type",
+        ) from exc
 
     record_audit(
         db,
