@@ -547,3 +547,75 @@ def test_structure_photo_requires_image(monkeypatch: pytest.MonkeyPatch) -> None
         headers=admin_headers,
     )
     assert delete_attachment_resp.status_code == 204
+
+
+def test_non_admin_editor_can_manage_structure_photos(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ALLOW_NON_ADMIN_STRUCTURE_EDIT", "true")
+    get_settings.cache_clear()
+
+    client = TestClient(app)
+    fake_s3 = _install_fake_storage(monkeypatch)
+
+    create_user(email="admin@example.com", name="Admin", is_admin=True)
+    admin_headers = login_headers(client, "admin@example.com", TEST_USER_PASSWORD)
+
+    create_structure = client.post(
+        "/api/v1/structures",
+        json={
+            "name": "Base Bosco",
+            "slug": "base-bosco",
+            "province": "BS",
+            "type": "house",
+        },
+        headers=admin_headers,
+    )
+    assert create_structure.status_code == 201, create_structure.text
+    structure_id = create_structure.json()["id"]
+
+    create_user(email="editor@example.com", name="Editor", is_admin=False)
+    editor_headers = login_headers(client, "editor@example.com", TEST_USER_PASSWORD)
+
+    sign = client.post(
+        "/api/v1/attachments/sign-put",
+        json={
+            "owner_type": "structure",
+            "owner_id": structure_id,
+            "filename": "facciata.jpg",
+            "mime": "image/jpeg",
+        },
+        headers=editor_headers,
+    )
+    assert sign.status_code == 200, sign.text
+    upload_key = sign.json()["fields"]["key"]
+    fake_s3.add_head(upload_key, {"ContentLength": 1024, "ContentType": "image/jpeg"})
+
+    confirm = client.post(
+        "/api/v1/attachments/confirm",
+        json={
+            "owner_type": "structure",
+            "owner_id": structure_id,
+            "filename": "facciata.jpg",
+            "mime": "image/jpeg",
+            "size": 1024,
+            "key": upload_key,
+        },
+        headers=editor_headers,
+    )
+    assert confirm.status_code == 201, confirm.text
+    attachment_id = confirm.json()["id"]
+
+    create_photo = client.post(
+        f"/api/v1/structures/{structure_id}/photos",
+        json={"attachment_id": attachment_id},
+        headers=editor_headers,
+    )
+    assert create_photo.status_code == 201, create_photo.text
+    photo_id = create_photo.json()["id"]
+
+    delete_photo = client.delete(
+        f"/api/v1/structures/{structure_id}/photos/{photo_id}",
+        headers=editor_headers,
+    )
+    assert delete_photo.status_code == 204, delete_photo.text
