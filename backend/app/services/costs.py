@@ -170,6 +170,12 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                 "utilities_flat": float(_quantize(option.utilities_flat))
                 if option.utilities_flat is not None
                 else None,
+                "min_total": float(_quantize(option.min_total))
+                if option.min_total is not None
+                else None,
+                "max_total": float(_quantize(option.max_total))
+                if option.max_total is not None
+                else None,
                 "age_rules": option.age_rules or None,
                 "modifiers": modifiers or None,
             }
@@ -294,6 +300,8 @@ def calc_quote(
             if modifier.date_end is not None:
                 modifier_metadata["modifier_date_end"] = modifier.date_end.isoformat()
 
+        minimum_total_applied = False
+        maximum_total_applied = False
         if option.model == StructureCostModel.PER_PERSON_DAY:
             quantity = people_total * days
             line_total = amount * Decimal(people_total) * Decimal(days)
@@ -312,6 +320,28 @@ def calc_quote(
 
         if modifier_metadata:
             metadata.update({k: v for k, v in modifier_metadata.items() if v is not None})
+
+        if option.model in (
+            StructureCostModel.PER_PERSON_DAY,
+            StructureCostModel.PER_PERSON_NIGHT,
+        ):
+            if option.min_total is not None:
+                minimum_total = _sanitize_decimal(option.min_total)
+                metadata["minimum_total"] = float(_quantize(minimum_total))
+                if line_total < minimum_total:
+                    line_total = minimum_total
+                    minimum_total_applied = True
+            if option.max_total is not None:
+                maximum_total = _sanitize_decimal(option.max_total)
+                metadata["maximum_total"] = float(_quantize(maximum_total))
+                if line_total > maximum_total:
+                    line_total = maximum_total
+                    maximum_total_applied = True
+
+        if minimum_total_applied:
+            metadata["minimum_total_applied"] = True
+        if maximum_total_applied:
+            metadata["maximum_total_applied"] = True
 
         line_total = _quantize(line_total)
         subtotal += line_total

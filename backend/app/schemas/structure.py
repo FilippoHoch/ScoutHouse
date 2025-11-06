@@ -370,6 +370,8 @@ class StructureCostOptionBase(BaseModel):
     deposit: Decimal | None = Field(default=None, ge=0)
     city_tax_per_night: Decimal | None = Field(default=None, ge=0)
     utilities_flat: Decimal | None = Field(default=None, ge=0)
+    min_total: Decimal | None = Field(default=None, ge=0)
+    max_total: Decimal | None = Field(default=None, ge=0)
     age_rules: dict[str, Any] | None = None
 
     @field_validator("currency")
@@ -378,6 +380,13 @@ class StructureCostOptionBase(BaseModel):
         if len(value) != 3 or not value.isalpha():
             raise ValueError("Currency must be a 3-letter ISO code")
         return value.upper()
+
+    @model_validator(mode="after")
+    def validate_totals(self) -> "StructureCostOptionBase":
+        if self.min_total is not None and self.max_total is not None:
+            if self.min_total > self.max_total:
+                raise ValueError("min_total non può essere maggiore di max_total")
+        return self
 
 
 class StructureCostOptionCreate(StructureCostOptionBase):
