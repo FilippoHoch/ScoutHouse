@@ -3,10 +3,9 @@ import type { LeafletMouseEvent } from "leaflet";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-
-const markerIconRetina = new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).toString();
-const markerIcon = new URL("leaflet/dist/images/marker-icon.png", import.meta.url).toString();
-const markerShadow = new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).toString();
+import markerIconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import markerIconUrl from "leaflet/dist/images/marker-icon.png";
+import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 export type GoogleMapEmbedCoordinates = {
   lat: number;
@@ -37,9 +36,9 @@ const combineClassNames = (...classNames: (string | false | null | undefined)[])
   classNames.filter(Boolean).join(" ");
 
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIconRetina,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow
+  iconRetinaUrl: markerIconRetinaUrl,
+  iconUrl: markerIconUrl,
+  shadowUrl: markerShadowUrl
 });
 
 const normalizeCoordinates = (value: GoogleMapEmbedCoordinates) => ({
