@@ -29,6 +29,10 @@ export const Layout = () => {
     { to: "/events", label: t("layout.nav.events") },
   ];
 
+  if (auth.user) {
+    navItems.push({ to: "/settings", label: t("layout.nav.settings") });
+  }
+
   if (auth.user?.is_admin) {
     navItems.push({ to: "/admin", label: t("layout.nav.admin") });
     navItems.push({ to: "/import-export", label: t("layout.nav.importExport") });

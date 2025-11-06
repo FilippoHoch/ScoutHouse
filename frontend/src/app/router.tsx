@@ -19,6 +19,7 @@ const StructureDetailsPage = lazy(() =>
 const LoginPage = lazy(() => import("../pages/Login").then((module) => ({ default: module.LoginPage })));
 const RegisterPage = lazy(() => import("../pages/Register").then((module) => ({ default: module.RegisterPage })));
 const AdminPage = lazy(() => import("../pages/Admin").then((module) => ({ default: module.AdminPage })));
+const SettingsPage = lazy(() => import("../pages/Settings").then((module) => ({ default: module.SettingsPage })));
 
 const ProtectedRoute = () => {
   const auth = useAuth();
@@ -80,6 +81,7 @@ export const AppRouter = () => {
               <Route path="/structures/:slug/edit" element={<StructureEditPage />} />
               <Route path="/import-export" element={<ImportExportPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

@@ -6,6 +6,7 @@
       "home": "Home",
       "structures": "Strutture",
       "events": "Eventi",
+      "settings": "Impostazioni",
       "admin": "Amministrazione",
       "importExport": "Import/Export",
       "newStructure": "Nuova struttura",
@@ -15,6 +16,52 @@
   },
   "auth": {
     "verifying": "Verifica della sessione in corso…"
+  },
+  "settings": {
+    "title": "Impostazioni personali",
+    "description": "Personalizza ScoutHouse in base alle tue preferenze operative.",
+    "sections": {
+      "general": {
+        "title": "Preferenze generali",
+        "description": "Aggiorna il tuo luogo di riferimento e la branca da proporre automaticamente."
+      },
+      "pricing": {
+        "title": "Preferenze sui prezzi",
+        "description": "Scegli quali fasce di prezzo privilegiare quando cerchi strutture."
+      }
+    },
+    "fields": {
+      "homeLocation": {
+        "label": "Luogo di base",
+        "placeholder": "Es. Milano, Lombardia",
+        "helper": "Utilizzato per proporre strutture e attività vicine al tuo territorio."
+      },
+      "defaultBranch": {
+        "label": "Branca predefinita",
+        "none": "Nessuna preferenza",
+        "helper": "Verrà selezionata automaticamente nella creazione di nuovi eventi.",
+        "options": {
+          "LC": "Lupetti (LC)",
+          "EG": "Esploratori (EG)",
+          "RS": "Rover (RS)",
+          "ALL": "Tutte le branche"
+        }
+      },
+      "pricePreferences": {
+        "label": "Fasce di prezzo preferite",
+        "helper": "Le fasce selezionate verranno messe in evidenza nelle ricerche.",
+        "options": {
+          "cheap": "Prezzi bassi",
+          "medium": "Prezzi medi",
+          "expensive": "Prezzi alti"
+        }
+      }
+    },
+    "actions": {
+      "save": "Salva preferenze",
+      "saved": "Preferenze salvate correttamente.",
+      "reset": "Ripristina valori predefiniti"
+    }
   },
   "admin": {
     "forbidden": "Solo gli amministratori possono accedere a questa pagina.",
