@@ -32,6 +32,51 @@
         "task_assigned": "Task assegnato",
         "candidate_status_changed": "Cambio stato candidatura"
       }
+    },
+    "users": {
+      "title": "Gestione utenti",
+      "description": "Visualizza e aggiorna gli account abilitati alla piattaforma.",
+      "refresh": "Aggiorna elenco",
+      "empty": "Nessun utente trovato.",
+      "editAction": "Modifica",
+      "createTitle": "Crea nuovo utente",
+      "createDescription": "Aggiungi manualmente un nuovo membro dello staff.",
+      "createSubmit": "Crea utente",
+      "createSuccess": "Utente {{name}} creato correttamente.",
+      "editTitle": "Modifica utente selezionato",
+      "updateSubmit": "Salva modifiche",
+      "updateSuccess": "Dati di {{name}} aggiornati.",
+      "selectPrompt": "Seleziona un utente dall'elenco per modificarlo.",
+      "noChanges": "Nessuna modifica da salvare.",
+      "table": {
+        "name": "Nome",
+        "email": "Email",
+        "role": "Ruolo",
+        "status": "Stato",
+        "created": "Creato il",
+        "actions": "Azioni"
+      },
+      "role": {
+        "admin": "Amministratore",
+        "user": "Utente"
+      },
+      "status": {
+        "active": "Attivo",
+        "inactive": "Disattivato"
+      },
+      "form": {
+        "name": "Nome completo",
+        "email": "Email",
+        "password": "Password",
+        "passwordHint": "Lascia vuoto per non modificarla.",
+        "isAdmin": "Amministratore",
+        "isActive": "Utente attivo"
+      },
+      "errors": {
+        "load": "Impossibile caricare l'elenco utenti.",
+        "create": "Impossibile creare l'utente.",
+        "update": "Impossibile aggiornare l'utente."
+      }
     }
   },
   "importExport": {

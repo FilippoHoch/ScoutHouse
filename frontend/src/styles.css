@@ -762,6 +762,24 @@ table tbody tr:hover {
   margin: 0.25rem 0 0;
 }
 
+.success {
+  color: var(--color-secondary);
+  font-weight: 600;
+  margin: 0.25rem 0 0;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 600;
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
 .empty-state {
   padding: var(--space-xl);
   text-align: center;

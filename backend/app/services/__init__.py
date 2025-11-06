@@ -10,6 +10,7 @@ from .mail import (
     schedule_password_reset_email,
     schedule_task_assigned_email,
 )
+from .users import ensure_default_admin
 
 __all__ = [
     "haversine_km",
@@ -25,4 +26,5 @@ __all__ = [
     "schedule_password_reset_email",
     "schedule_task_assigned_email",
     "schedule_candidate_status_email",
+    "ensure_default_admin",
 ]

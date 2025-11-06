@@ -15,11 +15,13 @@ from starlette.middleware.gzip import GZipMiddleware
 
 from app.api.v1 import api_router
 from app.core.config import get_settings
+from app.core.db import SessionLocal
 from app.core.limiter import limiter
 from app.core.logging import RequestIDMiddleware, RequestLoggingMiddleware, configure_logging
 from app.core.metrics import setup_metrics
 from app.core.pubsub import event_bus
 from app.core.sentry import init_sentry
+from app.services import ensure_default_admin
 
 
 def create_app() -> FastAPI:
@@ -54,9 +56,22 @@ def create_app() -> FastAPI:
 
     app.state.instrumentator = setup_metrics(app)
 
+    def _bootstrap_admin_user() -> None:
+        db = SessionLocal()
+        try:
+            ensure_default_admin(
+                db,
+                email=settings.default_admin_email,
+                password=settings.default_admin_password,
+                name=settings.default_admin_name,
+            )
+        finally:
+            db.close()
+
     @app.on_event("startup")
     async def _on_startup() -> None:
         event_bus.bind_to_loop(asyncio.get_running_loop())
+        await asyncio.to_thread(_bootstrap_admin_user)
         logger.info("Application startup complete")
 
     @app.on_event("shutdown")
