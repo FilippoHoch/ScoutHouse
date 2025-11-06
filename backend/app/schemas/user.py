@@ -19,6 +19,7 @@ class UserBase(BaseModel):
 
 class UserRead(UserBase):
     created_at: datetime
+    can_edit_structures: bool = False
 
 
 class UserCreate(BaseModel):

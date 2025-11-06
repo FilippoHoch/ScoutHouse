@@ -8,7 +8,7 @@ import { ForgotPasswordPage } from "../pages/ForgotPassword";
 import { LandingPage } from "../pages/Landing";
 import { ResetPasswordPage } from "../pages/ResetPassword";
 import { StructuresPage } from "../pages/Structures";
-import { StructureCreatePage } from "../pages/StructureCreate";
+import { StructureCreatePage, StructureEditPage } from "../pages/StructureCreate";
 import { ImportExportPage } from "../pages/ImportExport";
 import { ensureSession, restoreSession, useAuth } from "../shared/auth";
 
@@ -77,6 +77,7 @@ export const AppRouter = () => {
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:eventId" element={<EventDetailsPage />} />
               <Route path="/structures/new" element={<StructureCreatePage />} />
+              <Route path="/structures/:slug/edit" element={<StructureEditPage />} />
               <Route path="/import-export" element={<ImportExportPage />} />
               <Route path="/admin" element={<AdminPage />} />
             </Route>

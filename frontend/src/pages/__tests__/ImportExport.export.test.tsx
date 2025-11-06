@@ -32,6 +32,7 @@ describe("ImportExportPage exports", () => {
         email: "admin@example.com",
         name: "Admin",
         is_admin: true,
+        can_edit_structures: true,
         created_at: "2024-01-01T00:00:00Z"
       },
       accessToken: "token",
@@ -111,6 +112,7 @@ describe("ImportExportPage exports", () => {
         email: "user@example.com",
         name: "User",
         is_admin: false,
+        can_edit_structures: false,
         created_at: "2024-01-01T00:00:00Z"
       },
       accessToken: "token",

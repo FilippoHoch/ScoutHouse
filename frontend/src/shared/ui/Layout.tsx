@@ -34,7 +34,7 @@ export const Layout = () => {
     navItems.push({ to: "/import-export", label: t("layout.nav.importExport") });
   }
 
-  if (auth.user) {
+  if (auth.user?.can_edit_structures) {
     navItems.push({ to: "/structures/new", label: t("layout.nav.newStructure") });
   }
 

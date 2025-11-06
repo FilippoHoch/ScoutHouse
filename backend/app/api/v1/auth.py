@@ -42,6 +42,13 @@ def _mint_refresh_token(db: Session, user: User) -> tuple[str, RefreshToken]:
     return token_value, refresh
 
 
+def _serialize_user(user: User) -> UserRead:
+    settings = get_settings()
+    can_edit_structures = bool(user.is_admin or settings.allow_non_admin_structure_edit)
+    data = UserRead.model_validate(user)
+    return data.model_copy(update={"can_edit_structures": can_edit_structures})
+
+
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
     settings = get_settings()
@@ -62,7 +69,7 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
 
     issue_refresh_cookie(response, token_value, refresh.expires_at)
     access_token = create_access_token(user.id)
-    return AuthResponse(access_token=access_token, user=UserRead.model_validate(user))
+    return AuthResponse(access_token=access_token, user=_serialize_user(user))
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -86,7 +93,7 @@ async def login(
 
     issue_refresh_cookie(response, token_value, refresh.expires_at)
     access_token = create_access_token(user.id)
-    return AuthResponse(access_token=access_token, user=UserRead.model_validate(user))
+    return AuthResponse(access_token=access_token, user=_serialize_user(user))
 
 
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
@@ -168,4 +175,4 @@ def logout(
 
 @router.get("/me", response_model=UserRead)
 def get_me(user: User = Depends(get_current_user)) -> UserRead:
-    return UserRead.model_validate(user)
+    return _serialize_user(user)

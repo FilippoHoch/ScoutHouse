@@ -375,6 +375,17 @@ export async function createStructure(dto: StructureCreateDto): Promise<Structur
   });
 }
 
+export async function updateStructure(
+  structureId: number,
+  dto: StructureCreateDto
+): Promise<Structure> {
+  return apiFetch<Structure>(`/api/v1/structures/${structureId}`, {
+    method: "PUT",
+    body: JSON.stringify(dto),
+    auth: true
+  });
+}
+
 export async function getStructureContacts(structureId: number): Promise<Contact[]> {
   return apiFetch<Contact[]>(`/api/v1/structures/${structureId}/contacts`, { auth: true });
 }

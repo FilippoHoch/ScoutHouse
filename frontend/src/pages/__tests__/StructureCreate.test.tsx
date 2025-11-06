@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -10,11 +10,13 @@ import {
   confirmAttachmentUpload,
   createStructure,
   createStructurePhoto,
+  getStructureBySlug,
   signAttachmentUpload,
+  updateStructure,
   upsertStructureCostOptions
 } from "../../shared/api";
 import type { Structure } from "../../shared/types";
-import { StructureCreatePage } from "../StructureCreate";
+import { StructureCreatePage, StructureEditPage } from "../StructureCreate";
 
 const mockNavigate = vi.fn();
 
@@ -34,8 +36,10 @@ vi.mock("../../shared/api", async () => {
     ...actual,
     createStructure: vi.fn(),
     createStructurePhoto: vi.fn(),
+    getStructureBySlug: vi.fn(),
     signAttachmentUpload: vi.fn(),
     confirmAttachmentUpload: vi.fn(),
+    updateStructure: vi.fn(),
     upsertStructureCostOptions: vi.fn()
   };
 });
@@ -89,20 +93,34 @@ const createWrapper = (queryClient: QueryClient) =>
     </MemoryRouter>
   );
 
-describe("StructureCreatePage", () => {
-  beforeEach(() => {
-    mockNavigate.mockReset();
-    vi.mocked(createStructure).mockReset();
-    vi.mocked(createStructurePhoto).mockReset();
-    vi.mocked(signAttachmentUpload).mockReset();
-    vi.mocked(confirmAttachmentUpload).mockReset();
-    vi.mocked(upsertStructureCostOptions).mockReset();
-    alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
-  });
+const createEditWrapper = (queryClient: QueryClient, slug = "base-bosco") =>
+  ({ children }: { children: ReactNode }) => (
+    <MemoryRouter initialEntries={[`/structures/${slug}/edit`]}>
+      <QueryClientProvider client={queryClient}>
+        <Routes>
+          <Route path="/structures/:slug/edit" element={children} />
+        </Routes>
+      </QueryClientProvider>
+    </MemoryRouter>
+  );
 
-  afterEach(() => {
-    alertMock.mockRestore();
-  });
+beforeEach(() => {
+  mockNavigate.mockReset();
+  vi.mocked(createStructure).mockReset();
+  vi.mocked(createStructurePhoto).mockReset();
+  vi.mocked(getStructureBySlug).mockReset();
+  vi.mocked(signAttachmentUpload).mockReset();
+  vi.mocked(confirmAttachmentUpload).mockReset();
+  vi.mocked(updateStructure).mockReset();
+  vi.mocked(upsertStructureCostOptions).mockReset();
+  alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  alertMock.mockRestore();
+});
+
+describe("StructureCreatePage", () => {
 
   it("creates a structure and navigates to its detail page", async () => {
     const queryClient = new QueryClient({
@@ -467,5 +485,76 @@ describe("StructureCreatePage", () => {
     await waitFor(() => expect(createStructurePhoto).toHaveBeenCalledWith(1, { attachment_id: 10 }));
 
     fetchMock.mockRestore();
+  });
+});
+
+describe("StructureEditPage", () => {
+  it("prefills the form with existing structure data", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    vi.mocked(getStructureBySlug).mockResolvedValue(createdStructure);
+    const Wrapper = createEditWrapper(queryClient);
+
+    render(<StructureEditPage />, { wrapper: Wrapper });
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Nome/i)).toHaveValue(createdStructure.name)
+    );
+    expect(screen.getByRole("button", { name: /Salva modifiche/i })).toBeInTheDocument();
+  });
+
+  it("updates a structure and navigates to its detail page", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    vi.mocked(getStructureBySlug).mockResolvedValue(createdStructure);
+    const updatedStructure = {
+      ...createdStructure,
+      name: "Base Bosco Rinnovata",
+      slug: "base-bosco-rinnovata"
+    };
+    vi.mocked(updateStructure).mockResolvedValue(updatedStructure);
+    const Wrapper = createEditWrapper(queryClient);
+    const user = userEvent.setup();
+
+    render(<StructureEditPage />, { wrapper: Wrapper });
+
+    const nameInput = await screen.findByLabelText(/Nome/i);
+    expect(nameInput).toHaveValue(createdStructure.name);
+
+    await user.clear(nameInput);
+    await user.type(nameInput, "Base Bosco Rinnovata");
+
+    await user.click(screen.getByRole("button", { name: /Salva modifiche/i }));
+
+    await waitFor(() => expect(updateStructure).toHaveBeenCalled());
+
+    expect(updateStructure).toHaveBeenCalledWith(
+      createdStructure.id,
+      expect.objectContaining({
+        name: "Base Bosco Rinnovata",
+        slug: "base-bosco-rinnovata"
+      })
+    );
+
+    await waitFor(() =>
+      expect(upsertStructureCostOptions).toHaveBeenCalledWith(createdStructure.id, [])
+    );
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco-rinnovata")
+    );
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structure", "base-bosco"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structure", "base-bosco-rinnovata"] });
   });
 });

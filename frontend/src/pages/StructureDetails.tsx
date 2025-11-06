@@ -26,7 +26,7 @@ import type {
 import { useAuth } from "../shared/auth";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import { StructurePhotosSection } from "../shared/ui/StructurePhotosSection";
-import { Button } from "../shared/ui/designSystem";
+import { Button, LinkButton } from "../shared/ui/designSystem";
 import {
   createGoogleMapsEmbedUrl,
   createGoogleMapsViewUrl
@@ -711,6 +711,13 @@ export const StructureDetailsPage = () => {
               )}
             </dl>
           </div>
+          {auth.user?.can_edit_structures && (
+            <div className="structure-details__hero-actions">
+              <LinkButton to={`/structures/${structure.slug}/edit`}>
+                {t("structures.details.actions.edit")}
+              </LinkButton>
+            </div>
+          )}
         </div>
       </div>
 
