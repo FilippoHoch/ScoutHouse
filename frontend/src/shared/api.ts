@@ -38,7 +38,8 @@ import {
   StructureImportDryRunResponse,
   StructureImportResult,
   StructureOpenPeriodsImportDryRunResponse,
-  StructureOpenPeriodsImportResult
+  StructureOpenPeriodsImportResult,
+  User
 } from "./types";
 import { clearSession, getAccessToken, refreshAccessToken } from "./auth";
 import { API_URL, ApiError } from "./http";
@@ -111,6 +112,22 @@ export interface ApiFetchOptions extends RequestInit {
   contentType?: string | null;
 }
 
+export interface UserAdminCreateRequest {
+  name: string;
+  email: string;
+  password: string;
+  is_admin: boolean;
+  is_active: boolean;
+}
+
+export interface UserAdminUpdateRequest {
+  name?: string;
+  email?: string;
+  password?: string;
+  is_admin?: boolean;
+  is_active?: boolean;
+}
+
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const { auth = false, skipRefresh = false, contentType = "application/json", ...init } = options;
 
@@ -164,6 +181,29 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   }
 
   return (await response.json()) as T;
+}
+
+export async function listUsers(): Promise<User[]> {
+  return apiFetch<User[]>("/api/v1/users", { auth: true });
+}
+
+export async function createUser(payload: UserAdminCreateRequest): Promise<User> {
+  return apiFetch<User>("/api/v1/users", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateUser(
+  userId: string,
+  payload: UserAdminUpdateRequest
+): Promise<User> {
+  return apiFetch<User>(`/api/v1/users/${userId}`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify(payload)
+  });
 }
 
 export async function getAttachments(

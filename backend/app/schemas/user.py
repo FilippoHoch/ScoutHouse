@@ -10,6 +10,7 @@ class UserBase(BaseModel):
     email: EmailStr
     name: str
     is_admin: bool = False
+    is_active: bool = True
 
     model_config = {
         "from_attributes": True,
@@ -31,4 +32,22 @@ class UserUpdate(BaseModel):
     password: str | None = None
 
 
-__all__ = ["UserBase", "UserRead", "UserCreate", "UserUpdate"]
+class UserAdminCreate(UserCreate):
+    is_admin: bool = False
+    is_active: bool = True
+
+
+class UserAdminUpdate(UserUpdate):
+    email: EmailStr | None = None
+    is_admin: bool | None = None
+    is_active: bool | None = None
+
+
+__all__ = [
+    "UserBase",
+    "UserRead",
+    "UserCreate",
+    "UserUpdate",
+    "UserAdminCreate",
+    "UserAdminUpdate",
+]
