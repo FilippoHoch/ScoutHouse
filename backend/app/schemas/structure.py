@@ -9,7 +9,10 @@ from collections.abc import Iterable
 from pydantic import AnyHttpUrl, BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.models.availability import StructureSeason, StructureUnit
-from app.models.cost_option import StructureCostModel
+from app.models.cost_option import (
+    StructureCostModel,
+    StructureCostModifierKind,
+)
 from app.models.structure import (
     FirePolicy,
     StructureOpenPeriodKind,
@@ -314,6 +317,52 @@ class StructureAvailabilityRead(StructureAvailabilityBase):
     }
 
 
+class StructureCostModifierBase(BaseModel):
+    kind: StructureCostModifierKind
+    amount: Decimal = Field(..., gt=0)
+    season: StructureSeason | None = None
+    date_start: date | None = None
+    date_end: date | None = None
+
+    @model_validator(mode="after")
+    def validate_modifier(self) -> "StructureCostModifierBase":
+        if self.kind is StructureCostModifierKind.SEASON:
+            if self.season is None:
+                raise ValueError("Per i prezzi stagionali è richiesta la stagione")
+            if self.date_start is not None or self.date_end is not None:
+                raise ValueError("I prezzi stagionali non possono avere date specifiche")
+        elif self.kind is StructureCostModifierKind.DATE_RANGE:
+            if self.season is not None:
+                raise ValueError("I prezzi per periodo specifico non possono avere una stagione")
+            if self.date_start is None or self.date_end is None:
+                raise ValueError(
+                    "I prezzi per periodo specifico richiedono date di inizio e fine"
+                )
+            if self.date_start > self.date_end:
+                raise ValueError("date_start non può essere successiva a date_end")
+        elif self.kind is StructureCostModifierKind.WEEKEND:
+            if any(value is not None for value in (self.season, self.date_start, self.date_end)):
+                raise ValueError("I prezzi per il weekend non possono avere stagione o date")
+        return self
+
+
+class StructureCostModifierCreate(StructureCostModifierBase):
+    pass
+
+
+class StructureCostModifierUpdate(StructureCostModifierBase):
+    id: int | None = None
+
+
+class StructureCostModifierRead(StructureCostModifierBase):
+    id: int
+
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {Decimal: float},
+    }
+
+
 class StructureCostOptionBase(BaseModel):
     model: StructureCostModel
     amount: Decimal = Field(..., gt=0)
@@ -332,15 +381,17 @@ class StructureCostOptionBase(BaseModel):
 
 
 class StructureCostOptionCreate(StructureCostOptionBase):
-    pass
+    modifiers: list[StructureCostModifierCreate] | None = None
 
 
 class StructureCostOptionUpdate(StructureCostOptionBase):
     id: int | None = None
+    modifiers: list[StructureCostModifierUpdate] | None = None
 
 
 class StructureCostOptionRead(StructureCostOptionBase):
     id: int
+    modifiers: list[StructureCostModifierRead] | None = None
 
     model_config = {
         "from_attributes": True,
@@ -416,6 +467,9 @@ __all__ = [
     "StructureCostOptionRead",
     "StructureCostOptionCreate",
     "StructureCostOptionUpdate",
+    "StructureCostModifierRead",
+    "StructureCostModifierCreate",
+    "StructureCostModifierUpdate",
     "StructureOpenPeriodRead",
     "StructureOpenPeriodCreate",
     "StructureOpenPeriodUpdate",

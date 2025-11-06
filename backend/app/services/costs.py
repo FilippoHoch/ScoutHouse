@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import date, timedelta
 from enum import Enum
 from typing import Any
 
@@ -9,7 +10,10 @@ from app.models import (
     Event,
     Structure,
     StructureCostModel,
+    StructureCostModifier,
+    StructureCostModifierKind,
     StructureCostOption,
+    StructureSeason,
 )
 
 
@@ -135,6 +139,22 @@ def _resolve_duration(event: Event, overrides: dict[str, Any] | None) -> tuple[i
 def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str, Any]]:
     snapshot: list[dict[str, Any]] = []
     for option in options:
+        modifiers: list[dict[str, Any]] = []
+        for modifier in option.modifiers:
+            modifiers.append(
+                {
+                    "id": modifier.id,
+                    "kind": modifier.kind.value,
+                    "amount": float(_quantize(_sanitize_decimal(modifier.amount))),
+                    "season": modifier.season.value if modifier.season else None,
+                    "date_start": modifier.date_start.isoformat()
+                    if modifier.date_start
+                    else None,
+                    "date_end": modifier.date_end.isoformat()
+                    if modifier.date_end
+                    else None,
+                }
+            )
         snapshot.append(
             {
                 "id": option.id,
@@ -151,9 +171,70 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                 if option.utilities_flat is not None
                 else None,
                 "age_rules": option.age_rules or None,
+                "modifiers": modifiers or None,
             }
         )
     return snapshot
+
+
+def _event_days(event: Event) -> list[date]:
+    duration = (event.end_date - event.start_date).days
+    return [event.start_date + timedelta(days=index) for index in range(duration)]
+
+
+def _event_includes_weekend(event: Event) -> bool:
+    return any(day.weekday() >= 5 for day in _event_days(event))
+
+
+def _season_for_date(target: date) -> StructureSeason:
+    month = target.month
+    if month in (12, 1, 2):
+        return StructureSeason.WINTER
+    if month in (3, 4, 5):
+        return StructureSeason.SPRING
+    if month in (6, 7, 8):
+        return StructureSeason.SUMMER
+    return StructureSeason.AUTUMN
+
+
+def _modifier_priority(modifier: StructureCostModifier) -> int:
+    if modifier.kind is StructureCostModifierKind.DATE_RANGE:
+        return 0
+    if modifier.kind is StructureCostModifierKind.WEEKEND:
+        return 1
+    return 2
+
+
+def _select_applicable_modifier(
+    option: StructureCostOption, event: Event
+) -> StructureCostModifier | None:
+    modifiers = getattr(option, "modifiers", None) or []
+    if not modifiers:
+        return None
+
+    matches: list[tuple[int, StructureCostModifier]] = []
+    event_start = event.start_date
+    event_end = event.end_date
+    event_season = _season_for_date(event_start)
+    includes_weekend = _event_includes_weekend(event)
+
+    for modifier in modifiers:
+        if modifier.kind is StructureCostModifierKind.DATE_RANGE:
+            if modifier.date_start and modifier.date_end:
+                if event_start >= modifier.date_start and event_end <= modifier.date_end:
+                    matches.append((_modifier_priority(modifier), modifier))
+        elif modifier.kind is StructureCostModifierKind.WEEKEND:
+            if includes_weekend:
+                matches.append((_modifier_priority(modifier), modifier))
+        elif modifier.kind is StructureCostModifierKind.SEASON:
+            if modifier.season == event_season:
+                matches.append((_modifier_priority(modifier), modifier))
+
+    if not matches:
+        return None
+
+    matches.sort(key=lambda item: (item[0], getattr(item[1], "id", 0)))
+    return matches[0][1]
 
 
 def calc_quote(
@@ -196,7 +277,22 @@ def calc_quote(
     currency = cost_options[0].currency if cost_options else "EUR"
 
     for option in cost_options:
+        modifier = _select_applicable_modifier(option, event)
         amount = _sanitize_decimal(option.amount)
+        modifier_metadata: dict[str, Any] = {}
+
+        if modifier is not None:
+            amount = _sanitize_decimal(modifier.amount)
+            modifier_metadata = {
+                "modifier_id": getattr(modifier, "id", None),
+                "modifier_kind": modifier.kind.value,
+            }
+            if modifier.season is not None:
+                modifier_metadata["modifier_season"] = modifier.season.value
+            if modifier.date_start is not None:
+                modifier_metadata["modifier_date_start"] = modifier.date_start.isoformat()
+            if modifier.date_end is not None:
+                modifier_metadata["modifier_date_end"] = modifier.date_end.isoformat()
 
         if option.model == StructureCostModel.PER_PERSON_DAY:
             quantity = people_total * days
@@ -213,6 +309,9 @@ def calc_quote(
             line_total = amount
             description = "Forfait"
             metadata = {}
+
+        if modifier_metadata:
+            metadata.update({k: v for k, v in modifier_metadata.items() if v is not None})
 
         line_total = _quantize(line_total)
         subtotal += line_total
