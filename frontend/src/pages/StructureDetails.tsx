@@ -985,6 +985,20 @@ export const StructureDetailsPage = () => {
                             {option.utilities_flat !== null && (
                               <span>Utilities: {formatCurrency(option.utilities_flat, option.currency)}</span>
                             )}
+                            {option.min_total !== null && (
+                              <span>
+                                {t("structures.details.costs.minimumTotal", {
+                                  value: formatCurrency(option.min_total, option.currency)
+                                })}
+                              </span>
+                            )}
+                            {option.max_total !== null && (
+                              <span>
+                                {t("structures.details.costs.maximumTotal", {
+                                  value: formatCurrency(option.max_total, option.currency)
+                                })}
+                              </span>
+                            )}
                           </div>
                         </li>
                       );

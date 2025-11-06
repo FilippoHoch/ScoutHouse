@@ -88,6 +88,54 @@ def structure_with_modifiers() -> SimpleNamespace:
     return structure
 
 
+def test_calc_quote_applies_minimum_total(sample_event: Event) -> None:
+    option = StructureCostOption(
+        id=3,
+        structure_id=30,
+        model=StructureCostModel.PER_PERSON_DAY,
+        amount=Decimal("5.00"),
+        currency="EUR",
+        min_total=Decimal("400.00"),
+    )
+    structure = SimpleNamespace(id=30, cost_options=[option])
+
+    result = calc_quote(sample_event, structure)
+
+    totals = result["totals"]
+    assert totals["subtotal"] == pytest.approx(400.0)
+    line = next(
+        item
+        for item in result["breakdown"]
+        if item["type"] == StructureCostModel.PER_PERSON_DAY.value
+    )
+    assert line["metadata"]["minimum_total"] == pytest.approx(400.0)
+    assert line["metadata"]["minimum_total_applied"] is True
+
+
+def test_calc_quote_applies_maximum_total(sample_event: Event) -> None:
+    option = StructureCostOption(
+        id=4,
+        structure_id=40,
+        model=StructureCostModel.PER_PERSON_DAY,
+        amount=Decimal("25.00"),
+        currency="EUR",
+        max_total=Decimal("600.00"),
+    )
+    structure = SimpleNamespace(id=40, cost_options=[option])
+
+    result = calc_quote(sample_event, structure)
+
+    totals = result["totals"]
+    assert totals["subtotal"] == pytest.approx(600.0)
+    line = next(
+        item
+        for item in result["breakdown"]
+        if item["type"] == StructureCostModel.PER_PERSON_DAY.value
+    )
+    assert line["metadata"]["maximum_total"] == pytest.approx(600.0)
+    assert line["metadata"]["maximum_total_applied"] is True
+
+
 def test_calc_quote_breakdown(sample_event: Event, structure_with_costs: SimpleNamespace) -> None:
     result = calc_quote(sample_event, structure_with_costs)
 

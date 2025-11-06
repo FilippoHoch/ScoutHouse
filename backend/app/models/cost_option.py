@@ -51,6 +51,8 @@ class StructureCostOption(Base):
     utilities_flat: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2), nullable=True
     )
+    min_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    max_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     age_rules: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     structure: Mapped["Structure"] = relationship(

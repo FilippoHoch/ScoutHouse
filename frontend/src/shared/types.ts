@@ -82,6 +82,8 @@ export interface CostOption {
   deposit: number | null;
   city_tax_per_night: number | null;
   utilities_flat: number | null;
+  min_total: number | null;
+  max_total: number | null;
   age_rules?: Record<string, unknown> | null;
 }
 
@@ -93,6 +95,8 @@ export interface StructureCostOptionInput {
   deposit?: number | null;
   city_tax_per_night?: number | null;
   utilities_flat?: number | null;
+  min_total?: number | null;
+  max_total?: number | null;
   age_rules?: Record<string, unknown> | null;
 }
 

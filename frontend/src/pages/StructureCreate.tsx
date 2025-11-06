@@ -123,6 +123,8 @@ type CostOptionFormRow = {
   deposit: string;
   cityTaxPerNight: string;
   utilitiesFlat: string;
+  minTotal: string;
+  maxTotal: string;
 };
 
 const createCostOptionKey = () => `co-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
@@ -134,7 +136,9 @@ const createCostOptionRow = (): CostOptionFormRow => ({
   currency: "EUR",
   deposit: "",
   cityTaxPerNight: "",
-  utilitiesFlat: ""
+  utilitiesFlat: "",
+  minTotal: "",
+  maxTotal: ""
 });
 
 const parseCoordinateValue = (value: string): number | null => {
@@ -894,7 +898,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const handleCostOptionFieldChange = (
     key: string,
-    field: "amount" | "currency" | "deposit" | "cityTaxPerNight" | "utilitiesFlat",
+    field:
+      | "amount"
+      | "currency"
+      | "deposit"
+      | "cityTaxPerNight"
+      | "utilitiesFlat"
+      | "minTotal"
+      | "maxTotal",
     value: string
   ) => {
     updateCostOption(key, { [field]: value } as Partial<CostOptionFormRow>);
@@ -1113,6 +1124,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       utilitiesFlat:
         option.utilities_flat !== null && option.utilities_flat !== undefined
           ? String(option.utilities_flat)
+          : "",
+      minTotal:
+        option.min_total !== null && option.min_total !== undefined
+          ? String(option.min_total)
+          : "",
+      maxTotal:
+        option.max_total !== null && option.max_total !== undefined
+          ? String(option.max_total)
           : ""
     }));
     setCostOptions(mappedCostOptions);
@@ -1249,7 +1268,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       currency: option.currency.trim(),
       deposit: option.deposit.trim(),
       cityTaxPerNight: option.cityTaxPerNight.trim(),
-      utilitiesFlat: option.utilitiesFlat.trim()
+      utilitiesFlat: option.utilitiesFlat.trim(),
+      minTotal: option.minTotal.trim(),
+      maxTotal: option.maxTotal.trim()
     }));
 
     const errors: FieldErrors = {};
@@ -1395,7 +1416,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       !option.amount &&
       !option.deposit &&
       !option.cityTaxPerNight &&
-      !option.utilitiesFlat;
+      !option.utilitiesFlat &&
+      !option.minTotal &&
+      !option.maxTotal;
 
     for (const option of trimmedCostOptions) {
       if (isCostOptionEmpty(option)) {
@@ -1419,7 +1442,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         errors.cost_options = t("structures.create.errors.costOptionsCurrencyInvalid");
         break;
       }
-      const extraFields = [option.deposit, option.cityTaxPerNight, option.utilitiesFlat];
+      const extraFields = [
+        option.deposit,
+        option.cityTaxPerNight,
+        option.utilitiesFlat,
+        option.minTotal,
+        option.maxTotal
+      ];
       for (const candidate of extraFields) {
         if (!candidate) {
           continue;
@@ -1432,6 +1461,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       }
       if (errors.cost_options) {
         break;
+      }
+      if (option.minTotal && option.maxTotal) {
+        const minValue = Number.parseFloat(option.minTotal.replace(",", "."));
+        const maxValue = Number.parseFloat(option.maxTotal.replace(",", "."));
+        if (!Number.isNaN(minValue) && !Number.isNaN(maxValue) && minValue > maxValue) {
+          errors.cost_options = t("structures.create.errors.costOptionsTotalsInvalid");
+          break;
+        }
       }
     }
 
@@ -1481,7 +1518,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       currency: option.currency.trim(),
       deposit: option.deposit.trim(),
       cityTaxPerNight: option.cityTaxPerNight.trim(),
-      utilitiesFlat: option.utilitiesFlat.trim()
+      utilitiesFlat: option.utilitiesFlat.trim(),
+      minTotal: option.minTotal.trim(),
+      maxTotal: option.maxTotal.trim()
     }));
 
     const payload: StructureCreateDto = {
@@ -1611,7 +1650,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           !option.amount &&
           !option.deposit &&
           !option.cityTaxPerNight &&
-          !option.utilitiesFlat;
+          !option.utilitiesFlat &&
+          !option.minTotal &&
+          !option.maxTotal;
         if (isEmpty) {
           return null;
         }
@@ -1642,6 +1683,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         const utilitiesValue = parseOptional(option.utilitiesFlat);
         if (utilitiesValue !== null) {
           payloadItem.utilities_flat = utilitiesValue;
+        }
+        const minTotalValue = parseOptional(option.minTotal);
+        if (minTotalValue !== null) {
+          payloadItem.min_total = minTotalValue;
+        }
+        const maxTotalValue = parseOptional(option.maxTotal);
+        if (maxTotalValue !== null) {
+          payloadItem.max_total = maxTotalValue;
         }
         return payloadItem;
       })
@@ -2640,6 +2689,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                         const depositId = `structure-cost-option-${option.key}-deposit`;
                         const cityTaxId = `structure-cost-option-${option.key}-city-tax`;
                         const utilitiesId = `structure-cost-option-${option.key}-utilities`;
+                        const minTotalId = `structure-cost-option-${option.key}-min-total`;
+                        const maxTotalId = `structure-cost-option-${option.key}-max-total`;
                         return (
                           <div className="structure-cost-option-row" key={option.key}>
                             <div className="structure-cost-option-field">
@@ -2754,6 +2805,48 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                                   placeholder="0,00"
                                 />
                               </label>
+                            </div>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={minTotalId}>
+                                {t("structures.create.form.costOptions.minTotal")}
+                                <input
+                                  id={minTotalId}
+                                  value={option.minTotal}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "minTotal",
+                                      event.target.value
+                                    )
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                />
+                              </label>
+                              <span className="helper-text">
+                                {t("structures.create.form.costOptions.minTotalHint")}
+                              </span>
+                            </div>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={maxTotalId}>
+                                {t("structures.create.form.costOptions.maxTotal")}
+                                <input
+                                  id={maxTotalId}
+                                  value={option.maxTotal}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "maxTotal",
+                                      event.target.value
+                                    )
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                />
+                              </label>
+                              <span className="helper-text">
+                                {t("structures.create.form.costOptions.maxTotalHint")}
+                              </span>
                             </div>
                             <div className="structure-cost-option-actions">
                               <Button

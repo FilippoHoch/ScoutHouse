@@ -424,6 +424,10 @@
           "deposit": "Caparra (facoltativa)",
           "cityTax": "Tassa di soggiorno per notte (facoltativa)",
           "utilities": "Forfait utenze (facoltativo)",
+          "minTotal": "Totale minimo (facoltativo)",
+          "minTotalHint": "Importo minimo complessivo applicato alle tariffe a persona.",
+          "maxTotal": "Totale massimo (facoltativo)",
+          "maxTotalHint": "Importo massimo complessivo applicato alle tariffe a persona.",
           "models": {
             "per_person_day": "Per persona al giorno",
             "per_person_night": "Per persona a notte",
@@ -503,7 +507,8 @@
         "costOptionsAmountRequired": "Indica l'importo principale per ogni opzione di costo.",
         "costOptionsAmountInvalid": "Inserisci importi validi maggiori di zero.",
         "costOptionsCurrencyInvalid": "La valuta deve contenere tre lettere.",
-        "costOptionsExtraInvalid": "Inserisci importi validi maggiori o uguali a zero per caparra, tassa o utenze."
+        "costOptionsExtraInvalid": "Inserisci importi validi maggiori o uguali a zero per caparra, tassa o utenze.",
+        "costOptionsTotalsInvalid": "Il totale minimo deve essere minore o uguale al totale massimo."
       },
       "warnings": {
         "websiteUnreachable": "Attenzione: {{count, plural, one {il seguente link non risponde} other {i seguenti link non rispondono}}:\n{{urls}}\nLa struttura è stata creata comunque."
@@ -674,6 +679,10 @@
         "overviewPlaceholder": "La panoramica riassume i metadati e le coordinate della struttura.",
         "availabilityEmpty": "Nessuna disponibilità stagionale è stata configurata.",
         "costsEmpty": "Non sono state definite opzioni di costo per questa struttura."
+      },
+      "costs": {
+        "minimumTotal": "Totale minimo: {{value}}",
+        "maximumTotal": "Totale massimo: {{value}}"
       },
       "actions": {
         "edit": "Modifica struttura"

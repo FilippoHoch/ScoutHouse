@@ -194,6 +194,8 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
         deposit=option.deposit,
         city_tax_per_night=option.city_tax_per_night,
         utilities_flat=option.utilities_flat,
+        min_total=option.min_total,
+        max_total=option.max_total,
         age_rules=option.age_rules,
         modifiers=[_serialize_cost_modifier(item) for item in option.modifiers]
         if option.modifiers
@@ -1314,6 +1316,8 @@ def create_structure_cost_option(
         deposit=cost_option_in.deposit,
         city_tax_per_night=cost_option_in.city_tax_per_night,
         utilities_flat=cost_option_in.utilities_flat,
+        min_total=cost_option_in.min_total,
+        max_total=cost_option_in.max_total,
         age_rules=cost_option_in.age_rules,
     )
     if cost_option_in.modifiers:
@@ -1368,6 +1372,8 @@ def upsert_structure_cost_options(
             option.deposit = payload.deposit
             option.city_tax_per_night = payload.city_tax_per_night
             option.utilities_flat = payload.utilities_flat
+            option.min_total = payload.min_total
+            option.max_total = payload.max_total
             option.age_rules = payload.age_rules
             if payload.modifiers is not None:
                 _sync_cost_modifiers(option, payload.modifiers)
@@ -1381,6 +1387,8 @@ def upsert_structure_cost_options(
                 deposit=payload.deposit,
                 city_tax_per_night=payload.city_tax_per_night,
                 utilities_flat=payload.utilities_flat,
+                min_total=payload.min_total,
+                max_total=payload.max_total,
                 age_rules=payload.age_rules,
             )
             if payload.modifiers:

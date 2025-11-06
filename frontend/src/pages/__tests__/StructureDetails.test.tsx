@@ -81,6 +81,8 @@ const sampleStructure: Structure = {
       deposit: null,
       city_tax_per_night: null,
       utilities_flat: null,
+      min_total: null,
+      max_total: null,
       age_rules: null
     }
   ],

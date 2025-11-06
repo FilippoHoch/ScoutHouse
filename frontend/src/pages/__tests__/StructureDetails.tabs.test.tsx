@@ -77,6 +77,8 @@ const structureWithDetails: Structure = {
       deposit: 50,
       city_tax_per_night: 1.2,
       utilities_flat: null,
+      min_total: null,
+      max_total: null,
       age_rules: null
     }
   ],
