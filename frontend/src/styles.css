@@ -1654,42 +1654,87 @@ table tbody tr:hover {
   height: auto;
 }
 
-.structure-logistics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-md);
-}
-
 .structure-logistics-groups {
   display: grid;
-  gap: var(--space-lg);
+  gap: calc(var(--space-xl) * 0.9);
 }
 
 .structure-logistics-group {
   display: grid;
+  gap: var(--space-md);
+}
+
+.structure-logistics-group__header {
+  display: flex;
+  align-items: center;
   gap: var(--space-sm);
 }
 
-.structure-logistics-group h4 {
+.structure-logistics-group__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.12), rgba(37, 99, 235, 0.2));
+  color: var(--color-primary-strong);
+  font-size: 1.35rem;
+  box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.18);
+}
+
+.structure-logistics-group__title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--color-muted-strong);
 }
 
-.structure-logistics-grid dt {
+.structure-logistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-lg);
+}
+
+.structure-logistics-item {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  background: linear-gradient(160deg, var(--color-surface) 0%, var(--color-surface-muted) 100%);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+.structure-logistics-item__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0;
   font-weight: 600;
   color: var(--color-muted-strong);
 }
 
-.structure-logistics-grid dd {
+.structure-logistics-item__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--color-primary-strong);
+  font-size: 1.25rem;
+  box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.1);
+}
+
+.structure-logistics-item__value {
   margin: 0;
   color: var(--color-muted);
   word-break: break-word;
   white-space: pre-line;
+  line-height: 1.55;
 }
 
-.structure-logistics-grid__full {
+.structure-logistics-item--full {
   grid-column: 1 / -1;
 }
 

@@ -1,4 +1,4 @@
-import { FormEvent, Fragment, ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -63,8 +63,10 @@ const initialContactForm: ContactFormState = {
 };
 
 type LogisticsDetail = {
+  id: string;
   label: string;
   value: ReactNode;
+  icon?: ReactNode;
   isFull?: boolean;
 };
 
@@ -162,11 +164,21 @@ export const StructureDetailsPage = () => {
 
   const renderLogisticsDetails = (items: LogisticsDetail[]) => (
     <dl className="structure-logistics-grid">
-      {items.map(({ label, value, isFull }) => (
-        <Fragment key={label}>
-          <dt className={isFull ? "structure-logistics-grid__full" : undefined}>{label}</dt>
-          <dd className={isFull ? "structure-logistics-grid__full" : undefined}>{value}</dd>
-        </Fragment>
+      {items.map(({ id, label, value, icon, isFull }) => (
+        <div
+          key={id}
+          className={`structure-logistics-item${isFull ? " structure-logistics-item--full" : ""}`}
+        >
+          <dt className="structure-logistics-item__label">
+            {icon && (
+              <span className="structure-logistics-item__icon" aria-hidden="true">
+                {icon}
+              </span>
+            )}
+            <span>{label}</span>
+          </dt>
+          <dd className="structure-logistics-item__value">{value}</dd>
+        </div>
       ))}
     </dl>
   );
@@ -320,82 +332,118 @@ export const StructureDetailsPage = () => {
 
   const indoorDetails: LogisticsDetail[] = [
     {
+      id: "kitchen",
       label: t("structures.details.overview.hasKitchen.label"),
-      value: kitchenLabel
+      value: kitchenLabel,
+      icon: "🍳"
     },
     {
+      id: "hotWater",
       label: t("structures.details.overview.hotWater"),
-      value: formatBoolean(structure.hot_water)
+      value: formatBoolean(structure.hot_water),
+      icon: "♨️"
     },
     {
+      id: "beds",
       label: t("structures.details.overview.beds"),
-      value: formatCount(structure.indoor_beds)
+      value: formatCount(structure.indoor_beds),
+      icon: "🛏️"
     },
     {
+      id: "bathrooms",
       label: t("structures.details.overview.bathrooms"),
-      value: formatCount(structure.indoor_bathrooms)
+      value: formatCount(structure.indoor_bathrooms),
+      icon: "🚽"
     },
     {
+      id: "showers",
       label: t("structures.details.overview.showers"),
-      value: formatCount(structure.indoor_showers)
+      value: formatCount(structure.indoor_showers),
+      icon: "🚿"
     },
     {
+      id: "activityRooms",
       label: t("structures.details.overview.indoorActivityRooms"),
-      value: formatCount(structure.indoor_activity_rooms)
+      value: formatCount(structure.indoor_activity_rooms),
+      icon: "🎯"
     }
   ];
 
   const outdoorDetails: LogisticsDetail[] = [
     {
+      id: "landArea",
       label: t("structures.details.overview.landArea"),
-      value: formatLandArea(structure.land_area_m2)
+      value: formatLandArea(structure.land_area_m2),
+      icon: "🌿"
     },
     {
+      id: "shelterOnField",
       label: t("structures.details.overview.shelterOnField"),
-      value: formatBoolean(structure.shelter_on_field)
+      value: formatBoolean(structure.shelter_on_field),
+      icon: "⛺"
     },
     {
+      id: "fieldPoles",
       label: t("structures.details.overview.hasFieldPoles"),
-      value: formatBoolean(structure.has_field_poles)
+      value: formatBoolean(structure.has_field_poles),
+      icon: "🪢"
     },
     {
+      id: "waterSources",
       label: t("structures.details.overview.waterSources.label"),
-      value: formatWaterSources(structure.water_sources)
+      value: formatWaterSources(structure.water_sources),
+      icon: "💧"
     },
     {
+      id: "pitLatrineAllowed",
       label: t("structures.details.overview.pitLatrineAllowed"),
-      value: formatBoolean(structure.pit_latrine_allowed)
+      value: formatBoolean(structure.pit_latrine_allowed),
+      icon: "🚾"
     },
     {
+      id: "electricityAvailable",
       label: t("structures.details.overview.electricityAvailable"),
-      value: formatBoolean(structure.electricity_available)
+      value: formatBoolean(structure.electricity_available),
+      icon: "⚡"
     },
     {
+      id: "firePolicy",
       label: t("structures.details.overview.firePolicy"),
-      value: formatFirePolicy(structure.fire_policy)
+      value: formatFirePolicy(structure.fire_policy),
+      icon: "🔥"
     }
   ];
 
   const accessibilityDetails: LogisticsDetail[] = [
     {
+      id: "accessByCar",
       label: t("structures.details.overview.accessByCar"),
-      value: formatBoolean(structure.access_by_car)
+      value: formatBoolean(structure.access_by_car),
+      icon: "🚗"
     },
     {
+      id: "accessByCoach",
       label: t("structures.details.overview.accessByCoach"),
-      value: formatBoolean(structure.access_by_coach)
+      value: formatBoolean(structure.access_by_coach),
+      icon: "🚌"
     },
     {
+      id: "coachTurningArea",
       label: t("structures.details.overview.coachTurningArea"),
-      value: formatBoolean(structure.coach_turning_area)
+      value: formatBoolean(structure.coach_turning_area),
+      icon: "🔄"
     },
     {
+      id: "publicTransport",
       label: t("structures.details.overview.accessByPublicTransport"),
-      value: formatBoolean(structure.access_by_public_transport)
+      value: formatBoolean(structure.access_by_public_transport),
+      icon: "🚉"
     },
     {
+      id: "nearestBusStop",
       label: t("structures.details.overview.nearestBusStop"),
-      value: formatOptionalText(structure.nearest_bus_stop)
+      value: formatOptionalText(structure.nearest_bus_stop),
+      icon: "🚏"
     }
   ];
 
@@ -415,28 +463,36 @@ export const StructureDetailsPage = () => {
 
   const operationsDetails: LogisticsDetail[] = [
     {
+      id: "website",
       label: t("structures.details.overview.website"),
       value: websiteValue,
+      icon: "🌐",
       isFull: true
     },
     {
+      id: "weekendOnly",
       label: t("structures.details.overview.weekendOnly"),
-      value: formatBoolean(structure.weekend_only)
+      value: formatBoolean(structure.weekend_only),
+      icon: "📅"
     },
     {
+      id: "notesLogistics",
       label: t("structures.details.overview.notesLogistics"),
       value: formatOptionalText(
         structure.notes_logistics,
         "structures.details.overview.notesLogisticsFallback"
       ),
+      icon: "📝",
       isFull: true
     },
     {
+      id: "notes",
       label: t("structures.details.overview.notes"),
       value: formatOptionalText(
         structure.notes,
         "structures.details.overview.notesFallback"
       ),
+      icon: "💬",
       isFull: true
     }
   ];
@@ -730,19 +786,47 @@ export const StructureDetailsPage = () => {
               </h3>
               <div className="structure-logistics-groups">
                 <section className="structure-logistics-group">
-                  <h4>{t("structures.create.form.sections.indoor.title")}</h4>
+                  <header className="structure-logistics-group__header">
+                    <span className="structure-logistics-group__icon" aria-hidden="true">
+                      🏠
+                    </span>
+                    <h4 className="structure-logistics-group__title">
+                      {t("structures.create.form.sections.indoor.title")}
+                    </h4>
+                  </header>
                   {renderLogisticsDetails(indoorDetails)}
                 </section>
                 <section className="structure-logistics-group">
-                  <h4>{t("structures.create.form.sections.outdoor.title")}</h4>
+                  <header className="structure-logistics-group__header">
+                    <span className="structure-logistics-group__icon" aria-hidden="true">
+                      🌳
+                    </span>
+                    <h4 className="structure-logistics-group__title">
+                      {t("structures.create.form.sections.outdoor.title")}
+                    </h4>
+                  </header>
                   {renderLogisticsDetails(outdoorDetails)}
                 </section>
                 <section className="structure-logistics-group">
-                  <h4>{t("structures.create.form.sections.accessibility.title")}</h4>
+                  <header className="structure-logistics-group__header">
+                    <span className="structure-logistics-group__icon" aria-hidden="true">
+                      🧭
+                    </span>
+                    <h4 className="structure-logistics-group__title">
+                      {t("structures.create.form.sections.accessibility.title")}
+                    </h4>
+                  </header>
                   {renderLogisticsDetails(accessibilityDetails)}
                 </section>
                 <section className="structure-logistics-group">
-                  <h4>{t("structures.create.form.sections.operations.title")}</h4>
+                  <header className="structure-logistics-group__header">
+                    <span className="structure-logistics-group__icon" aria-hidden="true">
+                      ⚙️
+                    </span>
+                    <h4 className="structure-logistics-group__title">
+                      {t("structures.create.form.sections.operations.title")}
+                    </h4>
+                  </header>
                   {renderLogisticsDetails(operationsDetails)}
                 </section>
               </div>
