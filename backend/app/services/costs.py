@@ -185,7 +185,7 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
 
 def _event_days(event: Event) -> list[date]:
     duration = (event.end_date - event.start_date).days
-    return [event.start_date + timedelta(days=index) for index in range(duration)]
+    return [event.start_date + timedelta(days=index) for index in range(duration + 1)]
 
 
 def _event_includes_weekend(event: Event) -> bool:
