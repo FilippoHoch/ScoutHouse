@@ -236,6 +236,29 @@ def test_calc_quote_uses_weekend_modifier(
     assert primary["metadata"]["modifier_kind"] == "weekend"
     assert primary["metadata"]["modifier_id"] == 202
 
+
+def test_calc_quote_uses_weekend_modifier_for_saturday_end(
+    structure_with_modifiers: SimpleNamespace,
+) -> None:
+    saturday_event = Event(
+        id=4,
+        slug="uscita-sabato",
+        title="Uscita sabato",
+        branch=EventBranch.ALL,
+        start_date=date(2025, 10, 2),
+        end_date=date(2025, 10, 4),
+        participants={"lc": 6, "eg": 4, "rs": 0, "leaders": 2},
+        status=EventStatus.PLANNING,
+    )
+
+    result = calc_quote(saturday_event, structure_with_modifiers)
+    primary = next(item for item in result["breakdown"] if item["type"] == StructureCostModel.PER_PERSON_DAY.value)
+
+    assert primary["unit_amount"] == pytest.approx(15.0)
+    assert primary["metadata"]["modifier_kind"] == "weekend"
+    assert primary["metadata"]["modifier_id"] == 202
+
+
 def test_apply_scenarios_uses_defaults() -> None:
     scenarios = apply_scenarios(Decimal("100"))
     assert scenarios["best"] == pytest.approx(95.0)
