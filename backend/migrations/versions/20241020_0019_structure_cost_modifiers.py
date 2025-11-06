@@ -10,6 +10,8 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
+from migrations.utils.postgres import create_enum_if_not_exists
+
 
 # revision identifiers, used by Alembic.
 revision = "20241020_0019"
@@ -19,9 +21,12 @@ depends_on = None
 
 
 STRUCTURE_COST_MODIFIER_KIND = "structure_cost_modifier_kind"
+STRUCTURE_SEASON_VALUES = ("winter", "spring", "summer", "autumn")
 
 
 def upgrade() -> None:
+    create_enum_if_not_exists("structure_season", STRUCTURE_SEASON_VALUES)
+
     op.create_table(
         "structure_cost_modifier",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -40,10 +45,7 @@ def upgrade() -> None:
         sa.Column(
             "season",
             sa.Enum(
-                "winter",
-                "spring",
-                "summer",
-                "autumn",
+                *STRUCTURE_SEASON_VALUES,
                 name="structure_season",
                 create_type=False,
             ),
