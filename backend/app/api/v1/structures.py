@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.config import get_settings
 from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
-from app.deps import get_current_user, require_admin, require_structure_editor
+from app.deps import get_current_user, require_structure_editor
 from app.models import (
     Attachment,
     AttachmentOwnerType,
@@ -73,7 +73,6 @@ router = APIRouter()
 
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
-AdminUser = Annotated[User, Depends(require_admin)]
 StructureEditor = Annotated[User, Depends(require_structure_editor)]
 
 
@@ -1387,7 +1386,7 @@ def create_structure_photo(
     structure_id: int,
     payload: StructurePhotoCreate,
     db: DbSession,
-    _: AdminUser,
+    _current_user: StructureEditor,
 ) -> StructurePhotoRead:
     _get_structure_or_404(db, structure_id)
 
@@ -1456,7 +1455,7 @@ def delete_structure_photo(
     structure_id: int,
     photo_id: int,
     db: DbSession,
-    _: AdminUser,
+    _current_user: StructureEditor,
 ) -> None:
     row = db.execute(
         select(StructurePhoto, Attachment)

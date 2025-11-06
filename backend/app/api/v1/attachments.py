@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.db import get_db
 from app.deps import get_current_user
 from app.models import (
@@ -60,8 +61,16 @@ def _event_or_404(db: Session, event_id: int) -> Event:
 
 def _ensure_structure_access(db: Session, structure_id: int, user: User, *, write: bool) -> None:
     _structure_or_404(db, structure_id)
-    if write and not user.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin required")
+    if not write:
+        return
+
+    if user.is_admin:
+        return
+
+    if get_settings().allow_non_admin_structure_edit:
+        return
+
+    raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin required")
 
 
 def _ensure_event_access(db: Session, event_id: int, user: User, *, write: bool) -> None:
