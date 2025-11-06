@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -25,6 +25,13 @@ import {
   Surface,
   ToolbarSection,
 } from "../shared/ui/designSystem";
+import {
+  CoachIcon,
+  FireIcon,
+  HotWaterIcon,
+  KitchenIcon,
+  TrainIcon,
+} from "../shared/ui/icons";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
 const seasons: Season[] = ["winter", "spring", "summer", "autumn"];
@@ -151,21 +158,21 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
   const typeLabel = getStructureTypeLabel(t, item.type);
   const costBandLabel = item.cost_band ? getCostBandLabel(t, item.cost_band) : null;
   const fireLabel = item.fire_policy ? t(`structures.cards.icons.fire.${item.fire_policy}`) : null;
-  const quickIcons: Array<{ icon: string; label: string }> = [];
+  const quickIcons: Array<{ icon: ReactNode; label: string }> = [];
   if (fireLabel) {
-    quickIcons.push({ icon: "🔥", label: fireLabel });
+    quickIcons.push({ icon: <FireIcon aria-hidden="true" />, label: fireLabel });
   }
   if (item.access_by_coach) {
-    quickIcons.push({ icon: "🚌", label: t("structures.cards.icons.coach") });
+    quickIcons.push({ icon: <CoachIcon aria-hidden="true" />, label: t("structures.cards.icons.coach") });
   }
   if (item.access_by_public_transport) {
-    quickIcons.push({ icon: "🚆", label: t("structures.cards.icons.pt") });
+    quickIcons.push({ icon: <TrainIcon aria-hidden="true" />, label: t("structures.cards.icons.pt") });
   }
   if (item.has_kitchen) {
-    quickIcons.push({ icon: "🍳", label: t("structures.cards.icons.kitchen") });
+    quickIcons.push({ icon: <KitchenIcon aria-hidden="true" />, label: t("structures.cards.icons.kitchen") });
   }
   if (item.hot_water) {
-    quickIcons.push({ icon: "♨️", label: t("structures.cards.icons.hotWater") });
+    quickIcons.push({ icon: <HotWaterIcon aria-hidden="true" />, label: t("structures.cards.icons.hotWater") });
   }
 
   return (

@@ -591,12 +591,17 @@ textarea:focus {
   display: flex;
   gap: var(--space-sm);
   margin: var(--space-xs) 0;
-  font-size: 1.1rem;
 }
 
 .structure-card__icon {
   display: inline-flex;
   align-items: center;
+  color: var(--color-muted-strong);
+}
+
+.structure-card__icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .structure-card__badges {
