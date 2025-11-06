@@ -12,6 +12,7 @@ from . import (
     quotes,
     structures,
     templates,
+    users,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -26,5 +27,6 @@ api_router.include_router(quotes.router, tags=["quotes"])
 api_router.include_router(export.router, prefix="/export", tags=["export"])
 api_router.include_router(mail.router)
 api_router.include_router(ops.router)
+api_router.include_router(users.router)
 
 __all__ = ["api_router"]

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from typing import List, Literal, Sequence
 
-from pydantic import Field, field_validator
+from pydantic import EmailStr, Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     smtp_tls: bool = Field(True, alias="SMTP_TLS")
     sendgrid_api_key: str | None = Field(default=None, alias="SENDGRID_API_KEY")
     dev_mail_block_external: bool = Field(True, alias="DEV_MAIL_BLOCK_EXTERNAL")
+    default_admin_email: EmailStr = Field(
+        "hoch.filippo@gmail.com", alias="DEFAULT_ADMIN_EMAIL"
+    )
+    default_admin_password: str = Field("prova", alias="DEFAULT_ADMIN_PASSWORD")
+    default_admin_name: str = Field("Admin", alias="DEFAULT_ADMIN_NAME")
 
     model_config = {
         "env_file": ".env",

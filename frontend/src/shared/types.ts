@@ -62,6 +62,7 @@ export interface User {
   name: string;
   is_admin: boolean;
   can_edit_structures: boolean;
+  is_active: boolean;
   created_at: string;
 }
 

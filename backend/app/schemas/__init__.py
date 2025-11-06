@@ -45,7 +45,7 @@ from .quote import (
     QuoteScenarios,
     QuoteTotals,
 )
-from .user import UserCreate, UserRead, UserUpdate
+from .user import UserAdminCreate, UserAdminUpdate, UserCreate, UserRead, UserUpdate
 from .auth import (
     AuthResponse,
     ForgotPasswordRequest,
@@ -114,6 +114,8 @@ __all__ = [
     "UserRead",
     "UserCreate",
     "UserUpdate",
+    "UserAdminCreate",
+    "UserAdminUpdate",
     "AuthResponse",
     "RegisterRequest",
     "LoginRequest",
