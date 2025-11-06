@@ -3,7 +3,8 @@
 ## Template aggiornati
 
 - I file `structures_import_template.xlsx` e `structures_import_template.csv` espongono ora la colonna `indoor_activity_rooms` al posto della precedente `dining_capacity`.
-- Gli endpoint `/api/v1/templates/structure-open-periods.xlsx` e `/api/v1/templates/structure-open-periods.csv` restituiscono i file `structure_open_periods_template.xlsx` e `structure_open_periods_template.csv` con intestazioni `structure_slug`, `kind`, `season`, `date_start`, `date_end`, `notes`.
+- Gli endpoint `/api/v1/templates/structure-open-periods.xlsx` e `/api/v1/templates/structure-open-periods.csv` restituiscono i file `structure_open_periods_template.xlsx` e `structure_open_periods_template.csv` con intestazioni `structure_slug`, `kind`, `season`, `units`, `date_start`, `date_end`, `notes`.
+- La colonna `units` accetta più valori separati da virgola (es. `EG,RS`) quando il periodo è valido per più unità, coerentemente con quanto previsto dall'import.
 
 Scaricare sempre i template aggiornati dalle API (`/api/v1/templates/...`) prima di preparare i file: i campi obbligatori e l'ordine delle colonne vengono validati rigidamente.
 
