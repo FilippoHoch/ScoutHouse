@@ -61,6 +61,7 @@ export interface User {
   email: string;
   name: string;
   is_admin: boolean;
+  can_edit_structures: boolean;
   created_at: string;
 }
 

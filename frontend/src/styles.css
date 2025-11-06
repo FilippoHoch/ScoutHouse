@@ -1653,6 +1653,14 @@ table tbody tr:hover {
   gap: var(--space-md);
 }
 
+.structure-details__hero-actions {
+  margin-top: var(--space-sm);
+}
+
+.structure-details__hero-actions .button {
+  width: fit-content;
+}
+
 .structure-details__hero-tags {
   display: inline-flex;
   flex-wrap: wrap;

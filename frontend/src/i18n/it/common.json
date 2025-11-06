@@ -582,6 +582,9 @@
         "overviewPlaceholder": "La panoramica riassume i metadati e le coordinate della struttura.",
         "availabilityEmpty": "Nessuna disponibilità stagionale è stata configurata.",
         "costsEmpty": "Non sono state definite opzioni di costo per questa struttura."
+      },
+      "actions": {
+        "edit": "Modifica struttura"
       }
     },
     "photos": {
@@ -715,7 +718,7 @@
       "estimatedCost": "Costo stimato: {{value}}",
       "costBand": "· fascia {{value}}",
       "viewDetails": "Dettagli",
-        "openMap": "Open in Google Maps",
+      "openMap": "Open in Google Maps",
       "icons": {
         "label": "Servizi rapidi",
         "fire": {
@@ -748,6 +751,23 @@
       "cheap": "economica",
       "medium": "media",
       "expensive": "alta"
+    },
+    "edit": {
+      "title": "Modifica struttura",
+      "description": "Aggiorna le informazioni della struttura e salva le modifiche.",
+      "loading": "Caricamento dati della struttura…",
+      "notFoundTitle": "Struttura non trovata",
+      "notFoundDescription": "La struttura richiesta non è stata trovata o non sei autorizzato a modificarla.",
+      "loadErrorTitle": "Impossibile caricare la struttura",
+      "loadErrorDescription": "Si è verificato un errore durante il caricamento dei dati. Riprova più tardi.",
+      "backToList": "Torna all'elenco delle strutture",
+      "form": {
+        "submit": "Salva modifiche",
+        "submitting": "Salvataggio in corso…"
+      },
+      "errors": {
+        "saveFailed": "Non è stato possibile salvare le modifiche. Riprova più tardi."
+      }
     }
   },
   "attachments": {

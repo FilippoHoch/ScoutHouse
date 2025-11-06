@@ -7,7 +7,18 @@ import i18n from "../src/i18n";
 import { Layout } from "../src/shared/ui/Layout";
 
 vi.mock("../src/shared/auth", () => ({
-  useAuth: () => ({ user: { id: "1", name: "Test" }, accessToken: "token", status: "authenticated" as const }),
+  useAuth: () => ({
+    user: {
+      id: "1",
+      name: "Test",
+      email: "test@example.com",
+      is_admin: false,
+      can_edit_structures: false,
+      created_at: "2024-01-01T00:00:00Z"
+    },
+    accessToken: "token",
+    status: "authenticated" as const
+  }),
   logout: vi.fn()
 }));
 

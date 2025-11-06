@@ -8,8 +8,8 @@ import {
   useRef,
   useState
 } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -20,8 +20,10 @@ import {
   createStructure,
   createStructureContact,
   createStructurePhoto,
+  getStructureBySlug,
   searchContacts,
   signAttachmentUpload,
+  updateStructure,
   upsertStructureCostOptions
 } from "../shared/api";
 import {
@@ -83,6 +85,10 @@ type OpenPeriodFormRow = {
   units: Unit[];
 };
 
+export const StructureCreatePage = () => <StructureFormPage mode="create" />;
+
+export const StructureEditPage = () => <StructureFormPage mode="edit" />;
+
 const openPeriodSeasonOptions: StructureOpenPeriodSeason[] = [
   "winter",
   "spring",
@@ -110,6 +116,7 @@ const costModelOptions: CostModel[] = ["per_person_day", "per_person_night", "fo
 
 type CostOptionFormRow = {
   key: string;
+  id?: number;
   model: CostModel | "";
   amount: string;
   currency: string;
@@ -155,10 +162,15 @@ const isValidEmail = (value: string): boolean => {
   return pattern.test(value);
 };
 
-export const StructureCreatePage = () => {
+type StructureFormMode = "create" | "edit";
+
+const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const params = useParams<{ slug?: string }>();
   const queryClient = useQueryClient();
+  const isEditing = mode === "edit";
+  const editingSlug = isEditing ? params.slug : undefined;
   useEffect(() => {
     document.body.classList.add("layout-wide");
     return () => {
@@ -200,6 +212,8 @@ export const StructureCreatePage = () => {
   const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
+  const [structureId, setStructureId] = useState<number | null>(null);
+  const [isPrefilled, setIsPrefilled] = useState(!isEditing);
   const [addContact, setAddContact] = useState(false);
   const [contactFirstName, setContactFirstName] = useState("");
   const [contactLastName, setContactLastName] = useState("");
@@ -228,6 +242,18 @@ export const StructureCreatePage = () => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const shouldFetchStructure = isEditing && Boolean(editingSlug);
+  const {
+    data: existingStructure,
+    isLoading: isStructureLoading,
+    isError: isStructureError,
+    error: structureError
+  } = useQuery({
+    queryKey: ["structure", editingSlug],
+    queryFn: () => getStructureBySlug(editingSlug!, { include: "details" }),
+    enabled: shouldFetchStructure,
+    retry: false
+  });
 
   const selectedCoordinates = useMemo(() => {
     const latNumber = parseCoordinateValue(latitude);
@@ -251,8 +277,16 @@ export const StructureCreatePage = () => {
     });
   }, [selectedCoordinates, t]);
 
-  const createMutation = useMutation({
-    mutationFn: (dto: StructureCreateDto) => createStructure(dto)
+  const saveMutation = useMutation({
+    mutationFn: (dto: StructureCreateDto) => {
+      if (isEditing) {
+        if (!structureId) {
+          throw new Error("missing-structure-id");
+        }
+        return updateStructure(structureId, dto);
+      }
+      return createStructure(dto);
+    }
   });
 
   const clearFieldErrorsGroup = (keys: FieldErrorKey[]) => {
@@ -970,6 +1004,136 @@ export const StructureCreatePage = () => {
     }
   };
 
+  useEffect(() => {
+    if (!isEditing || !existingStructure || isPrefilled) {
+      return;
+    }
+
+    setStructureId(existingStructure.id);
+    setName(existingStructure.name ?? "");
+    setSlug(existingStructure.slug ?? "");
+    setProvince(existingStructure.province ?? "");
+    setAddress(existingStructure.address ?? "");
+    setLatitude(
+      existingStructure.latitude !== null && existingStructure.latitude !== undefined
+        ? String(existingStructure.latitude)
+        : ""
+    );
+    setLongitude(
+      existingStructure.longitude !== null && existingStructure.longitude !== undefined
+        ? String(existingStructure.longitude)
+        : ""
+    );
+    setAltitude(
+      existingStructure.altitude !== null && existingStructure.altitude !== undefined
+        ? String(existingStructure.altitude)
+        : ""
+    );
+    setType(existingStructure.type ?? "");
+    setIndoorBeds(
+      existingStructure.indoor_beds !== null && existingStructure.indoor_beds !== undefined
+        ? String(existingStructure.indoor_beds)
+        : ""
+    );
+    setIndoorBathrooms(
+      existingStructure.indoor_bathrooms !== null && existingStructure.indoor_bathrooms !== undefined
+        ? String(existingStructure.indoor_bathrooms)
+        : ""
+    );
+    setIndoorShowers(
+      existingStructure.indoor_showers !== null && existingStructure.indoor_showers !== undefined
+        ? String(existingStructure.indoor_showers)
+        : ""
+    );
+    setIndoorActivityRooms(
+      existingStructure.indoor_activity_rooms !== null &&
+      existingStructure.indoor_activity_rooms !== undefined
+        ? String(existingStructure.indoor_activity_rooms)
+        : ""
+    );
+    setHasKitchen(Boolean(existingStructure.has_kitchen));
+    setHotWater(Boolean(existingStructure.hot_water));
+    setLandArea(
+      existingStructure.land_area_m2 !== null && existingStructure.land_area_m2 !== undefined
+        ? String(existingStructure.land_area_m2)
+        : ""
+    );
+    setShelterOnField(Boolean(existingStructure.shelter_on_field));
+    setPitLatrineAllowed(Boolean(existingStructure.pit_latrine_allowed));
+    setWaterSources(existingStructure.water_sources ?? []);
+    setElectricityAvailable(Boolean(existingStructure.electricity_available));
+    setFirePolicy(existingStructure.fire_policy ?? "");
+    setAccessByCar(Boolean(existingStructure.access_by_car));
+    setAccessByCoach(Boolean(existingStructure.access_by_coach));
+    setAccessByPublicTransport(Boolean(existingStructure.access_by_public_transport));
+    setCoachTurningArea(Boolean(existingStructure.coach_turning_area));
+    setNearestBusStop(existingStructure.nearest_bus_stop ?? "");
+    setWeekendOnly(Boolean(existingStructure.weekend_only));
+    setHasFieldPoles(Boolean(existingStructure.has_field_poles));
+
+    const emailValues =
+      existingStructure.contact_emails && existingStructure.contact_emails.length > 0
+        ? [...existingStructure.contact_emails]
+        : [""];
+    setContactEmails(emailValues);
+
+    const websiteValues =
+      existingStructure.website_urls && existingStructure.website_urls.length > 0
+        ? [...existingStructure.website_urls]
+        : [""];
+    setWebsiteUrls(websiteValues);
+    setWebsiteUrlStatuses(websiteValues.map(evaluateWebsiteUrlStatus));
+
+    setNotesLogistics(existingStructure.notes_logistics ?? "");
+    setNotes(existingStructure.notes ?? "");
+
+    const mappedOpenPeriods = (existingStructure.open_periods ?? []).map((period) => ({
+      key: createOpenPeriodKey(),
+      id: period.id,
+      kind: period.kind,
+      season: period.kind === "season" ? period.season ?? "" : "",
+      dateStart: period.date_start ?? "",
+      dateEnd: period.date_end ?? "",
+      notes: period.notes ?? "",
+      units: period.units ?? []
+    }));
+    setOpenPeriods(mappedOpenPeriods);
+
+    const mappedCostOptions = (existingStructure.cost_options ?? []).map((option) => ({
+      key: createCostOptionKey(),
+      id: option.id,
+      model: option.model,
+      amount: option.amount !== null && option.amount !== undefined ? String(option.amount) : "",
+      currency: option.currency,
+      deposit: option.deposit !== null && option.deposit !== undefined ? String(option.deposit) : "",
+      cityTaxPerNight:
+        option.city_tax_per_night !== null && option.city_tax_per_night !== undefined
+          ? String(option.city_tax_per_night)
+          : "",
+      utilitiesFlat:
+        option.utilities_flat !== null && option.utilities_flat !== undefined
+          ? String(option.utilities_flat)
+          : ""
+    }));
+    setCostOptions(mappedCostOptions);
+
+    setAddContact(false);
+    setContactAllowDuplicate(false);
+    resetContactSection();
+    setContactDuplicates([]);
+    setContactStatusMessage(null);
+    setContactCheckingDuplicates(false);
+    setApiError(null);
+    setFieldErrors({});
+    setIsPrefilled(true);
+  }, [
+    existingStructure,
+    isEditing,
+    isPrefilled,
+    evaluateWebsiteUrlStatus,
+    resetContactSection
+  ]);
+
   const handleWebsiteUrlChange = (index: number, value: string) => {
     setWebsiteUrls((current) => {
       const next = [...current];
@@ -1421,6 +1585,9 @@ export const StructureCreatePage = () => {
 
     payload.open_periods = openPeriods.map((period): StructureOpenPeriodInput => {
       const base: StructureOpenPeriodInput = { kind: period.kind };
+      if (period.id !== undefined) {
+        base.id = period.id;
+      }
       if (period.kind === "season") {
         base.season = period.season ? (period.season as StructureOpenPeriodSeason) : undefined;
       } else {
@@ -1455,6 +1622,9 @@ export const StructureCreatePage = () => {
           amount: amountValue,
           currency: currencyValue
         };
+        if (option.id !== undefined) {
+          payloadItem.id = option.id;
+        }
         const parseOptional = (value: string) => {
           if (!value) {
             return null;
@@ -1478,21 +1648,22 @@ export const StructureCreatePage = () => {
       .filter((item): item is StructureCostOptionInput => item !== null);
 
     try {
-      const created = await createMutation.mutateAsync(payload);
+      const saved = await saveMutation.mutateAsync(payload);
 
-      if (Array.isArray(created.warnings) && created.warnings.length > 0) {
-        const formatted = created.warnings.map((url) => `• ${url}`).join("\n");
+      if (Array.isArray(saved.warnings) && saved.warnings.length > 0) {
+        const formatted = saved.warnings.map((url) => `• ${url}`).join("\n");
         window.alert(
           t("structures.create.warnings.websiteUnreachable", {
-            count: created.warnings.length,
+            count: saved.warnings.length,
             urls: formatted
           })
         );
       }
 
-      if (costOptionPayloads.length > 0) {
+      const shouldUpsertCostOptions = isEditing || costOptionPayloads.length > 0;
+      if (shouldUpsertCostOptions) {
         try {
-          await upsertStructureCostOptions(created.id, costOptionPayloads);
+          await upsertStructureCostOptions(saved.id, costOptionPayloads);
         } catch (costError) {
           console.error("Unable to save structure cost options", costError);
           window.alert(t("structures.create.costs.saveFailed"));
@@ -1501,23 +1672,33 @@ export const StructureCreatePage = () => {
 
       if (addContact && (contactHasDetails() || contactId !== null)) {
         try {
-          await createStructureContact(created.id, buildContactPayload());
+          await createStructureContact(saved.id, buildContactPayload());
         } catch (contactError) {
           window.alert(t("structures.create.contact.saveFailed"));
         }
       }
 
       try {
-        await uploadQueuedPhotos(created.id);
+        await uploadQueuedPhotos(saved.id);
       } catch (photoUploadError) {
         console.error("Unable to upload structure photos", photoUploadError);
         window.alert(t("structures.create.photos.uploadFailed"));
       }
 
       await queryClient.invalidateQueries({ queryKey: ["structures"] });
-      navigate(`/structures/${created.slug}`);
+      if (isEditing && editingSlug) {
+        await queryClient.invalidateQueries({ queryKey: ["structure", editingSlug] });
+        if (saved.slug !== editingSlug) {
+          await queryClient.invalidateQueries({ queryKey: ["structure", saved.slug] });
+        }
+      }
+
+      navigate(`/structures/${saved.slug}`);
     } catch (error) {
-      const fallbackMessage = t("structures.create.errors.saveFailed");
+      const fallbackKey = isEditing
+        ? "structures.edit.errors.saveFailed"
+        : "structures.create.errors.saveFailed";
+      const fallbackMessage = t(fallbackKey);
       if (error instanceof ApiError) {
         if (typeof error.body === "object" && error.body !== null && "detail" in error.body) {
           const detail = (error.body as { detail?: unknown }).detail;
@@ -1619,17 +1800,68 @@ export const StructureCreatePage = () => {
 
   const trimmedSlug = slug.trim();
 
+  const headingTitleKey = isEditing ? "structures.edit.title" : "structures.create.title";
+  const headingDescriptionKey = isEditing
+    ? "structures.edit.description"
+    : "structures.create.description";
+
   const slugPreviewMessage = trimmedSlug
     ? t("structures.create.form.slugPreviewLabel", { url: `/structures/${trimmedSlug}` })
     : t("structures.create.form.slugPreviewPlaceholder");
+
+  if (isEditing && !editingSlug) {
+    return (
+      <section>
+        <div className="card">
+          <h2>{t("structures.edit.notFoundTitle")}</h2>
+          <p>{t("structures.edit.notFoundDescription")}</p>
+          <Link to="/structures">{t("structures.edit.backToList")}</Link>
+        </div>
+      </section>
+    );
+  }
+
+  if (isEditing && (isStructureLoading || !isPrefilled)) {
+    return (
+      <section>
+        <div className="card" role="status" aria-live="polite">
+          <p>{t("structures.edit.loading")}</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (isEditing && isStructureError) {
+    if (structureError instanceof ApiError && structureError.status === 404) {
+      return (
+        <section>
+          <div className="card">
+            <h2>{t("structures.edit.notFoundTitle")}</h2>
+            <p>{t("structures.edit.notFoundDescription")}</p>
+            <Link to="/structures">{t("structures.edit.backToList")}</Link>
+          </div>
+        </section>
+      );
+    }
+
+    return (
+      <section>
+        <div className="card">
+          <h2>{t("structures.edit.loadErrorTitle")}</h2>
+          <p>{t("structures.edit.loadErrorDescription")}</p>
+          <Link to="/structures">{t("structures.edit.backToList")}</Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section aria-labelledby="structure-create-title" className="structure-create">
       <div className="structure-create-grid">
         <Surface className="structure-create-card">
           <SectionHeader className="structure-create-header">
-            <h2 id="structure-create-title">{t("structures.create.title")}</h2>
-            <p className="helper-text">{t("structures.create.description")}</p>
+            <h2 id="structure-create-title">{t(headingTitleKey)}</h2>
+            <p className="helper-text">{t(headingDescriptionKey)}</p>
           </SectionHeader>
           <form className="structure-form" onSubmit={handleSubmit} noValidate>
             <fieldset className="structure-form-section">
@@ -3208,10 +3440,18 @@ export const StructureCreatePage = () => {
             {apiError && <InlineMessage tone="danger">{apiError}</InlineMessage>}
 
             <div className="structure-form-actions">
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending
-                  ? t("structures.create.form.submitting")
-                  : t("structures.create.form.submit")}
+              <Button type="submit" disabled={saveMutation.isPending}>
+                {saveMutation.isPending
+                  ? t(
+                      isEditing
+                        ? "structures.edit.form.submitting"
+                        : "structures.create.form.submitting"
+                    )
+                  : t(
+                      isEditing
+                        ? "structures.edit.form.submit"
+                        : "structures.create.form.submit"
+                    )}
               </Button>
             </div>
           </form>
