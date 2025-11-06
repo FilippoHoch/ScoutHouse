@@ -3382,6 +3382,137 @@
           }
         }
       }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "List Users",
+        "operationId": "list_users_api_v1_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Users Api V1 Users Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Create User",
+        "operationId": "create_user_api_v1_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAdminCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update User",
+        "operationId": "update_user_api_v1_users__user_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserAdminUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6070,6 +6201,268 @@
         ],
         "title": "StructureCostModel"
       },
+      "StructureCostModifierCreate": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/StructureCostModifierKind"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Amount"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureSeason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "date_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Start"
+          },
+          "date_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "amount"
+        ],
+        "title": "StructureCostModifierCreate"
+      },
+      "StructureCostModifierKind": {
+        "type": "string",
+        "enum": [
+          "season",
+          "date_range",
+          "weekend"
+        ],
+        "title": "StructureCostModifierKind"
+      },
+      "StructureCostModifierRead-Input": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/StructureCostModifierKind"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Amount"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureSeason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "date_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Start"
+          },
+          "date_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date End"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "amount",
+          "id"
+        ],
+        "title": "StructureCostModifierRead"
+      },
+      "StructureCostModifierRead-Output": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/StructureCostModifierKind"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Amount"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureSeason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "date_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Start"
+          },
+          "date_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date End"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "amount",
+          "id"
+        ],
+        "title": "StructureCostModifierRead"
+      },
+      "StructureCostModifierUpdate": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/StructureCostModifierKind"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Amount"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureSeason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "date_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Start"
+          },
+          "date_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date End"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "amount"
+        ],
+        "title": "StructureCostModifierUpdate"
+      },
       "StructureCostOptionCreate": {
         "properties": {
           "model": {
@@ -6175,38 +6568,6 @@
             ],
             "title": "Max Total"
           },
-          "min_total": {
-            "anyOf": [
-              {
-                "type": "number",
-                "minimum": 0.0
-              },
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Min Total"
-          },
-          "max_total": {
-            "anyOf": [
-              {
-                "type": "number",
-                "minimum": 0.0
-              },
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Max Total"
-          },
           "age_rules": {
             "anyOf": [
               {
@@ -6218,6 +6579,20 @@
               }
             ],
             "title": "Age Rules"
+          },
+          "modifiers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureCostModifierCreate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modifiers"
           }
         },
         "type": "object",
@@ -6319,6 +6694,20 @@
           "id": {
             "type": "integer",
             "title": "Id"
+          },
+          "modifiers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureCostModifierRead-Output"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modifiers"
           }
         },
         "type": "object",
@@ -6402,6 +6791,38 @@
             ],
             "title": "Utilities Flat"
           },
+          "min_total": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Total"
+          },
+          "max_total": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Total"
+          },
           "age_rules": {
             "anyOf": [
               {
@@ -6424,6 +6845,20 @@
               }
             ],
             "title": "Id"
+          },
+          "modifiers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StructureCostModifierUpdate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modifiers"
           }
         },
         "type": "object",
@@ -6552,14 +6987,26 @@
             "title": "Indoor Activity Rooms"
           },
           "has_kitchen": {
-            "type": "boolean",
-            "title": "Has Kitchen",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Kitchen"
           },
           "hot_water": {
-            "type": "boolean",
-            "title": "Hot Water",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hot Water"
           },
           "land_area_m2": {
             "anyOf": [
@@ -6574,9 +7021,15 @@
             "title": "Land Area M2"
           },
           "shelter_on_field": {
-            "type": "boolean",
-            "title": "Shelter On Field",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shelter On Field"
           },
           "water_sources": {
             "anyOf": [
@@ -6593,9 +7046,15 @@
             "title": "Water Sources"
           },
           "electricity_available": {
-            "type": "boolean",
-            "title": "Electricity Available",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Electricity Available"
           },
           "fire_policy": {
             "anyOf": [
@@ -6608,24 +7067,48 @@
             ]
           },
           "access_by_car": {
-            "type": "boolean",
-            "title": "Access By Car",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Car"
           },
           "access_by_coach": {
-            "type": "boolean",
-            "title": "Access By Coach",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Coach"
           },
           "access_by_public_transport": {
-            "type": "boolean",
-            "title": "Access By Public Transport",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Public Transport"
           },
           "coach_turning_area": {
-            "type": "boolean",
-            "title": "Coach Turning Area",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coach Turning Area"
           },
           "nearest_bus_stop": {
             "anyOf": [
@@ -6640,19 +7123,37 @@
             "title": "Nearest Bus Stop"
           },
           "weekend_only": {
-            "type": "boolean",
-            "title": "Weekend Only",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekend Only"
           },
           "has_field_poles": {
-            "type": "boolean",
-            "title": "Has Field Poles",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Field Poles"
           },
           "pit_latrine_allowed": {
-            "type": "boolean",
-            "title": "Pit Latrine Allowed",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pit Latrine Allowed"
           },
           "contact_emails": {
             "items": {
@@ -7145,14 +7646,26 @@
             "title": "Indoor Activity Rooms"
           },
           "has_kitchen": {
-            "type": "boolean",
-            "title": "Has Kitchen",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Kitchen"
           },
           "hot_water": {
-            "type": "boolean",
-            "title": "Hot Water",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hot Water"
           },
           "land_area_m2": {
             "anyOf": [
@@ -7167,9 +7680,15 @@
             "title": "Land Area M2"
           },
           "shelter_on_field": {
-            "type": "boolean",
-            "title": "Shelter On Field",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shelter On Field"
           },
           "water_sources": {
             "anyOf": [
@@ -7186,9 +7705,15 @@
             "title": "Water Sources"
           },
           "electricity_available": {
-            "type": "boolean",
-            "title": "Electricity Available",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Electricity Available"
           },
           "fire_policy": {
             "anyOf": [
@@ -7201,24 +7726,48 @@
             ]
           },
           "access_by_car": {
-            "type": "boolean",
-            "title": "Access By Car",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Car"
           },
           "access_by_coach": {
-            "type": "boolean",
-            "title": "Access By Coach",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Coach"
           },
           "access_by_public_transport": {
-            "type": "boolean",
-            "title": "Access By Public Transport",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Public Transport"
           },
           "coach_turning_area": {
-            "type": "boolean",
-            "title": "Coach Turning Area",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coach Turning Area"
           },
           "nearest_bus_stop": {
             "anyOf": [
@@ -7233,19 +7782,37 @@
             "title": "Nearest Bus Stop"
           },
           "weekend_only": {
-            "type": "boolean",
-            "title": "Weekend Only",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekend Only"
           },
           "has_field_poles": {
-            "type": "boolean",
-            "title": "Has Field Poles",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Field Poles"
           },
           "pit_latrine_allowed": {
-            "type": "boolean",
-            "title": "Pit Latrine Allowed",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pit Latrine Allowed"
           },
           "contact_emails": {
             "items": {
@@ -7372,6 +7939,20 @@
               }
             ],
             "title": "Open Periods"
+          },
+          "warnings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warnings"
           }
         },
         "type": "object",
@@ -7513,29 +8094,59 @@
             ]
           },
           "access_by_car": {
-            "type": "boolean",
-            "title": "Access By Car",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Car"
           },
           "access_by_coach": {
-            "type": "boolean",
-            "title": "Access By Coach",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Coach"
           },
           "access_by_public_transport": {
-            "type": "boolean",
-            "title": "Access By Public Transport",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Public Transport"
           },
           "has_kitchen": {
-            "type": "boolean",
-            "title": "Has Kitchen",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Kitchen"
           },
           "hot_water": {
-            "type": "boolean",
-            "title": "Hot Water",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hot Water"
           }
         },
         "type": "object",
@@ -7744,14 +8355,26 @@
             "title": "Indoor Activity Rooms"
           },
           "has_kitchen": {
-            "type": "boolean",
-            "title": "Has Kitchen",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Kitchen"
           },
           "hot_water": {
-            "type": "boolean",
-            "title": "Hot Water",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hot Water"
           },
           "land_area_m2": {
             "anyOf": [
@@ -7766,9 +8389,15 @@
             "title": "Land Area M2"
           },
           "shelter_on_field": {
-            "type": "boolean",
-            "title": "Shelter On Field",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shelter On Field"
           },
           "water_sources": {
             "anyOf": [
@@ -7785,9 +8414,15 @@
             "title": "Water Sources"
           },
           "electricity_available": {
-            "type": "boolean",
-            "title": "Electricity Available",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Electricity Available"
           },
           "fire_policy": {
             "anyOf": [
@@ -7800,24 +8435,48 @@
             ]
           },
           "access_by_car": {
-            "type": "boolean",
-            "title": "Access By Car",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Car"
           },
           "access_by_coach": {
-            "type": "boolean",
-            "title": "Access By Coach",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Coach"
           },
           "access_by_public_transport": {
-            "type": "boolean",
-            "title": "Access By Public Transport",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access By Public Transport"
           },
           "coach_turning_area": {
-            "type": "boolean",
-            "title": "Coach Turning Area",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coach Turning Area"
           },
           "nearest_bus_stop": {
             "anyOf": [
@@ -7832,19 +8491,37 @@
             "title": "Nearest Bus Stop"
           },
           "weekend_only": {
-            "type": "boolean",
-            "title": "Weekend Only",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekend Only"
           },
           "has_field_poles": {
-            "type": "boolean",
-            "title": "Has Field Poles",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Field Poles"
           },
           "pit_latrine_allowed": {
-            "type": "boolean",
-            "title": "Pit Latrine Allowed",
-            "default": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pit Latrine Allowed"
           },
           "contact_emails": {
             "items": {
@@ -7901,6 +8578,102 @@
         ],
         "title": "StructureUpdate"
       },
+      "UserAdminCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "is_admin": {
+            "type": "boolean",
+            "title": "Is Admin",
+            "default": false
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "password"
+        ],
+        "title": "UserAdminCreate"
+      },
+      "UserAdminUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "is_admin": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Admin"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "UserAdminUpdate"
+      },
       "UserRead": {
         "properties": {
           "id": {
@@ -7922,10 +8695,20 @@
             "title": "Is Admin",
             "default": false
           },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "can_edit_structures": {
+            "type": "boolean",
+            "title": "Can Edit Structures",
+            "default": false
           }
         },
         "type": "object",

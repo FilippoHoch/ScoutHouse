@@ -859,6 +859,21 @@ table tbody tr:hover {
   height: 1.15rem;
 }
 
+.tri-state-field {
+  align-items: flex-start;
+}
+
+.tri-state-field__label {
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.tri-state-field .tri-state-toggle__select {
+  width: auto;
+  min-width: 9rem;
+  align-self: flex-start;
+}
+
 .empty-state {
   padding: var(--space-xl);
   text-align: center;

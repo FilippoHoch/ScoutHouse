@@ -87,21 +87,21 @@ class StructureBase(BaseModel):
     indoor_bathrooms: int | None = Field(default=None, ge=0)
     indoor_showers: int | None = Field(default=None, ge=0)
     indoor_activity_rooms: int | None = Field(default=None, ge=0)
-    has_kitchen: bool = False
-    hot_water: bool = False
+    has_kitchen: bool | None = None
+    hot_water: bool | None = None
     land_area_m2: float | None = Field(default=None, ge=0)
-    shelter_on_field: bool = False
+    shelter_on_field: bool | None = None
     water_sources: list[WaterSource] | None = None
-    electricity_available: bool = False
+    electricity_available: bool | None = None
     fire_policy: FirePolicy | None = None
-    access_by_car: bool = False
-    access_by_coach: bool = False
-    access_by_public_transport: bool = False
-    coach_turning_area: bool = False
+    access_by_car: bool | None = None
+    access_by_coach: bool | None = None
+    access_by_public_transport: bool | None = None
+    coach_turning_area: bool | None = None
     nearest_bus_stop: str | None = Field(default=None, max_length=255)
-    weekend_only: bool = False
-    has_field_poles: bool = False
-    pit_latrine_allowed: bool = False
+    weekend_only: bool | None = None
+    has_field_poles: bool | None = None
+    pit_latrine_allowed: bool | None = None
     contact_emails: list[EmailStr] = Field(default_factory=list)
     website_urls: list[AnyHttpUrl] = Field(default_factory=list)
     notes_logistics: str | None = None
@@ -441,11 +441,11 @@ class StructureSearchItem(BaseModel):
     seasons: list[StructureSeason] = Field(default_factory=list)
     units: list[StructureUnit] = Field(default_factory=list)
     fire_policy: FirePolicy | None = None
-    access_by_car: bool = False
-    access_by_coach: bool = False
-    access_by_public_transport: bool = False
-    has_kitchen: bool = False
-    hot_water: bool = False
+    access_by_car: bool | None = None
+    access_by_coach: bool | None = None
+    access_by_public_transport: bool | None = None
+    has_kitchen: bool | None = None
+    hot_water: bool | None = None
 
     model_config = {
         "from_attributes": True,

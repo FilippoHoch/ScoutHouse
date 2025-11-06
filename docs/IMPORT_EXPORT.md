@@ -15,7 +15,7 @@ Il flusso resta invariato rispetto alle versioni precedenti:
 2. Risolvere eventuali errori e rilanciare l'import con `dry_run=false`.
 3. Il sistema esegue un upsert per `slug`, conteggia le righe vuote in `skipped` e registra un audit `import_structures`.
 
-Campi booleani (`has_kitchen`, `hot_water`, `access_*`, `pit_latrine_allowed`, ecc.) accettano i valori `true/false`, `1/0`, `yes/no`. Le colonne numeriche devono contenere interi o decimali positivi; lasciare la cella vuota se il dato non è disponibile.
+Campi booleani (`has_kitchen`, `hot_water`, `access_*`, `pit_latrine_allowed`, ecc.) accettano i valori `true/false`, `1/0`, `yes/no`. Le colonne numeriche devono contenere interi o decimali positivi; lasciare la cella vuota per indicare "non specificato" (il valore verrà memorizzato come `null`).
 
 ## Import periodi di apertura
 
