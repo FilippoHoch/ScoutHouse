@@ -19,7 +19,6 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import expression
 from sqlalchemy.sql.sqltypes import JSON
 
 from app.core.db import Base
@@ -95,81 +94,70 @@ class Structure(Base):
     indoor_bathrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     indoor_showers: Mapped[int | None] = mapped_column(Integer, nullable=True)
     indoor_activity_rooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    has_kitchen: Mapped[bool] = mapped_column(
+    has_kitchen: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
-    hot_water: Mapped[bool] = mapped_column(
+    hot_water: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
     land_area_m2: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
-    shelter_on_field: Mapped[bool] = mapped_column(
+    shelter_on_field: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
     water_sources: Mapped[list[WaterSource] | None] = mapped_column(
         JSON,
         nullable=True,
     )
-    electricity_available: Mapped[bool] = mapped_column(
+    electricity_available: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
     fire_policy: Mapped[FirePolicy | None] = mapped_column(
         sqla_enum(FirePolicy, name="fire_policy"),
         nullable=True,
     )
-    access_by_car: Mapped[bool] = mapped_column(
+    access_by_car: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
-    access_by_coach: Mapped[bool] = mapped_column(
+    access_by_coach: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
-    access_by_public_transport: Mapped[bool] = mapped_column(
+    access_by_public_transport: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
-    coach_turning_area: Mapped[bool] = mapped_column(
+    coach_turning_area: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
     nearest_bus_stop: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    weekend_only: Mapped[bool] = mapped_column(
+    weekend_only: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
-    has_field_poles: Mapped[bool] = mapped_column(
+    has_field_poles: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
-    pit_latrine_allowed: Mapped[bool] = mapped_column(
+    pit_latrine_allowed: Mapped[bool | None] = mapped_column(
         Boolean,
-        nullable=False,
-        server_default=expression.false(),
-        default=False,
+        nullable=True,
+        default=None,
     )
     contact_emails: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     website_urls: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)

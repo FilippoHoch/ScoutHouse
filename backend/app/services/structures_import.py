@@ -829,22 +829,22 @@ def _process_rows(
                 land_area_m2 = None
             if shelter_on_field:
                 _warn("shelter_on_field", "Ignored for type=house")
-                shelter_on_field = False
+                shelter_on_field = None
             if water_sources:
                 _warn("water_sources", "Ignored for type=house")
                 water_sources = None
             if electricity_available:
                 _warn("electricity_available", "Ignored for type=house")
-                electricity_available = False
+                electricity_available = None
             if fire_policy is not None:
                 _warn("fire_policy", "Ignored for type=house")
                 fire_policy = None
             if has_field_poles:
                 _warn("has_field_poles", "Ignored for type=house")
-                has_field_poles = False
+                has_field_poles = None
             if pit_latrine_allowed:
                 _warn("pit_latrine_allowed", "Ignored for type=house")
-                pit_latrine_allowed = False
+                pit_latrine_allowed = None
 
         if structure_type == StructureType.LAND:
             if indoor_beds is not None:
@@ -861,10 +861,10 @@ def _process_rows(
                 indoor_activity_rooms = None
             if has_kitchen:
                 _warn("has_kitchen", "Ignored for type=land")
-                has_kitchen = False
+                has_kitchen = None
             if hot_water:
                 _warn("hot_water", "Ignored for type=land")
-                hot_water = False
+                hot_water = None
 
         if slug and slug in seen_slugs:
             row_errors.append(

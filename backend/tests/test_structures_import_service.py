@@ -46,8 +46,8 @@ def test_house_row_ignores_outdoor_fields_with_warnings() -> None:
     assert row.indoor_beds == 18
     assert row.land_area_m2 is None
     assert row.fire_policy is None
-    assert row.shelter_on_field is False
-    assert row.pit_latrine_allowed is False
+    assert row.shelter_on_field is None
+    assert row.pit_latrine_allowed is None
 
 
 def test_land_row_clears_indoor_fields_and_normalises_booleans() -> None:
@@ -86,8 +86,8 @@ def test_land_row_clears_indoor_fields_and_normalises_booleans() -> None:
     assert row.indoor_beds is None
     assert row.indoor_showers is None
     assert row.indoor_activity_rooms is None
-    assert row.has_kitchen is False
-    assert row.hot_water is False
+    assert row.has_kitchen is None
+    assert row.hot_water is None
     assert row.shelter_on_field is True
     assert row.electricity_available is True
     assert row.pit_latrine_allowed is False

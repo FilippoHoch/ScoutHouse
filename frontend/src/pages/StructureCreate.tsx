@@ -49,6 +49,7 @@ import {
   Surface
 } from "../shared/ui/designSystem";
 import { GoogleMapEmbed, type GoogleMapEmbedCoordinates } from "../shared/ui/GoogleMapEmbed";
+import { TriStateToggle } from "../shared/ui/TriStateToggle";
 import { isImageFile } from "../shared/utils/image";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -150,6 +151,16 @@ const parseCoordinateValue = (value: string): number | null => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const toTriState = (value: boolean | null | undefined): boolean | null => {
+  if (value === true) {
+    return true;
+  }
+  if (value === false) {
+    return false;
+  }
+  return null;
+};
+
 function toSlug(value: string): string {
   return value
     .trim()
@@ -194,21 +205,21 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [indoorBathrooms, setIndoorBathrooms] = useState("");
   const [indoorShowers, setIndoorShowers] = useState("");
   const [indoorActivityRooms, setIndoorActivityRooms] = useState("");
-  const [hasKitchen, setHasKitchen] = useState(false);
-  const [hotWater, setHotWater] = useState(false);
+  const [hasKitchen, setHasKitchen] = useState<boolean | null>(null);
+  const [hotWater, setHotWater] = useState<boolean | null>(null);
   const [landArea, setLandArea] = useState("");
-  const [shelterOnField, setShelterOnField] = useState(false);
-  const [pitLatrineAllowed, setPitLatrineAllowed] = useState(false);
+  const [shelterOnField, setShelterOnField] = useState<boolean | null>(null);
+  const [pitLatrineAllowed, setPitLatrineAllowed] = useState<boolean | null>(null);
   const [waterSources, setWaterSources] = useState<WaterSource[]>([]);
-  const [electricityAvailable, setElectricityAvailable] = useState(false);
+  const [electricityAvailable, setElectricityAvailable] = useState<boolean | null>(null);
   const [firePolicy, setFirePolicy] = useState<FirePolicy | "">("");
-  const [accessByCar, setAccessByCar] = useState(false);
-  const [accessByCoach, setAccessByCoach] = useState(false);
-  const [accessByPublicTransport, setAccessByPublicTransport] = useState(false);
-  const [coachTurningArea, setCoachTurningArea] = useState(false);
+  const [accessByCar, setAccessByCar] = useState<boolean | null>(null);
+  const [accessByCoach, setAccessByCoach] = useState<boolean | null>(null);
+  const [accessByPublicTransport, setAccessByPublicTransport] = useState<boolean | null>(null);
+  const [coachTurningArea, setCoachTurningArea] = useState<boolean | null>(null);
   const [nearestBusStop, setNearestBusStop] = useState("");
-  const [weekendOnly, setWeekendOnly] = useState(false);
-  const [hasFieldPoles, setHasFieldPoles] = useState(false);
+  const [weekendOnly, setWeekendOnly] = useState<boolean | null>(null);
+  const [hasFieldPoles, setHasFieldPoles] = useState<boolean | null>(null);
   type WebsiteUrlStatus = "idle" | "valid" | "invalid";
 
   const [contactEmails, setContactEmails] = useState<string[]>([""]);
@@ -238,6 +249,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [contactPickerLoading, setContactPickerLoading] = useState(false);
   const [contactPickerError, setContactPickerError] = useState<string | null>(null);
   const [contactPickerResults, setContactPickerResults] = useState<Contact[]>([]);
+  const triStateLabels = useMemo(
+    () => ({
+      yes: t("common.triState.yes"),
+      no: t("common.triState.no"),
+      unknown: t("common.triState.unknown"),
+    }),
+    [t]
+  );
   const [openPeriods, setOpenPeriods] = useState<OpenPeriodFormRow[]>([]);
   const [costOptions, setCostOptions] = useState<CostOptionFormRow[]>([]);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -322,8 +341,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setIndoorBathrooms("");
     setIndoorShowers("");
     setIndoorActivityRooms("");
-    setHasKitchen(false);
-    setHotWater(false);
+    setHasKitchen(null);
+    setHotWater(null);
     clearFieldErrorsGroup([
       "indoor_beds",
       "indoor_bathrooms",
@@ -334,13 +353,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const resetOutdoorFields = () => {
     setLandArea("");
-    setShelterOnField(false);
-    setPitLatrineAllowed(false);
+    setShelterOnField(null);
+    setPitLatrineAllowed(null);
     setWaterSources([]);
-    setElectricityAvailable(false);
+    setElectricityAvailable(null);
     setFirePolicy("");
     setNearestBusStop("");
-    setHasFieldPoles(false);
+    setHasFieldPoles(null);
     clearFieldErrorsGroup([
       "land_area_m2",
       "open_periods"
@@ -757,13 +776,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     clearFieldError("indoor_activity_rooms");
   };
 
-  const handleHasKitchenChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setHasKitchen(event.target.checked);
+  const handleHasKitchenChange = (value: boolean | null) => {
+    setHasKitchen(value);
     setApiError(null);
   };
 
-  const handleHotWaterChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setHotWater(event.target.checked);
+  const handleHotWaterChange = (value: boolean | null) => {
+    setHotWater(value);
     setApiError(null);
   };
 
@@ -773,13 +792,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     clearFieldError("land_area_m2");
   };
 
-  const handleShelterOnFieldChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setShelterOnField(event.target.checked);
+  const handleShelterOnFieldChange = (value: boolean | null) => {
+    setShelterOnField(value);
     setApiError(null);
   };
 
-  const handlePitLatrineAllowedChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setPitLatrineAllowed(event.target.checked);
+  const handlePitLatrineAllowedChange = (value: boolean | null) => {
+    setPitLatrineAllowed(value);
     setApiError(null);
   };
 
@@ -928,8 +947,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handleElectricityAvailableChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setElectricityAvailable(event.target.checked);
+  const handleElectricityAvailableChange = (value: boolean | null) => {
+    setElectricityAvailable(value);
     setApiError(null);
   };
 
@@ -938,23 +957,23 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handleAccessByCarChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setAccessByCar(event.target.checked);
+  const handleAccessByCarChange = (value: boolean | null) => {
+    setAccessByCar(value);
     setApiError(null);
   };
 
-  const handleAccessByCoachChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setAccessByCoach(event.target.checked);
+  const handleAccessByCoachChange = (value: boolean | null) => {
+    setAccessByCoach(value);
     setApiError(null);
   };
 
-  const handleAccessByPublicTransportChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setAccessByPublicTransport(event.target.checked);
+  const handleAccessByPublicTransportChange = (value: boolean | null) => {
+    setAccessByPublicTransport(value);
     setApiError(null);
   };
 
-  const handleCoachTurningAreaChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setCoachTurningArea(event.target.checked);
+  const handleCoachTurningAreaChange = (value: boolean | null) => {
+    setCoachTurningArea(value);
     setApiError(null);
   };
 
@@ -963,13 +982,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handleWeekendOnlyChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setWeekendOnly(event.target.checked);
+  const handleWeekendOnlyChange = (value: boolean | null) => {
+    setWeekendOnly(value);
     setApiError(null);
   };
 
-  const handleHasFieldPolesChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setHasFieldPoles(event.target.checked);
+  const handleHasFieldPolesChange = (value: boolean | null) => {
+    setHasFieldPoles(value);
     setApiError(null);
   };
 
@@ -1062,25 +1081,25 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         ? String(existingStructure.indoor_activity_rooms)
         : ""
     );
-    setHasKitchen(Boolean(existingStructure.has_kitchen));
-    setHotWater(Boolean(existingStructure.hot_water));
+    setHasKitchen(toTriState(existingStructure.has_kitchen));
+    setHotWater(toTriState(existingStructure.hot_water));
     setLandArea(
       existingStructure.land_area_m2 !== null && existingStructure.land_area_m2 !== undefined
         ? String(existingStructure.land_area_m2)
         : ""
     );
-    setShelterOnField(Boolean(existingStructure.shelter_on_field));
-    setPitLatrineAllowed(Boolean(existingStructure.pit_latrine_allowed));
+    setShelterOnField(toTriState(existingStructure.shelter_on_field));
+    setPitLatrineAllowed(toTriState(existingStructure.pit_latrine_allowed));
     setWaterSources(existingStructure.water_sources ?? []);
-    setElectricityAvailable(Boolean(existingStructure.electricity_available));
+    setElectricityAvailable(toTriState(existingStructure.electricity_available));
     setFirePolicy(existingStructure.fire_policy ?? "");
-    setAccessByCar(Boolean(existingStructure.access_by_car));
-    setAccessByCoach(Boolean(existingStructure.access_by_coach));
-    setAccessByPublicTransport(Boolean(existingStructure.access_by_public_transport));
-    setCoachTurningArea(Boolean(existingStructure.coach_turning_area));
+    setAccessByCar(toTriState(existingStructure.access_by_car));
+    setAccessByCoach(toTriState(existingStructure.access_by_coach));
+    setAccessByPublicTransport(toTriState(existingStructure.access_by_public_transport));
+    setCoachTurningArea(toTriState(existingStructure.coach_turning_area));
     setNearestBusStop(existingStructure.nearest_bus_stop ?? "");
-    setWeekendOnly(Boolean(existingStructure.weekend_only));
-    setHasFieldPoles(Boolean(existingStructure.has_field_poles));
+    setWeekendOnly(toTriState(existingStructure.weekend_only));
+    setHasFieldPoles(toTriState(existingStructure.has_field_poles));
 
     const emailValues =
       existingStructure.contact_emails && existingStructure.contact_emails.length > 0
@@ -1584,8 +1603,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.indoor_bathrooms = null;
       payload.indoor_showers = null;
       payload.indoor_activity_rooms = null;
-      payload.has_kitchen = false;
-      payload.hot_water = false;
+      payload.has_kitchen = null;
+      payload.hot_water = null;
     }
 
     if (showOutdoorSection) {
@@ -1595,13 +1614,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.fire_policy = firePolicy ? (firePolicy as FirePolicy) : null;
     } else {
       payload.land_area_m2 = null;
-      payload.shelter_on_field = false;
+      payload.shelter_on_field = null;
       payload.water_sources = null;
-      payload.electricity_available = false;
+      payload.electricity_available = null;
       payload.fire_policy = null;
       payload.nearest_bus_stop = null;
-      payload.has_field_poles = false;
-      payload.pit_latrine_allowed = false;
+      payload.has_field_poles = null;
+      payload.pit_latrine_allowed = null;
     }
 
     const nonEmptyWebsiteUrls = trimmedWebsiteUrls.filter((value) => value);
@@ -2130,31 +2149,31 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     )}
                   </div>
 
-                  <div className="structure-form-field checkbox-field">
-                    <label htmlFor="structure-has-kitchen">
-                      <input
-                        id="structure-has-kitchen"
-                        type="checkbox"
-                        checked={hasKitchen}
-                        onChange={handleHasKitchenChange}
-                      />
+                  <div className="structure-form-field tri-state-field">
+                    <label htmlFor="structure-has-kitchen" className="tri-state-field__label">
                       {t("structures.create.form.hasKitchen")}
                     </label>
+                    <TriStateToggle
+                      id="structure-has-kitchen"
+                      value={hasKitchen}
+                      onChange={handleHasKitchenChange}
+                      labels={triStateLabels}
+                    />
                     <span className="helper-text">
                       {t("structures.create.form.hasKitchenHint")}
                     </span>
                   </div>
 
-                  <div className="structure-form-field checkbox-field">
-                    <label htmlFor="structure-hot-water">
-                      <input
-                        id="structure-hot-water"
-                        type="checkbox"
-                        checked={hotWater}
-                        onChange={handleHotWaterChange}
-                      />
+                  <div className="structure-form-field tri-state-field">
+                    <label htmlFor="structure-hot-water" className="tri-state-field__label">
                       {t("structures.create.form.hotWater")}
                     </label>
+                    <TriStateToggle
+                      id="structure-hot-water"
+                      value={hotWater}
+                      onChange={handleHotWaterChange}
+                      labels={triStateLabels}
+                    />
                     <span className="helper-text">
                       {t("structures.create.form.hotWaterHint")}
                     </span>
@@ -2254,61 +2273,61 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     </span>
                   </div>
 
-                  <div className="structure-form-field checkbox-field">
-                    <label htmlFor="structure-shelter-on-field">
-                      <input
-                        id="structure-shelter-on-field"
-                        type="checkbox"
-                        checked={shelterOnField}
-                        onChange={handleShelterOnFieldChange}
-                      />
+                  <div className="structure-form-field tri-state-field">
+                    <label htmlFor="structure-shelter-on-field" className="tri-state-field__label">
                       {t("structures.create.form.shelterOnField")}
                     </label>
+                    <TriStateToggle
+                      id="structure-shelter-on-field"
+                      value={shelterOnField}
+                      onChange={handleShelterOnFieldChange}
+                      labels={triStateLabels}
+                    />
                     <span className="helper-text">
                       {t("structures.create.form.shelterOnFieldHint")}
                     </span>
                   </div>
 
-                  <div className="structure-form-field checkbox-field">
-                    <label htmlFor="structure-electricity-available">
-                      <input
-                        id="structure-electricity-available"
-                        type="checkbox"
-                        checked={electricityAvailable}
-                        onChange={handleElectricityAvailableChange}
-                      />
+                  <div className="structure-form-field tri-state-field">
+                    <label htmlFor="structure-electricity-available" className="tri-state-field__label">
                       {t("structures.create.form.electricityAvailable")}
                     </label>
+                    <TriStateToggle
+                      id="structure-electricity-available"
+                      value={electricityAvailable}
+                      onChange={handleElectricityAvailableChange}
+                      labels={triStateLabels}
+                    />
                     <span className="helper-text">
                       {t("structures.create.form.electricityAvailableHint")}
                     </span>
                   </div>
 
-                  <div className="structure-form-field checkbox-field">
-                    <label htmlFor="structure-has-field-poles">
-                      <input
-                        id="structure-has-field-poles"
-                        type="checkbox"
-                        checked={hasFieldPoles}
-                        onChange={handleHasFieldPolesChange}
-                      />
+                  <div className="structure-form-field tri-state-field">
+                    <label htmlFor="structure-has-field-poles" className="tri-state-field__label">
                       {t("structures.create.form.hasFieldPoles")}
                     </label>
+                    <TriStateToggle
+                      id="structure-has-field-poles"
+                      value={hasFieldPoles}
+                      onChange={handleHasFieldPolesChange}
+                      labels={triStateLabels}
+                    />
                     <span className="helper-text">
                       {t("structures.create.form.hasFieldPolesHint")}
                     </span>
                   </div>
 
-                  <div className="structure-form-field checkbox-field">
-                    <label htmlFor="structure-pit-latrine">
-                      <input
-                        id="structure-pit-latrine"
-                        type="checkbox"
-                        checked={pitLatrineAllowed}
-                        onChange={handlePitLatrineAllowedChange}
-                      />
+                  <div className="structure-form-field tri-state-field">
+                    <label htmlFor="structure-pit-latrine" className="tri-state-field__label">
                       {t("structures.create.form.pitLatrineAllowed")}
                     </label>
+                    <TriStateToggle
+                      id="structure-pit-latrine"
+                      value={pitLatrineAllowed}
+                      onChange={handlePitLatrineAllowedChange}
+                      labels={triStateLabels}
+                    />
                     <span className="helper-text">
                       {t("structures.create.form.pitLatrineAllowedHint")}
                     </span>
@@ -2323,61 +2342,61 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 {t("structures.create.form.sections.accessibility.description")}
               </p>
               <div className="structure-field-grid">
-                <div className="structure-form-field checkbox-field">
-                  <label htmlFor="structure-access-car">
-                    <input
-                      id="structure-access-car"
-                      type="checkbox"
-                      checked={accessByCar}
-                      onChange={handleAccessByCarChange}
-                    />
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-access-car" className="tri-state-field__label">
                     {t("structures.create.form.accessByCar")}
                   </label>
+                  <TriStateToggle
+                    id="structure-access-car"
+                    value={accessByCar}
+                    onChange={handleAccessByCarChange}
+                    labels={triStateLabels}
+                  />
                   <span className="helper-text">
                     {t("structures.create.form.accessByCarHint")}
                   </span>
                 </div>
 
-                <div className="structure-form-field checkbox-field">
-                  <label htmlFor="structure-access-coach">
-                    <input
-                      id="structure-access-coach"
-                      type="checkbox"
-                      checked={accessByCoach}
-                      onChange={handleAccessByCoachChange}
-                    />
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-access-coach" className="tri-state-field__label">
                     {t("structures.create.form.accessByCoach")}
                   </label>
+                  <TriStateToggle
+                    id="structure-access-coach"
+                    value={accessByCoach}
+                    onChange={handleAccessByCoachChange}
+                    labels={triStateLabels}
+                  />
                   <span className="helper-text">
                     {t("structures.create.form.accessByCoachHint")}
                   </span>
                 </div>
 
-                <div className="structure-form-field checkbox-field">
-                  <label htmlFor="structure-access-pt">
-                    <input
-                      id="structure-access-pt"
-                      type="checkbox"
-                      checked={accessByPublicTransport}
-                      onChange={handleAccessByPublicTransportChange}
-                    />
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-access-pt" className="tri-state-field__label">
                     {t("structures.create.form.accessByPublicTransport")}
                   </label>
+                  <TriStateToggle
+                    id="structure-access-pt"
+                    value={accessByPublicTransport}
+                    onChange={handleAccessByPublicTransportChange}
+                    labels={triStateLabels}
+                  />
                   <span className="helper-text">
                     {t("structures.create.form.accessByPublicTransportHint")}
                   </span>
                 </div>
 
-                <div className="structure-form-field checkbox-field">
-                  <label htmlFor="structure-coach-turning-area">
-                    <input
-                      id="structure-coach-turning-area"
-                      type="checkbox"
-                      checked={coachTurningArea}
-                      onChange={handleCoachTurningAreaChange}
-                    />
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-coach-turning-area" className="tri-state-field__label">
                     {t("structures.create.form.coachTurningArea")}
                   </label>
+                  <TriStateToggle
+                    id="structure-coach-turning-area"
+                    value={coachTurningArea}
+                    onChange={handleCoachTurningAreaChange}
+                    labels={triStateLabels}
+                  />
                 </div>
 
                 <div className="structure-form-field">
@@ -2623,16 +2642,16 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   )}
                 </div>
 
-                <div className="structure-form-field checkbox-field">
-                  <label htmlFor="structure-weekend-only">
-                    <input
-                      id="structure-weekend-only"
-                      type="checkbox"
-                      checked={weekendOnly}
-                      onChange={handleWeekendOnlyChange}
-                    />
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-weekend-only" className="tri-state-field__label">
                     {t("structures.create.form.weekendOnly")}
                   </label>
+                  <TriStateToggle
+                    id="structure-weekend-only"
+                    value={weekendOnly}
+                    onChange={handleWeekendOnlyChange}
+                    labels={triStateLabels}
+                  />
                   <span className="helper-text">
                     {t("structures.create.form.weekendOnlyHint")}
                   </span>
