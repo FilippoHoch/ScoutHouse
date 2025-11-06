@@ -812,6 +812,23 @@ table tbody tr:hover {
   flex-wrap: wrap;
 }
 
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.export-actions .button {
+  justify-content: center;
+  min-width: 160px;
+}
+
+.export-actions .button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .error,
 .error-text {
   color: var(--color-danger);
