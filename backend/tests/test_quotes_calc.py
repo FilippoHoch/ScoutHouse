@@ -24,8 +24,8 @@ def sample_event() -> Event:
         slug="campo-estivo",
         title="Campo estivo",
         branch=EventBranch.ALL,
-        start_date=date(2025, 7, 10),
-        end_date=date(2025, 7, 12),
+        start_date=date(2025, 7, 7),
+        end_date=date(2025, 7, 9),
         participants={"lc": 10, "eg": 5, "rs": 0, "leaders": 2},
         status=EventStatus.DRAFT,
     )
@@ -226,6 +226,28 @@ def test_calc_quote_uses_weekend_modifier(
         start_date=date(2025, 10, 3),
         end_date=date(2025, 10, 6),
         participants={"lc": 8, "eg": 4, "rs": 0, "leaders": 2},
+        status=EventStatus.PLANNING,
+    )
+
+    result = calc_quote(weekend_event, structure_with_modifiers)
+    primary = next(item for item in result["breakdown"] if item["type"] == StructureCostModel.PER_PERSON_DAY.value)
+
+    assert primary["unit_amount"] == pytest.approx(15.0)
+    assert primary["metadata"]["modifier_kind"] == "weekend"
+    assert primary["metadata"]["modifier_id"] == 202
+
+
+def test_calc_quote_applies_weekend_modifier_when_spanning_weekday_to_weekend(
+    structure_with_modifiers: SimpleNamespace,
+) -> None:
+    weekend_event = Event(
+        id=4,
+        slug="serata-weekend",
+        title="Serata weekend",
+        branch=EventBranch.ALL,
+        start_date=date(2025, 10, 3),
+        end_date=date(2025, 10, 4),
+        participants={"lc": 6, "eg": 4, "rs": 0, "leaders": 2},
         status=EventStatus.PLANNING,
     )
 
