@@ -1,18 +1,26 @@
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, Numeric, String, Index
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
 from app.core.db import Base
+from app.models.availability import StructureSeason
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
     from .structure import Structure
+
+
+class StructureCostModifierKind(str, Enum):
+    SEASON = "season"
+    DATE_RANGE = "date_range"
+    WEEKEND = "weekend"
 
 
 class StructureCostModel(str, Enum):
@@ -49,6 +57,13 @@ class StructureCostOption(Base):
         "Structure",
         back_populates="cost_options",
     )
+    modifiers: Mapped[list["StructureCostModifier"]] = relationship(
+        "StructureCostModifier",
+        back_populates="cost_option",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="StructureCostModifier.id",
+    )
 
 
 Index(
@@ -57,7 +72,35 @@ Index(
     StructureCostOption.model,
 )
 
+
+class StructureCostModifier(Base):
+    __tablename__ = "structure_cost_modifier"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cost_option_id: Mapped[int] = mapped_column(
+        ForeignKey("structure_cost_option.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    kind: Mapped[StructureCostModifierKind] = mapped_column(
+        sqla_enum(StructureCostModifierKind, name="structure_cost_modifier_kind"),
+        nullable=False,
+    )
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    season: Mapped[StructureSeason | None] = mapped_column(
+        sqla_enum(StructureSeason, name="structure_season"), nullable=True
+    )
+    date_start: Mapped[date | None] = mapped_column(Date, nullable=True)
+    date_end: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    cost_option: Mapped[StructureCostOption] = relationship(
+        StructureCostOption,
+        back_populates="modifiers",
+    )
+
 __all__ = [
     "StructureCostModel",
     "StructureCostOption",
+    "StructureCostModifier",
+    "StructureCostModifierKind",
 ]

@@ -25,6 +25,8 @@ from app.models import (
     FirePolicy,
     Structure,
     StructureContact,
+    StructureCostModifier,
+    StructureCostModifierKind,
     StructureCostOption,
     StructureOpenPeriod,
     StructureOpenPeriodKind,
@@ -43,6 +45,9 @@ from app.schemas import (
     StructureAvailabilityCreate,
     StructureAvailabilityRead,
     StructureAvailabilityUpdate,
+    StructureCostModifierCreate,
+    StructureCostModifierRead,
+    StructureCostModifierUpdate,
     StructureCostOptionCreate,
     StructureCostOptionRead,
     StructureCostOptionUpdate,
@@ -168,6 +173,19 @@ def _serialize_availability(
     )
 
 
+def _serialize_cost_modifier(
+    modifier: StructureCostModifier,
+) -> StructureCostModifierRead:
+    return StructureCostModifierRead(
+        id=modifier.id,
+        kind=modifier.kind,
+        amount=modifier.amount,
+        season=modifier.season,
+        date_start=modifier.date_start,
+        date_end=modifier.date_end,
+    )
+
+
 def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRead:
     return StructureCostOptionRead(
         id=option.id,
@@ -178,7 +196,43 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
         city_tax_per_night=option.city_tax_per_night,
         utilities_flat=option.utilities_flat,
         age_rules=option.age_rules,
+        modifiers=[_serialize_cost_modifier(item) for item in option.modifiers]
+        if option.modifiers
+        else None,
     )
+
+
+def _sync_cost_modifiers(
+    option: StructureCostOption,
+    modifiers_payload: Sequence[StructureCostModifierUpdate | StructureCostModifierCreate],
+) -> None:
+    existing = {modifier.id: modifier for modifier in option.modifiers}
+    seen: set[int] = set()
+
+    for payload in modifiers_payload:
+        payload_id = getattr(payload, "id", None)
+        if payload_id is not None and payload_id in existing:
+            modifier = existing[payload_id]
+            modifier.kind = payload.kind
+            modifier.amount = payload.amount
+            modifier.season = payload.season
+            modifier.date_start = payload.date_start
+            modifier.date_end = payload.date_end
+            seen.add(payload_id)
+        else:
+            option.modifiers.append(
+                StructureCostModifier(
+                    kind=payload.kind,
+                    amount=payload.amount,
+                    season=payload.season,
+                    date_start=payload.date_start,
+                    date_end=payload.date_end,
+                )
+            )
+
+    for modifier_id, modifier in list(existing.items()):
+        if modifier_id not in seen:
+            option.modifiers.remove(modifier)
 
 
 def _coerce_units(units: Sequence[object] | None) -> list[str] | None:
@@ -364,7 +418,9 @@ def _get_structure_or_404(
         options.extend(
             [
                 selectinload(Structure.availabilities),
-                selectinload(Structure.cost_options),
+                selectinload(Structure.cost_options).selectinload(
+                    StructureCostOption.modifiers
+                ),
             ]
         )
     if with_contacts:
@@ -1261,6 +1317,8 @@ def create_structure_cost_option(
         utilities_flat=cost_option_in.utilities_flat,
         age_rules=cost_option_in.age_rules,
     )
+    if cost_option_in.modifiers:
+        _sync_cost_modifiers(cost_option, cost_option_in.modifiers)
     db.add(cost_option)
     db.flush()
 
@@ -1312,6 +1370,8 @@ def upsert_structure_cost_options(
             option.city_tax_per_night = payload.city_tax_per_night
             option.utilities_flat = payload.utilities_flat
             option.age_rules = payload.age_rules
+            if payload.modifiers is not None:
+                _sync_cost_modifiers(option, payload.modifiers)
             seen_ids.add(payload.id)
         else:
             option = StructureCostOption(
@@ -1324,6 +1384,8 @@ def upsert_structure_cost_options(
                 utilities_flat=payload.utilities_flat,
                 age_rules=payload.age_rules,
             )
+            if payload.modifiers:
+                _sync_cost_modifiers(option, payload.modifiers)
             db.add(option)
 
     for option_id, option in list(existing.items()):
