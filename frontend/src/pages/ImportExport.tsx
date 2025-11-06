@@ -521,9 +521,10 @@ export const ImportExportPage = () => {
             </div>
             {structureExportError && <p className="error">{structureExportError}</p>}
             {structureExportStatus && <p className="success">{structureExportStatus}</p>}
-            <div className="actions">
+            <div className="actions export-actions">
               <button
                 type="button"
+                className="button ghost"
                 onClick={() => handleStructureExport("csv")}
                 disabled={structureExportLoading}
               >
@@ -533,6 +534,7 @@ export const ImportExportPage = () => {
               </button>
               <button
                 type="button"
+                className="button ghost"
                 onClick={() => handleStructureExport("xlsx")}
                 disabled={structureExportLoading}
               >
@@ -542,6 +544,7 @@ export const ImportExportPage = () => {
               </button>
               <button
                 type="button"
+                className="button ghost"
                 onClick={() => handleStructureExport("json")}
                 disabled={structureExportLoading}
               >
@@ -576,9 +579,10 @@ export const ImportExportPage = () => {
             </div>
             {eventsExportError && <p className="error">{eventsExportError}</p>}
             {eventsExportStatus && <p className="success">{eventsExportStatus}</p>}
-            <div className="actions">
+            <div className="actions export-actions">
               <button
                 type="button"
+                className="button ghost"
                 onClick={() => handleEventsExport("csv")}
                 disabled={eventsExportLoading}
               >
@@ -588,6 +592,7 @@ export const ImportExportPage = () => {
               </button>
               <button
                 type="button"
+                className="button ghost"
                 onClick={() => handleEventsExport("xlsx")}
                 disabled={eventsExportLoading}
               >
@@ -597,6 +602,7 @@ export const ImportExportPage = () => {
               </button>
               <button
                 type="button"
+                className="button ghost"
                 onClick={() => handleEventsExport("json")}
                 disabled={eventsExportLoading}
               >
