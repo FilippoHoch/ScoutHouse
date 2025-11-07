@@ -37,6 +37,10 @@ from app.models import (
     StructureType,
     StructureUnit,
     User,
+    CellCoverageQuality,
+    RiverSwimmingOption,
+    WastewaterType,
+    FloodRiskLevel,
 )
 from app.schemas import (
     ContactCreate,
@@ -341,6 +345,7 @@ def _structure_payload(
     payload = structure_in.model_dump(exclude=exclude)
     payload["contact_emails"] = [str(email) for email in structure_in.contact_emails]
     payload["website_urls"] = [str(url) for url in structure_in.website_urls]
+    payload["map_resources_urls"] = [str(url) for url in structure_in.map_resources_urls]
     payload["water_sources"] = (
         [source.value for source in structure_in.water_sources]
         if structure_in.water_sources is not None
@@ -354,6 +359,14 @@ def _structure_payload(
         payload["contact_status"] = structure_in.contact_status.value
     if structure_in.operational_status is not None:
         payload["operational_status"] = structure_in.operational_status.value
+    if structure_in.wastewater_type is not None:
+        payload["wastewater_type"] = structure_in.wastewater_type.value
+    if structure_in.cell_coverage is not None:
+        payload["cell_coverage"] = structure_in.cell_coverage.value
+    if structure_in.river_swimming is not None:
+        payload["river_swimming"] = structure_in.river_swimming.value
+    if structure_in.flood_risk is not None:
+        payload["flood_risk"] = structure_in.flood_risk.value
     payload["bus_type_access"] = list(structure_in.bus_type_access or [])
     payload["allowed_audiences"] = list(structure_in.allowed_audiences or [])
     return payload
@@ -616,6 +629,13 @@ def search_structures(
     fire_policy: FirePolicy | None = Query(default=None, alias="fire"),
     min_land_area: float | None = Query(default=None, ge=0),
     hot_water: bool | None = Query(default=None),
+    cell_coverage: CellCoverageQuality | None = Query(default=None),
+    aed_on_site: bool | None = Query(default=None),
+    river_swimming: RiverSwimmingOption | None = Query(default=None),
+    wastewater_type: WastewaterType | None = Query(default=None),
+    min_power_capacity_kw: float | None = Query(default=None, ge=0),
+    min_parking_car_slots: int | None = Query(default=None, ge=0),
+    flood_risk: FloodRiskLevel | None = Query(default=None),
     open_in_season: StructureOpenPeriodSeason | None = Query(default=None),
     open_on_date: date | None = Query(default=None),
     page: int = Query(default=1, ge=1),
@@ -681,6 +701,27 @@ def search_structures(
 
     if hot_water is not None:
         filters.append(Structure.hot_water.is_(hot_water))
+
+    if cell_coverage is not None:
+        filters.append(Structure.cell_coverage == cell_coverage)
+
+    if aed_on_site is not None:
+        filters.append(Structure.aed_on_site.is_(aed_on_site))
+
+    if river_swimming is not None:
+        filters.append(Structure.river_swimming == river_swimming)
+
+    if wastewater_type is not None:
+        filters.append(Structure.wastewater_type == wastewater_type)
+
+    if min_power_capacity_kw is not None:
+        filters.append(Structure.power_capacity_kw >= min_power_capacity_kw)
+
+    if min_parking_car_slots is not None:
+        filters.append(Structure.parking_car_slots >= min_parking_car_slots)
+
+    if flood_risk is not None:
+        filters.append(Structure.flood_risk == flood_risk)
 
     if open_in_season is not None:
         filters.append(
@@ -831,6 +872,15 @@ def search_structures(
             access_by_public_transport=structure.access_by_public_transport,
             has_kitchen=structure.has_kitchen,
             hot_water=structure.hot_water,
+            cell_coverage=structure.cell_coverage,
+            aed_on_site=structure.aed_on_site,
+            river_swimming=structure.river_swimming,
+            wastewater_type=structure.wastewater_type,
+            flood_risk=structure.flood_risk,
+            power_capacity_kw=float(structure.power_capacity_kw)
+            if structure.power_capacity_kw is not None
+            else None,
+            parking_car_slots=structure.parking_car_slots,
         )
         for structure, distance, band, estimated_cost, seasons, units in paginated
     ]

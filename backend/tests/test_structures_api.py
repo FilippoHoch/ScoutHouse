@@ -211,6 +211,110 @@ def test_field_validation_errors() -> None:
     assert response.status_code == 422
 
 
+def test_create_structure_requires_power_capacity_with_generator() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Campo Energia",
+        "slug": "campo-energia",
+        "province": "MI",
+        "type": "land",
+        "generator_available": True,
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 422
+
+
+def test_create_structure_requires_pit_latrine_for_dry_toilet() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Campo Bosco",
+        "slug": "campo-bosco-dry",
+        "province": "MI",
+        "type": "land",
+        "dry_toilet": True,
+        "pit_latrine_allowed": False,
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 422
+
+
+def test_create_structure_requires_wildlife_notes_for_river_swimming() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Campo Fiume",
+        "slug": "campo-fiume",
+        "province": "MI",
+        "type": "land",
+        "river_swimming": "si",
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 422
+
+    valid_payload = {
+        **payload,
+        "wildlife_notes": "Sorvegliare il tratto di fiume",
+    }
+
+    ok = client.post("/api/v1/structures/", json=valid_payload)
+    assert ok.status_code == 201, ok.text
+
+
+def test_create_structure_requires_invoice_channel_for_italy() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Casa Fatture",
+        "slug": "casa-fatture",
+        "province": "MI",
+        "type": "house",
+        "invoice_available": True,
+        "country": "IT",
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 422
+
+    ok_payload = {
+        **payload,
+        "pec_email": "contabilita@example.org",
+    }
+
+    ok_response = client.post("/api/v1/structures/", json=ok_payload)
+    assert ok_response.status_code == 201, ok_response.text
+
+
+def test_create_structure_validates_location_codes() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Casa Codici",
+        "slug": "casa-codici",
+        "province": "MI",
+        "type": "house",
+        "plus_code": "9G8F+5V",
+        "what3words": "scout.campo.rifugio",
+        "emergency_coordinates": {"lat": 45.0, "lon": 9.0},
+    }
+
+    ok_response = client.post("/api/v1/structures/", json=payload)
+    assert ok_response.status_code == 201, ok_response.text
+
+    invalid_payload = {
+        **payload,
+        "slug": "casa-codici-invalid",
+        "plus_code": "INVALID",
+    }
+
+    invalid_response = client.post("/api/v1/structures/", json=invalid_payload)
+    assert invalid_response.status_code == 422
+
+
 def test_get_structure_by_slug_not_found() -> None:
     client = get_client()
     response = client.get("/api/v1/structures/by-slug/unknown")

@@ -55,7 +55,14 @@ const sampleResponse: StructureSearchResponse = {
       access_by_public_transport: true,
       has_kitchen: true,
       hot_water: true,
-      pit_latrine_allowed: false
+      pit_latrine_allowed: false,
+      cell_coverage: "good",
+      aed_on_site: true,
+      river_swimming: "no",
+      wastewater_type: "mains",
+      flood_risk: "low",
+      power_capacity_kw: 12,
+      parking_car_slots: 20
     },
     {
       id: 2,
@@ -78,7 +85,14 @@ const sampleResponse: StructureSearchResponse = {
       access_by_public_transport: false,
       has_kitchen: false,
       hot_water: false,
-      pit_latrine_allowed: true
+      pit_latrine_allowed: true,
+      cell_coverage: "limited",
+      aed_on_site: false,
+      river_swimming: "unknown",
+      wastewater_type: "none",
+      flood_risk: "medium",
+      power_capacity_kw: null,
+      parking_car_slots: null
     }
   ],
   page: 1,
