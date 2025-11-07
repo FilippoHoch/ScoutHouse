@@ -181,6 +181,37 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 
 * Dashboard e alert attivi, report FinOps condiviso e simulazione disaster recovery eseguita con esito positivo.
 
+### M6.1 · Governance dati catalogo strutture
+
+**Obiettivi principali**
+
+* Aumentare l'affidabilità del registro strutture introducendo nuove dimensioni informative e controlli di coerenza.
+
+#### Task essenziali
+
+* **Schema & migrazioni**
+  * Estendere il modello `Structure` con i blocchi governance, localizzazione dettagliata, accessibilità, target/regole d’uso, vincoli ambientali e media (fonte dato, stato operatività, destinatari ammessi, policy animali, blackout dates, amenities stagionali, ecc.).
+  * Aggiornare `StructureCostOption` con rinomina `booking_deposit`, nuovo `damage_deposit`, `price_per_resource` e campi utilities/pagamenti.
+  * Adeguare `structure_open_periods` con flag `blackout` e migrazioni su `indoor_rooms` JSON, `bus_type_access`, `field_slope`, `pitches_tende`, `water_at_field`.
+* **Validazioni & regole business**
+  * Applicare vincoli su `slug` univoco, coppia `(name, comune)` con warning e controlli `capacity_min ≤ capacity_max`, `pitches_tende ≥ 0`, `parking_car_slots ≥ 0`.
+  * Introdurre regole condizionali per `type` (case senza tende, terreni senza indoor) e obblighi per `fire_policy='with_permit'`, `in_area_protetta`, foto outdoor ≥ 3.
+  * Generare warning se `utilities_flat` coesiste con `utilities_included` o se mancano `fire_rules`/`ente_area_protetta` quando richiesti.
+* **API & import/export**
+  * Aggiornare serializer, serializer admin e filtri per esporre i nuovi campi, compresi `contact_status`, `booking_url`, `whatsapp` e `bus_type_access`.
+  * Estendere pipeline import/export (CSV/JSON) con mapping e validazioni dei nuovi campi, inclusa gestione `price_per_resource.modifiers`.
+  * Aggiornare interfaccia di amministrazione e viste catalogo per editing inline dei nuovi blocchi (accessibilità, vincoli ambientali, logistica avanzata).
+
+#### Metriche di successo
+
+* ≥ 95% delle strutture hanno `fonte_dato` e `data_ultima_verifica` valorizzati dopo il backfill iniziale.
+* Riduzione del 50% delle incongruenze logistiche segnalate (tende senza acqua/pendenza non indicata) nelle revisioni mensili.
+* 100% degli import automatici applicano i nuovi controlli di validazione senza regressioni sulle performance (< 2s/record batch da 200 righe).
+
+**DoD**
+
+* Migrazioni applicate in staging, UI/admin aggiornati con i nuovi campi, import/export documentati e validazioni attive con report QA firmato.
+
 ### M7 · Esperienza utente e adozione guidata
 
 **Obiettivi principali**
