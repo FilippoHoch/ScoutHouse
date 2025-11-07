@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from migrations.utils.postgres import create_enum_if_not_exists
 
@@ -26,6 +27,9 @@ STRUCTURE_SEASON_VALUES = ("winter", "spring", "summer", "autumn")
 
 def upgrade() -> None:
     create_enum_if_not_exists("structure_season", STRUCTURE_SEASON_VALUES)
+    structure_season = postgresql.ENUM(
+        *STRUCTURE_SEASON_VALUES, name="structure_season", create_type=False
+    )
 
     op.create_table(
         "structure_cost_modifier",
@@ -42,15 +46,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("amount", sa.Numeric(10, 2), nullable=False),
-        sa.Column(
-            "season",
-            sa.Enum(
-                *STRUCTURE_SEASON_VALUES,
-                name="structure_season",
-                create_type=False,
-            ),
-            nullable=True,
-        ),
+        sa.Column("season", structure_season, nullable=True),
         sa.Column("date_start", sa.Date(), nullable=True),
         sa.Column("date_end", sa.Date(), nullable=True),
         sa.ForeignKeyConstraint(
