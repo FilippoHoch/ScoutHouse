@@ -44,18 +44,23 @@ cp frontend/.env.example frontend/.env
 
 The root `.env` is used by the backup service defined in `docker-compose.yml`
 and currently only contains the credentials needed to connect to the local
-PostgreSQL instance. The backend `.env` exposes `DATABASE_URL`, `APP_ENV`, and
-the optional
+PostgreSQL instance. The backend `.env` exposes `DATABASE_URL`, `APP_ENV`, and the optional
 `DEFAULT_BASE_LAT`/`DEFAULT_BASE_LON` coordinates used for distance
 calculations. Authentication adds `JWT_SECRET`, `ACCESS_TTL_MIN`,
 `REFRESH_TTL_DAYS`, `ALLOW_REGISTRATION` (disabled by default),
 `CORS_ALLOWED_ORIGINS`, and `SECURE_COOKIES`. Imposta inoltre il flag
 `ALLOW_NON_ADMIN_STRUCTURE_EDIT` (default `false`) per controllare se gli utenti
 non amministratori possono creare o modificare strutture. The frontend `.env`
-exposes the `VITE_API_URL` used to talk to the API, `VITE_BASE_COORDS` for the
-default map reference point, and an optional `VITE_GOOGLE_MAPS_API_KEY` to
-unlock the fully interactive Google Maps picker (without it a read-only
-embedded preview is shown).
+exposes the `VITE_API_URL` used to talk to the API and `VITE_BASE_COORDS` for
+the default map reference point. The map picker relies on the Leaflet component
+in
+[`frontend/src/shared/ui/GoogleMapEmbed.tsx`](frontend/src/shared/ui/GoogleMapEmbed.tsx),
+which loads the public Google Maps raster tiles without requiring any
+credentials. You can still define `VITE_GOOGLE_MAPS_API_KEY` for future
+integrations, but it is **not** needed to run the embedded map. Keep in mind
+that the public tile endpoints may enforce rate limiting and only expose the
+standard map layer—advanced features such as Places autocomplete or Street View
+remain unavailable without the official Google Maps JavaScript API.
 
 ### Local development (without Docker)
 
