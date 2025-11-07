@@ -253,7 +253,7 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 
 #### Metriche di successo
 
-* 0 errori runtime su validazioni condizionali e nessun regressione sui payload esistenti (copertura test ≥ 90% sulle nuove branch).
+* 0 errori runtime su validazioni condizionali e nessuna regressione sui payload esistenti (copertura test ≥ 90% sulle nuove branch).
 * ≥ 80% strutture con dati energia/sicurezza compilati entro il primo ciclo di aggiornamento.
 * Filtri catalogo aggiornati utilizzati in ≥ 50% delle sessioni admin nelle 4 settimane successive al rilascio.
 
