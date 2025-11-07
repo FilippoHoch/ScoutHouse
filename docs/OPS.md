@@ -87,7 +87,7 @@ Il backend dispone di tre provider:
 
 | Driver    | Dev/Test (default)         | Produzione                         | Note |
 |-----------|----------------------------|------------------------------------|------|
-| console   | ✅ (log JSON con mascheramento) | Utilizzabile per ambienti sandbox    | Nessun invio reale, contenuto sanificato nei log. |
+| console   | ✅ (log JSON con mascheramento)                     | Utilizzabile per ambienti sandbox    | Nessun invio reale, contenuto sanificato nei log. |
 | smtp      | ↩︎ forzato su console se `DEV_MAIL_BLOCK_EXTERNAL=true` | Consegna via server SMTP configurato | Richiede `SMTP_HOST` e (se necessarie) credenziali. |
 | sendgrid  | ↩︎ forzato su console se `DEV_MAIL_BLOCK_EXTERNAL=true` | HTTP `POST` su API SendGrid          | Richiede `SENDGRID_API_KEY`. |
 
