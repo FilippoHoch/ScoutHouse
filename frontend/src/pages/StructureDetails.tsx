@@ -779,6 +779,58 @@ export const StructureDetailsPage = () => {
 
       <div className="structure-details__layout">
         <div className="structure-details__main">
+          <div className="structure-details-card structure-details-card--location">
+            <h3 className="structure-details-card__title">
+              {t("structures.details.location.title")}
+            </h3>
+            <div
+              className="structure-details__map"
+              data-has-coordinates={hasCoordinates ? "true" : "false"}
+            >
+              {hasCoordinates ? (
+                <>
+                  {googleMapsEmbedUrl && (
+                    <iframe
+                      className="structure-details__map-embed"
+                      src={googleMapsEmbedUrl}
+                      title={googleMapsEmbedTitle}
+                      aria-label={googleMapsEmbedAriaLabel}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  )}
+                  <p className="structure-details__map-coordinates">
+                    {t("structures.details.location.coordinates", {
+                      lat: structure.latitude?.toFixed(4),
+                      lon: structure.longitude?.toFixed(4)
+                    })}
+                  </p>
+                  {altitudeLabel && (
+                    <p className="structure-details__map-coordinates">{altitudeLabel}</p>
+                  )}
+                  <p className="structure-details__map-note">
+                    {t("structures.details.location.placeholder")}
+                  </p>
+                </>
+              ) : (
+                <p className="structure-details__map-note">
+                  {t("structures.details.location.unavailable")}
+                </p>
+              )}
+            </div>
+            {googleMapsUrl && (
+              <a
+                className="structure-details__map-link"
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("structures.cards.openMap")}
+              </a>
+            )}
+          </div>
+
           <div className="structure-details-card">
             <div className="structure-details-card__section">
               <h3 className="structure-details-card__title">
@@ -1312,60 +1364,6 @@ export const StructureDetailsPage = () => {
             )}
           </div>
         </div>
-
-        <aside className="structure-details__sidebar">
-          <div className="structure-details-card structure-details-card--sidebar">
-            <h3 className="structure-details-card__title">
-              {t("structures.details.location.title")}
-            </h3>
-            <div
-              className="structure-details__map"
-              data-has-coordinates={hasCoordinates ? "true" : "false"}
-            >
-              {hasCoordinates ? (
-                <>
-                  {googleMapsEmbedUrl && (
-                    <iframe
-                      className="structure-details__map-embed"
-                      src={googleMapsEmbedUrl}
-                      title={googleMapsEmbedTitle}
-                      aria-label={googleMapsEmbedAriaLabel}
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                    />
-                  )}
-                  <p className="structure-details__map-coordinates">
-                    {t("structures.details.location.coordinates", {
-                      lat: structure.latitude?.toFixed(4),
-                      lon: structure.longitude?.toFixed(4)
-                    })}
-                  </p>
-                  {altitudeLabel && (
-                    <p className="structure-details__map-coordinates">{altitudeLabel}</p>
-                  )}
-                  <p className="structure-details__map-note">
-                    {t("structures.details.location.placeholder")}
-                  </p>
-                </>
-              ) : (
-                <p className="structure-details__map-note">
-                  {t("structures.details.location.unavailable")}
-                </p>
-              )}
-            </div>
-            {googleMapsUrl && (
-              <a
-                className="structure-details__map-link"
-                href={googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t("structures.cards.openMap")}
-              </a>
-            )}
-          </div>
-        </aside>
       </div>
 
       <p className="structure-details__back-link">

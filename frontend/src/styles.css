@@ -1958,19 +1958,7 @@ table tbody tr:hover {
   gap: var(--space-xl);
 }
 
-@media (min-width: 1024px) {
-  .structure-details__layout {
-    grid-template-columns: minmax(0, 2.35fr) minmax(280px, 1fr);
-    align-items: start;
-  }
-}
-
 .structure-details__main {
-  display: grid;
-  gap: var(--space-xl);
-}
-
-.structure-details__sidebar {
   display: grid;
   gap: var(--space-xl);
 }
@@ -1989,10 +1977,8 @@ table tbody tr:hover {
   gap: var(--space-lg);
 }
 
-.structure-details-card--sidebar {
+.structure-details-card--location {
   gap: var(--space-lg);
-  position: sticky;
-  top: calc(var(--space-xl) * 1.5);
 }
 
 .structure-details-card__section {
