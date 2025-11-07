@@ -412,96 +412,6 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 
 * Motore raccomandazioni attivo in beta controllata, automazioni comunicazioni configurabili per evento e knowledge base accessibile via app con ricerca semantica funzionante.
 
-### M10 · Partnership territoriali e community
-
-**Obiettivi principali**
-
-* Coinvolgere strutture, regioni scout e fornitori di servizi complementari in un ecosistema collaborativo e sostenibile.
-
-#### Task essenziali
-
-* **Programma partner**
-  * Portale dedicato per gestori strutture con dashboard performance, richieste in corso e strumenti per aggiornare disponibilità.
-  * Marketplace fornitori verificati con schede servizio, recensioni e workflow di richiesta preventivo integrato.
-  * Contratti quadro e policy SLA con onboarding digitale (firma elettronica e KYC di base).
-* **Community & formazione**
-  * Calendario webinar e incontri territoriali sincronizzato con CRM contatti, reminder automatici e registrazione presenze.
-  * Forum/area community moderata con thread tematici (logistica, finanza, sicurezza) e badge reputazione.
-  * Toolkit comunicazione per i livelli regionali (presentazioni, materiali marketing) con tracciamento download.
-* **Reporting condiviso**
-  * Report impatto territoriale (numero eventi, partecipanti, occupancy) esportabile per regione/AGESCI.
-  * Indicatori di sostenibilità (impronta CO₂ stimata, usi energia) e suggerimenti best practice.
-
-#### Metriche di successo
-
-* ≥ 50 strutture partner attive sul portale con aggiornamenti mensili.
-* ≥ 3 fornitori certificati per categoria chiave (catering, trasporti, materiali tecnici).
-* Engagement community: ≥ 200 utenti attivi/mese e retention 60% a 3 mesi.
-
-**DoD**
-
-* Portale partner in produzione con prime strutture onboarded, marketplace live in beta e programma community lanciato con calendario eventi pubblicato.
-
-### M11 · Scalabilità enterprise e audit avanzato
-
-**Obiettivi principali**
-
-* Rendere la piattaforma pronta per adozione da parte di grandi organizzazioni, con garanzie su audit, compliance e gestione multi-tenancy.
-
-#### Task essenziali
-
-* **Multi-tenancy & controlli**
-  * Isolamento logico dei dati con tenant ID e policy row-level, supporto a sottodomini dedicati e custom branding.
-  * Provisioning self-service di nuovi tenant con workflow approvazione e seed dati iniziale.
-  * Limiti di rate e quota configurabili per tenant, con monitoraggio e alert.
-* **Audit & compliance avanzata**
-  * Registro audit immutabile con firma crittografica e retention configurabile.
-  * Connettore esportazione audit verso SIEM/archivi esterni e API di consultazione granulari.
-  * Allineamento a standard ISO 27001/27701: gap analysis, piano di remediation e controlli obbligatori documentati.
-* **Operazioni & supporto**
-  * Runbook on-call multi-tenant, tooling per impersonation sicura a fini supporto e mascheramento dati sensibili.
-  * Funzionalità di migrazione massiva (tenant merge/split) e test rollback.
-
-#### Metriche di successo
-
-* Supporto fino a 20 tenant con isolamento certificato da penetration test di terza parte.
-* Tempo medio provisioning nuovo tenant < 30 minuti end-to-end.
-* Copertura controllo ISO prioritaria ≥ 80% e audit esterno superato senza non conformità maggiori.
-
-**DoD**
-
-* Multi-tenancy documentata, audit trail avanzato operativo e report compliance ISO consegnato con azioni di follow-up pianificate.
-
-### M12 · Espansione internazionale e compliance multi-paese
-
-**Obiettivi principali**
-
-* Adattare il prodotto per lanciare in nuovi paesi europei, garantendo localizzazione, fiscalità e compliance locale.
-
-#### Task essenziali
-
-* **Localizzazione & contenuti**
-  * Estensione i18n a ≥ 5 lingue (IT, EN, FR, ES, DE) con gestione locale per unità di misura, valuta, formati data.
-  * Revisione UX per supportare multi-currency, TVA/IVA variabile e documentazione legale per paese.
-  * Libreria clausole contrattuali per normative locali (GDPR vs equivalenti, privacy minors) e workflow revisione legale.
-* **Pagamenti & fiscalità**
-  * Integrazione PSP europeo (es. Stripe) per incassi multivaluta, gestione split payment verso strutture partner.
-  * Generazione automatica documenti fiscali (fatture, ricevute) con codifica fiscale per paese e archiviazione conforme.
-  * Modulo analisi rischio frodi con controlli KYC/AML base per nuovi partner.
-* **Supporto & operations**
-  * Playbook supporto multilingua con SLA e escalation differenziate.
-  * Infrastruttura distribuita (regioni EU multiple) con controllo sovranità dati e routing geolocalizzato.
-
-#### Metriche di successo
-
-* Lancio pilota in 2 paesi con almeno 5 strutture attive ciascuno entro 6 mesi.
-* Gestione pagamenti multivaluta con errore transazioni < 0.5%.
-* Supporto multilingua con CSAT medio ≥ 4.2/5.
-
-**DoD**
-
-* Localizzazione completa, processi fiscali conformi certificati da consulente esterno e primi clienti internazionali attivi in produzione.
-
 ## 7) Piano temporale suggerito (sprint 2 settimane)
 
 * Sprint 1–6: M0–M4 ✅ (completati)
@@ -512,9 +422,6 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 * Sprint 19–21: M7 (adozione & UX)
 * Sprint 22–25: M8 (integrazioni & monetizzazione)
 * Sprint 26–29: M9 (automazioni & knowledge)
-* Sprint 30–33: M10 (partnership & community)
-* Sprint 34–37: M11 (scalabilità enterprise)
-* Sprint 38–41: M12 (espansione internazionale)
 
 ## 8) API principali (v1, estratto)
 
