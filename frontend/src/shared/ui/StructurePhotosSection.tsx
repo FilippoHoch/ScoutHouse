@@ -28,12 +28,14 @@ interface StructurePhotosSectionProps {
   structureId: number | null;
   canUpload: boolean;
   canDelete: boolean;
+  showManagementControls?: boolean;
 }
 
 export const StructurePhotosSection = ({
   structureId,
   canUpload,
-  canDelete
+  canDelete,
+  showManagementControls = true
 }: StructurePhotosSectionProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -334,8 +336,10 @@ export const StructurePhotosSection = ({
   };
 
   return (
-    <div className="structure-photos">
-      {canUpload && (
+    <div
+      className={`structure-photos${showManagementControls ? "" : " structure-photos--compact"}`}
+    >
+      {showManagementControls && canUpload && (
         <div
           className={`structure-photos__dropzone ${dropActive ? "is-active" : ""}`}
           onDragOver={onDragOver}
@@ -360,24 +364,25 @@ export const StructurePhotosSection = ({
             disabled={uploadMutation.isPending || structureId === null}
           />
         </div>
-  )}
+      )}
 
-  {error && <p className="error">{error}</p>}
+      {showManagementControls && error && <p className="error">{error}</p>}
 
-  <div className="structure-photos__actions">
-    <button
-      type="button"
-      onClick={handleDownloadAll}
-      disabled={downloadAllPending || photos.length === 0 || structureId === null}
-    >
-      {downloadAllPending
-        ? t("structures.photos.actions.downloadAllProgress")
-        : t("structures.photos.actions.downloadAll")}
-    </button>
-  </div>
-
-  <div className="structure-photos__content">{renderBody()}</div>
-</div>
-);
+      {showManagementControls && (
+        <div className="structure-photos__actions">
+          <button
+            type="button"
+            onClick={handleDownloadAll}
+            disabled={downloadAllPending || photos.length === 0 || structureId === null}
+          >
+            {downloadAllPending
+              ? t("structures.photos.actions.downloadAllProgress")
+              : t("structures.photos.actions.downloadAll")}
+          </button>
+        </div>
+      )}
+      <div className="structure-photos__content">{renderBody()}</div>
+    </div>
+  );
 };
 

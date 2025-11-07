@@ -2364,6 +2364,22 @@ table tbody tr:hover {
   gap: var(--space-lg);
 }
 
+.structure-photos--compact {
+  gap: var(--space-lg);
+}
+
+.structure-photos--compact .structure-photos__content {
+  min-height: 0;
+}
+
+.structure-photos--compact .structure-photos__carousel {
+  gap: var(--space-lg);
+}
+
+.structure-photos--compact .structure-photos__preview-item img {
+  height: clamp(300px, 50vh, 460px);
+}
+
 .structure-photos__dropzone {
   border: 2px dashed #cbd5f5;
   border-radius: var(--radius-md);
