@@ -1,122 +1,117 @@
 # Data model – ScoutHouse
 
+Questo documento descrive lo stato attuale del modello dati utilizzato dal backend ScoutHouse. I riferimenti derivano direttamente dagli ORM SQLAlchemy definiti sotto `backend/app/models` e riflettono lo schema post-migrazione attualmente in esercizio.
+
 ## `structures`
 
-The `structures` table stores the core registry for huts, bases and campsites. The catalog now captures richer attributes across governance, location, accessibility, logistics and pricing:
+La tabella `structures` rappresenta l'anagrafica principale di case, basi e terreni. I campi più rilevanti sono suddivisi per area tematica.
 
-### Governance & provenance
+### Identità e localizzazione
 
-- `fonte_dato` (text/URL), `data_ultima_verifica` (date) and `verificato_da` (text) track who provided the information and when it was last checked.
-- `stato_operativita` enum (`attiva|chiusa|in_attesa`).
+- `id` (PK incrementale).
+- `name` (varchar 255) e `slug` (varchar 255, univoco) per identificare la struttura; esiste un indice su `lower(name)` per individuare duplicati omonimi.
+- `type` enum `house | land | mixed` (`StructureType`).
+- Coordinate e indirizzo: `province`, `address`, `latitude`, `longitude`, `altitude`.
 
-### Localizzazione
+### Capacità indoor
 
-- `comune`, `cap`, `regione`, `frazione_localita` complement `address`, `province`, `latitude`, `longitude`.
+- `indoor_beds`, `indoor_bathrooms`, `indoor_showers`, `indoor_activity_rooms` (tutti interi opzionali).
+- `has_kitchen` e `hot_water` (boolean opzionali) per la dotazione di cucina e acqua calda.
 
-### Accessibilità
+### Area esterna e servizi
 
-- `accessible` enum (`no|parziale|si`) plus `accessibility_details` (free-form notes covering bagni, rampe, docce, ecc.).
+- `land_area_m2` (numeric 10,2) e `shelter_on_field` (boolean) per superfici e ripari in campo.
+- `water_sources` lista JSON di valori `none | fountain | tap | river` (`WaterSource`).
+- `electricity_available` (boolean) e `fire_policy` enum `allowed | with_permit | forbidden` (`FirePolicy`).
+- `has_field_poles` e `pit_latrine_allowed` (boolean) per pali e latrine.
 
-### Target & regole d'uso
+### Accessibilità e logistica
 
-- `destinatari_ammessi` (set membership across `AGESCI|CNGEI|MASCI|oratori|famiglie`).
-- `autogestione` enum (`si|no|parziale`).
-- `policy_animali` and `quiet_hours` (e.g. "22:00–8:00").
+- `access_by_car`, `access_by_coach`, `access_by_public_transport`, `coach_turning_area` (boolean) per i mezzi ammessi.
+- `nearest_bus_stop` (stringa 255) per la fermata più vicina.
+- `weekend_only` (boolean) per le strutture prenotabili solo nel weekend.
+- `notes_logistics` e `notes` (text) raccolgono note operative e generiche.
 
-### Vincoli ambientali
+### Contatti e metadati
 
-- `in_area_protetta` (bool), `ente_area_protetta`, `regole_area_protetta`.
+- `contact_emails` e `website_urls` (liste JSON di stringhe) per email/URL pubblici.
+- `created_at` (timestamp con timezone, default `now()`).
 
-### Spazi interni
+Gli indici secondari includono `ix_structures_province`, `ix_structures_type`, `ix_structures_fire_policy`, `ix_structures_access_by_coach` e `ix_structures_access_by_public_transport` per ottimizzare i filtri API.
 
-- `indoor_beds`, `indoor_bathrooms`, `indoor_showers` remain, while `indoor_activity_rooms` becomes `indoor_rooms` (JSON array of `{tipo, capienza}`) with optional aggregate `indoor_activity_rooms_capacity_total` for backwards compatibility.
-- `cappella` (bool) with `cappella_seats` (int).
-- `kitchen_spec` (array of appliances/features, e.g. frigo, forno, lavastoviglie).
-- `heating_type` (text).
+## Relazioni principali
 
-### Spazi esterni
+Una struttura carica diverse relazioni con `lazy="selectin"` quando il client richiede `include=details`:
 
-- `land_area_m2` stays but is complemented by `pitches_tende` (int), `field_slope` enum (`piano|leggera|forte`), `tap_on_field` and `water_at_field` (bool to distinguish water availability in the tent area), plus `fire_policy` and detailed `fire_rules` (required when `fire_policy = 'with_permit'`).
-- `water_sources` retains the array of sources and now also carries the `water_at_field` flag to ease API consumption.
+- `availabilities`: stagionalità/capienza (`StructureSeasonAvailability`).
+- `cost_options`: modelli di costo (`StructureCostOption`).
+- `contacts`: referenti (`StructureContact`).
+- `open_periods`: periodi di apertura (`StructureOpenPeriod`).
+- `photos`: galleria immagini (`StructurePhoto`).
 
-### Logistica avanzata
+## `structure_season_availability`
 
-- Access: `access_by_car`, `access_by_coach` (bool) augmented by `bus_type_access` enum (`no|minibus|granturismo`), `coach_turning_area` (bool) and optional `turning_area_length_m`.
-- Heavy vehicles: `access_by_heavy_vehicles` (bool).
-- Distances: `distance_km_bus_stop`, `distance_km_hospital`, `distance_km_supermarket`.
-- Parking: `parking_car_slots` (int) and `bus_parking` (bool).
+Rappresenta la capacità per stagione scout (`StructureSeasonAvailability`).
 
-### Sicurezza
+- `structure_id` FK verso `structures` con `ON DELETE CASCADE`.
+- `season` enum `winter | spring | summer | autumn`.
+- `units` lista JSON di sigle reparto (`LC`, `EG`, `RS`, `ALL`).
+- `capacity_min` e `capacity_max` (interi opzionali).
 
-- `certificazioni` (JSON blob detailing agibilità, antincendio/CPI, capienza_autorizzata, ecc.).
-- `emergency_plan_url` (URL).
-
-### Media
-
-- `photos` (array of URLs) with validation requiring at least three images whenever the structure is not a pure `house` or exposes outdoor fields (see validations below).
-
-### Disponibilità & stagionalità
-
-- `blackout_dates` (array of `{date_start, date_end, note}`).
-- `amenities_by_period` (JSON overrides for amenities, e.g. `{"winter": {"hot_water": false}}`).
-
-### Costi & pagamenti
-
-- `utilities_flat` (legacy) is complemented by `utilities_included` (bool) to explicitly flag whether utilities are covered in the base price, with warnings emitted if both are set and conflicting.
-- `cleaning_fee`, `heating_surcharge`, `waste_disposal_fee` (numeric), `min_nights` (int).
-- Deposits: `booking_deposit` (rename of `deposit`) and `damage_deposit` (numeric).
-- `payment_methods` (set from `bonifico|contanti|carta|altro`).
-- `price_per_resource` (array of `{risorsa: 'house'|'field'|'altro', prezzo, include_consumi}`) to distinguish pricing for casa vs prato and support modifiers.
-
-### Contatti
-
-- `booking_url` (URL), `whatsapp` (string), `contact_status` pipeline enum (`da_chiamare|mail_inviata|da_richiamare|non_risponde|non_disponibile|opzione|confermata`).
-
-`slug` remains unique and stable and is used to reconcile imports as well as public URLs. A soft uniqueness check applies to the `(name, comune)` pair to warn on duplicates. Booleans default to `false`. Numeric fields accept `NULL` when information is unavailable.
+L'indice `ix_structure_season_availability_structure_id_season` previene duplicati stagionali.
 
 ## `structure_open_periods`
 
-Open periods are stored in a dedicated table linked via `structure_id` with `ON DELETE CASCADE`. Each row has:
+Memorizza finestre di apertura e blackout.
 
-- `kind`: `season` or `range`.
-- `season`: nullable enum (`winter`, `spring`, `summer`, `autumn`). Mandatory when `kind = 'season'`.
-- `date_start`, `date_end`: nullable ISO dates. Mandatory (and inclusive) when `kind = 'range'`.
-- `notes`: optional free text for exceptions or clarifications.
-- `blackout` (bool, default `false`) to mark periods within a season when the structure is unavailable. These can coexist with standard availability ranges to express maintenance windows.
+- `structure_id` FK con `ON DELETE CASCADE`.
+- `kind` enum `season | range` (`StructureOpenPeriodKind`).
+- `season` enum `spring | summer | autumn | winter`, richiesto quando `kind = 'season'`.
+- `date_start` e `date_end` (date, richieste quando `kind = 'range'`).
+- `notes` campo testuale per eccezioni.
+- `units` lista JSON opzionale per limitare il periodo a specifiche unità scout.
 
-A uniqueness constraint prevents duplicates by combining `structure_id`, `kind`, `season`, `date_start` and `date_end`. This allows the importer to skip rows already present in the catalog.
+Sono presenti indici per combinazioni `(structure_id, kind)`, `(structure_id, season)` e `(structure_id, date_start, date_end)` per evitare duplicati e accelerare le query.
 
-`blackout_dates` stored directly on `structures` surface ad-hoc closures discovered after imports, while `structure_open_periods.blackout=true` keeps repeat seasonal shutdowns co-located with the canonical availability calendar.
+## `structure_cost_option` e `structure_cost_modifier`
 
-When serializing, the API continues returning `open_periods` sorted by season/date and now includes blackout metadata for UI timelines.
+Il modello `StructureCostOption` descrive la tariffazione base:
 
-## Relationships and eager loading
+- `structure_id` FK con `ON DELETE CASCADE`.
+- `model` enum `per_person_day | per_person_night | forfait`.
+- `amount` (numeric 10,2) e `currency` (ISO 4217, default `EUR`).
+- Costi accessori opzionali: `deposit`, `city_tax_per_night`, `utilities_flat`, `min_total`, `max_total` (tutti numeric 10,2).
+- `age_rules` (JSON) per eccezioni di prezzo per fascia d'età.
 
-When fetching a structure with `include=details`, the API returns:
+Le opzioni possono avere modificatori (`StructureCostModifier`) collegati tramite `cost_option_id`:
 
-- `open_periods`: serialized from the table above, already sorted by season/date.
-- `availabilities`: high-level seasonal capacity blocks used by event planners.
-- `cost_options`: pricing models with currencies and deposit/tax metadata. The nested payload aligns with the richer `StructureCostOption` schema described below.
+- `kind` enum `season | date_range | weekend`.
+- `amount` (numeric 10,2) e, quando applicabile, `season` (`StructureSeason`) oppure `date_start`/`date_end`.
 
-Consumers should rely on these expanded payloads to populate the new UI sections (period badges, filters, and detail lists) rather than querying tables directly.
+## Contatti delle strutture
 
-## `structure_cost_options`
+La tabella pivot `structure_contacts` collega `structures` e `contacts`:
 
-The `structure_cost_options` table gains parallel updates:
+- `role` (text), `preferred_channel` enum `email | phone | other`, `is_primary` (boolean).
+- Constraint univoco (`structure_id`, `contact_id`) e indice che garantisce un solo contatto primario per struttura (`uix_structure_contacts_primary`).
+- Timestamp `created_at`/`updated_at` e `gdpr_consent_at` opzionale.
 
-- Rename column `deposit` → `booking_deposit` and introduce `damage_deposit`.
-- Add `utilities_included` (bool), `min_nights` (int) and optional `payment_methods` set.
-- Allow `price_per_resource` JSON array with the same `{risorsa, prezzo, include_consumi}` shape accepted at the structure level, including nested `modifiers` for seasonal/target adjustments.
+I record in `contacts` custodiscono `first_name`, `last_name`, `email`, `phone`, `notes` e timestamp di creazione/aggiornamento.
 
-Validation rules ensure that `utilities_flat` on a cost option triggers warnings when `utilities_included = true` to avoid double counting and that `price_per_resource` modifiers inherit the surrounding currency and VAT defaults.
+## Media
 
-## Validazioni trasversali
+Le immagini sono gestite dalla tabella `structure_photos`:
 
-- `slug` unique and immutable; `(name, comune)` soft uniqueness with warning-level enforcement.
-- Capacity coherence: `capacity_min ≤ capacity_max`, `pitches_tende ≥ 0`, `parking_car_slots ≥ 0`.
-- Type-specific constraints: when `type = 'house'` tent-related fields (`pitches_tende`, `tap_on_field`, `field_slope`) are forbidden; when `type = 'land'` indoor-only fields (`indoor_rooms`, `indoor_beds`, ecc.) are not allowed.
-- Environmental rules: `fire_policy = 'with_permit'` requires `fire_rules`; `in_area_protetta = true` requires `ente_area_protetta`.
-- Media: require ≥ 3 photos whenever the structure has outdoor features or `type != 'house'`.
-- Seasonal overrides: `amenities_by_period` may override baseline booleans (e.g. `hot_water`) but must match the allowed amenity keys.
+- `structure_id` FK verso `structures` e `attachment_id` FK verso `attachments` (1:1, unique).
+- `position` intero per ordinamento esplicito.
+- `created_at` timestamp.
 
-Warnings emitted during imports help operators reconcile conflicting utility information and missing mandatory pairings (e.g. protected area without authority).
+## Validazioni applicative
+
+Le convalide sono garantite principalmente a livello di dominio (schemi Pydantic e servizi), ma i vincoli principali lato database includono:
+
+- Unicità di `slug` per la riconciliazione import/API.
+- Cascade delete su periodi, availabilities, cost options, contatti e foto, per mantenere il catalogo consistente.
+- Indici specializzati per filtri su provincia, tipo, policy fuochi e accessibilità trasporto.
+
+Ulteriori verifiche (coerenza capacità, note logistiche obbligatorie solo in alcuni flussi, numero minimo di foto, ecc.) sono demandate al layer applicativo.
