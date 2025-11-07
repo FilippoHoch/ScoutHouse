@@ -43,7 +43,7 @@ def create_structure_with_cost(client: TestClient) -> int:
         "model": "per_person_day",
         "amount": "12.50",
         "currency": "EUR",
-        "deposit": "150.00",
+        "booking_deposit": "150.00",
         "city_tax_per_night": "1.20",
         "utilities_flat": "25.00",
     }

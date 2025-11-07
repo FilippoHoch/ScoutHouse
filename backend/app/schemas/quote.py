@@ -39,6 +39,8 @@ class QuoteTotals(BaseModel):
     utilities: float
     city_tax: float
     deposit: float
+    booking_deposit: float
+    damage_deposit: float
     total: float
 
 

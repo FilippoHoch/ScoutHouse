@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
@@ -56,11 +56,39 @@ class FirePolicy(str, Enum):
     FORBIDDEN = "forbidden"
 
 
+class StructureOperationalStatus(str, Enum):
+    OPERATIONAL = "operational"
+    SEASONAL = "seasonal"
+    TEMPORARILY_CLOSED = "temporarily_closed"
+    PERMANENTLY_CLOSED = "permanently_closed"
+
+
+class StructureContactStatus(str, Enum):
+    UNKNOWN = "unknown"
+    TO_CONTACT = "to_contact"
+    CONTACTED = "contacted"
+    CONFIRMED = "confirmed"
+    STALE = "stale"
+
+
 class WaterSource(str, Enum):
     NONE = "none"
     FOUNTAIN = "fountain"
     TAP = "tap"
     RIVER = "river"
+
+
+class AnimalPolicy(str, Enum):
+    ALLOWED = "allowed"
+    ALLOWED_ON_REQUEST = "allowed_on_request"
+    FORBIDDEN = "forbidden"
+
+
+class FieldSlope(str, Enum):
+    FLAT = "flat"
+    GENTLE = "gentle"
+    MODERATE = "moderate"
+    STEEP = "steep"
 
 
 class StructureOpenPeriodKind(str, Enum):
@@ -82,6 +110,9 @@ class Structure(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     province: Mapped[str] = mapped_column(String(100), nullable=True)
+    municipality: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    municipality_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    locality: Mapped[str | None] = mapped_column(String(255), nullable=True)
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
     latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
@@ -94,6 +125,7 @@ class Structure(Base):
     indoor_bathrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     indoor_showers: Mapped[int | None] = mapped_column(Integer, nullable=True)
     indoor_activity_rooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    indoor_rooms: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
     has_kitchen: Mapped[bool | None] = mapped_column(
         Boolean,
         nullable=True,
@@ -105,6 +137,12 @@ class Structure(Base):
         default=None,
     )
     land_area_m2: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    field_slope: Mapped[FieldSlope | None] = mapped_column(
+        sqla_enum(FieldSlope, name="structure_field_slope"),
+        nullable=True,
+    )
+    pitches_tende: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    water_at_field: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
     shelter_on_field: Mapped[bool | None] = mapped_column(
         Boolean,
         nullable=True,
@@ -123,6 +161,7 @@ class Structure(Base):
         sqla_enum(FirePolicy, name="fire_policy"),
         nullable=True,
     )
+    fire_rules: Mapped[str | None] = mapped_column(Text, nullable=True)
     access_by_car: Mapped[bool | None] = mapped_column(
         Boolean,
         nullable=True,
@@ -144,6 +183,7 @@ class Structure(Base):
         default=None,
     )
     nearest_bus_stop: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    bus_type_access: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     weekend_only: Mapped[bool | None] = mapped_column(
         Boolean,
         nullable=True,
@@ -159,6 +199,38 @@ class Structure(Base):
         nullable=True,
         default=None,
     )
+    wheelchair_accessible: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    step_free_access: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    parking_car_slots: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    parking_bus_slots: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    parking_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    accessibility_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    allowed_audiences: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    usage_rules: Mapped[str | None] = mapped_column(Text, nullable=True)
+    animal_policy: Mapped[AnimalPolicy | None] = mapped_column(
+        sqla_enum(AnimalPolicy, name="structure_animal_policy"),
+        nullable=True,
+    )
+    animal_policy_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    in_area_protetta: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    ente_area_protetta: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    environmental_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    seasonal_amenities: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    booking_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    whatsapp: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    contact_status: Mapped[StructureContactStatus] = mapped_column(
+        sqla_enum(StructureContactStatus, name="structure_contact_status"),
+        nullable=False,
+        default=StructureContactStatus.UNKNOWN,
+    )
+    operational_status: Mapped[StructureOperationalStatus | None] = mapped_column(
+        sqla_enum(StructureOperationalStatus, name="structure_operational_status"),
+        nullable=True,
+    )
+    data_source: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    data_source_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    data_last_verified: Mapped[date | None] = mapped_column(Date, nullable=True)
+    governance_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     contact_emails: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     website_urls: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     notes_logistics: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -234,6 +306,7 @@ class StructureOpenPeriod(Base):
     date_end: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     units: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    blackout: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     structure: Mapped[Structure] = relationship(
         Structure,
@@ -293,4 +366,8 @@ __all__ = [
     "StructureOpenPeriod",
     "StructureOpenPeriodKind",
     "StructureOpenPeriodSeason",
+    "StructureOperationalStatus",
+    "StructureContactStatus",
+    "AnimalPolicy",
+    "FieldSlope",
 ]

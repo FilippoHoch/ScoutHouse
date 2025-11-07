@@ -14,9 +14,13 @@ from app.models.cost_option import (
     StructureCostModifierKind,
 )
 from app.models.structure import (
+    AnimalPolicy,
+    FieldSlope,
     FirePolicy,
+    StructureContactStatus,
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
+    StructureOperationalStatus,
     StructureType,
     WaterSource,
 )
@@ -34,6 +38,7 @@ class StructureOpenPeriodBase(BaseModel):
     date_end: date | None = None
     notes: str | None = None
     units: list[StructureUnit] | None = None
+    blackout: bool = False
 
     @model_validator(mode="after")
     def validate_period(self) -> "StructureOpenPeriodBase":
@@ -78,6 +83,9 @@ class StructureBase(BaseModel):
     name: str = Field(..., min_length=1)
     slug: str
     province: str | None = Field(default=None, max_length=2)
+    municipality: str | None = Field(default=None, max_length=255)
+    municipality_code: str | None = Field(default=None, max_length=16)
+    locality: str | None = Field(default=None, max_length=255)
     address: str | None = None
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
@@ -87,21 +95,49 @@ class StructureBase(BaseModel):
     indoor_bathrooms: int | None = Field(default=None, ge=0)
     indoor_showers: int | None = Field(default=None, ge=0)
     indoor_activity_rooms: int | None = Field(default=None, ge=0)
+    indoor_rooms: list[dict[str, Any]] | None = None
     has_kitchen: bool | None = None
     hot_water: bool | None = None
     land_area_m2: float | None = Field(default=None, ge=0)
+    field_slope: FieldSlope | None = None
+    pitches_tende: int | None = Field(default=None, ge=0)
+    water_at_field: bool | None = None
     shelter_on_field: bool | None = None
     water_sources: list[WaterSource] | None = None
     electricity_available: bool | None = None
     fire_policy: FirePolicy | None = None
+    fire_rules: str | None = None
     access_by_car: bool | None = None
     access_by_coach: bool | None = None
     access_by_public_transport: bool | None = None
     coach_turning_area: bool | None = None
     nearest_bus_stop: str | None = Field(default=None, max_length=255)
+    bus_type_access: list[str] | None = None
     weekend_only: bool | None = None
     has_field_poles: bool | None = None
     pit_latrine_allowed: bool | None = None
+    wheelchair_accessible: bool | None = None
+    step_free_access: bool | None = None
+    parking_car_slots: int | None = Field(default=None, ge=0)
+    parking_bus_slots: int | None = Field(default=None, ge=0)
+    parking_notes: str | None = None
+    accessibility_notes: str | None = None
+    allowed_audiences: list[str] | None = None
+    usage_rules: str | None = None
+    animal_policy: AnimalPolicy | None = None
+    animal_policy_notes: str | None = None
+    in_area_protetta: bool | None = None
+    ente_area_protetta: str | None = Field(default=None, max_length=255)
+    environmental_notes: str | None = None
+    seasonal_amenities: dict[str, Any] | None = None
+    booking_url: AnyHttpUrl | None = None
+    whatsapp: str | None = Field(default=None, max_length=32)
+    contact_status: StructureContactStatus = StructureContactStatus.UNKNOWN
+    operational_status: StructureOperationalStatus | None = None
+    data_source: str | None = Field(default=None, max_length=255)
+    data_source_url: AnyHttpUrl | None = None
+    data_last_verified: date | None = None
+    governance_notes: str | None = None
     contact_emails: list[EmailStr] = Field(default_factory=list)
     website_urls: list[AnyHttpUrl] = Field(default_factory=list)
     notes_logistics: str | None = None
@@ -186,6 +222,22 @@ class StructureBase(BaseModel):
             raise ValueError("Province must be exactly two alphabetic characters")
         return value.upper()
 
+    @field_validator("municipality")
+    @classmethod
+    def normalize_municipality(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+    @field_validator("municipality_code")
+    @classmethod
+    def normalize_municipality_code(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().upper()
+        return normalized or None
+
     @field_validator("latitude")
     @classmethod
     def validate_latitude(cls, value: float | None) -> float | None:
@@ -226,8 +278,10 @@ class StructureBase(BaseModel):
             "has_kitchen": self.has_kitchen,
             "hot_water": self.hot_water,
         }
+        indoor_payload = self.indoor_rooms
         outdoor_values = {
             "land_area_m2": self.land_area_m2,
+            "pitches_tende": self.pitches_tende,
         }
         outdoor_flags = {
             "shelter_on_field": self.shelter_on_field,
@@ -235,14 +289,17 @@ class StructureBase(BaseModel):
             "fire_policy": self.fire_policy,
             "has_field_poles": self.has_field_poles,
             "pit_latrine_allowed": self.pit_latrine_allowed,
+            "water_at_field": self.water_at_field,
         }
         outdoor_lists = {
             "water_sources": self.water_sources,
+            "bus_type_access": self.bus_type_access,
+            "allowed_audiences": self.allowed_audiences,
         }
 
         has_indoor_data = any(
             value not in (None, 0) for value in indoor_fields.values()
-        ) or any(flag is True for flag in indoor_flags.values())
+        ) or any(flag is True for flag in indoor_flags.values()) or bool(indoor_payload)
         has_outdoor_data = any(
             value not in (None, 0) for value in outdoor_values.values()
         ) or any(flag not in (None, False) for flag in outdoor_flags.values()) or any(
@@ -323,6 +380,7 @@ class StructureCostModifierBase(BaseModel):
     season: StructureSeason | None = None
     date_start: date | None = None
     date_end: date | None = None
+    price_per_resource: dict[str, Decimal] | None = None
 
     @model_validator(mode="after")
     def validate_modifier(self) -> "StructureCostModifierBase":
@@ -367,12 +425,18 @@ class StructureCostOptionBase(BaseModel):
     model: StructureCostModel
     amount: Decimal = Field(..., gt=0)
     currency: str = Field(default="EUR", min_length=3, max_length=3)
-    deposit: Decimal | None = Field(default=None, ge=0)
+    booking_deposit: Decimal | None = Field(default=None, ge=0)
+    damage_deposit: Decimal | None = Field(default=None, ge=0)
     city_tax_per_night: Decimal | None = Field(default=None, ge=0)
     utilities_flat: Decimal | None = Field(default=None, ge=0)
+    utilities_included: bool | None = None
+    utilities_notes: str | None = None
     min_total: Decimal | None = Field(default=None, ge=0)
     max_total: Decimal | None = Field(default=None, ge=0)
     age_rules: dict[str, Any] | None = None
+    payment_methods: list[str] | None = None
+    payment_terms: str | None = None
+    price_per_resource: dict[str, Decimal] | None = None
 
     @field_validator("currency")
     @classmethod

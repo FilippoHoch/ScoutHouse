@@ -29,6 +29,18 @@ def _sanitize_decimal(value: Decimal | None) -> Decimal:
     return value
 
 
+def _serialize_price_map(value: dict | None) -> dict | None:
+    if not value:
+        return None
+    result: dict[str, float] = {}
+    for key, amount in value.items():
+        if amount is None:
+            continue
+        decimal_amount = _sanitize_decimal(Decimal(str(amount)))
+        result[str(key)] = float(_quantize(decimal_amount))
+    return result or None
+
+
 def estimate_mean_daily_cost(structure: Structure) -> Decimal | None:
     """Estimate the mean daily cost for a structure based on its options."""
 
@@ -153,6 +165,9 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                     "date_end": modifier.date_end.isoformat()
                     if modifier.date_end
                     else None,
+                    "price_per_resource": _serialize_price_map(
+                        getattr(modifier, "price_per_resource", None)
+                    ),
                 }
             )
         snapshot.append(
@@ -161,8 +176,15 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                 "model": option.model.value,
                 "amount": float(_quantize(_sanitize_decimal(option.amount))),
                 "currency": option.currency,
-                "deposit": float(_quantize(_sanitize_decimal(option.deposit)))
-                if option.deposit is not None
+                "booking_deposit": float(
+                    _quantize(_sanitize_decimal(option.booking_deposit))
+                )
+                if getattr(option, "booking_deposit", None) is not None
+                else None,
+                "damage_deposit": float(
+                    _quantize(_sanitize_decimal(option.damage_deposit))
+                )
+                if getattr(option, "damage_deposit", None) is not None
                 else None,
                 "city_tax_per_night": float(_quantize(option.city_tax_per_night))
                 if option.city_tax_per_night is not None
@@ -170,6 +192,8 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                 "utilities_flat": float(_quantize(option.utilities_flat))
                 if option.utilities_flat is not None
                 else None,
+                "utilities_included": option.utilities_included,
+                "utilities_notes": option.utilities_notes,
                 "min_total": float(_quantize(option.min_total))
                 if option.min_total is not None
                 else None,
@@ -177,6 +201,11 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                 if option.max_total is not None
                 else None,
                 "age_rules": option.age_rules or None,
+                "payment_methods": option.payment_methods or None,
+                "payment_terms": option.payment_terms,
+                "price_per_resource": _serialize_price_map(
+                    getattr(option, "price_per_resource", None)
+                ),
                 "modifiers": modifiers or None,
             }
         )
@@ -206,9 +235,11 @@ def _season_for_date(target: date) -> StructureSeason:
 def _modifier_priority(modifier: StructureCostModifier) -> int:
     if modifier.kind is StructureCostModifierKind.DATE_RANGE:
         return 0
-    if modifier.kind is StructureCostModifierKind.WEEKEND:
+    if modifier.kind is StructureCostModifierKind.SEASON:
         return 1
-    return 2
+    if modifier.kind is StructureCostModifierKind.WEEKEND:
+        return 2
+    return 3
 
 
 def _select_applicable_modifier(
@@ -277,7 +308,8 @@ def calc_quote(
     subtotal = Decimal("0")
     utilities_total = Decimal("0")
     city_tax_total = Decimal("0")
-    deposit_total = Decimal("0")
+    booking_deposit_total = Decimal("0")
+    damage_deposit_total = Decimal("0")
     breakdown: list[dict[str, Any]] = []
 
     currency = cost_options[0].currency if cost_options else "EUR"
@@ -394,19 +426,34 @@ def calc_quote(
                 }
             )
 
-        if option.deposit is not None:
-            deposit_amount = _quantize(_sanitize_decimal(option.deposit))
-            deposit_total += deposit_amount
+        if getattr(option, "booking_deposit", None) is not None:
+            deposit_amount = _quantize(_sanitize_decimal(option.booking_deposit))
+            booking_deposit_total += deposit_amount
             breakdown.append(
                 {
                     "option_id": option.id,
-                    "type": "deposit",
-                    "description": "Caparra",
+                    "type": "booking_deposit",
+                    "description": "Caparra di prenotazione",
                     "currency": option.currency,
                     "unit_amount": float(deposit_amount),
                     "quantity": 1,
                     "metadata": {},
                     "total": float(deposit_amount),
+                }
+            )
+        if getattr(option, "damage_deposit", None) is not None:
+            damage_amount = _quantize(_sanitize_decimal(option.damage_deposit))
+            damage_deposit_total += damage_amount
+            breakdown.append(
+                {
+                    "option_id": option.id,
+                    "type": "damage_deposit",
+                    "description": "Deposito cauzionale",
+                    "currency": option.currency,
+                    "unit_amount": float(damage_amount),
+                    "quantity": 1,
+                    "metadata": {},
+                    "total": float(damage_amount),
                 }
             )
 
@@ -456,11 +503,15 @@ def calc_quote(
         "cost_options": _snapshot_cost_options(cost_options),
     }
 
+    deposit_total = booking_deposit_total + damage_deposit_total
+
     totals = {
         "subtotal": float(_quantize(subtotal)),
         "utilities": float(_quantize(utilities_total)),
         "city_tax": float(_quantize(city_tax_total)),
         "deposit": float(_quantize(deposit_total)),
+        "booking_deposit": float(_quantize(booking_deposit_total)),
+        "damage_deposit": float(_quantize(damage_deposit_total)),
         "total": float(_quantize(total)),
     }
 

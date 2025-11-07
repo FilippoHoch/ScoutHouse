@@ -39,7 +39,7 @@ def structure_with_costs() -> SimpleNamespace:
         model=StructureCostModel.PER_PERSON_DAY,
         amount=Decimal("10.00"),
         currency="EUR",
-        deposit=Decimal("100"),
+        booking_deposit=Decimal("100"),
         city_tax_per_night=Decimal("1.50"),
         utilities_flat=Decimal("20"),
     )
@@ -144,9 +144,13 @@ def test_calc_quote_breakdown(sample_event: Event, structure_with_costs: SimpleN
     assert totals["utilities"] == pytest.approx(20.0)
     assert totals["city_tax"] == pytest.approx(45.0)
     assert totals["deposit"] == pytest.approx(100.0)
+    assert totals["booking_deposit"] == pytest.approx(100.0)
+    assert totals["damage_deposit"] == pytest.approx(0.0)
     assert totals["total"] == pytest.approx(575.0)
 
-    deposit_entries = [entry for entry in result["breakdown"] if entry["type"] == "deposit"]
+    deposit_entries = [
+        entry for entry in result["breakdown"] if entry["type"] == "booking_deposit"
+    ]
     assert len(deposit_entries) == 1
     assert deposit_entries[0]["total"] == pytest.approx(100.0)
 

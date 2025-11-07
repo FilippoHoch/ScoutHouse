@@ -42,7 +42,19 @@ def quote_to_xlsx(quote: Quote) -> bytes:
     sheet.append(["Utenze", None, None, totals.get("utilities", 0)])
     sheet.append(["Tassa di soggiorno", None, None, totals.get("city_tax", 0)])
     sheet.append(["Totale", None, None, totals.get("total", 0)])
-    sheet.append(["Caparre", None, None, totals.get("deposit", 0)])
+    sheet.append([
+        "Caparra prenotazione",
+        None,
+        None,
+        totals.get("booking_deposit", 0),
+    ])
+    sheet.append([
+        "Deposito cauzionale",
+        None,
+        None,
+        totals.get("damage_deposit", 0),
+    ])
+    sheet.append(["Caparre totali", None, None, totals.get("deposit", 0)])
 
     for column in range(1, 5):
         sheet.column_dimensions[get_column_letter(column)].width = 20

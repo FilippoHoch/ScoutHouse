@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Index
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
@@ -44,16 +44,24 @@ class StructureCostOption(Base):
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="EUR")
-    deposit: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    booking_deposit: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    damage_deposit: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     city_tax_per_night: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2), nullable=True
     )
     utilities_flat: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2), nullable=True
     )
+    utilities_included: Mapped[bool | None] = mapped_column(
+        Boolean, nullable=True, default=None
+    )
+    utilities_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     min_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     max_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     age_rules: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    payment_methods: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    payment_terms: Mapped[str | None] = mapped_column(Text, nullable=True)
+    price_per_resource: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     structure: Mapped["Structure"] = relationship(
         "Structure",
@@ -89,6 +97,7 @@ class StructureCostModifier(Base):
         nullable=False,
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    price_per_resource: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     season: Mapped[StructureSeason | None] = mapped_column(
         sqla_enum(StructureSeason, name="structure_season"), nullable=True
     )

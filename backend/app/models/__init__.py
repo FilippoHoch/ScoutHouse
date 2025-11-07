@@ -21,9 +21,13 @@ from .structure import (
     StructureType,
     FirePolicy,
     WaterSource,
+    AnimalPolicy,
+    FieldSlope,
     StructureOpenPeriod,
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
+    StructureOperationalStatus,
+    StructureContactStatus,
 )
 from .structure_photo import StructurePhoto
 from .attachment import Attachment, AttachmentOwnerType
@@ -64,5 +68,9 @@ __all__ = [
     "StructureOpenPeriod",
     "StructureOpenPeriodKind",
     "StructureOpenPeriodSeason",
+    "StructureOperationalStatus",
+    "StructureContactStatus",
+    "AnimalPolicy",
+    "FieldSlope",
     "StructurePhoto",
 ]
