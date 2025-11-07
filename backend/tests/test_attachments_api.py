@@ -268,9 +268,30 @@ def test_event_attachment_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     assert listed.status_code == 200, listed.text
     assert len(listed.json()) == 1
 
+    update = client.patch(
+        f"/api/v1/attachments/{attachment_id}",
+        json={"filename": "programma finale.pdf", "description": "Versione aggiornata"},
+        headers=headers,
+    )
+    assert update.status_code == 200, update.text
+    payload = update.json()
+    assert payload["filename"] == "programma finale.pdf"
+    assert payload["description"] == "Versione aggiornata"
+
+    refreshed = client.get(
+        "/api/v1/attachments",
+        params={"owner_type": "event", "owner_id": event_id},
+        headers=headers,
+    )
+    assert refreshed.status_code == 200
+    assert refreshed.json()[0]["description"] == "Versione aggiornata"
+
     download = client.get(f"/api/v1/attachments/{attachment_id}/sign-get", headers=headers)
     assert download.status_code == 200, download.text
     assert download.json()["url"].startswith("http")
+    assert fake_s3.presigned_urls[-1]["Params"]["ResponseContentDisposition"].startswith(
+        "attachment;"
+    )
 
     delete = client.delete(f"/api/v1/attachments/{attachment_id}", headers=headers)
     assert delete.status_code == 204, delete.text

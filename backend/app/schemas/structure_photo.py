@@ -19,6 +19,7 @@ class StructurePhotoRead(BaseModel):
     position: int
     url: AnyHttpUrl
     created_at: datetime
+    description: str | None = None
 
 
 __all__ = ["StructurePhotoCreate", "StructurePhotoRead"]

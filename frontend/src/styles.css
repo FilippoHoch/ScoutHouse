@@ -2346,6 +2346,17 @@ table tbody tr:hover {
   gap: var(--space-sm);
 }
 
+.attachments-section table.attachments td input[type="text"],
+.attachments-section table.attachments td textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.attachments-section table.attachments td.attachments__description {
+  max-width: 18rem;
+  white-space: pre-wrap;
+}
+
 .attachments-section__actions {
   display: flex;
   justify-content: flex-end;
@@ -2493,6 +2504,32 @@ table tbody tr:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.structure-photos__description {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.structure-photos__edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.structure-photos__edit-fields input,
+.structure-photos__edit-fields textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.structure-photos__preview-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .structure-photos__counter {

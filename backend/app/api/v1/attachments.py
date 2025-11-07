@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Annotated, Iterable
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -23,6 +24,7 @@ from app.schemas import (
     AttachmentDownloadSignature,
     AttachmentRead,
     AttachmentSignRequest,
+    AttachmentUpdateRequest,
     AttachmentUploadSignature,
 )
 from app.services.attachments import (
@@ -126,6 +128,7 @@ def _serialize_attachment_rows(rows: Iterable[tuple[Attachment, User | None]]) -
                 created_by=attachment.created_by,
                 created_by_name=creator.name if creator else None,
                 created_at=attachment.created_at,
+                description=attachment.description,
             )
         )
     return items
@@ -249,6 +252,7 @@ def confirm_attachment(
         size=attachment.size,
         created_by=attachment.created_by,
         created_by_name=user.name,
+        description=attachment.description,
         created_at=attachment.created_at,
     )
 
@@ -266,13 +270,82 @@ def sign_attachment_download(
 
     _ensure_owner_access(db, attachment.owner_type, attachment.owner_id, user, write=False)
     bucket, client = _ensure_storage_ready()
+    safe_filename = attachment.filename or "download"
+    disposition = f"attachment; filename*=UTF-8''{quote(safe_filename)}"
     url = client.generate_presigned_url(
         "get_object",
-        Params={"Bucket": bucket, "Key": attachment.storage_key},
+        Params={
+            "Bucket": bucket,
+            "Key": attachment.storage_key,
+            "ResponseContentDisposition": disposition,
+        },
         ExpiresIn=120,
     )
     url = rewrite_presigned_url(url)
     return AttachmentDownloadSignature(url=url)
+
+
+@router.patch("/{attachment_id}", response_model=AttachmentRead)
+def update_attachment(
+    attachment_id: int,
+    payload: AttachmentUpdateRequest,
+    *,
+    db: DbSession,
+    user: CurrentUser,
+) -> AttachmentRead:
+    attachment = db.get(Attachment, attachment_id)
+    if attachment is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+
+    _ensure_owner_access(db, attachment.owner_type, attachment.owner_id, user, write=True)
+
+    data = payload.model_dump(exclude_unset=True)
+    if not data:
+        creator_name = (
+            db.execute(select(User.name).where(User.id == attachment.created_by))
+            .scalars()
+            .first()
+        )
+        return AttachmentRead(
+            id=attachment.id,
+            owner_type=attachment.owner_type,
+            owner_id=attachment.owner_id,
+            filename=attachment.filename,
+            mime=attachment.mime,
+            size=attachment.size,
+            created_by=attachment.created_by,
+            created_by_name=creator_name,
+            description=attachment.description,
+            created_at=attachment.created_at,
+        )
+
+    if "filename" in data:
+        attachment.filename = data["filename"]
+    if "description" in data:
+        attachment.description = data["description"]
+
+    db.add(attachment)
+    db.commit()
+    db.refresh(attachment)
+
+    creator_name = (
+        db.execute(select(User.name).where(User.id == attachment.created_by))
+        .scalars()
+        .first()
+    )
+
+    return AttachmentRead(
+        id=attachment.id,
+        owner_type=attachment.owner_type,
+        owner_id=attachment.owner_id,
+        filename=attachment.filename,
+        mime=attachment.mime,
+        size=attachment.size,
+        created_by=attachment.created_by,
+        created_by_name=creator_name,
+        description=attachment.description,
+        created_at=attachment.created_at,
+    )
 
 
 @router.delete("/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)

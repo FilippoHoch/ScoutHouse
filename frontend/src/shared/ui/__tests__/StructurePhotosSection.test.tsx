@@ -8,7 +8,8 @@ import {
   signAttachmentUpload,
   confirmAttachmentUpload,
   createStructurePhoto,
-  deleteStructurePhoto
+  deleteStructurePhoto,
+  updateAttachment
 } from "../../api";
 import { StructurePhotosSection } from "../StructurePhotosSection";
 import { downloadEntriesAsZip } from "../../utils/download";
@@ -21,7 +22,8 @@ vi.mock("../../api", async () => {
     signAttachmentUpload: vi.fn(),
     confirmAttachmentUpload: vi.fn(),
     createStructurePhoto: vi.fn(),
-    deleteStructurePhoto: vi.fn()
+    deleteStructurePhoto: vi.fn(),
+    updateAttachment: vi.fn()
   };
 });
 
@@ -35,6 +37,7 @@ const mockedConfirmUpload = vi.mocked(confirmAttachmentUpload);
 const mockedCreatePhoto = vi.mocked(createStructurePhoto);
 const mockedDeletePhoto = vi.mocked(deleteStructurePhoto);
 const mockedDownloadZip = vi.mocked(downloadEntriesAsZip);
+const mockedUpdateAttachment = vi.mocked(updateAttachment);
 
 const Wrapper = ({ children }: { children: React.ReactNode }) => {
   const queryClient = new QueryClient({
@@ -52,6 +55,7 @@ describe("StructurePhotosSection", () => {
     mockedDeletePhoto.mockReset();
     mockedDownloadZip.mockReset();
     mockedDownloadZip.mockResolvedValue(undefined);
+    mockedUpdateAttachment.mockReset();
   });
 
   it("renders empty state when no photos are available", async () => {
@@ -77,7 +81,8 @@ describe("StructurePhotosSection", () => {
         size: 2048,
         position: 0,
         url: "https://example.com/panorama.jpg",
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        description: null
       }
     ]);
 
@@ -107,7 +112,8 @@ describe("StructurePhotosSection", () => {
         size: 2048,
         position: 0,
         url: "https://example.com/panorama.jpg",
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        description: null
       }
     ]);
 
@@ -139,7 +145,8 @@ describe("StructurePhotosSection", () => {
         size: 2048,
         position: 0,
         url: "https://example.com/panorama.jpg",
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        description: null
       },
       {
         id: 2,
@@ -150,7 +157,8 @@ describe("StructurePhotosSection", () => {
         size: 1024,
         position: 1,
         url: "https://example.com/bosco.jpg",
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        description: null
       }
     ]);
 
@@ -203,7 +211,8 @@ describe("StructurePhotosSection", () => {
         size: 1024,
         position: 0,
         url: "https://example.com/nuova.jpg",
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        description: null
       }
     ]);
     mockedSignUpload.mockResolvedValue({
@@ -219,7 +228,8 @@ describe("StructurePhotosSection", () => {
       size: 1024,
       created_by: "user",
       created_by_name: "User",
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      description: null
     });
     mockedCreatePhoto.mockResolvedValue({
       id: 2,
@@ -230,7 +240,8 @@ describe("StructurePhotosSection", () => {
       size: 1024,
       position: 0,
       url: "https://example.com/nuova.jpg",
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      description: null
     });
 
     const fetchMock = vi
@@ -270,7 +281,8 @@ describe("StructurePhotosSection", () => {
         size: 900,
         position: 0,
         url: "https://example.com/vecchia.jpg",
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        description: null
       }
     ]);
     mockedDeletePhoto.mockResolvedValue();
@@ -283,6 +295,82 @@ describe("StructurePhotosSection", () => {
     const deleteButton = await screen.findByRole("button", { name: /Elimina/i });
     await user.click(deleteButton);
     await waitFor(() => expect(mockedDeletePhoto).toHaveBeenCalledWith(42, 5));
+  });
+
+  it("allows renaming a photo and updating its description", async () => {
+    const user = userEvent.setup();
+    mockedGetPhotos
+      .mockResolvedValueOnce([
+        {
+          id: 7,
+          structure_id: 42,
+          attachment_id: 150,
+          filename: "panorama.jpg",
+          mime: "image/jpeg",
+          size: 2048,
+          position: 0,
+          url: "https://example.com/panorama.jpg",
+          created_at: new Date().toISOString(),
+          description: "Vista mattutina"
+        }
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 7,
+          structure_id: 42,
+          attachment_id: 150,
+          filename: "panorama sera.jpg",
+          mime: "image/jpeg",
+          size: 2048,
+          position: 0,
+          url: "https://example.com/panorama.jpg",
+          created_at: new Date().toISOString(),
+          description: "Tramonto"
+        }
+      ]);
+    mockedUpdateAttachment.mockResolvedValue({
+      id: 150,
+      owner_type: "structure",
+      owner_id: 42,
+      filename: "panorama sera.jpg",
+      mime: "image/jpeg",
+      size: 2048,
+      created_at: new Date().toISOString(),
+      created_by: "user-1",
+      created_by_name: "Mario",
+      description: "Tramonto"
+    });
+
+    render(
+      <StructurePhotosSection structureId={42} canUpload canDelete={false} />,
+      { wrapper: Wrapper }
+    );
+
+    await waitFor(() => expect(mockedGetPhotos).toHaveBeenCalledTimes(1));
+
+    const renameButton = await screen.findByRole("button", { name: /Rinomina/i });
+    await user.click(renameButton);
+
+    const nameInput = screen.getByLabelText(/Nome foto/i);
+    await user.clear(nameInput);
+    await user.type(nameInput, "panorama sera.jpg");
+
+    const descriptionInput = screen.getByLabelText(/Descrizione foto/i);
+    await user.clear(descriptionInput);
+    await user.type(descriptionInput, "Tramonto");
+
+    await user.click(screen.getByRole("button", { name: /Salva/i }));
+
+    await waitFor(() =>
+      expect(mockedUpdateAttachment).toHaveBeenCalledWith(150, {
+        filename: "panorama sera.jpg",
+        description: "Tramonto"
+      })
+    );
+
+    await waitFor(() => expect(mockedGetPhotos).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("panorama sera.jpg")).toBeInTheDocument();
+    expect(screen.getByText("Tramonto")).toBeInTheDocument();
   });
 
   it("downloads all photos as a single archive", async () => {
@@ -298,6 +386,7 @@ describe("StructurePhotosSection", () => {
         position: 0,
         url: "https://example.com/panorama.jpg",
         created_at: new Date().toISOString(),
+        description: null,
       },
       {
         id: 2,
@@ -309,6 +398,7 @@ describe("StructurePhotosSection", () => {
         position: 1,
         url: "https://example.com/bosco.jpg",
         created_at: new Date().toISOString(),
+        description: null,
       },
     ]);
 

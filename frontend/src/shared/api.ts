@@ -252,6 +252,22 @@ export async function deleteAttachment(attachmentId: number): Promise<void> {
   });
 }
 
+export interface AttachmentUpdateRequest {
+  filename?: string | null;
+  description?: string | null;
+}
+
+export async function updateAttachment(
+  attachmentId: number,
+  payload: AttachmentUpdateRequest
+): Promise<Attachment> {
+  return apiFetch<Attachment>(`/api/v1/attachments/${attachmentId}`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify(payload)
+  });
+}
+
 export interface StructurePhotoCreateRequest {
   attachment_id: number;
 }
