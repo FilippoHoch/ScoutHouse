@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
 
+from app.api.v1.export import CSV_HEADERS_OPEN_PERIODS  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.core.limiter import TEST_RATE_LIMIT_HEADER  # noqa: E402
 from app.main import app  # noqa: E402
@@ -46,7 +47,13 @@ def get_client(*, authenticated: bool = False, is_admin: bool = False, email: st
     return client
 
 
-def create_structure(client: TestClient, slug: str, province: str) -> None:
+def create_structure(
+    client: TestClient,
+    slug: str,
+    province: str,
+    *,
+    open_periods: list[dict[str, object]] | None = None,
+) -> None:
     payload = {
         "name": f"Structure {slug}",
         "slug": slug,
@@ -57,6 +64,8 @@ def create_structure(client: TestClient, slug: str, province: str) -> None:
         "longitude": 9.0,
         "altitude": 210.0,
     }
+    if open_periods is not None:
+        payload["open_periods"] = open_periods
     response = client.post("/api/v1/structures/", json=payload)
     assert response.status_code == 201
 
@@ -83,7 +92,14 @@ def test_export_structures_requires_admin() -> None:
 
 def test_export_structures_with_filters_csv() -> None:
     client = get_client(authenticated=True, is_admin=True)
-    create_structure(client, "casa-scout", "MI")
+    open_period = {
+        "kind": "range",
+        "date_start": "2025-06-01",
+        "date_end": "2025-06-30",
+        "notes": "Disponibile in estate",
+        "units": ["LC", "EG"],
+    }
+    create_structure(client, "casa-scout", "MI", open_periods=[open_period])
     create_structure(client, "casa-nord", "BS")
 
     filters = quote(json.dumps({"province": "MI"}))
@@ -99,6 +115,22 @@ def test_export_structures_with_filters_csv() -> None:
         assert header[8] == "altitude"
         assert "casa-scout" in structures[1]
         assert all("casa-nord" not in line for line in structures)
+
+        open_period_lines = archive.read("structure_open_periods.csv").decode("utf-8").splitlines()
+        open_period_reader = list(csv.reader(open_period_lines))
+        assert open_period_reader[0] == list(CSV_HEADERS_OPEN_PERIODS)
+        data_rows = [row for row in open_period_reader[1:] if any(cell for cell in row)]
+        empty_rows = [row for row in open_period_reader[1:] if not any(cell for cell in row)]
+        for row in empty_rows:
+            assert all(cell == "" for cell in row)
+        assert data_rows, "Expected at least one exported open period"
+        assert all(row[1] == "casa-scout" for row in data_rows)
+        first_period_row = data_rows[0]
+        assert first_period_row[2] == "range"
+        assert first_period_row[4] == "LC,EG"
+        assert first_period_row[5] == "2025-06-01"
+        assert first_period_row[6] == "2025-06-30"
+        assert first_period_row[7] == "Disponibile in estate"
 
 
 def test_export_events_json_with_date_range() -> None:
