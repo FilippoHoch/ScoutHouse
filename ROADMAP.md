@@ -121,156 +121,129 @@
 
 ### Stato avanzamento e priorità
 
-La codebase ha completato le fondamenta previste dalle milestone M0–M4:
+Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura) sono state chiuse e manteniamo solo le attività aperte nel piano seguente.
 
-* **Infrastruttura e DevOps**: monorepo con Docker Compose, CI GitHub Actions, metriche Prometheus e backup automatici.
-* **Catalogo strutture**: ricerca avanzata (`/structures/search`), import/export CSV/XLSX, anagrafiche complete con contatti, costi e disponibilità.
-* **Eventi e collaborazione**: wizard eventi, candidature con sincronizzazione stato in tempo reale (SSE), task contatti e gestione team.
-* **Preventivi**: calcolo scenari, versioning quote, export XLSX/HTML e notifiche email tramite RQ.
-* **Allegati & audit**: storage S3-compatibile con firma temporanea, audit log centralizzato e seeding dataset.
-
-Le prossime milestone si concentrano su sicurezza, qualità, operatività e adozione.
-
-### M5 · Sicurezza e compliance estesa
+### M5 · Governance accessi e compliance operativa
 
 **Obiettivi principali**
 
-* Rafforzare il controllo accessi e coprire i requisiti GDPR/ASVS prima del go-live pubblico.
+* Coprire gli ultimi gap su controllo accessi, gestione sessioni e obblighi GDPR prima del beta pubblico.
 
 #### Task essenziali
 
-* **Backend & API**
-  * Evolvere il modello permessi oltre `is_admin`, introducendo ruoli granulari per strutture ed eventi (lettura/scrittura/moderazione) e tabelle pivot dedicate.
-  * Implementare MFA (TOTP/WebAuthn) con gestione dispositivi e enforcement per ruoli sensibili.
-  * Esporre endpoint di gestione sessioni attive/refresh token (lista e revoca) e completare gli audit su `Attachment`, `Quote` e `Event` con dettagli ip/user-agent.
-  * Arricchire rate limiting SlowAPI con bucket per autenticazione e export, più log di sicurezza strutturati.
-* **Frontend & UX**
-  * Creare dashboard amministrativa per gestione utenti/ruoli, revisione audit log e chiusura sessioni attive.
-  * Offrire flusso di attivazione MFA con verifica backup codes e indicatori di sicurezza account.
-  * Surface avvisi di compliance (consensi, data-retention) nelle schede struttura/evento.
-* **Compliance & Ops**
-  * Formalizzare criteri data-retention per allegati e log, con job programmati di purge e reportistica.
-  * Integrare scansioni dipendenze (Dependabot, Trivy, pip-audit, npm audit) nel workflow CI e documentare il processo di remediation.
-  * Stesura DPIA, Registro trattamenti e playbook incident response con esercitazione tabletop.
+* **Identity & access management**
+  * Introdurre ruoli granulari per strutture/eventi con ereditarietà e deleghe temporanee.
+  * Single Sign-On opzionale (SAML/SCIM) per gruppi con più account e gestione sessioni attive con revoca.
+  * MFA obbligatoria per amministratori e audit trail completo su eventi di login/dispositivo.
+* **Compliance**
+  * Workflow consensi e data-retention automatizzata su contatti e allegati con job programmati di purge.
+  * DPIA aggiornata, registro trattamenti versionato e run trimestrale del playbook incident response.
+* **Security automation**
+  * Integrazione scanner dipendenze (Dependabot, Trivy, pip-audit, npm audit) con triage automatico e SLA di remediation tracciato.
+  * Alerting sicurezza centralizzato (SIEM leggero) e report mensile condiviso con il team.
 
 #### Metriche di successo
 
-* 100% endpoint sensibili coperti da test autorizzazione automatici.
-* ≥ 70% degli amministratori con MFA attivo entro due settimane dal rilascio.
-* Nessun CVE alto aperto oltre 7 giorni.
+* 100% endpoint privilegiati coperti da test autorizzazione automatici.
+* ≥ 80% degli amministratori con MFA attiva entro un mese dal rilascio.
+* Nessun CVE alto aperto oltre 5 giorni.
 
 **DoD**
 
-* Matrice ruoli/permessi approvata, audit log arricchito e UI amministrativa in produzione con checklist ASVS L1 completata.
+* Matrice ruoli/permessi e policy di retention pubblicate, SSO/MFA disponibili in produzione, check ASVS L1 superato e report incident response archiviato.
 
-### M6 · Qualità automatizzata e resilienza
+### M6 · Resilienza, osservabilità e costi
 
 **Obiettivi principali**
 
-* Consolidare copertura test e garantire resilienza degli scenari collaborativi (SSE, queue email, import massivi).
+* Garantire disponibilità e tempi di risposta stabili, introducendo strumenti di monitoraggio e ottimizzando i costi cloud.
 
 #### Task essenziali
 
-* **Testing**
-  * Portare coverage backend ≥ 85% includendo servizi `attachments`, `quotes` e `events` con casi di concorrenza.
-  * Introdurre contract test generati da OpenAPI e test end-to-end Playwright multi-utente (aggiornamenti live, preventivi condivisi).
-  * Automatizzare test axe-core e snapshot responsivi per pagine principali.
-* **Performance & resilienza**
-  * Stress test su import/export e generazione quote (k6) con monitoraggio p95 < 1s per API critiche.
-  * Chaos testing leggero su coda RQ e storage S3 (timeout/retry) con alert Prometheus/Grafana.
-  * Verifica disaster recovery: restore backup + ripristino allegati firmati.
-* **Developer Experience**
-  * Pipeline nightly con suite estese, badge qualità e report su docs/OPS.
-  * Template PR arricchito con checklist sicurezza/tests e gating automatico per lint/format.
+* **Affidabilità**
+  * Test di carico k6 sugli scenari critici (import massivi, generazione preventivi, SSE eventi) con target p95 < 1s.
+  * Chaos testing su code RQ, servizi esterni (S3, geocoding) e failover DB con run mensile documentata.
+  * Piano DR completo: restore automatizzato DB/allegati + verifica RPO/RTO.
+* **Osservabilità**
+  * Tracing distribuito OpenTelemetry end-to-end con sampling adattivo e log contestualizzati.
+  * Dashboard Grafana unificate (API, frontend, code, job) con alerting su SLO e canali on-call.
+* **Ottimizzazione costi**
+  * Stima budget ambienti (dev/staging/prod) con alert FinOps e scalabilità oraria per workload batch.
+  * Riduzione storage S3 tramite lifecycle e compressione automatica esportazioni.
 
 #### Metriche di successo
 
-* Trend coverage positivo per 3 sprint consecutivi.
-* 0 regressioni critiche individuate in staging durante due rilasci consecutivi.
+* ≥ 99.5% uptime applicativo in staging con carico realistico.
+* P95 API critiche < 900 ms durante gli stress test.
+* Riduzione costi infrastruttura del 15% rispetto al baseline attuale.
 
 **DoD**
 
-* Pipeline CI/CD blocca merge privi di test, dashboard qualità condivisa con storico esecuzioni e run disaster-recovery documentato.
+* Dashboard e alert attivi, report FinOps condiviso e simulazione disaster recovery eseguita con esito positivo.
 
-### M7 · Readiness operativa e localizzazione
+### M7 · Esperienza utente e adozione guidata
 
 **Obiettivi principali**
 
-* Preparare il rollout controllato con supporto multilingua, osservabilità ampliata e playbook operativi.
+* Migliorare onboarding, supporto e feedback loop per facilitare l’adozione nei gruppi scout.
 
 #### Task essenziali
 
-* **Prodotto & UX**
-  * Estendere i18n (EN/IT) coprendo l'intero frontend e le email (`frontend/src/i18n`, `backend/app/templates/mail`).
-  * Ottimizzare bundle React (code splitting, lazy loading), compressione asset e caching lato CDN.
-  * Implementare knowledge base in-app (FAQ, tutorial video) e onboarding guidato.
-* **Ops**
-  * Cruscotti Grafana per eventi, preventivi, code email e storage; alerting su errori/latency.
-  * Automazione backup con test restore programmati e retention documentata.
-  * Helpdesk/ticketing collegato a incident response, con template comunicazioni verso i capi.
+* **Onboarding & formazione**
+  * Tour guidati contestuali per eventi, preventivi e gestione strutture con checklist completamento.
+  * Knowledge base in-app con ricerca, tutorial video e template email verso i gestori delle strutture.
+* **Accessibilità e localizzazione**
+  * Copertura i18n completa (IT/EN) inclusa documentazione automatica email/notifiche.
+  * Audit accessibilità periodico (axe, manuale) con fix di contrasto, focus e scorciatoie.
+* **Feedback & analytics**
+  * Integrazione PostHog/Matomo per funnel shortlist→preventivo→prenotazione e widget feedback in pagina.
+  * Report adozione condiviso con indicatori settimanali e action log.
 
 #### Metriche di successo
 
-* LCP < 2.5s su `/structures` e `/events/:id` con dati realistici.
-* ≥ 90% stringhe tradotte e validate da stakeholder.
-* Playbook operativi approvati e simulazione on-call completata.
+* ≥ 90% utenti completano l’onboarding entro 7 giorni dal primo accesso.
+* SUS ≥ 80 e miglioramento del 20% nel tasso di completamento preventivi.
+* Tutte le principali viste superano verifica accessibilità WCAG 2.1 AA.
 
 **DoD**
 
-* Ambiente staging pubblico con monitoraggio attivo, guida utenti disponibile e prova restore eseguita con successo.
+* Tour e knowledge base pubblicati, dashboard adozione in uso e audit accessibilità firmato.
 
-### M8 · UX evoluta e adoption
+### M8 · Estensioni ecosistema e monetizzazione
 
 **Obiettivi principali**
 
-* Allineare il design system, migliorare microinterazioni e facilitare l'adozione continua.
+* Abilitare integrazioni esterne, estendere il valore dato ai gruppi e preparare i modelli di revenue.
 
 #### Task essenziali
 
-* Design system centralizzato (Storybook con token condivisi) e dark mode opzionale.
-* Revisione flussi chiave basata su test moderati con capi scout reali, includendo empty/error state raffinati.
-* PWA con cache offline selettiva per consultare contatti e documenti in mobilità.
-* Analisi funnel (PostHog/Matomo) e widget feedback rapidi in app.
+* **Integrazioni**
+  * API pubblica read-only con chiavi e rate limit per condividere strutture con reti territoriali.
+  * Sincronizzazione calendari bidirezionale (Google Calendar + ICS) per disponibilità strutture ed eventi.
+  * Webhook per CRM/contabilità e marketplace fornitori (catering, trasporti) in beta.
+* **Monetizzazione & partnership**
+  * Modello tariffario (tier gruppi, organizzazioni partner) con billing manuale iniziale.
+  * Reportistica avanzata (Metabase/Looker Studio) per strutture partner con insight utilizzo.
+* **Mobile & offline**
+  * PWA con cache offline per contatti, documenti e checklist sopralluogo con sincronizzazione differita.
 
 #### Metriche di successo
 
-* SUS ≥ 80 e Net Promoter Score positivo nei test pilota.
-* Riduzione bounce rate del 20% nel flusso preventivi.
+* ≥ 3 integrazioni attive in beta con feedback positivo.
+* 20% delle strutture partner utilizza i report dedicati ogni mese.
+* Utenti mobile accedono ai contenuti offline con tasso successo > 95%.
 
 **DoD**
 
-* Libreria UI versionata, risultati UX documentati e features mobile-ready distribuite.
-
-### M9 · Ricerca e insight avanzati
-
-**Obiettivi principali**
-
-* Potenziare discovery e reporting basandosi sui dati raccolti.
-
-#### Task essenziali
-
-* Integrazione motore ricerca avanzato (Postgres FTS + sinonimi o ElasticSearch) con ranking personalizzato per strutture/eventi/preventivi.
-* Ricerca globale nel frontend con suggerimenti, filtri dinamici e feedback di rilevanza.
-* Dashboard insight (Looker Studio/Metabase) su utilizzo catalogo, conversioni shortlist→preventivi e saturazione strutture.
-* Job di indicizzazione incrementale con monitoraggio e alert.
-
-#### Metriche di successo
-
-* ≥ 85% query con feedback positivo, riduzione del 50% delle ricerche “zero results”.
-* Tempo risposta ricerca avanzata ≤ 700 ms p95.
-
-**DoD**
-
-* Pipeline indicizzazione attiva, dashboard insight condivisa e feedback loop utenti implementato.
+* API pubblica documentata, calendari sincronizzati in staging, primi contratti partner attivi e PWA disponibile sugli store.
 
 ## 7) Piano temporale suggerito (sprint 2 settimane)
 
 * Sprint 1–6: M0–M4 ✅ (completati)
-* Sprint 7–9: M5 (sicurezza) + audit DPIA
-* Sprint 10–12: M6 (quality & resilienza)
-* Sprint 13–15: M7 (readiness) con rollout pilota
-* Sprint 16–18: M8 (UX/adoption)
-* Sprint 19–20: M9 (ricerca & insight)
+* Sprint 7–9: M5 (governance & compliance)
+* Sprint 10–12: M6 (resilienza & osservabilità)
+* Sprint 13–15: M7 (adozione & UX)
+* Sprint 16–18: M8 (integrazioni & monetizzazione)
 
 ## 8) API principali (v1, estratto)
 
@@ -297,11 +270,11 @@ Le prossime milestone si concentrano su sicurezza, qualità, operatività e adoz
 
 ## 11) Backlog futuro
 
-* Recensioni interne post-evento.
-* Sync calendari bidirezionale.
-* App mobile sopralluoghi.
-* API pubblica read-only multi-gruppo.
-* Suggerimenti ML su feedback e costi.
+* Recensioni interne post-evento e badge qualità struttura.
+* Automazioni ML su pricing e suggerimenti shortlist.
+* Integrazione pagamenti digitali per caparre/utenze.
+* App mobile nativa per sopralluoghi con foto offline.
+* Partnership con reti scout internazionali e pacchetti traduzione extra lingue.
 
 ## 12) Rischi e mitigazioni
 
