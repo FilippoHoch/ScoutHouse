@@ -775,6 +775,9 @@ export const StructureDetailsPage = () => {
             </div>
           )}
         </div>
+        <div className="structure-details__hero-gallery">
+          <StructurePhotosSection structureId={structure.id} canUpload={false} canDelete={false} />
+        </div>
       </div>
 
       <div className="structure-details__layout">
