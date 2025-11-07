@@ -146,7 +146,24 @@ def _rewrite_presigned_url(url: str) -> str:
         logger.warning("Unable to parse presigned URL: %s", url)
         return url
 
-    return urlunparse(url_parts._replace(scheme=public_parts.scheme, netloc=public_parts.netloc))
+    path = url_parts.path
+    public_path = public_parts.path.rstrip("/")
+    if public_path:
+        suffix = path.lstrip("/")
+        if suffix:
+            path = f"{public_path}/{suffix}"
+        else:
+            path = public_path
+        if not path.startswith("/"):
+            path = f"/{path}"
+
+    return urlunparse(
+        url_parts._replace(
+            scheme=public_parts.scheme,
+            netloc=public_parts.netloc,
+            path=path,
+        )
+    )
 
 
 def rewrite_presigned_post_signature(signature: dict[str, Any]) -> dict[str, Any]:
