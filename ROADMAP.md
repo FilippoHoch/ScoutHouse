@@ -212,6 +212,40 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 
 * Migrazioni applicate in staging, UI/admin aggiornati con i nuovi campi, import/export documentati e validazioni attive con report QA firmato.
 
+### M6.2 · Operatività strutture avanzate
+
+**Obiettivi principali**
+
+* Estendere il modello `Structure` con i blocchi operativi richiesti dai campi geocoding, energia, sicurezza e compliance italiana senza rompere i payload esistenti.
+
+#### Task essenziali
+
+* **Schema & migrazioni**
+  * Aggiungere colonne ai modelli per i nuovi campi: geocodifica (`plus_code`, `what3words`, `winter_access_notes`, limiti strada/ponti), energia/acqua (potenza, prese, generatori, serbatoi, reflue), sanitari indoor/outdoor, comunicazioni, sicurezza/emergenze, meteo/rischi, spazi/attività, inclusione, regole evento, prenotazioni/documenti, fiscale/pagamenti (incluso `pec_email`), data quality e logistica fine.
+  * Definire ENUM e vincoli DB (range numerici, array tipizzati, JSONB per coordinate) e implementare regole condizionali: `dry_toilet` ⇒ `pit_latrine_allowed`, `river_swimming='si'` ⇒ `wildlife_notes` o `risk_assessment_template_url`, `invoice_available`+`country='IT'` ⇒ `sdi_recipient_code` o `pec_email`, `generator_available` ⇒ `power_capacity_kw` obbligatorio, rispetto vincoli indoor/outdoor per `type`.
+  * Gestire backfill con default coerenti, loggare violazioni senza bloccare la migrazione.
+* **Validazioni & servizi**
+  * Implementare validator per IBAN (modulo 97), formato `what3words`, OLC `plus_code`, coordinate emergenza (`lat`/`lon`), URL (HTTP/HTTPS), array/enum e controlli condizionali runtime con warning UI.
+  * Aggiornare servizi di filtraggio `/structures/search` con filtri `cell_coverage`, `aed_on_site`, `river_swimming`, `wastewater_type`, soglie `power_capacity_kw` e `parking_car_slots`, `flood_risk`.
+* **API & DTO**
+  * Estendere schemi Create/Update/Read e serializer senza rompere la compatibilità; aggiornare import/export per gestire i nuovi campi.
+  * Aggiornare test API con combinazioni limite e assicurare default sensati su campi opzionali.
+* **UI Admin**
+  * Introdurre tab dedicate: "Energia e acqua", "Sicurezza ed emergenze", "Meteo e rischi", "Documenti e mappe", "Fiscale e fatturazione" con help text e warning sui vincoli.
+  * Aggiungere supporto alle nuove proprietà in moduli admin, filtri e checklist runtime.
+* **Test & QA**
+  * Coprire validator (IBAN, OLC, what3words, coordinate), regressioni API CRUD/search, e2e UI sulle nuove tab e filtri.
+
+#### Metriche di successo
+
+* 0 errori runtime su validazioni condizionali e nessun regressione sui payload esistenti (copertura test ≥ 90% sulle nuove branch).
+* ≥ 80% strutture con dati energia/sicurezza compilati entro il primo ciclo di aggiornamento.
+* Filtri catalogo aggiornati utilizzati in ≥ 50% delle sessioni admin nelle 4 settimane successive al rilascio.
+
+**DoD**
+
+* Migrazioni applicate, API/UI pubblicate con warning vincoli attivi, test (unit, API, e2e) verdi e documentazione admin aggiornata.
+
 ### M7 · Esperienza utente e adozione guidata
 
 **Obiettivi principali**
@@ -393,12 +427,13 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 * Sprint 1–6: M0–M4 ✅ (completati)
 * Sprint 7–9: M5 (governance & compliance)
 * Sprint 10–12: M6 (resilienza & osservabilità)
-* Sprint 13–15: M7 (adozione & UX)
-* Sprint 16–18: M8 (integrazioni & monetizzazione)
-* Sprint 19–22: M9 (automazioni & knowledge)
-* Sprint 23–26: M10 (partnership & community)
-* Sprint 27–30: M11 (scalabilità enterprise)
-* Sprint 31–34: M12 (espansione internazionale)
+* Sprint 13–15: M6.2 (operatività strutture avanzate)
+* Sprint 16–18: M7 (adozione & UX)
+* Sprint 19–22: M8 (integrazioni & monetizzazione)
+* Sprint 23–26: M9 (automazioni & knowledge)
+* Sprint 27–30: M10 (partnership & community)
+* Sprint 31–34: M11 (scalabilità enterprise)
+* Sprint 35–38: M12 (espansione internazionale)
 
 ## 8) API principali (v1, estratto)
 
