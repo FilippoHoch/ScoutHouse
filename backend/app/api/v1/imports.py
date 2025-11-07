@@ -80,22 +80,20 @@ def _lookup_existing_structures(db: Session, slugs: list[str]) -> dict[str, Stru
 
 
 def _detect_source_format(file: UploadFile) -> TemplateFormat:
-    if file.content_type:
-        content_type = file.content_type.split(";", 1)[0].strip().lower()
-        if content_type == "application/vnd.ms-excel":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=UNSUPPORTED_XLS_MESSAGE,
-            )
-        if content_type in ALLOWED_MIME_TYPES:
-            return ALLOWED_MIME_TYPES[content_type]
-
     extension = Path(file.filename or "").suffix.lower()
     if extension == ".xls":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=UNSUPPORTED_XLS_MESSAGE,
         )
+
+    if file.content_type:
+        content_type = file.content_type.split(";", 1)[0].strip().lower()
+        if content_type == "application/vnd.ms-excel":
+            return "csv"
+        if content_type in ALLOWED_MIME_TYPES:
+            return ALLOWED_MIME_TYPES[content_type]
+
     if extension in ALLOWED_EXTENSIONS:
         return ALLOWED_EXTENSIONS[extension]
 

@@ -230,6 +230,33 @@ def test_rejects_legacy_xls_files() -> None:
     assert response.json() == {"detail": UNSUPPORTED_XLS_MESSAGE}
 
 
+def test_treats_excel_mime_csv_as_csv() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    row = {
+        "name": "Casa CSV",
+        "slug": "casa-csv",
+        "province": "MI",
+        "type": "house",
+    }
+    csv_header = ",".join(HEADERS)
+    csv_row = ",".join(str(row.get(header, "")) for header in HEADERS)
+    csv_content = f"{csv_header}\n{csv_row}\n".encode()
+
+    response = upload_file(
+        client,
+        csv_content,
+        filename="structures.csv",
+        content_type="application/vnd.ms-excel",
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["source_format"] == "csv"
+    assert payload["valid_rows"] == 1
+    assert payload["invalid_rows"] == 0
+
+
 def test_import_requires_admin() -> None:
     client = get_client(authenticated=True, is_admin=False)
     workbook = build_workbook(
