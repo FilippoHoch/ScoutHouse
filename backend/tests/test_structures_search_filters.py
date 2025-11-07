@@ -305,3 +305,155 @@ def test_search_filters_by_cost_band() -> None:
     assert none_resp.status_code == 200
     slugs = {item["slug"] for item in none_resp.json()["items"]}
     assert "volunteer-field" not in slugs
+
+
+def test_search_filters_by_cell_coverage_and_aed() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    create_structure(
+        client,
+        {
+            "name": "Campo Sicuro",
+            "slug": "campo-sicuro",
+            "province": "BS",
+            "type": "mixed",
+            "cell_coverage": "excellent",
+            "aed_on_site": True,
+        },
+    )
+    create_structure(
+        client,
+        {
+            "name": "Campo Basico",
+            "slug": "campo-basico",
+            "province": "BS",
+            "type": "mixed",
+            "cell_coverage": "limited",
+            "aed_on_site": False,
+        },
+    )
+
+    response = client.get(
+        "/api/v1/structures/search",
+        params={"cell_coverage": "excellent", "aed_on_site": True},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["slug"] == "campo-sicuro"
+
+
+def test_search_filters_by_wastewater_and_river_swimming() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    create_structure(
+        client,
+        {
+            "name": "Campo Fiume",
+            "slug": "campo-fiume",
+            "province": "CN",
+            "type": "mixed",
+            "wastewater_type": "mains",
+            "river_swimming": "si",
+            "wildlife_notes": "Sorvegliare il fiume",
+        },
+    )
+    create_structure(
+        client,
+        {
+            "name": "Campo Collina",
+            "slug": "campo-collina",
+            "province": "CN",
+            "type": "mixed",
+            "wastewater_type": "septic",
+            "river_swimming": "no",
+        },
+    )
+
+    mains_resp = client.get(
+        "/api/v1/structures/search",
+        params={"wastewater_type": "mains"},
+    )
+    assert mains_resp.status_code == 200
+    mains_data = mains_resp.json()
+    assert mains_data["total"] == 1
+    assert mains_data["items"][0]["slug"] == "campo-fiume"
+
+    swimming_resp = client.get(
+        "/api/v1/structures/search",
+        params={"river_swimming": "si"},
+    )
+    assert swimming_resp.status_code == 200
+    swimming_data = swimming_resp.json()
+    assert swimming_data["total"] == 1
+    assert swimming_data["items"][0]["slug"] == "campo-fiume"
+
+
+def test_search_filters_by_power_and_parking_thresholds() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    create_structure(
+        client,
+        {
+            "name": "Campo Energia",
+            "slug": "campo-energia",
+            "province": "MI",
+            "type": "mixed",
+            "power_capacity_kw": 12.0,
+            "parking_car_slots": 8,
+        },
+    )
+    create_structure(
+        client,
+        {
+            "name": "Campo Piccolo",
+            "slug": "campo-piccolo",
+            "province": "MI",
+            "type": "mixed",
+            "power_capacity_kw": 3.5,
+            "parking_car_slots": 2,
+        },
+    )
+
+    response = client.get(
+        "/api/v1/structures/search",
+        params={"min_power_capacity_kw": 5, "min_parking_car_slots": 5},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["slug"] == "campo-energia"
+
+
+def test_search_filters_by_flood_risk() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    create_structure(
+        client,
+        {
+            "name": "Campo Sicuro",
+            "slug": "campo-sicuro-rischio",
+            "province": "VR",
+            "type": "mixed",
+            "flood_risk": "low",
+        },
+    )
+    create_structure(
+        client,
+        {
+            "name": "Campo Critico",
+            "slug": "campo-critico",
+            "province": "VR",
+            "type": "mixed",
+            "flood_risk": "high",
+        },
+    )
+
+    response = client.get(
+        "/api/v1/structures/search",
+        params={"flood_risk": "high"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["slug"] == "campo-critico"

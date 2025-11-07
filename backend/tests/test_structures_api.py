@@ -315,6 +315,111 @@ def test_create_structure_validates_location_codes() -> None:
     assert invalid_response.status_code == 422
 
 
+def test_create_structure_requires_generator_capacity() -> None:
+    client = get_client(authenticated=True)
+
+    base_payload = {
+        "name": "Campo Energia",
+        "slug": "campo-energia",
+        "province": "MI",
+        "type": "mixed",
+        "generator_available": True,
+    }
+
+    missing_capacity = client.post("/api/v1/structures/", json=base_payload)
+    assert missing_capacity.status_code == 422
+
+    ok_payload = {
+        **base_payload,
+        "slug": "campo-energia-ok",
+        "power_capacity_kw": 5.5,
+    }
+
+    ok_response = client.post("/api/v1/structures/", json=ok_payload)
+    assert ok_response.status_code == 201, ok_response.text
+    body = ok_response.json()
+    assert body["generator_available"] is True
+    assert body["power_capacity_kw"] == pytest.approx(5.5)
+
+
+def test_create_structure_river_swimming_requires_notes() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Campo Fiume",
+        "slug": "campo-fiume",
+        "province": "BG",
+        "type": "mixed",
+        "river_swimming": "si",
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 422
+
+    ok_payload = {
+        **payload,
+        "slug": "campo-fiume-ok",
+        "wildlife_notes": "Verificare fauna presente.",
+    }
+
+    ok_response = client.post("/api/v1/structures/", json=ok_payload)
+    assert ok_response.status_code == 201, ok_response.text
+    assert ok_response.json()["river_swimming"] == "si"
+
+
+def test_create_structure_dry_toilet_requires_pit_latrine_allowed() -> None:
+    client = get_client(authenticated=True)
+
+    payload = {
+        "name": "Campo Compost",
+        "slug": "campo-compost",
+        "province": "TO",
+        "type": "mixed",
+        "dry_toilet": True,
+        "pit_latrine_allowed": False,
+    }
+
+    response = client.post("/api/v1/structures/", json=payload)
+    assert response.status_code == 422
+
+    ok_payload = {
+        **payload,
+        "slug": "campo-compost-ok",
+        "pit_latrine_allowed": True,
+    }
+
+    ok_response = client.post("/api/v1/structures/", json=ok_payload)
+    assert ok_response.status_code == 201, ok_response.text
+    data = ok_response.json()
+    assert data["dry_toilet"] is True
+    assert data["pit_latrine_allowed"] is True
+
+
+def test_create_structure_validates_iban_checksum() -> None:
+    client = get_client(authenticated=True)
+
+    invalid_payload = {
+        "name": "Casa Iban",
+        "slug": "casa-iban",
+        "province": "MI",
+        "type": "house",
+        "iban": "IT00A0000000000000000000000",
+    }
+
+    invalid_response = client.post("/api/v1/structures/", json=invalid_payload)
+    assert invalid_response.status_code == 422
+
+    ok_payload = {
+        **invalid_payload,
+        "slug": "casa-iban-ok",
+        "iban": "IT60X0542811101000000123456",
+    }
+
+    ok_response = client.post("/api/v1/structures/", json=ok_payload)
+    assert ok_response.status_code == 201, ok_response.text
+    assert ok_response.json()["iban"] == "IT60X0542811101000000123456"
+
+
 def test_get_structure_by_slug_not_found() -> None:
     client = get_client()
     response = client.get("/api/v1/structures/by-slug/unknown")
