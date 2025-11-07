@@ -70,6 +70,7 @@ from app.services.attachments import (
     StorageUnavailableError,
     delete_object,
     ensure_bucket,
+    ensure_bucket_exists,
     get_s3_client,
     rewrite_presigned_url,
 )
@@ -139,6 +140,13 @@ def _ensure_storage_ready() -> tuple[str, Any]:
             detail="File storage not configured",
         ) from exc
     client = get_s3_client()
+    try:
+        ensure_bucket_exists(client, bucket)
+    except StorageUnavailableError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File storage not configured",
+        ) from exc
     return bucket, client
 
 

@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from botocore.exceptions import ClientError
 
 
 def _install_boto_stubs() -> None:
@@ -89,9 +90,21 @@ class FakeS3Client:
         self.deleted: list[tuple[str, str]] = []
         self.presigned_posts: list[dict[str, Any]] = []
         self.presigned_urls: list[dict[str, Any]] = []
+        self.buckets: set[str] = set()
 
     def add_head(self, key: str, response: dict[str, Any]) -> None:
         self.head_responses[key] = response
+
+    def head_bucket(self, *, Bucket: str) -> dict[str, Any]:
+        if Bucket not in self.buckets:
+            raise ClientError({"Error": {"Code": "404"}}, "HeadBucket")
+        return {}
+
+    def create_bucket(self, *, Bucket: str, **_kwargs: Any) -> dict[str, Any]:
+        if Bucket in self.buckets:
+            raise ClientError({"Error": {"Code": "BucketAlreadyOwnedByYou"}}, "CreateBucket")
+        self.buckets.add(Bucket)
+        return {}
 
     def head_object(self, *, Bucket: str, Key: str) -> dict[str, Any]:
         try:
