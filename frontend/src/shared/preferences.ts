@@ -6,6 +6,8 @@ export interface PricePreferences {
   cheap: boolean;
   medium: boolean;
   expensive: boolean;
+  cheapMax: number;
+  mediumMax: number;
 }
 
 export interface UserPreferences {
@@ -23,7 +25,9 @@ function createDefaultPreferences(): UserPreferences {
     pricePreferences: {
       cheap: true,
       medium: true,
-      expensive: true
+      expensive: true,
+      cheapMax: 8,
+      mediumMax: 15
     }
   };
 }
@@ -34,6 +38,21 @@ function isEventBranch(value: unknown): value is EventBranch {
   return typeof value === "string" && eventBranches.includes(value as EventBranch);
 }
 
+function parseThreshold(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
+}
+
 function normalisePricePreferences(value: unknown): PricePreferences {
   const defaults = createDefaultPreferences().pricePreferences;
 
@@ -42,10 +61,17 @@ function normalisePricePreferences(value: unknown): PricePreferences {
   }
 
   const record = value as Record<string, unknown>;
+  const cheapMax = parseThreshold(record.cheapMax, defaults.cheapMax);
+  const mediumMax = parseThreshold(record.mediumMax, defaults.mediumMax);
+  const normalisedCheapMax = Math.max(0, cheapMax);
+  const normalisedMediumMax = Math.max(normalisedCheapMax, mediumMax);
+
   return {
     cheap: typeof record.cheap === "boolean" ? record.cheap : defaults.cheap,
     medium: typeof record.medium === "boolean" ? record.medium : defaults.medium,
-    expensive: typeof record.expensive === "boolean" ? record.expensive : defaults.expensive
+    expensive: typeof record.expensive === "boolean" ? record.expensive : defaults.expensive,
+    cheapMax: normalisedCheapMax,
+    mediumMax: normalisedMediumMax
   };
 }
 
@@ -75,7 +101,9 @@ function clonePreferences(preferences: UserPreferences): UserPreferences {
     pricePreferences: {
       cheap: preferences.pricePreferences.cheap,
       medium: preferences.pricePreferences.medium,
-      expensive: preferences.pricePreferences.expensive
+      expensive: preferences.pricePreferences.expensive,
+      cheapMax: preferences.pricePreferences.cheapMax,
+      mediumMax: preferences.pricePreferences.mediumMax
     }
   };
 }
@@ -161,11 +189,13 @@ export function updateUserPreferences(update: Partial<UserPreferences>): void {
     pricePreferences: {
       cheap: update.pricePreferences?.cheap ?? state.pricePreferences.cheap,
       medium: update.pricePreferences?.medium ?? state.pricePreferences.medium,
-      expensive: update.pricePreferences?.expensive ?? state.pricePreferences.expensive
+      expensive: update.pricePreferences?.expensive ?? state.pricePreferences.expensive,
+      cheapMax: update.pricePreferences?.cheapMax ?? state.pricePreferences.cheapMax,
+      mediumMax: update.pricePreferences?.mediumMax ?? state.pricePreferences.mediumMax
     }
   };
 
-  persist(next);
+  persist(normalisePreferences(next));
 }
 
 export function resetUserPreferences(): void {

@@ -29,7 +29,9 @@ export const SettingsPage = () => {
       formState.defaultBranch !== preferences.defaultBranch ||
       formState.pricePreferences.cheap !== preferences.pricePreferences.cheap ||
       formState.pricePreferences.medium !== preferences.pricePreferences.medium ||
-      formState.pricePreferences.expensive !== preferences.pricePreferences.expensive
+      formState.pricePreferences.expensive !== preferences.pricePreferences.expensive ||
+      formState.pricePreferences.cheapMax !== preferences.pricePreferences.cheapMax ||
+      formState.pricePreferences.mediumMax !== preferences.pricePreferences.mediumMax
     );
   }, [formState, preferences]);
 
@@ -54,7 +56,7 @@ export const SettingsPage = () => {
     setStatus("idle");
   };
 
-  const handlePriceChange = (key: keyof UserPreferences["pricePreferences"], value: boolean) => {
+  const handlePriceChange = (key: "cheap" | "medium" | "expensive", value: boolean) => {
     setFormState((prev) => ({
       ...prev,
       pricePreferences: {
@@ -62,6 +64,35 @@ export const SettingsPage = () => {
         [key]: value
       }
     }));
+    setStatus("idle");
+  };
+
+  const handleThresholdChange = (key: "cheapMax" | "mediumMax", rawValue: string) => {
+    const parsed = Number.parseFloat(rawValue);
+
+    setFormState((prev) => {
+      const nextValue = Number.isFinite(parsed) ? parsed : 0;
+      let cheapMax = key === "cheapMax" ? nextValue : prev.pricePreferences.cheapMax;
+      let mediumMax = key === "mediumMax" ? nextValue : prev.pricePreferences.mediumMax;
+
+      cheapMax = Math.max(0, cheapMax);
+      mediumMax = Math.max(0, mediumMax);
+
+      if (key === "cheapMax" && cheapMax > mediumMax) {
+        mediumMax = cheapMax;
+      } else if (key === "mediumMax" && mediumMax < cheapMax) {
+        cheapMax = mediumMax;
+      }
+
+      return {
+        ...prev,
+        pricePreferences: {
+          ...prev.pricePreferences,
+          cheapMax,
+          mediumMax
+        }
+      };
+    });
     setStatus("idle");
   };
 
@@ -81,7 +112,7 @@ export const SettingsPage = () => {
               </div>
             </SectionHeader>
             <div className="settings-fields">
-              <label>
+              <label className="settings-field">
                 {t("settings.fields.homeLocation.label")}
                 <input
                   type="text"
@@ -91,7 +122,7 @@ export const SettingsPage = () => {
                 />
                 <span className="helper-text">{t("settings.fields.homeLocation.helper")}</span>
               </label>
-              <label>
+              <label className="settings-field">
                 {t("settings.fields.defaultBranch.label")}
                 <select
                   value={formState.defaultBranch}
@@ -142,6 +173,39 @@ export const SettingsPage = () => {
                     onChange={(event) => handlePriceChange("expensive", event.target.checked)}
                   />
                   <span>{t("settings.fields.pricePreferences.options.expensive")}</span>
+                </label>
+              </div>
+              <div className="settings-divider" role="presentation" />
+              <div className="settings-thresholds">
+                <label className="settings-field">
+                  <span className="settings-field__label">{t("settings.fields.pricePreferences.thresholds.cheapMax.label")}</span>
+                  <div className="settings-input">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step={0.5}
+                      value={formState.pricePreferences.cheapMax}
+                      onChange={(event) => handleThresholdChange("cheapMax", event.target.value)}
+                    />
+                    <span className="settings-input__suffix">€/notte</span>
+                  </div>
+                  <span className="helper-text">{t("settings.fields.pricePreferences.thresholds.cheapMax.helper")}</span>
+                </label>
+                <label className="settings-field">
+                  <span className="settings-field__label">{t("settings.fields.pricePreferences.thresholds.mediumMax.label")}</span>
+                  <div className="settings-input">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step={0.5}
+                      value={formState.pricePreferences.mediumMax}
+                      onChange={(event) => handleThresholdChange("mediumMax", event.target.value)}
+                    />
+                    <span className="settings-input__suffix">€/notte</span>
+                  </div>
+                  <span className="helper-text">{t("settings.fields.pricePreferences.thresholds.mediumMax.helper")}</span>
                 </label>
               </div>
             </fieldset>
