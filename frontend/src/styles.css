@@ -2346,6 +2346,18 @@ table tbody tr:hover {
   gap: var(--space-sm);
 }
 
+.attachments-section__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.structure-photos__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
 .structure-photos {
   display: flex;
   flex-direction: column;

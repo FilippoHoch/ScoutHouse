@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.27.5",
+    "file-saver": "^2.0.5",
     "i18next": "^23.11.5",
+    "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -22,11 +24,11 @@
     "react-router-dom": "^6.22.0"
   },
   "devDependencies": {
-    "@types/leaflet": "^1.9.21",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.2",
     "@types/google.maps": "^3.58.1",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",

@@ -703,7 +703,8 @@
         "invalidType": "Carica un file immagine (JPG, PNG, WebP o GIF).",
         "uploadFailed": "Impossibile caricare la foto.",
         "invalidKey": "Impossibile validare la firma di upload.",
-        "invalidStructure": "Seleziona una struttura per gestire le foto."
+        "invalidStructure": "Seleziona una struttura per gestire le foto.",
+        "downloadAllFailed": "Impossibile scaricare le foto. Riprova."
       },
       "state": {
         "loading": "Caricamento foto in corso…",
@@ -711,7 +712,10 @@
         "empty": "Nessuna foto caricata."
       },
       "actions": {
-        "delete": "Elimina"
+        "delete": "Elimina",
+        "downloadAll": "Scarica tutto",
+        "downloadAllProgress": "Preparazione…",
+        "downloadAllArchiveName": "foto.zip"
       },
       "carousel": {
         "label": "Galleria foto della struttura",
@@ -878,7 +882,7 @@
   },
   "attachments": {
     "upload": {
-      "prompt": "Trascina qui i file o clicca per caricarli (PDF o immagini, max 5 MB).",
+      "prompt": "Trascina qui i file o clicca per caricarli (PDF o documenti, max 5 MB).",
       "button": "Seleziona file",
       "progress": "Caricamento in corso…"
     },
@@ -898,13 +902,17 @@
     },
     "actions": {
       "download": "Scarica",
-      "delete": "Elimina"
+      "downloadAll": "Scarica tutto",
+      "downloadAllProgress": "Preparazione…",
+      "delete": "Elimina",
+      "downloadAllArchiveName": "allegati.zip"
     },
     "errors": {
       "invalidOwner": "Identificativo struttura/evento non valido.",
       "uploadFailed": "Caricamento su storage fallito.",
       "invalidKey": "Chiave di caricamento non valida.",
-      "generic": "Impossibile completare l'operazione."
+      "generic": "Impossibile completare l'operazione.",
+      "downloadAllFailed": "Impossibile scaricare tutti gli allegati. Riprova."
     }
   },
   "events": {

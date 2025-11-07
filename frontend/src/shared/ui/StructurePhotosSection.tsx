@@ -22,6 +22,7 @@ import {
   getStructurePhotos,
   signAttachmentUpload
 } from "../api";
+import { downloadEntriesAsZip } from "../utils/download";
 
 interface StructurePhotosSectionProps {
   structureId: number | null;
@@ -40,6 +41,7 @@ export const StructurePhotosSection = ({
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [downloadAllPending, setDownloadAllPending] = useState(false);
 
   const queryKey = useMemo(
     () => ["structure-photos", structureId],
@@ -210,6 +212,30 @@ export const StructurePhotosSection = ({
     setActiveIndex(index);
   };
 
+  const handleDownloadAll = async () => {
+    if (structureId === null || photos.length === 0) {
+      return;
+    }
+    setError(null);
+    setDownloadAllPending(true);
+    try {
+      await downloadEntriesAsZip(
+        photos.map((photo) => ({
+          filename: photo.filename,
+          url: photo.url,
+        })),
+        t("structures.photos.actions.downloadAllArchiveName")
+      );
+    } catch (downloadError) {
+      setError(t("structures.photos.errors.downloadAllFailed"));
+      if (downloadError instanceof Error) {
+        console.error("Unable to download photos", downloadError);
+      }
+    } finally {
+      setDownloadAllPending(false);
+    }
+  };
+
   const renderBody = () => {
     if (structureId === null) {
       return <p className="structure-photos__placeholder">{t("structures.photos.errors.invalidStructure")}</p>;
@@ -334,12 +360,24 @@ export const StructurePhotosSection = ({
             disabled={uploadMutation.isPending || structureId === null}
           />
         </div>
-      )}
+  )}
 
-      {error && <p className="error">{error}</p>}
+  {error && <p className="error">{error}</p>}
 
-      <div className="structure-photos__content">{renderBody()}</div>
-    </div>
-  );
+  <div className="structure-photos__actions">
+    <button
+      type="button"
+      onClick={handleDownloadAll}
+      disabled={downloadAllPending || photos.length === 0 || structureId === null}
+    >
+      {downloadAllPending
+        ? t("structures.photos.actions.downloadAllProgress")
+        : t("structures.photos.actions.downloadAll")}
+    </button>
+  </div>
+
+  <div className="structure-photos__content">{renderBody()}</div>
+</div>
+);
 };
 

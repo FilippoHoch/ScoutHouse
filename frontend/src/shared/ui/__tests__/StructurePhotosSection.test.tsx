@@ -11,6 +11,7 @@ import {
   deleteStructurePhoto
 } from "../../api";
 import { StructurePhotosSection } from "../StructurePhotosSection";
+import { downloadEntriesAsZip } from "../../utils/download";
 
 vi.mock("../../api", async () => {
   const actual = await vi.importActual<typeof import("../../api")>("../../api");
@@ -24,11 +25,16 @@ vi.mock("../../api", async () => {
   };
 });
 
+vi.mock("../../utils/download", () => ({
+  downloadEntriesAsZip: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mockedGetPhotos = vi.mocked(getStructurePhotos);
 const mockedSignUpload = vi.mocked(signAttachmentUpload);
 const mockedConfirmUpload = vi.mocked(confirmAttachmentUpload);
 const mockedCreatePhoto = vi.mocked(createStructurePhoto);
 const mockedDeletePhoto = vi.mocked(deleteStructurePhoto);
+const mockedDownloadZip = vi.mocked(downloadEntriesAsZip);
 
 const Wrapper = ({ children }: { children: React.ReactNode }) => {
   const queryClient = new QueryClient({
@@ -44,6 +50,8 @@ describe("StructurePhotosSection", () => {
     mockedConfirmUpload.mockReset();
     mockedCreatePhoto.mockReset();
     mockedDeletePhoto.mockReset();
+    mockedDownloadZip.mockReset();
+    mockedDownloadZip.mockResolvedValue(undefined);
   });
 
   it("renders empty state when no photos are available", async () => {
@@ -244,6 +252,50 @@ describe("StructurePhotosSection", () => {
     const deleteButton = await screen.findByRole("button", { name: /Elimina/i });
     await user.click(deleteButton);
     await waitFor(() => expect(mockedDeletePhoto).toHaveBeenCalledWith(42, 5));
+  });
+
+  it("downloads all photos as a single archive", async () => {
+    const user = userEvent.setup();
+    mockedGetPhotos.mockResolvedValue([
+      {
+        id: 1,
+        structure_id: 42,
+        attachment_id: 99,
+        filename: "panorama.jpg",
+        mime: "image/jpeg",
+        size: 2048,
+        position: 0,
+        url: "https://example.com/panorama.jpg",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 2,
+        structure_id: 42,
+        attachment_id: 101,
+        filename: "bosco.jpg",
+        mime: "image/jpeg",
+        size: 1024,
+        position: 1,
+        url: "https://example.com/bosco.jpg",
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
+    render(
+      <StructurePhotosSection structureId={42} canUpload={false} canDelete={false} />,
+      { wrapper: Wrapper }
+    );
+
+    const button = await screen.findByRole("button", { name: /Scarica tutto/i });
+    await user.click(button);
+
+    await waitFor(() => expect(mockedDownloadZip).toHaveBeenCalledWith(
+      [
+        { filename: "panorama.jpg", url: "https://example.com/panorama.jpg" },
+        { filename: "bosco.jpg", url: "https://example.com/bosco.jpg" },
+      ],
+      "foto.zip"
+    ));
   });
 });
 
