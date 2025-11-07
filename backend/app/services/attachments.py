@@ -62,6 +62,31 @@ def ensure_bucket() -> str:
     return bucket
 
 
+def ensure_bucket_exists(client: BaseClient, bucket: str) -> None:
+    """Ensure the configured bucket exists, creating it if missing."""
+
+    try:
+        client.head_bucket(Bucket=bucket)
+        return
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code")
+        if error_code not in {"404", "NoSuchBucket", "NotFound"}:
+            raise StorageUnavailableError("Unable to verify storage bucket") from exc
+
+    create_kwargs: dict[str, Any] = {"Bucket": bucket}
+    region = get_settings().s3_region
+    if region and region != "us-east-1":
+        create_kwargs["CreateBucketConfiguration"] = {"LocationConstraint": region}
+
+    try:
+        client.create_bucket(**create_kwargs)
+    except ClientError as exc:  # pragma: no cover - defensive guard
+        error_code = exc.response.get("Error", {}).get("Code")
+        if error_code in {"BucketAlreadyOwnedByYou", "BucketAlreadyExists"}:
+            return
+        raise StorageUnavailableError("Unable to create storage bucket") from exc
+
+
 def sanitize_filename(filename: str) -> str:
     base = os.path.basename(filename.strip()) or "file"
     name, ext = os.path.splitext(base)
@@ -185,6 +210,7 @@ __all__ = [
     "build_storage_key",
     "delete_object",
     "ensure_bucket",
+    "ensure_bucket_exists",
     "ensure_size_within_limits",
     "get_s3_client",
     "head_object",
