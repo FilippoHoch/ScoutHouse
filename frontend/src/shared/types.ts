@@ -41,6 +41,7 @@ export interface Attachment {
   size: number;
   created_by: string | null;
   created_by_name: string | null;
+  description: string | null;
   created_at: string;
 }
 
@@ -54,6 +55,7 @@ export interface StructurePhoto {
   position: number;
   url: string;
   created_at: string;
+  description: string | null;
 }
 
 export interface User {

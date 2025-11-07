@@ -21,6 +21,7 @@ import {
   getAttachments,
   signAttachmentDownload,
   signAttachmentUpload,
+  updateAttachment,
 } from "../api";
 import { downloadEntriesAsZip } from "../utils/download";
 
@@ -53,6 +54,9 @@ export const AttachmentsSection = ({
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloadAllPending, setDownloadAllPending] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const queryKey = useMemo(
     () => ["attachments", ownerType, ownerId],
@@ -113,6 +117,37 @@ export const AttachmentsSection = ({
   const deleteMutation = useMutation({
     mutationFn: (attachmentId: number) => deleteAttachment(attachmentId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+  });
+
+  const updateMutation = useMutation({
+    onMutate: () => {
+      setError(null);
+    },
+    mutationFn: async (attachmentId: number) => {
+      const trimmedName = editName.trim();
+      if (!trimmedName) {
+        throw new Error("missing-name");
+      }
+      const descriptionValue = editDescription.trim();
+      return updateAttachment(attachmentId, {
+        filename: trimmedName,
+        description: descriptionValue ? descriptionValue : null,
+      });
+    },
+    onSuccess: () => {
+      setEditingId(null);
+      setEditName("");
+      setEditDescription("");
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (err) => {
+      const code = err instanceof Error ? err.message : "unknown";
+      if (code === "missing-name") {
+        setError(t("attachments.errors.missingName"));
+      } else {
+        setError(t("attachments.errors.updateFailed"));
+      }
+    },
   });
 
   const handleSelectFile = (event: ChangeEvent<HTMLInputElement>) => {
@@ -232,6 +267,7 @@ export const AttachmentsSection = ({
         <thead>
           <tr>
             <th>{t("attachments.columns.name")}</th>
+            <th>{t("attachments.columns.description")}</th>
             <th>{t("attachments.columns.size")}</th>
             <th>{t("attachments.columns.author")}</th>
             <th>{t("attachments.columns.createdAt")}</th>
@@ -241,7 +277,34 @@ export const AttachmentsSection = ({
         <tbody>
           {downloadableAttachments.map((attachment) => (
             <tr key={attachment.id}>
-              <td>{attachment.filename}</td>
+              <td>
+                {editingId === attachment.id ? (
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(event) => setEditName(event.target.value)}
+                    disabled={updateMutation.isPending}
+                    aria-label={t("attachments.form.nameLabel")}
+                  />
+                ) : (
+                  attachment.filename
+                )}
+              </td>
+              <td className="attachments__description">
+                {editingId === attachment.id ? (
+                  <textarea
+                    value={editDescription}
+                    onChange={(event) => setEditDescription(event.target.value)}
+                    disabled={updateMutation.isPending}
+                    rows={2}
+                    aria-label={t("attachments.form.descriptionLabel")}
+                  />
+                ) : attachment.description ? (
+                  attachment.description
+                ) : (
+                  "–"
+                )}
+              </td>
               <td>{formatFileSize(attachment.size)}</td>
               <td>{attachment.created_by_name ?? "–"}</td>
               <td>{new Date(attachment.created_at).toLocaleString()}</td>
@@ -249,14 +312,55 @@ export const AttachmentsSection = ({
                 <button type="button" onClick={() => handleDownload(attachment.id)}>
                   {t("attachments.actions.download")}
                 </button>
-                {canDelete && (
-                  <button
-                    type="button"
-                    onClick={() => deleteMutation.mutate(attachment.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    {t("attachments.actions.delete")}
-                  </button>
+                {editingId === attachment.id ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => updateMutation.mutate(attachment.id)}
+                      disabled={updateMutation.isPending}
+                    >
+                      {updateMutation.isPending
+                        ? t("attachments.actions.saveProgress")
+                        : t("attachments.actions.save")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(null);
+                        setEditName("");
+                        setEditDescription("");
+                        setError(null);
+                      }}
+                      disabled={updateMutation.isPending}
+                    >
+                      {t("attachments.actions.cancel")}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {canUpload && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(attachment.id);
+                          setEditName(attachment.filename);
+                          setEditDescription(attachment.description ?? "");
+                          setError(null);
+                        }}
+                      >
+                        {t("attachments.actions.edit")}
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => deleteMutation.mutate(attachment.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        {t("attachments.actions.delete")}
+                      </button>
+                    )}
+                  </>
                 )}
               </td>
             </tr>

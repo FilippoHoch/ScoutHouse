@@ -717,7 +717,9 @@
         "uploadFailed": "Impossibile caricare la foto.",
         "invalidKey": "Impossibile validare la firma di upload.",
         "invalidStructure": "Seleziona una struttura per gestire le foto.",
-        "downloadAllFailed": "Impossibile scaricare le foto. Riprova."
+        "downloadAllFailed": "Impossibile scaricare le foto. Riprova.",
+        "missingName": "Inserisci un nome per la foto.",
+        "updateFailed": "Impossibile aggiornare i dettagli della foto."
       },
       "state": {
         "loading": "Caricamento foto in corso…",
@@ -728,7 +730,15 @@
         "delete": "Elimina",
         "downloadAll": "Scarica tutto",
         "downloadAllProgress": "Preparazione…",
-        "downloadAllArchiveName": "foto.zip"
+        "downloadAllArchiveName": "foto.zip",
+        "edit": "Rinomina",
+        "save": "Salva",
+        "saveProgress": "Salvataggio…",
+        "cancel": "Annulla"
+      },
+      "form": {
+        "nameLabel": "Nome foto",
+        "descriptionLabel": "Descrizione foto"
       },
       "carousel": {
         "label": "Galleria foto della struttura",
@@ -908,6 +918,7 @@
     },
     "columns": {
       "name": "Nome",
+      "description": "Descrizione",
       "size": "Dimensione",
       "author": "Caricato da",
       "createdAt": "Data",
@@ -917,6 +928,10 @@
       "download": "Scarica",
       "downloadAll": "Scarica tutto",
       "downloadAllProgress": "Preparazione…",
+      "edit": "Modifica",
+      "save": "Salva",
+      "saveProgress": "Salvataggio…",
+      "cancel": "Annulla",
       "delete": "Elimina",
       "downloadAllArchiveName": "allegati.zip"
     },
@@ -925,7 +940,13 @@
       "uploadFailed": "Caricamento su storage fallito.",
       "invalidKey": "Chiave di caricamento non valida.",
       "generic": "Impossibile completare l'operazione.",
-      "downloadAllFailed": "Impossibile scaricare tutti gli allegati. Riprova."
+      "downloadAllFailed": "Impossibile scaricare tutti gli allegati. Riprova.",
+      "missingName": "Inserisci un nome per l'allegato.",
+      "updateFailed": "Impossibile aggiornare l'allegato."
+    },
+    "form": {
+      "nameLabel": "Nome allegato",
+      "descriptionLabel": "Descrizione allegato"
     }
   },
   "events": {

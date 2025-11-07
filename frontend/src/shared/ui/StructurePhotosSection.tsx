@@ -20,7 +20,8 @@ import {
   createStructurePhoto,
   deleteStructurePhoto,
   getStructurePhotos,
-  signAttachmentUpload
+  signAttachmentUpload,
+  updateAttachment
 } from "../api";
 import { downloadEntriesAsZip } from "../utils/download";
 import { Button } from "./designSystem";
@@ -45,6 +46,9 @@ export const StructurePhotosSection = ({
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [downloadAllPending, setDownloadAllPending] = useState(false);
+  const [editingPhotoId, setEditingPhotoId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const queryKey = useMemo(
     () => ["structure-photos", structureId],
@@ -122,6 +126,37 @@ export const StructurePhotosSection = ({
     }
   });
 
+  const updateMutation = useMutation({
+    onMutate: () => {
+      setError(null);
+    },
+    mutationFn: async (attachmentId: number) => {
+      const trimmedName = editName.trim();
+      if (!trimmedName) {
+        throw new Error("missing-name");
+      }
+      const descriptionValue = editDescription.trim();
+      return updateAttachment(attachmentId, {
+        filename: trimmedName,
+        description: descriptionValue ? descriptionValue : null
+      });
+    },
+    onSuccess: () => {
+      setEditingPhotoId(null);
+      setEditName("");
+      setEditDescription("");
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (err) => {
+      const code = err instanceof Error ? err.message : "unknown";
+      if (code === "missing-name") {
+        setError(t("structures.photos.errors.missingName"));
+      } else {
+        setError(t("structures.photos.errors.updateFailed"));
+      }
+    }
+  });
+
   const handleUpload = useCallback(
     async (file: File) => {
       if (!isImageFile(file)) {
@@ -186,6 +221,9 @@ export const StructurePhotosSection = ({
 
   useEffect(() => {
     setActiveIndex(0);
+    setEditingPhotoId(null);
+    setEditName("");
+    setEditDescription("");
   }, [structureId]);
 
   useEffect(() => {
@@ -195,7 +233,15 @@ export const StructurePhotosSection = ({
       }
       return Math.min(current, photos.length - 1);
     });
-  }, [photos.length]);
+    if (editingPhotoId !== null) {
+      const stillExists = photos.some((photo) => photo.id === editingPhotoId);
+      if (!stillExists) {
+        setEditingPhotoId(null);
+        setEditName("");
+        setEditDescription("");
+      }
+    }
+  }, [photos, photos.length, editingPhotoId]);
 
   const handlePrevious = () => {
     if (photos.length <= 1) {
@@ -256,6 +302,7 @@ export const StructurePhotosSection = ({
     if (!activePhoto) {
       return null;
     }
+    const isEditing = editingPhotoId === activePhoto.id;
     return (
       <div
         className="structure-photos__carousel"
@@ -278,9 +325,39 @@ export const StructurePhotosSection = ({
             <img src={activePhoto.url} alt={activePhoto.filename} />
             <figcaption>
               <div className="structure-photos__preview-meta">
-                <span className="structure-photos__filename" title={activePhoto.filename}>
-                  {activePhoto.filename}
-                </span>
+                {isEditing ? (
+                  <div className="structure-photos__edit-fields">
+                    <label className="sr-only" htmlFor={`photo-name-${activePhoto.id}`}>
+                      {t("structures.photos.form.nameLabel")}
+                    </label>
+                    <input
+                      id={`photo-name-${activePhoto.id}`}
+                      type="text"
+                      value={editName}
+                      onChange={(event) => setEditName(event.target.value)}
+                      disabled={updateMutation.isPending}
+                    />
+                    <label className="sr-only" htmlFor={`photo-description-${activePhoto.id}`}>
+                      {t("structures.photos.form.descriptionLabel")}
+                    </label>
+                    <textarea
+                      id={`photo-description-${activePhoto.id}`}
+                      value={editDescription}
+                      onChange={(event) => setEditDescription(event.target.value)}
+                      disabled={updateMutation.isPending}
+                      rows={3}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <span className="structure-photos__filename" title={activePhoto.filename}>
+                      {activePhoto.filename}
+                    </span>
+                    {activePhoto.description && (
+                      <p className="structure-photos__description">{activePhoto.description}</p>
+                    )}
+                  </>
+                )}
                 {photos.length > 1 && (
                   <span className="structure-photos__counter">
                     {t("structures.photos.carousel.counter", {
@@ -290,14 +367,59 @@ export const StructurePhotosSection = ({
                   </span>
                 )}
               </div>
-              {canDelete && (
-                <button
-                  type="button"
-                  onClick={() => deleteMutation.mutate(activePhoto.id)}
-                  disabled={deleteMutation.isPending}
-                >
-                  {t("structures.photos.actions.delete")}
-                </button>
+              {showManagementControls && (
+                <div className="structure-photos__preview-actions">
+                  {isEditing ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => updateMutation.mutate(activePhoto.attachment_id)}
+                        disabled={updateMutation.isPending}
+                      >
+                        {updateMutation.isPending
+                          ? t("structures.photos.actions.saveProgress")
+                          : t("structures.photos.actions.save")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingPhotoId(null);
+                          setEditName("");
+                          setEditDescription("");
+                          setError(null);
+                        }}
+                        disabled={updateMutation.isPending}
+                      >
+                        {t("structures.photos.actions.cancel")}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {canUpload && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingPhotoId(activePhoto.id);
+                            setEditName(activePhoto.filename);
+                            setEditDescription(activePhoto.description ?? "");
+                            setError(null);
+                          }}
+                        >
+                          {t("structures.photos.actions.edit")}
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => deleteMutation.mutate(activePhoto.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          {t("structures.photos.actions.delete")}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
             </figcaption>
           </figure>

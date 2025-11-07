@@ -292,6 +292,7 @@ def _serialize_photo(
         position=photo.position,
         url=url,
         created_at=photo.created_at,
+        description=attachment.description,
     )
 
 

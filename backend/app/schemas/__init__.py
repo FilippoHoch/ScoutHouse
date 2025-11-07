@@ -62,6 +62,7 @@ from .attachment import (
     AttachmentDownloadSignature,
     AttachmentRead,
     AttachmentSignRequest,
+    AttachmentUpdateRequest,
     AttachmentUploadSignature,
 )
 
@@ -115,6 +116,7 @@ __all__ = [
     "AttachmentRead",
     "AttachmentSignRequest",
     "AttachmentUploadSignature",
+    "AttachmentUpdateRequest",
     "AttachmentConfirmRequest",
     "AttachmentDownloadSignature",
     "UserRead",

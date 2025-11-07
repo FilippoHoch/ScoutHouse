@@ -9,6 +9,7 @@ import {
   confirmAttachmentUpload,
   deleteAttachment,
   signAttachmentDownload,
+  updateAttachment,
 } from "../../api";
 import { AttachmentsSection } from "../AttachmentsSection";
 import { downloadEntriesAsZip } from "../../utils/download";
@@ -22,6 +23,7 @@ vi.mock("../../api", async () => {
     confirmAttachmentUpload: vi.fn(),
     deleteAttachment: vi.fn(),
     signAttachmentDownload: vi.fn(),
+    updateAttachment: vi.fn(),
   };
 });
 
@@ -35,6 +37,7 @@ const mockedConfirm = vi.mocked(confirmAttachmentUpload);
 const mockedDelete = vi.mocked(deleteAttachment);
 const mockedSignDownload = vi.mocked(signAttachmentDownload);
 const mockedDownloadZip = vi.mocked(downloadEntriesAsZip);
+const mockedUpdate = vi.mocked(updateAttachment);
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -54,6 +57,7 @@ describe("AttachmentsSection", () => {
     mockedDelete.mockReset();
     mockedSignDownload.mockReset();
     mockedDownloadZip.mockReset();
+    mockedUpdate.mockReset();
     mockedDownloadZip.mockResolvedValue(undefined);
   });
 
@@ -69,6 +73,7 @@ describe("AttachmentsSection", () => {
         created_at: new Date("2024-05-01T10:00:00Z").toISOString(),
         created_by: "user-1",
         created_by_name: "Mario Rossi",
+        description: null,
       },
     ]);
 
@@ -95,6 +100,7 @@ describe("AttachmentsSection", () => {
         created_at: new Date().toISOString(),
         created_by: "user-2",
         created_by_name: "Anna",
+        description: null,
       },
     ]);
     mockedSignUpload.mockResolvedValue({
@@ -111,6 +117,7 @@ describe("AttachmentsSection", () => {
       created_at: new Date().toISOString(),
       created_by: "user-2",
       created_by_name: "Anna",
+      description: null,
     });
 
     const fetchMock = vi
@@ -156,6 +163,7 @@ describe("AttachmentsSection", () => {
         created_at: new Date().toISOString(),
         created_by: "user-3",
         created_by_name: "Luca",
+        description: null,
       },
     ]);
     mockedDelete.mockResolvedValue();
@@ -183,6 +191,7 @@ describe("AttachmentsSection", () => {
         created_at: new Date().toISOString(),
         created_by: "user-1",
         created_by_name: "Mario",
+        description: null,
       },
       {
         id: 11,
@@ -194,6 +203,7 @@ describe("AttachmentsSection", () => {
         created_at: new Date().toISOString(),
         created_by: "user-2",
         created_by_name: "Anna",
+        description: null,
       },
     ]);
 
@@ -206,6 +216,82 @@ describe("AttachmentsSection", () => {
     await waitForElementToBeRemoved(() => screen.getByText(/Caricamento allegati…/i));
     expect(await screen.findByText("documento.pdf")).toBeInTheDocument();
     expect(screen.queryByText("foto.jpg")).not.toBeInTheDocument();
+  });
+
+  it("allows renaming an attachment and updating its description", async () => {
+    const user = userEvent.setup();
+    mockedGetAttachments
+      .mockResolvedValueOnce([
+        {
+          id: 5,
+          owner_type: "structure",
+          owner_id: 42,
+          filename: "documento.pdf",
+          mime: "application/pdf",
+          size: 1024,
+          created_at: new Date().toISOString(),
+          created_by: "user-1",
+          created_by_name: "Mario",
+          description: "Vecchia nota",
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 5,
+          owner_type: "structure",
+          owner_id: 42,
+          filename: "Documento aggiornato.pdf",
+          mime: "application/pdf",
+          size: 1024,
+          created_at: new Date().toISOString(),
+          created_by: "user-1",
+          created_by_name: "Mario",
+          description: "Versione aggiornata",
+        },
+      ]);
+    mockedUpdate.mockResolvedValue({
+      id: 5,
+      owner_type: "structure",
+      owner_id: 42,
+      filename: "Documento aggiornato.pdf",
+      mime: "application/pdf",
+      size: 1024,
+      created_at: new Date().toISOString(),
+      created_by: "user-1",
+      created_by_name: "Mario",
+      description: "Versione aggiornata",
+    });
+
+    render(
+      <AttachmentsSection ownerType="structure" ownerId={42} canUpload canDelete={false} />,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(mockedGetAttachments).toHaveBeenCalledTimes(1));
+
+    const editButton = await screen.findByRole("button", { name: /Modifica/i });
+    await user.click(editButton);
+
+    const nameInput = screen.getByLabelText(/Nome allegato/i);
+    await user.clear(nameInput);
+    await user.type(nameInput, "Documento aggiornato.pdf");
+
+    const descriptionInput = screen.getByLabelText(/Descrizione allegato/i);
+    await user.clear(descriptionInput);
+    await user.type(descriptionInput, "Versione aggiornata");
+
+    await user.click(screen.getByRole("button", { name: /Salva/i }));
+
+    await waitFor(() =>
+      expect(mockedUpdate).toHaveBeenCalledWith(5, {
+        filename: "Documento aggiornato.pdf",
+        description: "Versione aggiornata",
+      })
+    );
+
+    await waitFor(() => expect(mockedGetAttachments).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("Documento aggiornato.pdf")).toBeInTheDocument();
+    expect(screen.getByText("Versione aggiornata")).toBeInTheDocument();
   });
 
   it("downloads all attachments as a single archive", async () => {
@@ -221,6 +307,7 @@ describe("AttachmentsSection", () => {
         created_at: new Date().toISOString(),
         created_by: "user-1",
         created_by_name: "Mario",
+        description: null,
       },
       {
         id: 22,
@@ -232,6 +319,7 @@ describe("AttachmentsSection", () => {
         created_at: new Date().toISOString(),
         created_by: "user-2",
         created_by_name: "Anna",
+        description: null,
       },
     ]);
     mockedSignDownload

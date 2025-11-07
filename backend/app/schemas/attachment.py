@@ -51,6 +51,29 @@ class AttachmentConfirmRequest(AttachmentSignRequest):
     key: str = Field(min_length=1)
 
 
+class AttachmentUpdateRequest(BaseModel):
+    filename: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("filename")
+    @classmethod
+    def _trim_filename(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("filename cannot be blank")
+        return cleaned
+
+    @field_validator("description")
+    @classmethod
+    def _normalize_description(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
 class AttachmentRead(BaseModel):
     id: int
     owner_type: AttachmentOwnerType
@@ -60,6 +83,7 @@ class AttachmentRead(BaseModel):
     size: int
     created_by: str | None = None
     created_by_name: str | None = None
+    description: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
