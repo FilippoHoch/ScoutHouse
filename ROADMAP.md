@@ -237,6 +237,126 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 
 * API pubblica documentata, calendari sincronizzati in staging, primi contratti partner attivi e PWA disponibile sugli store.
 
+### M9 · Automazioni intelligenti e knowledge management
+
+**Obiettivi principali**
+
+* Creare insight proattivi per i capi evento e ridurre il carico manuale tramite automazioni guidate da dati e ML leggero.
+
+#### Task essenziali
+
+* **Machine learning & suggerimenti**
+  * Motore raccomandazioni shortlist basato su combinazione di preferenze storiche, disponibilità e feedback post-evento.
+  * Stima automatica costi extra (trasporti, cambusa) usando regressione con spiegabilità (SHAP) e range di confidenza.
+  * Segmentazione strutture per performance (occupazione, rating) con avvisi per strutture sotto soglia.
+* **Automazioni operative**
+  * Bot di follow-up email/SMS verso gestori quando i task contatto restano in sospeso oltre SLA definiti.
+  * Template dinamici per piani attività evento con checklist derivate da caratteristiche (branca, durata, servizi disponibili).
+  * Integrazione con strumenti interni (es. Notion/Confluence) per esportare knowledge base aggiornata automaticamente.
+* **Knowledge management**
+  * Repository centralizzato di lesson learned con tagging per branca, regione, stagione e ricerca semantica.
+  * Workflow di approvazione contenuti con versioning e storicizzazione contributi.
+
+#### Metriche di successo
+
+* ≥ 60% shortlist generate con supporto del motore raccomandazioni e feedback positivo ≥ 4/5.
+* Riduzione del 30% dei task contatto scaduti oltre SLA.
+* ≥ 70% dei nuovi eventi utilizza almeno un template/checklist generato automaticamente.
+
+**DoD**
+
+* Motore raccomandazioni attivo in beta controllata, automazioni comunicazioni configurabili per evento e knowledge base accessibile via app con ricerca semantica funzionante.
+
+### M10 · Partnership territoriali e community
+
+**Obiettivi principali**
+
+* Coinvolgere strutture, regioni scout e fornitori di servizi complementari in un ecosistema collaborativo e sostenibile.
+
+#### Task essenziali
+
+* **Programma partner**
+  * Portale dedicato per gestori strutture con dashboard performance, richieste in corso e strumenti per aggiornare disponibilità.
+  * Marketplace fornitori verificati con schede servizio, recensioni e workflow di richiesta preventivo integrato.
+  * Contratti quadro e policy SLA con onboarding digitale (firma elettronica e KYC di base).
+* **Community & formazione**
+  * Calendario webinar e incontri territoriali sincronizzato con CRM contatti, reminder automatici e registrazione presenze.
+  * Forum/area community moderata con thread tematici (logistica, finanza, sicurezza) e badge reputazione.
+  * Toolkit comunicazione per i livelli regionali (presentazioni, materiali marketing) con tracciamento download.
+* **Reporting condiviso**
+  * Report impatto territoriale (numero eventi, partecipanti, occupancy) esportabile per regione/AGESCI.
+  * Indicatori di sostenibilità (impronta CO₂ stimata, usi energia) e suggerimenti best practice.
+
+#### Metriche di successo
+
+* ≥ 50 strutture partner attive sul portale con aggiornamenti mensili.
+* ≥ 3 fornitori certificati per categoria chiave (catering, trasporti, materiali tecnici).
+* Engagement community: ≥ 200 utenti attivi/mese e retention 60% a 3 mesi.
+
+**DoD**
+
+* Portale partner in produzione con prime strutture onboarded, marketplace live in beta e programma community lanciato con calendario eventi pubblicato.
+
+### M11 · Scalabilità enterprise e audit avanzato
+
+**Obiettivi principali**
+
+* Rendere la piattaforma pronta per adozione da parte di grandi organizzazioni, con garanzie su audit, compliance e gestione multi-tenancy.
+
+#### Task essenziali
+
+* **Multi-tenancy & controlli**
+  * Isolamento logico dei dati con tenant ID e policy row-level, supporto a sottodomini dedicati e custom branding.
+  * Provisioning self-service di nuovi tenant con workflow approvazione e seed dati iniziale.
+  * Limiti di rate e quota configurabili per tenant, con monitoraggio e alert.
+* **Audit & compliance avanzata**
+  * Registro audit immutabile con firma crittografica e retention configurabile.
+  * Connettore esportazione audit verso SIEM/archivi esterni e API di consultazione granulari.
+  * Allineamento a standard ISO 27001/27701: gap analysis, piano di remediation e controlli obbligatori documentati.
+* **Operazioni & supporto**
+  * Runbook on-call multi-tenant, tooling per impersonation sicura a fini supporto e mascheramento dati sensibili.
+  * Funzionalità di migrazione massiva (tenant merge/split) e test rollback.
+
+#### Metriche di successo
+
+* Supporto fino a 20 tenant con isolamento certificato da penetration test di terza parte.
+* Tempo medio provisioning nuovo tenant < 30 minuti end-to-end.
+* Copertura controllo ISO prioritaria ≥ 80% e audit esterno superato senza non conformità maggiori.
+
+**DoD**
+
+* Multi-tenancy documentata, audit trail avanzato operativo e report compliance ISO consegnato con azioni di follow-up pianificate.
+
+### M12 · Espansione internazionale e compliance multi-paese
+
+**Obiettivi principali**
+
+* Adattare il prodotto per lanciare in nuovi paesi europei, garantendo localizzazione, fiscalità e compliance locale.
+
+#### Task essenziali
+
+* **Localizzazione & contenuti**
+  * Estensione i18n a ≥ 5 lingue (IT, EN, FR, ES, DE) con gestione locale per unità di misura, valuta, formati data.
+  * Revisione UX per supportare multi-currency, TVA/IVA variabile e documentazione legale per paese.
+  * Libreria clausole contrattuali per normative locali (GDPR vs equivalenti, privacy minors) e workflow revisione legale.
+* **Pagamenti & fiscalità**
+  * Integrazione PSP europeo (es. Stripe) per incassi multivaluta, gestione split payment verso strutture partner.
+  * Generazione automatica documenti fiscali (fatture, ricevute) con codifica fiscale per paese e archiviazione conforme.
+  * Modulo analisi rischio frodi con controlli KYC/AML base per nuovi partner.
+* **Supporto & operations**
+  * Playbook supporto multilingua con SLA e escalation differenziate.
+  * Infrastruttura distribuita (regioni EU multiple) con controllo sovranità dati e routing geolocalizzato.
+
+#### Metriche di successo
+
+* Lancio pilota in 2 paesi con almeno 5 strutture attive ciascuno entro 6 mesi.
+* Gestione pagamenti multivaluta con errore transazioni < 0.5%.
+* Supporto multilingua con CSAT medio ≥ 4.2/5.
+
+**DoD**
+
+* Localizzazione completa, processi fiscali conformi certificati da consulente esterno e primi clienti internazionali attivi in produzione.
+
 ## 7) Piano temporale suggerito (sprint 2 settimane)
 
 * Sprint 1–6: M0–M4 ✅ (completati)
@@ -244,6 +364,10 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 * Sprint 10–12: M6 (resilienza & osservabilità)
 * Sprint 13–15: M7 (adozione & UX)
 * Sprint 16–18: M8 (integrazioni & monetizzazione)
+* Sprint 19–22: M9 (automazioni & knowledge)
+* Sprint 23–26: M10 (partnership & community)
+* Sprint 27–30: M11 (scalabilità enterprise)
+* Sprint 31–34: M12 (espansione internazionale)
 
 ## 8) API principali (v1, estratto)
 
@@ -275,6 +399,9 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 * Integrazione pagamenti digitali per caparre/utenze.
 * App mobile nativa per sopralluoghi con foto offline.
 * Partnership con reti scout internazionali e pacchetti traduzione extra lingue.
+* Modulo carbon footprint evento con calcolo emissioni e suggerimenti compensazione.
+* Libreria contratti standard per collaborazioni intergruppo e convenzioni regioni.
+* Supporto offline avanzato per aree remote con sincronizzazione differita dei media.
 
 ## 12) Rischi e mitigazioni
 
@@ -282,3 +409,10 @@ Le milestone M0–M4 (fondamenta prodotto, workflow principali e infrastruttura)
 * **Qualità dati** → import con validazione, ruoli revisori, audit.
 * **Disponibilità reale** → regole di conflitto e lock per range date.
 * **Adozione** → formazione, guide brevi, KPI di utilizzo, feedback loop.
+
+## 13) Team, governance e dipendenze
+
+* **Team di prodotto**: Product manager, design lead, tech lead FE/BE, data lead e referente operations. Incontri settimanali di allineamento OKR.
+* **Riti**: Sprint review condivisa con stakeholder territoriali ogni 4 settimane, retrospettiva cross-team e community update trimestrale.
+* **Dipendenze esterne**: Contratti geocoding/OSRM, fornitore PSP, consulenti legali privacy/fiscale, partner infrastruttura (cloud provider, monitoring SaaS).
+* **Governance**: Comitato guida con rappresentanti capi regione, revisione roadmap semestrale e gestione risk register centralizzata in docs/risks.
