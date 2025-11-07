@@ -162,6 +162,7 @@ def configure_storage(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, 
     monkeypatch.setenv("S3_ACCESS_KEY", "test-access")
     monkeypatch.setenv("S3_SECRET_KEY", "test-secret")
     monkeypatch.setenv("S3_REGION", "eu-west-1")
+    monkeypatch.setenv("S3_PUBLIC_ENDPOINT", "https://s3.example.com")
     get_settings.cache_clear()
     if hasattr(attachment_service.get_s3_client, "cache_clear"):
         attachment_service.get_s3_client.cache_clear()

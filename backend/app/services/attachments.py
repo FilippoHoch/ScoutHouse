@@ -5,6 +5,7 @@ import os
 import re
 from functools import lru_cache
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 import boto3
@@ -123,6 +124,44 @@ def allowed_mime_types() -> set[str]:
     return {*ALLOWED_MIME_TYPES, *ALLOWED_MIME_PREFIXES}
 
 
+def _rewrite_presigned_url(url: str) -> str:
+    settings = get_settings()
+    public_endpoint = settings.s3_public_endpoint
+    if not public_endpoint:
+        return url
+
+    try:
+        public_parts = urlparse(public_endpoint)
+    except ValueError:  # pragma: no cover - defensive guard
+        logger.warning("Invalid S3_PUBLIC_ENDPOINT value: %s", public_endpoint)
+        return url
+
+    if not public_parts.scheme or not public_parts.netloc:
+        logger.warning("Incomplete S3_PUBLIC_ENDPOINT value: %s", public_endpoint)
+        return url
+
+    try:
+        url_parts = urlparse(url)
+    except ValueError:  # pragma: no cover - defensive guard
+        logger.warning("Unable to parse presigned URL: %s", url)
+        return url
+
+    return urlunparse(url_parts._replace(scheme=public_parts.scheme, netloc=public_parts.netloc))
+
+
+def rewrite_presigned_post_signature(signature: dict[str, Any]) -> dict[str, Any]:
+    url = signature.get("url")
+    if not isinstance(url, str):  # pragma: no cover - defensive guard
+        return signature
+    rewritten = dict(signature)
+    rewritten["url"] = _rewrite_presigned_url(url)
+    return rewritten
+
+
+def rewrite_presigned_url(url: str) -> str:
+    return _rewrite_presigned_url(url)
+
+
 __all__ = [
     "MAX_ATTACHMENT_SIZE",
     "allowed_mime_types",
@@ -132,6 +171,8 @@ __all__ = [
     "ensure_size_within_limits",
     "get_s3_client",
     "head_object",
+    "rewrite_presigned_post_signature",
+    "rewrite_presigned_url",
     "sanitize_filename",
     "StorageUnavailableError",
     "validate_key",

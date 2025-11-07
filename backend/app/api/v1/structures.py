@@ -71,6 +71,7 @@ from app.services.attachments import (
     delete_object,
     ensure_bucket,
     get_s3_client,
+    rewrite_presigned_url,
 )
 
 router = APIRouter()
@@ -272,6 +273,7 @@ def _serialize_photo(
         Params={"Bucket": bucket, "Key": attachment.storage_key},
         ExpiresIn=120,
     )
+    url = rewrite_presigned_url(url)
     return StructurePhotoRead(
         id=photo.id,
         structure_id=photo.structure_id,

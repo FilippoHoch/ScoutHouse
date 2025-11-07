@@ -8,6 +8,9 @@ presigned URLs.
 ## Storage policy
 
 - **Bucket** – Configure the backend with `S3_BUCKET` and related credentials.
+- **Public endpoint** – When using a private object store (like MinIO in Docker),
+  expose the service to browsers with `S3_PUBLIC_ENDPOINT` so presigned URLs use
+  a reachable host.
 - **Max size** – Each attachment can be up to **5 MiB**.
 - **Allowed types** – `application/pdf` and any `image/*` MIME type.
 - **Retention** – Attachments remain until explicitly deleted via the API.
