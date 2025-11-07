@@ -23,6 +23,7 @@ import {
   signAttachmentUpload
 } from "../api";
 import { downloadEntriesAsZip } from "../utils/download";
+import { Button } from "./designSystem";
 
 interface StructurePhotosSectionProps {
   structureId: number | null;
@@ -347,15 +348,16 @@ export const StructurePhotosSection = ({
           onDrop={onDrop}
         >
           <p>{t("structures.photos.upload.prompt")}</p>
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadMutation.isPending || structureId === null}
           >
             {uploadMutation.isPending
               ? t("structures.photos.upload.progress")
               : t("structures.photos.upload.button")}
-          </button>
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
