@@ -32,7 +32,7 @@
       },
       "pricing": {
         "title": "Preferenze sui prezzi",
-        "description": "Scegli quali fasce di prezzo privilegiare quando cerchi strutture."
+        "description": "Scegli le fasce da mettere in evidenza e personalizza le soglie di costo giornaliero."
       }
     },
     "fields": {
@@ -54,11 +54,21 @@
       },
       "pricePreferences": {
         "label": "Fasce di prezzo preferite",
-        "helper": "Le fasce selezionate verranno messe in evidenza nelle ricerche.",
+        "helper": "Le fasce selezionate verranno messe in evidenza nelle ricerche e nei filtri rapidi.",
         "options": {
           "cheap": "Prezzi bassi",
           "medium": "Prezzi medi",
           "expensive": "Prezzi alti"
+        },
+        "thresholds": {
+          "cheapMax": {
+            "label": "Economica fino a",
+            "helper": "I prezzi fino a questo valore saranno evidenziati come economici."
+          },
+          "mediumMax": {
+            "label": "Media fino a",
+            "helper": "I prezzi fino a questo valore saranno considerati medi. Tutto ciò che supera la soglia sarà indicato come alto."
+          }
         }
       }
     },
