@@ -251,9 +251,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [contactPickerResults, setContactPickerResults] = useState<Contact[]>([]);
   const triStateLabels = useMemo(
     () => ({
-      yes: t("common.triState.yes"),
-      no: t("common.triState.no"),
-      unknown: t("common.triState.unknown"),
+      yes: t("triState.yes"),
+      no: t("triState.no"),
+      unknown: t("triState.unknown"),
     }),
     [t]
   );
