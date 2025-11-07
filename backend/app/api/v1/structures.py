@@ -191,6 +191,7 @@ def _serialize_cost_modifier(
         season=modifier.season,
         date_start=modifier.date_start,
         date_end=modifier.date_end,
+        price_per_resource=modifier.price_per_resource,
     )
 
 
@@ -200,12 +201,18 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
         model=option.model,
         amount=option.amount,
         currency=option.currency,
-        deposit=option.deposit,
+        booking_deposit=getattr(option, "booking_deposit", None),
+        damage_deposit=getattr(option, "damage_deposit", None),
         city_tax_per_night=option.city_tax_per_night,
         utilities_flat=option.utilities_flat,
+        utilities_included=option.utilities_included,
+        utilities_notes=option.utilities_notes,
         min_total=option.min_total,
         max_total=option.max_total,
         age_rules=option.age_rules,
+        payment_methods=option.payment_methods,
+        payment_terms=option.payment_terms,
+        price_per_resource=option.price_per_resource,
         modifiers=[_serialize_cost_modifier(item) for item in option.modifiers]
         if option.modifiers
         else None,
@@ -228,6 +235,7 @@ def _sync_cost_modifiers(
             modifier.season = payload.season
             modifier.date_start = payload.date_start
             modifier.date_end = payload.date_end
+            modifier.price_per_resource = payload.price_per_resource
             seen.add(payload_id)
         else:
             option.modifiers.append(
@@ -237,6 +245,7 @@ def _sync_cost_modifiers(
                     season=payload.season,
                     date_start=payload.date_start,
                     date_end=payload.date_end,
+                    price_per_resource=payload.price_per_resource,
                 )
             )
 
@@ -266,6 +275,7 @@ def _serialize_open_period(period: StructureOpenPeriod) -> StructureOpenPeriodRe
         date_end=period.date_end,
         notes=period.notes,
         units=_serialize_units(period.units) if period.units else None,
+        blackout=period.blackout,
     )
 
 
@@ -335,7 +345,61 @@ def _structure_payload(
         if structure_in.water_sources is not None
         else None
     )
+    if structure_in.field_slope is not None:
+        payload["field_slope"] = structure_in.field_slope.value
+    if structure_in.animal_policy is not None:
+        payload["animal_policy"] = structure_in.animal_policy.value
+    if structure_in.contact_status is not None:
+        payload["contact_status"] = structure_in.contact_status.value
+    if structure_in.operational_status is not None:
+        payload["operational_status"] = structure_in.operational_status.value
+    payload["bus_type_access"] = list(structure_in.bus_type_access or [])
+    payload["allowed_audiences"] = list(structure_in.allowed_audiences or [])
     return payload
+
+
+def _collect_structure_warnings(db: Session, structure: Structure) -> list[str]:
+    warnings: list[str] = []
+
+    name = (structure.name or "").strip()
+    municipality = (structure.municipality or "").strip()
+    if name and municipality:
+        duplicate_exists = (
+            db.execute(
+                select(func.count())
+                .select_from(Structure)
+                .where(
+                    func.lower(Structure.name) == name.lower(),
+                    func.lower(Structure.municipality) == municipality.lower(),
+                    Structure.id != structure.id,
+                )
+            ).scalar_one()
+        )
+        if duplicate_exists:
+            warnings.append(
+                "Esistono altre strutture con lo stesso nome nel medesimo comune"
+            )
+
+    if structure.fire_policy is FirePolicy.WITH_PERMIT and not structure.fire_rules:
+        warnings.append("Specificare le regole per i fuochi (fire_rules)")
+
+    if structure.in_area_protetta and not structure.ente_area_protetta:
+        warnings.append(
+            "Indicare l'ente responsabile dell'area protetta"
+        )
+
+    for option in getattr(structure, "cost_options", []) or []:
+        if option.utilities_flat is not None and option.utilities_included:
+            warnings.append(
+                "Verificare le utenze: utilities_flat e utilities_included sono entrambi valorizzati"
+            )
+            break
+
+    photos = getattr(structure, "photos", None)
+    if photos is not None and 0 < len(photos) < 3:
+        warnings.append("Aggiungere almeno 3 foto della struttura")
+
+    return warnings
 
 
 def _sync_open_periods(
@@ -357,6 +421,7 @@ def _sync_open_periods(
             period.date_end = item_dict.get("date_end")
             period.notes = item_dict.get("notes")
             period.units = _coerce_units(item_dict.get("units"))
+            period.blackout = bool(item_dict.get("blackout", False))
             seen_ids.add(period_id)
             continue
 
@@ -367,6 +432,7 @@ def _sync_open_periods(
             date_end=item_dict.get("date_end"),
             notes=item_dict.get("notes"),
             units=_coerce_units(item_dict.get("units")),
+            blackout=bool(item_dict.get("blackout", False)),
         )
         structure.open_periods.append(new_period)
 
@@ -528,6 +594,9 @@ def get_structure_by_slug(
         include_details=include_details,
         include_contacts=include_contacts,
     )
+    warnings = _collect_structure_warnings(db, structure)
+    if warnings:
+        result = result.model_copy(update={"warnings": warnings})
     cached = apply_http_cache(request, response, result)
     return cached
 
@@ -810,6 +879,7 @@ def create_structure(
             date_end=period.date_end,
             notes=period.notes,
             units=_coerce_units(period.units),
+            blackout=period.blackout,
         )
         for period in structure_in.open_periods
     ]
@@ -836,8 +906,10 @@ def create_structure(
     db.commit()
     db.refresh(structure)
     response = StructureRead.model_validate(structure)
-    if website_warnings:
-        response = response.model_copy(update={"warnings": website_warnings})
+    warnings = website_warnings + _collect_structure_warnings(db, structure)
+    if warnings:
+        unique_warnings = list(dict.fromkeys(warnings))
+        response = response.model_copy(update={"warnings": unique_warnings})
     return response
 
 
@@ -897,7 +969,18 @@ def update_structure(
 
     db.commit()
     db.refresh(structure)
-    return structure
+
+    response = _build_structure_read(
+        structure,
+        include_details=True,
+        include_contacts=True,
+    )
+    warnings = _collect_structure_warnings(db, structure)
+    website_warnings = _check_website_urls(structure.website_urls or [])
+    all_warnings = list(dict.fromkeys([*warnings, *website_warnings]))
+    if all_warnings:
+        response = response.model_copy(update={"warnings": all_warnings})
+    return response
 
 
 @router.get("/{structure_id}/contacts", response_model=list[ContactRead])
@@ -1323,12 +1406,18 @@ def create_structure_cost_option(
         model=cost_option_in.model,
         amount=cost_option_in.amount,
         currency=cost_option_in.currency,
-        deposit=cost_option_in.deposit,
+        booking_deposit=cost_option_in.booking_deposit,
+        damage_deposit=cost_option_in.damage_deposit,
         city_tax_per_night=cost_option_in.city_tax_per_night,
         utilities_flat=cost_option_in.utilities_flat,
+        utilities_included=cost_option_in.utilities_included,
+        utilities_notes=cost_option_in.utilities_notes,
         min_total=cost_option_in.min_total,
         max_total=cost_option_in.max_total,
         age_rules=cost_option_in.age_rules,
+        payment_methods=cost_option_in.payment_methods,
+        payment_terms=cost_option_in.payment_terms,
+        price_per_resource=cost_option_in.price_per_resource,
     )
     if cost_option_in.modifiers:
         _sync_cost_modifiers(cost_option, cost_option_in.modifiers)
@@ -1379,12 +1468,18 @@ def upsert_structure_cost_options(
             option.model = payload.model
             option.amount = payload.amount
             option.currency = payload.currency
-            option.deposit = payload.deposit
+            option.booking_deposit = payload.booking_deposit
+            option.damage_deposit = payload.damage_deposit
             option.city_tax_per_night = payload.city_tax_per_night
             option.utilities_flat = payload.utilities_flat
+            option.utilities_included = payload.utilities_included
+            option.utilities_notes = payload.utilities_notes
             option.min_total = payload.min_total
             option.max_total = payload.max_total
             option.age_rules = payload.age_rules
+            option.payment_methods = payload.payment_methods
+            option.payment_terms = payload.payment_terms
+            option.price_per_resource = payload.price_per_resource
             if payload.modifiers is not None:
                 _sync_cost_modifiers(option, payload.modifiers)
             seen_ids.add(payload.id)
@@ -1394,12 +1489,18 @@ def upsert_structure_cost_options(
                 model=payload.model,
                 amount=payload.amount,
                 currency=payload.currency,
-                deposit=payload.deposit,
+                booking_deposit=payload.booking_deposit,
+                damage_deposit=payload.damage_deposit,
                 city_tax_per_night=payload.city_tax_per_night,
                 utilities_flat=payload.utilities_flat,
+                utilities_included=payload.utilities_included,
+                utilities_notes=payload.utilities_notes,
                 min_total=payload.min_total,
                 max_total=payload.max_total,
                 age_rules=payload.age_rules,
+                payment_methods=payload.payment_methods,
+                payment_terms=payload.payment_terms,
+                price_per_resource=payload.price_per_resource,
             )
             if payload.modifiers:
                 _sync_cost_modifiers(option, payload.modifiers)

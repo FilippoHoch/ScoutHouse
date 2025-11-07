@@ -107,7 +107,7 @@ def test_structure_details_include_tabs() -> None:
                 "model": "forfait",
                 "amount": 950.0,
                 "currency": "EUR",
-                "deposit": 300.0,
+                "booking_deposit": 300.0,
             },
         ],
     )
