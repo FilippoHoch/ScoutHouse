@@ -9,7 +9,27 @@ export function resolveApiBaseUrl(): string {
 
   if (envUrl) {
     try {
-      const parsed = new URL(envUrl);
+      let urlToParse = envUrl;
+      const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(urlToParse);
+
+      if (
+        (urlToParse.startsWith("/") || !hasScheme) &&
+        typeof window !== "undefined" &&
+        window.location?.origin
+      ) {
+        // During local development we allow relative API paths such as "/api"
+        // so that setting VITE_API_URL=/api keeps requests on the current origin.
+        const origin = stripTrailingSlash(window.location.origin);
+        urlToParse = urlToParse.startsWith("/")
+          ? `${origin}${urlToParse}`
+          : `${origin}/${urlToParse}`;
+      } else if (urlToParse.startsWith("/") || !hasScheme) {
+        throw new Error(
+          "Relative VITE_API_URL requires window.location.origin to resolve"
+        );
+      }
+
+      const parsed = new URL(urlToParse);
 
       if (
         typeof window !== "undefined" &&
