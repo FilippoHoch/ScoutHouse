@@ -779,6 +779,20 @@ export const StructureDetailsPage = () => {
 
       <div className="structure-details__layout">
         <div className="structure-details__main">
+          <div className="structure-details-card structure-details-card--photos">
+            <div className="structure-details-card__section">
+              <h3 className="structure-details-card__title">
+                {t("structures.details.photos.title")}
+              </h3>
+              <StructurePhotosSection
+                structureId={structure.id}
+                canUpload={false}
+                canDelete={false}
+                showManagementControls={false}
+              />
+            </div>
+          </div>
+
           <div className="structure-details-card structure-details-card--location">
             <h3 className="structure-details-card__title">
               {t("structures.details.location.title")}

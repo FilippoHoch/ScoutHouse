@@ -96,6 +96,37 @@ describe("StructurePhotosSection", () => {
     expect(nextButton).toBeDisabled();
   });
 
+  it("renders a compact carousel without management controls", async () => {
+    mockedGetPhotos.mockResolvedValue([
+      {
+        id: 1,
+        structure_id: 42,
+        attachment_id: 99,
+        filename: "panorama.jpg",
+        mime: "image/jpeg",
+        size: 2048,
+        position: 0,
+        url: "https://example.com/panorama.jpg",
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+    render(
+      <StructurePhotosSection
+        structureId={42}
+        canUpload
+        canDelete
+        showManagementControls={false}
+      />,
+      { wrapper: Wrapper }
+    );
+
+    const region = await screen.findByRole("region", { name: /Galleria foto della struttura/i });
+    expect(region).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Carica foto/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Scarica tutto/i })).not.toBeInTheDocument();
+  });
+
   it("allows navigating between photos", async () => {
     const user = userEvent.setup();
     mockedGetPhotos.mockResolvedValue([

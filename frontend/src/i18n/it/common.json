@@ -680,6 +680,9 @@
         "photos": "Foto",
         "attachments": "Allegati"
       },
+      "photos": {
+        "title": "Galleria fotografica"
+      },
       "messages": {
         "overviewPlaceholder": "La panoramica riassume i metadati e le coordinate della struttura.",
         "availabilityEmpty": "Nessuna disponibilità stagionale è stata configurata.",
