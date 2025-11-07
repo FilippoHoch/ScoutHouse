@@ -34,14 +34,13 @@ const combineClassNames = (...classNames: (string | false | null | undefined)[])
 
 const MARKER_ICON_HTML = `
   <span class="google-map-embed__marker-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" focusable="false">
-      <path d="M12 22C12 22 5 14.9706 5 10C5 6.13401 8.13401 3 12 3C15.866 3 19 6.13401 19 10C19 14.9706 12 22 12 22Z" />
-      <circle cx="12" cy="10" r="3" />
+    <svg viewBox="0 0 20 20" focusable="false">
+      <circle cx="10" cy="10" r="6" />
     </svg>
   </span>
 `;
 
-const MARKER_ICON_SIZE: [number, number] = [48, 62];
+const MARKER_ICON_SIZE: [number, number] = [28, 28];
 
 const markerIcon = L.divIcon({
   className: "google-map-embed__marker",
