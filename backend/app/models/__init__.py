@@ -28,6 +28,10 @@ from .structure import (
     StructureOpenPeriodSeason,
     StructureOperationalStatus,
     StructureContactStatus,
+    CellCoverageQuality,
+    WastewaterType,
+    FloodRiskLevel,
+    RiverSwimmingOption,
 )
 from .structure_photo import StructurePhoto
 from .attachment import Attachment, AttachmentOwnerType
@@ -73,4 +77,8 @@ __all__ = [
     "AnimalPolicy",
     "FieldSlope",
     "StructurePhoto",
+    "CellCoverageQuality",
+    "WastewaterType",
+    "FloodRiskLevel",
+    "RiverSwimmingOption",
 ]

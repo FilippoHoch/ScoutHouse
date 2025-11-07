@@ -97,6 +97,16 @@ const openPeriodSeasonOptions: StructureOpenPeriodSeason[] = [
   "autumn"
 ];
 
+const toSeasonValue = (value: unknown): StructureOpenPeriodSeason | "" => {
+  if (typeof value === "string") {
+    if ((openPeriodSeasonOptions as string[]).includes(value)) {
+      return value as StructureOpenPeriodSeason;
+    }
+    return "";
+  }
+  return "";
+};
+
 const openPeriodUnitOptions: Unit[] = ["LC", "EG", "RS", "ALL"];
 
 const openPeriodKindOptions: StructureOpenPeriodKind[] = ["season", "range"];
@@ -1121,7 +1131,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       key: createOpenPeriodKey(),
       id: period.id,
       kind: period.kind,
-      season: period.kind === "season" ? period.season ?? "" : "",
+      season: period.kind === "season" ? toSeasonValue(period.season) : "",
       dateStart: period.date_start ?? "",
       dateEnd: period.date_end ?? "",
       notes: period.notes ?? "",
@@ -1282,6 +1292,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedContactEmails = contactEmails.map((value) => value.trim());
     const trimmedCostOptions = costOptions.map((option) => ({
       key: option.key,
+      id: option.id,
       model: option.model,
       amount: option.amount.trim(),
       currency: option.currency.trim(),
@@ -1532,6 +1543,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedNotesLogistics = notesLogistics.trim();
     const trimmedNotes = notes.trim();
     const trimmedCostOptions = costOptions.map((option) => ({
+      id: option.id,
       model: option.model,
       amount: option.amount.trim(),
       currency: option.currency.trim(),

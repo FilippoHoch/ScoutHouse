@@ -15,13 +15,17 @@ from app.models.cost_option import (
 )
 from app.models.structure import (
     AnimalPolicy,
+    CellCoverageQuality,
     FieldSlope,
     FirePolicy,
+    FloodRiskLevel,
+    RiverSwimmingOption,
     StructureContactStatus,
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
     StructureOperationalStatus,
     StructureType,
+    WastewaterType,
     WaterSource,
 )
 from .contact import ContactRead
@@ -29,6 +33,82 @@ from app.services.costs import CostBand
 
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+PLUS_CODE_PATTERN = re.compile(r"^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}$")
+WHAT3WORDS_PATTERN = re.compile(r"^[a-z]+(?:[-a-z]+)?\.[a-z]+(?:[-a-z]+)?\.[a-z]+(?:[-a-z]+)?$")
+IBAN_PATTERN = re.compile(r"^[A-Z0-9]{15,34}$")
+
+
+def _normalize_str_list(value: object) -> list[str] | object:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = [value]
+    if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
+        normalized: list[str] = []
+        for item in value:
+            if item is None:
+                continue
+            text = str(item).strip()
+            if not text:
+                continue
+            normalized.append(text)
+        return normalized
+    return value
+
+
+def _normalize_optional_str_list(value: object) -> list[str] | None | object:
+    if value is None:
+        return None
+    normalized = _normalize_str_list(value)
+    if isinstance(normalized, list):
+        return normalized
+    return normalized
+
+
+def _normalize_url_list(value: object) -> list[AnyHttpUrl] | object:
+    if value is None:
+        return []
+    if isinstance(value, (str, AnyHttpUrl)):
+        value = [value]
+    if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
+        return list(value)
+    return value
+
+
+def _validate_emergency_coordinates(value: object) -> dict[str, float] | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return None
+        parts = {part.split(":", 1)[0].strip(): part.split(":", 1)[1].strip()
+                 for part in value.split(",")
+                 if ":" in part}
+        value = parts
+    if not isinstance(value, dict):
+        raise ValueError("Coordinate di emergenza non valide")
+    try:
+        lat = float(value["lat"])
+        lon = float(value["lon"])
+    except (KeyError, TypeError, ValueError) as exc:  # pragma: no cover - defensive
+        raise ValueError("Coordinate di emergenza non valide") from exc
+    if not -90 <= lat <= 90:
+        raise ValueError("Latitudine emergenza fuori intervallo")
+    if not -180 <= lon <= 180:
+        raise ValueError("Longitudine emergenza fuori intervallo")
+    return {"lat": lat, "lon": lon}
+
+
+def _validate_iban(value: str) -> str:
+    normalized = value.replace(" ", "").upper()
+    if not IBAN_PATTERN.match(normalized):
+        raise ValueError("Formato IBAN non valido")
+    rearranged = normalized[4:] + normalized[:4]
+    digits = "".join(str(int(ch, 36)) for ch in rearranged)
+    if int(digits) % 97 != 1:
+        raise ValueError("IBAN non valido")
+    return normalized
 
 
 class StructureOpenPeriodBase(BaseModel):
@@ -82,6 +162,7 @@ class StructureOpenPeriodRead(StructureOpenPeriodBase):
 class StructureBase(BaseModel):
     name: str = Field(..., min_length=1)
     slug: str
+    country: str = Field(default="IT", min_length=2, max_length=2)
     province: str | None = Field(default=None, max_length=2)
     municipality: str | None = Field(default=None, max_length=255)
     municipality_code: str | None = Field(default=None, max_length=16)
@@ -90,6 +171,14 @@ class StructureBase(BaseModel):
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
     altitude: float | None = Field(default=None)
+    plus_code: str | None = None
+    what3words: str | None = None
+    emergency_coordinates: dict[str, float] | None = None
+    winter_access_notes: str | None = None
+    road_weight_limit_tonnes: float | None = Field(default=None, ge=0)
+    bridge_weight_limit_tonnes: float | None = Field(default=None, ge=0)
+    max_vehicle_height_m: float | None = Field(default=None, ge=0)
+    road_access_notes: str | None = None
     type: StructureType
     indoor_beds: int | None = Field(default=None, ge=0)
     indoor_bathrooms: int | None = Field(default=None, ge=0)
@@ -105,6 +194,14 @@ class StructureBase(BaseModel):
     shelter_on_field: bool | None = None
     water_sources: list[WaterSource] | None = None
     electricity_available: bool | None = None
+    power_capacity_kw: float | None = Field(default=None, ge=0)
+    power_outlets_count: int | None = Field(default=None, ge=0)
+    power_outlet_types: list[str] | None = None
+    generator_available: bool | None = None
+    generator_notes: str | None = None
+    water_tank_capacity_liters: int | None = Field(default=None, ge=0)
+    wastewater_type: WastewaterType | None = None
+    wastewater_notes: str | None = None
     fire_policy: FirePolicy | None = None
     fire_rules: str | None = None
     access_by_car: bool | None = None
@@ -116,6 +213,9 @@ class StructureBase(BaseModel):
     weekend_only: bool | None = None
     has_field_poles: bool | None = None
     pit_latrine_allowed: bool | None = None
+    dry_toilet: bool | None = None
+    outdoor_bathrooms: int | None = Field(default=None, ge=0)
+    outdoor_showers: int | None = Field(default=None, ge=0)
     wheelchair_accessible: bool | None = None
     step_free_access: bool | None = None
     parking_car_slots: int | None = Field(default=None, ge=0)
@@ -132,15 +232,49 @@ class StructureBase(BaseModel):
     seasonal_amenities: dict[str, Any] | None = None
     booking_url: AnyHttpUrl | None = None
     whatsapp: str | None = Field(default=None, max_length=32)
+    booking_required: bool | None = None
+    booking_notes: str | None = None
+    documents_required: list[str] = Field(default_factory=list)
+    map_resources_urls: list[AnyHttpUrl] = Field(default_factory=list)
+    event_rules_url: AnyHttpUrl | None = None
+    event_rules_notes: str | None = None
     contact_status: StructureContactStatus = StructureContactStatus.UNKNOWN
     operational_status: StructureOperationalStatus | None = None
+    cell_coverage: CellCoverageQuality | None = None
+    cell_coverage_notes: str | None = None
+    communications_infrastructure: list[str] = Field(default_factory=list)
+    aed_on_site: bool | None = None
+    emergency_phone_available: bool | None = None
+    emergency_response_time_minutes: int | None = Field(default=None, ge=0)
+    emergency_plan_notes: str | None = None
+    evacuation_plan_url: AnyHttpUrl | None = None
+    risk_assessment_template_url: AnyHttpUrl | None = None
+    wildlife_notes: str | None = None
+    river_swimming: RiverSwimmingOption | None = None
+    flood_risk: FloodRiskLevel | None = None
+    weather_risk_notes: str | None = None
+    activity_spaces: list[str] = Field(default_factory=list)
+    activity_equipment: list[str] = Field(default_factory=list)
+    inclusion_services: list[str] = Field(default_factory=list)
+    inclusion_notes: str | None = None
+    pec_email: EmailStr | None = None
+    sdi_recipient_code: str | None = Field(default=None, min_length=7, max_length=7)
+    invoice_available: bool | None = None
+    iban: str | None = None
+    payment_methods: list[str] = Field(default_factory=list)
+    fiscal_notes: str | None = None
     data_source: str | None = Field(default=None, max_length=255)
     data_source_url: AnyHttpUrl | None = None
     data_last_verified: date | None = None
+    data_quality_score: int | None = Field(default=None, ge=0, le=100)
+    data_quality_notes: str | None = None
+    data_quality_flags: list[str] = Field(default_factory=list)
     governance_notes: str | None = None
     contact_emails: list[EmailStr] = Field(default_factory=list)
     website_urls: list[AnyHttpUrl] = Field(default_factory=list)
     notes_logistics: str | None = None
+    logistics_arrival_notes: str | None = None
+    logistics_departure_notes: str | None = None
     notes: str | None = None
 
     @field_validator("type", mode="before")
@@ -205,6 +339,82 @@ class StructureBase(BaseModel):
                     normalized.append(text)
             return normalized
         return value
+
+    @field_validator("country")
+    @classmethod
+    def validate_country(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if len(normalized) != 2 or not normalized.isalpha():
+            raise ValueError("Country must be a 2-letter ISO code")
+        return normalized
+
+    @field_validator("plus_code")
+    @classmethod
+    def validate_plus_code(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().upper()
+        if not PLUS_CODE_PATTERN.match(normalized):
+            raise ValueError("Plus code non valido")
+        return normalized
+
+    @field_validator("what3words")
+    @classmethod
+    def validate_what3words(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        if not WHAT3WORDS_PATTERN.match(normalized):
+            raise ValueError("what3words deve essere nel formato parola.parola.parola")
+        return normalized
+
+    @field_validator("emergency_coordinates", mode="before")
+    @classmethod
+    def normalize_emergency_coordinates(
+        cls, value: object
+    ) -> dict[str, float] | None:
+        return _validate_emergency_coordinates(value)
+
+    @field_validator("power_outlet_types", mode="before")
+    @classmethod
+    def normalize_power_outlet_types(cls, value: object) -> list[str] | None | object:
+        return _normalize_optional_str_list(value)
+
+    @field_validator(
+        "documents_required",
+        "communications_infrastructure",
+        "activity_spaces",
+        "activity_equipment",
+        "inclusion_services",
+        "payment_methods",
+        "data_quality_flags",
+        mode="before",
+    )
+    @classmethod
+    def normalize_string_lists(cls, value: object) -> list[str] | object:
+        return _normalize_str_list(value)
+
+    @field_validator("map_resources_urls", mode="before")
+    @classmethod
+    def normalize_map_urls(cls, value: object) -> list[AnyHttpUrl] | object:
+        return _normalize_url_list(value)
+
+    @field_validator("sdi_recipient_code")
+    @classmethod
+    def validate_sdi(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().upper()
+        if len(normalized) != 7 or not normalized.isalnum():
+            raise ValueError("Il codice SDI deve essere di 7 caratteri alfanumerici")
+        return normalized
+
+    @field_validator("iban")
+    @classmethod
+    def validate_iban(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_iban(value)
 
     @field_validator("slug")
     @classmethod
@@ -331,6 +541,26 @@ class StructureBase(BaseModel):
             raise ValueError(
                 f"Campi indoor non ammessi per type=land: {detail}"
             )
+        if self.generator_available:
+            if self.power_capacity_kw is None:
+                raise ValueError(
+                    "Specificare la potenza disponibile (power_capacity_kw) quando generator_available è attivo"
+                )
+        if self.dry_toilet:
+            if self.pit_latrine_allowed is not True:
+                raise ValueError(
+                    "Quando dry_toilet è attivo, pit_latrine_allowed deve essere true"
+                )
+        if self.river_swimming is RiverSwimmingOption.SI:
+            if not (self.wildlife_notes or self.risk_assessment_template_url):
+                raise ValueError(
+                    "Per river_swimming=si indicare wildlife_notes o risk_assessment_template_url"
+                )
+        if self.invoice_available and self.country == "IT":
+            if not (self.sdi_recipient_code or self.pec_email):
+                raise ValueError(
+                    "Per le fatture in Italia indicare sdi_recipient_code o pec_email"
+                )
         return self
 
 
@@ -510,6 +740,13 @@ class StructureSearchItem(BaseModel):
     access_by_public_transport: bool | None = None
     has_kitchen: bool | None = None
     hot_water: bool | None = None
+    cell_coverage: CellCoverageQuality | None = None
+    aed_on_site: bool | None = None
+    river_swimming: RiverSwimmingOption | None = None
+    wastewater_type: WastewaterType | None = None
+    flood_risk: FloodRiskLevel | None = None
+    power_capacity_kw: float | None = None
+    parking_car_slots: int | None = None
 
     model_config = {
         "from_attributes": True,

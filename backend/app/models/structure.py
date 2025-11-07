@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -103,12 +104,41 @@ class StructureOpenPeriodSeason(str, Enum):
     WINTER = "winter"
 
 
+class CellCoverageQuality(str, Enum):
+    NONE = "none"
+    LIMITED = "limited"
+    GOOD = "good"
+    EXCELLENT = "excellent"
+
+
+class WastewaterType(str, Enum):
+    NONE = "none"
+    SEPTIC = "septic"
+    HOLDING_TANK = "holding_tank"
+    MAINS = "mains"
+    UNKNOWN = "unknown"
+
+
+class FloodRiskLevel(str, Enum):
+    NONE = "none"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class RiverSwimmingOption(str, Enum):
+    SI = "si"
+    NO = "no"
+    UNKNOWN = "unknown"
+
+
 class Structure(Base):
     __tablename__ = "structures"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    country: Mapped[str] = mapped_column(String(2), nullable=False, default="IT")
     province: Mapped[str] = mapped_column(String(100), nullable=True)
     municipality: Mapped[str | None] = mapped_column(String(255), nullable=True)
     municipality_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
@@ -117,6 +147,14 @@ class Structure(Base):
     latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     altitude: Mapped[Decimal | None] = mapped_column(Numeric(7, 2), nullable=True)
+    plus_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    what3words: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    emergency_coordinates: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    winter_access_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    road_weight_limit_tonnes: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+    bridge_weight_limit_tonnes: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+    max_vehicle_height_m: Mapped[Decimal | None] = mapped_column(Numeric(4, 2), nullable=True)
+    road_access_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     type: Mapped[StructureType] = mapped_column(
         sqla_enum(StructureType, name="structure_type"),
         nullable=False,
@@ -157,6 +195,17 @@ class Structure(Base):
         nullable=True,
         default=None,
     )
+    power_capacity_kw: Mapped[Decimal | None] = mapped_column(Numeric(7, 2), nullable=True)
+    power_outlets_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    power_outlet_types: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    generator_available: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    generator_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    water_tank_capacity_liters: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    wastewater_type: Mapped[WastewaterType | None] = mapped_column(
+        sqla_enum(WastewaterType, name="structure_wastewater_type"),
+        nullable=True,
+    )
+    wastewater_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     fire_policy: Mapped[FirePolicy | None] = mapped_column(
         sqla_enum(FirePolicy, name="fire_policy"),
         nullable=True,
@@ -199,6 +248,9 @@ class Structure(Base):
         nullable=True,
         default=None,
     )
+    dry_toilet: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    outdoor_bathrooms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    outdoor_showers: Mapped[int | None] = mapped_column(Integer, nullable=True)
     wheelchair_accessible: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
     step_free_access: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
     parking_car_slots: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -218,6 +270,12 @@ class Structure(Base):
     seasonal_amenities: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     booking_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     whatsapp: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    booking_required: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    booking_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    documents_required: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    map_resources_urls: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    event_rules_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    event_rules_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     contact_status: Mapped[StructureContactStatus] = mapped_column(
         sqla_enum(StructureContactStatus, name="structure_contact_status"),
         nullable=False,
@@ -227,13 +285,53 @@ class Structure(Base):
         sqla_enum(StructureOperationalStatus, name="structure_operational_status"),
         nullable=True,
     )
+    cell_coverage: Mapped[CellCoverageQuality | None] = mapped_column(
+        sqla_enum(CellCoverageQuality, name="structure_cell_coverage"),
+        nullable=True,
+    )
+    cell_coverage_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    communications_infrastructure: Mapped[list[str] | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
+    aed_on_site: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    emergency_phone_available: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    emergency_response_time_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    emergency_plan_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evacuation_plan_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    risk_assessment_template_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    wildlife_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    river_swimming: Mapped[RiverSwimmingOption | None] = mapped_column(
+        sqla_enum(RiverSwimmingOption, name="structure_river_swimming"),
+        nullable=True,
+    )
+    flood_risk: Mapped[FloodRiskLevel | None] = mapped_column(
+        sqla_enum(FloodRiskLevel, name="structure_flood_risk"),
+        nullable=True,
+    )
+    weather_risk_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    activity_spaces: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    activity_equipment: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    inclusion_services: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    inclusion_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pec_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    sdi_recipient_code: Mapped[str | None] = mapped_column(String(7), nullable=True)
+    invoice_available: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    iban: Mapped[str | None] = mapped_column(String(34), nullable=True)
+    payment_methods: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    fiscal_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     data_source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     data_source_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     data_last_verified: Mapped[date | None] = mapped_column(Date, nullable=True)
+    data_quality_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    data_quality_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    data_quality_flags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     governance_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     contact_emails: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     website_urls: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     notes_logistics: Mapped[str | None] = mapped_column(Text, nullable=True)
+    logistics_arrival_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    logistics_departure_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -278,6 +376,25 @@ class Structure(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="StructurePhoto.position",
+    )
+
+    __table_args__ = (
+        CheckConstraint("power_capacity_kw >= 0", name="power_capacity_kw_non_negative"),
+        CheckConstraint("power_outlets_count >= 0", name="power_outlets_count_non_negative"),
+        CheckConstraint(
+            "water_tank_capacity_liters >= 0",
+            name="water_tank_capacity_liters_non_negative",
+        ),
+        CheckConstraint("outdoor_bathrooms >= 0", name="outdoor_bathrooms_non_negative"),
+        CheckConstraint("outdoor_showers >= 0", name="outdoor_showers_non_negative"),
+        CheckConstraint(
+            "emergency_response_time_minutes >= 0",
+            name="emergency_response_time_minutes_non_negative",
+        ),
+        CheckConstraint(
+            "(data_quality_score >= 0 AND data_quality_score <= 100) OR data_quality_score IS NULL",
+            name="data_quality_score_range",
+        ),
     )
 
     @property
@@ -370,4 +487,8 @@ __all__ = [
     "StructureContactStatus",
     "AnimalPolicy",
     "FieldSlope",
+    "CellCoverageQuality",
+    "WastewaterType",
+    "FloodRiskLevel",
+    "RiverSwimmingOption",
 ]
