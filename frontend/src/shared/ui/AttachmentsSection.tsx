@@ -22,6 +22,7 @@ import {
   signAttachmentDownload,
   signAttachmentUpload,
 } from "../api";
+import { downloadEntriesAsZip } from "../utils/download";
 
 interface AttachmentsSectionProps {
   ownerType: AttachmentOwnerType;
@@ -51,6 +52,7 @@ export const AttachmentsSection = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadAllPending, setDownloadAllPending] = useState(false);
 
   const queryKey = useMemo(
     () => ["attachments", ownerType, ownerId],
@@ -168,10 +170,48 @@ export const AttachmentsSection = ({
   };
 
   const attachments = attachmentsQuery.data ?? [];
+  const downloadableAttachments = useMemo(
+    () =>
+      attachments.filter((attachment) => {
+        const mime = attachment.mime?.toLowerCase() ?? "";
+        return !mime.startsWith("image/");
+      }),
+    [attachments]
+  );
 
   const handleDownload = async (attachmentId: number) => {
     const { url } = await signAttachmentDownload(attachmentId);
     window.open(url, "_blank", "noopener");
+  };
+
+  const handleDownloadAll = async () => {
+    if (ownerId === null || downloadableAttachments.length === 0) {
+      return;
+    }
+    setError(null);
+    setDownloadAllPending(true);
+    try {
+      const downloads = await Promise.all(
+        downloadableAttachments.map(async (attachment) => {
+          const { url } = await signAttachmentDownload(attachment.id);
+          return {
+            filename: attachment.filename,
+            url,
+          };
+        })
+      );
+      await downloadEntriesAsZip(
+        downloads,
+        t("attachments.actions.downloadAllArchiveName")
+      );
+    } catch (downloadError) {
+      setError(t("attachments.errors.downloadAllFailed"));
+      if (downloadError instanceof Error) {
+        console.error("Unable to download attachments", downloadError);
+      }
+    } finally {
+      setDownloadAllPending(false);
+    }
   };
 
   const renderBody = () => {
@@ -184,7 +224,7 @@ export const AttachmentsSection = ({
     if (attachmentsQuery.isError) {
       return <p className="error">{t("attachments.state.error")}</p>;
     }
-    if (attachments.length === 0) {
+    if (downloadableAttachments.length === 0) {
       return <p>{t("attachments.state.empty")}</p>;
     }
     return (
@@ -199,7 +239,7 @@ export const AttachmentsSection = ({
           </tr>
         </thead>
         <tbody>
-          {attachments.map((attachment) => (
+          {downloadableAttachments.map((attachment) => (
             <tr key={attachment.id}>
               <td>{attachment.filename}</td>
               <td>{formatFileSize(attachment.size)}</td>
@@ -249,16 +289,32 @@ export const AttachmentsSection = ({
             ref={fileInputRef}
             type="file"
             onChange={handleSelectFile}
-            disabled={uploadMutation.isPending || ownerId === null}
-            style={{ display: "none" }}
-            accept="application/pdf,image/*"
-          />
-        </div>
-      )}
+          disabled={uploadMutation.isPending || ownerId === null}
+          style={{ display: "none" }}
+          accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip"
+        />
+      </div>
+    )}
 
-      {error && <p className="error">{error}</p>}
+    {error && <p className="error">{error}</p>}
 
-      <div className="attachments-list">{renderBody()}</div>
+    <div className="attachments-section__actions">
+      <button
+        type="button"
+        onClick={handleDownloadAll}
+        disabled={
+          downloadAllPending ||
+          ownerId === null ||
+          downloadableAttachments.length === 0
+        }
+      >
+        {downloadAllPending
+          ? t("attachments.actions.downloadAllProgress")
+          : t("attachments.actions.downloadAll")}
+      </button>
     </div>
-  );
+
+    <div className="attachments-list">{renderBody()}</div>
+  </div>
+);
 };

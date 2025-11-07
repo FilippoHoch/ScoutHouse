@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -8,8 +8,10 @@ import {
   signAttachmentUpload,
   confirmAttachmentUpload,
   deleteAttachment,
+  signAttachmentDownload,
 } from "../../api";
 import { AttachmentsSection } from "../AttachmentsSection";
+import { downloadEntriesAsZip } from "../../utils/download";
 
 vi.mock("../../api", async () => {
   const actual = await vi.importActual<typeof import("../../api")>("../../api");
@@ -19,13 +21,20 @@ vi.mock("../../api", async () => {
     signAttachmentUpload: vi.fn(),
     confirmAttachmentUpload: vi.fn(),
     deleteAttachment: vi.fn(),
+    signAttachmentDownload: vi.fn(),
   };
 });
+
+vi.mock("../../utils/download", () => ({
+  downloadEntriesAsZip: vi.fn().mockResolvedValue(undefined),
+}));
 
 const mockedGetAttachments = vi.mocked(getAttachments);
 const mockedSignUpload = vi.mocked(signAttachmentUpload);
 const mockedConfirm = vi.mocked(confirmAttachmentUpload);
 const mockedDelete = vi.mocked(deleteAttachment);
+const mockedSignDownload = vi.mocked(signAttachmentDownload);
+const mockedDownloadZip = vi.mocked(downloadEntriesAsZip);
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -43,6 +52,9 @@ describe("AttachmentsSection", () => {
     mockedSignUpload.mockReset();
     mockedConfirm.mockReset();
     mockedDelete.mockReset();
+    mockedSignDownload.mockReset();
+    mockedDownloadZip.mockReset();
+    mockedDownloadZip.mockResolvedValue(undefined);
   });
 
   it("shows attachments list when data is available", async () => {
@@ -138,8 +150,8 @@ describe("AttachmentsSection", () => {
         id: 3,
         owner_type: "structure",
         owner_id: 99,
-        filename: "da-rimuovere.jpg",
-        mime: "image/jpeg",
+        filename: "da-rimuovere.pdf",
+        mime: "application/pdf",
         size: 512,
         created_at: new Date().toISOString(),
         created_by: "user-3",
@@ -157,5 +169,90 @@ describe("AttachmentsSection", () => {
     const deleteButton = await screen.findByRole("button", { name: /Elimina/i });
     await user.click(deleteButton);
     await waitFor(() => expect(mockedDelete).toHaveBeenCalledWith(3));
+  });
+
+  it("filters image attachments from the list", async () => {
+    mockedGetAttachments.mockResolvedValue([
+      {
+        id: 10,
+        owner_type: "structure",
+        owner_id: 99,
+        filename: "documento.pdf",
+        mime: "application/pdf",
+        size: 1024,
+        created_at: new Date().toISOString(),
+        created_by: "user-1",
+        created_by_name: "Mario",
+      },
+      {
+        id: 11,
+        owner_type: "structure",
+        owner_id: 99,
+        filename: "foto.jpg",
+        mime: "image/jpeg",
+        size: 2048,
+        created_at: new Date().toISOString(),
+        created_by: "user-2",
+        created_by_name: "Anna",
+      },
+    ]);
+
+    render(
+      <AttachmentsSection ownerType="structure" ownerId={99} canUpload={false} canDelete={false} />,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => expect(mockedGetAttachments).toHaveBeenCalledTimes(1));
+    await waitForElementToBeRemoved(() => screen.getByText(/Caricamento allegati…/i));
+    expect(await screen.findByText("documento.pdf")).toBeInTheDocument();
+    expect(screen.queryByText("foto.jpg")).not.toBeInTheDocument();
+  });
+
+  it("downloads all attachments as a single archive", async () => {
+    const user = userEvent.setup();
+    mockedGetAttachments.mockResolvedValue([
+      {
+        id: 21,
+        owner_type: "structure",
+        owner_id: 99,
+        filename: "documento.pdf",
+        mime: "application/pdf",
+        size: 1024,
+        created_at: new Date().toISOString(),
+        created_by: "user-1",
+        created_by_name: "Mario",
+      },
+      {
+        id: 22,
+        owner_type: "structure",
+        owner_id: 99,
+        filename: "preventivo.docx",
+        mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        size: 2048,
+        created_at: new Date().toISOString(),
+        created_by: "user-2",
+        created_by_name: "Anna",
+      },
+    ]);
+    mockedSignDownload
+      .mockResolvedValueOnce({ url: "https://example.com/documento.pdf" })
+      .mockResolvedValueOnce({ url: "https://example.com/preventivo.docx" });
+
+    render(
+      <AttachmentsSection ownerType="structure" ownerId={99} canUpload={false} canDelete={false} />,
+      { wrapper: createWrapper() }
+    );
+
+    const button = await screen.findByRole("button", { name: /Scarica tutto/i });
+    await user.click(button);
+
+    await waitFor(() => expect(mockedSignDownload).toHaveBeenCalledTimes(2));
+    expect(mockedDownloadZip).toHaveBeenCalledWith(
+      [
+        { filename: "documento.pdf", url: "https://example.com/documento.pdf" },
+        { filename: "preventivo.docx", url: "https://example.com/preventivo.docx" },
+      ],
+      "allegati.zip"
+    );
   });
 });
