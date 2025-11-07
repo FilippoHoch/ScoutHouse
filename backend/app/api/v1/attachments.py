@@ -34,6 +34,8 @@ from app.services.attachments import (
     ensure_size_within_limits,
     get_s3_client,
     head_object,
+    rewrite_presigned_post_signature,
+    rewrite_presigned_url,
     validate_key,
     validate_mime,
 )
@@ -187,6 +189,7 @@ def sign_attachment_upload(
         Conditions=conditions,
         ExpiresIn=600,
     )
+    signature = rewrite_presigned_post_signature(signature)
     return AttachmentUploadSignature(url=signature["url"], fields=signature["fields"])
 
 
@@ -263,6 +266,7 @@ def sign_attachment_download(
         Params={"Bucket": bucket, "Key": attachment.storage_key},
         ExpiresIn=120,
     )
+    url = rewrite_presigned_url(url)
     return AttachmentDownloadSignature(url=url)
 
 

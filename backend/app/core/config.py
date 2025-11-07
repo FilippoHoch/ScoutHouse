@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     s3_secret_key: str | None = Field(default=None, alias="S3_SECRET_KEY")
     s3_region: str | None = Field(default=None, alias="S3_REGION")
     s3_use_path_style: bool = Field(False, alias="S3_USE_PATH_STYLE")
+    s3_public_endpoint: str | None = Field(
+        default=None,
+        alias="S3_PUBLIC_ENDPOINT",
+        description="Public base URL exposed to browsers for presigned uploads and downloads.",
+    )
     mail_driver: Literal["console", "smtp", "sendgrid"] = Field(
         "console", alias="MAIL_DRIVER"
     )

@@ -70,7 +70,7 @@ Aggiornare il path al file desiderato. In scenari S3 scaricare il dump con
 | `SENTRY_DSN`                | DSN Sentry (vuoto → disabilitato).                            |
 | `SENTRY_TRACES_SAMPLE_RATE` | Sample rate per performance traces (0.0 – 1.0).               |
 | `BACKUP_CRON`               | Programmazione cron del job di backup.                        |
-| `S3_*`                      | Credenziali e configurazione per upload su S3/MinIO.           |
+| `S3_*`                      | Credenziali e configurazione per upload su S3/MinIO (`S3_PUBLIC_ENDPOINT` incluso). |
 | `DATABASE_URL`              | Connessione al database (usata anche dal job di backup).      |
 | `MAIL_DRIVER`               | Driver email (`console`, `smtp`, `sendgrid`).                 |
 | `MAIL_FROM_NAME`            | Nome mittente visualizzato nelle email.                       |
