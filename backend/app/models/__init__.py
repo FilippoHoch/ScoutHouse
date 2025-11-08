@@ -6,7 +6,7 @@ from .cost_option import (
     StructureCostOption,
 )
 from .contact import Contact, ContactPreferredChannel, StructureContact
-from .event import Event, EventBranch, EventStatus
+from .event import Event, EventAccommodation, EventBranch, EventBranchSegment, EventStatus
 from .event_candidate import EventStructureCandidate, EventStructureCandidateStatus
 from .event_contact_task import (
     EventContactTask,
@@ -51,6 +51,8 @@ __all__ = [
     "ContactPreferredChannel",
     "Event",
     "EventBranch",
+    "EventBranchSegment",
+    "EventAccommodation",
     "EventStatus",
     "EventStructureCandidate",
     "EventStructureCandidateStatus",

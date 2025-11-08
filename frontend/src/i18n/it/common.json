@@ -1123,14 +1123,20 @@
       "downloadIcal": "Scarica iCal",
       "icalError": "Impossibile scaricare il file iCal.",
       "mailPreviewButton": "Anteprima mail stato candidatura",
-      "mailPreviewError": "Impossibile mostrare l'anteprima email."
+      "mailPreviewError": "Impossibile mostrare l'anteprima email.",
+      "segments": {
+        "title": "Branche coinvolte",
+        "empty": "Nessuna branca registrata per questo evento."
+      }
     },
     "candidates": {
       "conflict": "Conflitto",
       "mail": {
         "subject": "Richiesta disponibilità – {{title}} ({{start}}–{{end}})",
-        "body": "Ciao,\n\nsiamo interessati alla struttura per l'evento {{title}} dal {{start}} al {{end}}. Fateci sapere disponibilità e condizioni.\n\nGrazie,\nSquadra eventi",
-        "subjectNoDates": "Richiesta disponibilità – {{title}}"
+        "body": "Ciao,\n\nsiamo interessati alla struttura per l'evento {{title}} dal {{start}} al {{end}}.\n\n{{segments}}\n\nFateci sapere disponibilità e condizioni.\n\nGrazie,\nSquadra eventi",
+        "subjectNoDates": "Richiesta disponibilità – {{title}}",
+        "segmentsHeading": "Presenze previste:",
+        "segmentsEmpty": "Presenze previste: da definire"
       },
       "contact": {
         "loading": "Caricamento contatti…",
@@ -1213,7 +1219,7 @@
       "steps": {
         "label": "Passaggi creazione evento",
         "details": "Dettagli",
-        "participants": "Partecipanti",
+        "branches": "Branche",
         "review": "Suggerimenti"
       },
       "actions": {
@@ -1228,19 +1234,41 @@
         "required": "Compila tutti i campi obbligatori.",
         "dates": "Seleziona le date dell'evento.",
         "create": "Impossibile creare l'evento.",
-        "addStructure": "Impossibile aggiungere la struttura."
-      },
-      "participants": {
-        "title": "Partecipanti",
-        "labels": {
-          "lc": "Lupetti",
-          "eg": "Esploratori",
-          "rs": "Rover",
-          "leaders": "Capi"
-        }
+        "addStructure": "Impossibile aggiungere la struttura.",
+        "segmentsRequired": "Aggiungi almeno una branca all'evento.",
+        "segmentDates": "Indica date valide per ogni branca.",
+        "segmentOrder": "La data di fine della branca non può essere precedente all'inizio.",
+        "segmentRange": "Le date di ogni branca devono essere comprese nell'evento.",
+        "segmentBranch": "Seleziona una branca specifica (LC, EG o RS)."
       },
       "summary": {
-        "created": "Evento {{title}} creato con successo. Aggiungi una struttura candidata dalle proposte."
+        "created": "Evento {{title}} creato con successo. Aggiungi una struttura candidata dalle proposte.",
+        "requirementsTitle": "Esigenze logistiche",
+        "segmentParticipants": "{{youth}} partecipanti · {{leaders}} capi"
+      },
+      "segments": {
+        "title": "Branche e presenza",
+        "empty": "Aggiungi le branche che parteciperanno all'evento.",
+        "segmentLabel": "Branca {{index}}",
+        "add": "Aggiungi branca",
+        "remove": "Rimuovi",
+        "branch": "Branca",
+        "youthCount": "Partecipanti",
+        "leadersCount": "Capi",
+        "notes": "Note",
+        "accommodation": {
+          "label": "Sistemazione",
+          "options": {
+            "indoor": "Casa / letti",
+            "tents": "Campo / tende"
+          }
+        },
+        "summaryTitle": "Riepilogo presenze",
+        "summaryBranch": "{{branch}}: {{count}} persone",
+        "summaryLeaders": "Capi: {{count}}",
+        "summaryTotal": "Totale persone: {{count}}",
+        "summaryIndoor": "Letti contemporaneamente necessari: {{count}}",
+        "summaryTents": "Posti tenda contemporaneamente necessari: {{count}}"
       },
       "suggestions": {
         "loading": "Caricamento suggerimenti…",

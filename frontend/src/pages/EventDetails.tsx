@@ -22,6 +22,7 @@ import {
 } from "../shared/api";
 import {
   Event,
+  EventAccommodation,
   EventCandidate,
   EventCandidateStatus,
   EventContactTask,
@@ -37,6 +38,11 @@ import { useAuth } from "../shared/auth";
 import { useEventLive } from "../shared/live";
 import { EventQuotesTab } from "./EventQuotesTab";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
+import {
+  NormalizedBranchSegment,
+  computeAccommodationRequirements,
+  computeParticipantTotals
+} from "../shared/eventUtils";
 
 const candidateStatuses: EventCandidateStatus[] = [
   "to_contact",
@@ -82,6 +88,7 @@ interface CandidateRowProps {
   eventTitle: string;
   eventStart: string;
   eventEnd: string;
+  segmentsDescription: string;
 }
 
 const CandidateRow = ({
@@ -91,7 +98,8 @@ const CandidateRow = ({
   onSave,
   eventTitle,
   eventStart,
-  eventEnd
+  eventEnd,
+  segmentsDescription
 }: CandidateRowProps) => {
   const { t } = useTranslation();
   const [assignedUserId, setAssignedUserId] = useState(candidate.assigned_user_id ?? "");
@@ -141,6 +149,7 @@ const CandidateRow = ({
         start: eventStart,
         end: eventEnd,
         structure: candidate.structure?.name ?? t("events.candidates.contact.unknownStructure"),
+        segments: segmentsDescription,
       })
     : "";
   const mailHref = selectedContact?.email
@@ -528,6 +537,48 @@ export const EventDetailsPage = () => {
     return Object.values(event.participants).reduce((acc, value) => acc + value, 0);
   }, [event]);
 
+  const branchSegments = event.branch_segments ?? [];
+  const normalizedSegments = useMemo<NormalizedBranchSegment[]>(
+    () =>
+      branchSegments.map((segment) => ({
+        branch: segment.branch,
+        startDate: segment.start_date,
+        endDate: segment.end_date,
+        youthCount: segment.youth_count,
+        leadersCount: segment.leaders_count,
+        accommodation: segment.accommodation as EventAccommodation,
+        notes: segment.notes ?? undefined,
+      })),
+    [branchSegments],
+  );
+  const segmentsTotals = useMemo(() => computeParticipantTotals(normalizedSegments), [normalizedSegments]);
+  const accommodationSummary = useMemo(
+    () => computeAccommodationRequirements(normalizedSegments),
+    [normalizedSegments],
+  );
+  const segmentsTotalParticipants = useMemo(
+    () => Object.values(segmentsTotals).reduce((acc, value) => acc + value, 0),
+    [segmentsTotals],
+  );
+  const segmentsMailDescription = useMemo(() => {
+    if (normalizedSegments.length === 0) {
+      return t("events.candidates.mail.segmentsEmpty");
+    }
+    const lines = normalizedSegments.map((segment) => {
+      const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
+      const period = t("events.list.period", { start: segment.startDate, end: segment.endDate });
+      const participantsLabel = t("events.wizard.summary.segmentParticipants", {
+        youth: segment.youthCount,
+        leaders: segment.leadersCount,
+      });
+      const accommodationLabel = t(
+        `events.wizard.segments.accommodation.options.${segment.accommodation}`,
+      );
+      return `- ${branchLabel} (${period}) · ${participantsLabel} · ${accommodationLabel}`;
+    });
+    return [t("events.candidates.mail.segmentsHeading"), ...lines].join("\n");
+  }, [normalizedSegments, t]);
+
   if (!isValidEventId) {
     return (
       <section>
@@ -639,6 +690,63 @@ export const EventDetailsPage = () => {
         </header>
         {icalError && <p className="error">{icalError}</p>}
         {mailPreviewError && <p className="error">{mailPreviewError}</p>}
+        <div className="event-branch-segments">
+          <h3>{t("events.details.segments.title")}</h3>
+          {branchSegments.length === 0 ? (
+            <p>{t("events.details.segments.empty")}</p>
+          ) : (
+            <>
+              <div className="branch-segments__summary">
+                <h4>{t("events.wizard.summary.requirementsTitle")}</h4>
+                <ul>
+                  {segmentsTotals.lc > 0 && (
+                    <li>{t("events.wizard.segments.summaryBranch", { branch: t("events.branches.LC"), count: segmentsTotals.lc })}</li>
+                  )}
+                  {segmentsTotals.eg > 0 && (
+                    <li>{t("events.wizard.segments.summaryBranch", { branch: t("events.branches.EG"), count: segmentsTotals.eg })}</li>
+                  )}
+                  {segmentsTotals.rs > 0 && (
+                    <li>{t("events.wizard.segments.summaryBranch", { branch: t("events.branches.RS"), count: segmentsTotals.rs })}</li>
+                  )}
+                  {segmentsTotals.leaders > 0 && (
+                    <li>{t("events.wizard.segments.summaryLeaders", { count: segmentsTotals.leaders })}</li>
+                  )}
+                  <li>{t("events.wizard.segments.summaryTotal", { count: segmentsTotalParticipants })}</li>
+                  {accommodationSummary.needsIndoor && (
+                    <li>{t("events.wizard.segments.summaryIndoor", { count: accommodationSummary.indoorCapacity })}</li>
+                  )}
+                  {accommodationSummary.needsTents && (
+                    <li>{t("events.wizard.segments.summaryTents", { count: accommodationSummary.tentsCapacity })}</li>
+                  )}
+                </ul>
+              </div>
+              <ul className="branch-segments__list">
+                {branchSegments.map((segment) => {
+                  const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
+                  const periodLabel = t("events.list.period", { start: segment.start_date, end: segment.end_date });
+                  const participantsLabel = t("events.wizard.summary.segmentParticipants", {
+                    youth: segment.youth_count,
+                    leaders: segment.leaders_count,
+                  });
+                  const accommodationLabel = t(
+                    `events.wizard.segments.accommodation.options.${segment.accommodation}`,
+                  );
+                  return (
+                    <li key={segment.id}>
+                      <div className="branch-segments__list-info">
+                        <strong>{branchLabel}</strong>
+                        <span>{periodLabel}</span>
+                        <span>{participantsLabel}</span>
+                        <span>{accommodationLabel}</span>
+                      </div>
+                      {segment.notes && <p className="branch-segments__list-notes">{segment.notes}</p>}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+        </div>
         <div className="team-section">
           <h3>Team</h3>
           {memberError && <p className="error">{memberError}</p>}
@@ -838,6 +946,7 @@ export const EventDetailsPage = () => {
                       eventTitle={event.title}
                       eventStart={eventStartLabel}
                       eventEnd={eventEndLabel}
+                      segmentsDescription={segmentsMailDescription}
                     />
                   ))
                 ) : (

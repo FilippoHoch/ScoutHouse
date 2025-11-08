@@ -8,8 +8,7 @@ from app.schemas.geocoding import GeocodingAddress, GeocodingResult
 client = TestClient(app)
 
 
-@pytest.mark.asyncio
-async def test_geocoding_search(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_geocoding_search(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_search(**kwargs):  # type: ignore[no-untyped-def]
         assert kwargs["address"] == "Via Roma 1"
         return [
@@ -40,8 +39,7 @@ async def test_geocoding_search(monkeypatch: pytest.MonkeyPatch) -> None:
     assert payload["results"][0]["address"]["postal_code"] == "20121"
 
 
-@pytest.mark.asyncio
-async def test_geocoding_search_handles_error(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_geocoding_search_handles_error(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_search(**kwargs):  # type: ignore[no-untyped-def]
         raise geocoding_api.geocoding.GeocodingError("Service down", status_code=503)
 

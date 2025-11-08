@@ -44,7 +44,9 @@ def structure_matches_filters(
 
     if season is not None or unit is not None:
         availabilities = getattr(structure, "availabilities", None) or []
-        if not any(_availability_matches(avail, season=season, unit=unit) for avail in availabilities):
+        if availabilities and not any(
+            _availability_matches(avail, season=season, unit=unit) for avail in availabilities
+        ):
             return False, computed_band, float(estimated_cost_decimal) if estimated_cost_decimal is not None else None
 
     estimated_cost = float(estimated_cost_decimal) if estimated_cost_decimal is not None else None

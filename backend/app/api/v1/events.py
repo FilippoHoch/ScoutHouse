@@ -4,8 +4,8 @@ import asyncio
 import json
 import re
 from contextlib import suppress
-from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any
+from datetime import date, datetime, timedelta, timezone
+from typing import Annotated, Any, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
@@ -20,6 +20,9 @@ from app.models import (
     Contact,
     StructureContact,
     Event,
+    EventAccommodation,
+    EventBranch,
+    EventBranchSegment,
     EventContactTask,
     EventMember,
     EventMemberRole,
@@ -121,6 +124,76 @@ def _participants_to_dict(participants: Any) -> dict[str, int]:
     raise TypeError("participants must be a mapping")
 
 
+def _participants_from_segments(segments: Sequence[dict[str, Any]]) -> dict[str, int]:
+    totals = {"lc": 0, "eg": 0, "rs": 0, "leaders": 0}
+    for segment in segments:
+        branch_value = segment.get("branch")
+        if branch_value is None:
+            continue
+        branch = branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
+        youth_count = int(segment.get("youth_count", 0) or 0)
+        leaders_count = int(segment.get("leaders_count", 0) or 0)
+        if branch == EventBranch.LC:
+            totals["lc"] += youth_count
+        elif branch == EventBranch.EG:
+            totals["eg"] += youth_count
+        elif branch == EventBranch.RS:
+            totals["rs"] += youth_count
+        totals["leaders"] += leaders_count
+    return totals
+
+
+def _coerce_date(value: date | str) -> date:
+    if isinstance(value, date):
+        return value
+    return date.fromisoformat(value)
+
+
+def _build_segment(payload: dict[str, Any]) -> EventBranchSegment:
+    branch_value = payload.get("branch")
+    if branch_value is None:
+        raise ValueError("Segment branch is required")
+    branch = branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
+
+    accommodation_value = payload.get("accommodation")
+    if accommodation_value is None:
+        raise ValueError("Segment accommodation is required")
+    accommodation = (
+        accommodation_value
+        if isinstance(accommodation_value, EventAccommodation)
+        else EventAccommodation(accommodation_value)
+    )
+
+    start_raw = payload.get("start_date")
+    end_raw = payload.get("end_date")
+    if start_raw is None or end_raw is None:
+        raise ValueError("Segment dates are required")
+
+    start_date = _coerce_date(start_raw)
+    end_date = _coerce_date(end_raw)
+
+    youth_count = int(payload.get("youth_count", 0) or 0)
+    leaders_count = int(payload.get("leaders_count", 0) or 0)
+    notes_raw = payload.get("notes")
+    notes = notes_raw if isinstance(notes_raw, str) and notes_raw.strip() else None
+
+    return EventBranchSegment(
+        branch=branch,
+        start_date=start_date,
+        end_date=end_date,
+        youth_count=youth_count,
+        leaders_count=leaders_count,
+        accommodation=accommodation,
+        notes=notes,
+    )
+
+
+def _set_branch_segments(event: Event, segments: Sequence[dict[str, Any]]) -> None:
+    event.branch_segments.clear()
+    for payload in segments:
+        event.branch_segments.append(_build_segment(payload))
+
+
 def _slugify(value: str) -> str:
     slug = SLUG_RE.sub("-", value.lower()).strip("-")
     return slug or "event"
@@ -207,7 +280,7 @@ def _owner_count(db: Session, event_id: int, *, exclude_member_id: int | None = 
 
 
 def _load_event(db: Session, event_id: int, *, with_candidates: bool = False, with_tasks: bool = False) -> Event:
-    options = []
+    options = [selectinload(Event.branch_segments)]
     if with_candidates:
         options.append(
             selectinload(Event.candidates).selectinload(EventStructureCandidate.structure)
@@ -373,15 +446,23 @@ def create_event(
     slug = _generate_unique_slug(db, base_slug)
 
     data = event_in.model_dump()
-    participants = data.pop("participants")
+    branch_segments = data.pop("branch_segments", [])
+    participants = _participants_to_dict(data.pop("participants"))
     status_value = data.pop("status", EventStatus.DRAFT)
 
     event = Event(slug=slug, **data)
-    event.participants = _participants_to_dict(participants)
+    if branch_segments:
+        event.participants = _participants_from_segments(branch_segments)
+    else:
+        event.participants = participants
     event.status = status_value
 
     db.add(event)
     db.flush()
+
+    if branch_segments:
+        _set_branch_segments(event, branch_segments)
+        db.flush()
 
     membership = EventMember(event_id=event.id, user_id=current_user.id, role=EventMemberRole.OWNER)
     db.add(membership)
@@ -508,11 +589,30 @@ def update_event(
     before_snapshot = EventRead.model_validate(event).model_dump()
 
     data = event_in.model_dump(exclude_unset=True)
+
+    segments_payload = data.pop("branch_segments", None)
+    normalized_segments: list[dict[str, Any]] | None = None
+    if segments_payload is not None:
+        normalized_segments = segments_payload or []
+        new_start_raw = data.get("start_date", event.start_date)
+        new_end_raw = data.get("end_date", event.end_date)
+        new_start = _coerce_date(new_start_raw)
+        new_end = _coerce_date(new_end_raw)
+        for segment in normalized_segments:
+            segment_start = _coerce_date(segment["start_date"])
+            segment_end = _coerce_date(segment["end_date"])
+            if segment_start < new_start or segment_end > new_end:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Segment dates must be within event dates",
+                )
+        data["participants"] = _participants_from_segments(normalized_segments)
+
     if "participants" in data and data["participants"] is not None:
         data["participants"] = _participants_to_dict(data["participants"])
 
-    new_start = data.get("start_date", event.start_date)
-    new_end = data.get("end_date", event.end_date)
+    new_start = _coerce_date(data.get("start_date", event.start_date))
+    new_end = _coerce_date(data.get("end_date", event.end_date))
     if new_end < new_start:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -521,6 +621,9 @@ def update_event(
 
     for key, value in data.items():
         setattr(event, key, value)
+
+    if normalized_segments is not None:
+        _set_branch_segments(event, normalized_segments)
 
     db.add(event)
     db.flush()

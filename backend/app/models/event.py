@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, Integer, Numeric, String, Text
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import JSON
@@ -22,6 +23,11 @@ class EventBranch(str, Enum):
     EG = "EG"
     RS = "RS"
     ALL = "ALL"
+
+
+class EventAccommodation(str, Enum):
+    INDOOR = "indoor"
+    TENTS = "tents"
 
 
 class EventStatus(str, Enum):
@@ -81,5 +87,42 @@ class Event(Base):
         lazy="selectin",
     )
 
+    branch_segments: Mapped[list["EventBranchSegment"]] = relationship(
+        "EventBranchSegment",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
-__all__ = ["Event", "EventBranch", "EventStatus"]
+
+class EventBranchSegment(Base):
+    __tablename__ = "event_branch_segments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    branch: Mapped[EventBranch] = mapped_column(sqla_enum(EventBranch, name="event_branch"), nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    youth_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    leaders_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    accommodation: Mapped[EventAccommodation] = mapped_column(
+        sqla_enum(EventAccommodation, name="event_accommodation"),
+        nullable=False,
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    event: Mapped["Event"] = relationship("Event", back_populates="branch_segments")
+
+
+__all__ = [
+    "Event",
+    "EventBranch",
+    "EventStatus",
+    "EventAccommodation",
+    "EventBranchSegment",
+]

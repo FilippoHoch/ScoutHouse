@@ -582,6 +582,7 @@ export interface StructureSearchParams {
 
 export type EventBranch = "LC" | "EG" | "RS" | "ALL";
 export type EventStatus = "draft" | "planning" | "booked" | "archived";
+export type EventAccommodation = "indoor" | "tents";
 export type EventCandidateStatus =
   | "to_contact"
   | "contacting"
@@ -598,6 +599,27 @@ export interface EventParticipants {
   eg: number;
   rs: number;
   leaders: number;
+}
+
+export interface EventBranchSegment {
+  id: number;
+  branch: EventBranch;
+  start_date: string;
+  end_date: string;
+  youth_count: number;
+  leaders_count: number;
+  accommodation: EventAccommodation;
+  notes: string | null;
+}
+
+export interface EventBranchSegmentCreate {
+  branch: EventBranch;
+  start_date: string;
+  end_date: string;
+  youth_count: number;
+  leaders_count: number;
+  accommodation: EventAccommodation;
+  notes?: string | null;
 }
 
 export interface EventCandidateStructure {
@@ -647,6 +669,7 @@ export interface Event {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  branch_segments: EventBranchSegment[];
   candidates?: EventCandidate[] | null;
   tasks?: EventContactTask[] | null;
 }
@@ -681,6 +704,7 @@ export interface EventCreateDto {
   budget_total?: number | null;
   status?: EventStatus;
   notes?: string | null;
+  branch_segments?: EventBranchSegmentCreate[];
 }
 
 export type EventUpdateDto = Partial<EventCreateDto>;
