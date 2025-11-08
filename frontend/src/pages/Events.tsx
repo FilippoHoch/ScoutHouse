@@ -28,7 +28,7 @@ import {
   InlineActions,
   InlineFields,
   InlineMessage,
-  SectionHeader,
+  Metric,
   StatusBadge,
   Surface,
   TableWrapper,
@@ -94,6 +94,22 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     { id: 2, label: t("events.wizard.steps.participants") },
     { id: 3, label: t("events.wizard.steps.review") },
   ];
+  const branchOptions = useMemo(
+    () =>
+      branches.map((branch) => ({
+        value: branch,
+        label: t(`events.branches.${branch}`, branch),
+      })),
+    [t],
+  );
+  const statusOptions = useMemo(
+    () =>
+      statuses.map((status) => ({
+        value: status,
+        label: t(`events.status.${status}`, status),
+      })),
+    [t],
+  );
 
   const createMutation = useMutation({
     mutationFn: (dto: EventCreateDto) => createEvent(dto),
@@ -223,9 +239,9 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                       setState((prev) => ({ ...prev, branch: event.target.value as EventBranch }))
                     }
                   >
-                    {branches.map((branch) => (
-                      <option key={branch} value={branch}>
-                        {branch}
+                    {branchOptions.map((branch) => (
+                      <option key={branch.value} value={branch.value}>
+                        {branch.label}
                       </option>
                     ))}
                   </select>
@@ -321,9 +337,9 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                       setState((prev) => ({ ...prev, status: event.target.value as EventStatus }))
                     }
                   >
-                    {statuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
+                    {statusOptions.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
                       </option>
                     ))}
                   </select>
@@ -419,10 +435,35 @@ export const EventsPage = () => {
 
   const events = eventsQuery.data?.items ?? [];
   const hasError = eventsQuery.isError;
+  const statusOptions = useMemo(
+    () =>
+      statuses.map((status) => ({
+        value: status,
+        label: t(`events.status.${status}`, status),
+      })),
+    [t],
+  );
+  const statusMetrics = useMemo(
+    () =>
+      statuses.map((status) => ({
+        status,
+        count: eventsQuery.data
+          ? eventsQuery.data.items.filter((item) => item.status === status).length
+          : null,
+      })),
+    [eventsQuery.data],
+  );
+  const totalEvents = eventsQuery.data?.total ?? null;
+  const totalMetricHint = eventsQuery.isFetching
+    ? t("events.metrics.refreshing")
+    : eventsQuery.data
+      ? t("events.metrics.pageHint", { count: events.length })
+      : undefined;
+  const isInitialLoading = eventsQuery.isLoading && !eventsQuery.data;
 
   const summaryMessage = useMemo(() => {
     if (!eventsQuery.data) {
-      return "";
+      return null;
     }
     if (eventsQuery.data.total === 0) {
       return t("events.list.summary.empty");
@@ -443,15 +484,33 @@ export const EventsPage = () => {
     });
 
   return (
-    <section>
-      <Surface>
-        <SectionHeader>
-          <h2>{t("events.title")}</h2>
-          <Button type="button" onClick={() => setIsWizardOpen(true)}>
-            {t("events.actions.new")}
-          </Button>
-        </SectionHeader>
-        <form className="toolbar" onSubmit={handleSubmit}>
+    <section className="events-page">
+      <div className="events-hero">
+        <div className="events-hero__heading">
+          <div className="events-hero__intro">
+            <span className="events-hero__badge">{t("events.hero.badge")}</span>
+            <h1>{t("events.title")}</h1>
+            <p>{t("events.hero.subtitle")}</p>
+          </div>
+          <div className="events-hero__actions">
+            <Button type="button" size="sm" onClick={() => setIsWizardOpen(true)}>
+              {t("events.actions.new")}
+            </Button>
+          </div>
+        </div>
+        <div className="inline-metrics events-hero__metrics" aria-live="polite">
+          <Metric label={t("events.metrics.total")} value={totalEvents ?? "—"} hint={totalMetricHint} />
+          {statusMetrics.map(({ status, count }) => (
+            <Metric
+              key={status}
+              label={t(`events.status.${status}`, status)}
+              value={count ?? "—"}
+            />
+          ))}
+        </div>
+      </div>
+      <Surface className="events-panel" aria-busy={eventsQuery.isFetching}>
+        <form className="toolbar events-toolbar" onSubmit={handleSubmit}>
           <ToolbarSection>
             <label>
               {t("events.filters.search.label")}
@@ -469,9 +528,9 @@ export const EventsPage = () => {
                 onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}
               >
                 <option value="">{t("events.filters.status.all")}</option>
-                {statuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
+                {statusOptions.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
                   </option>
                 ))}
               </select>
@@ -494,12 +553,16 @@ export const EventsPage = () => {
             </div>
           </ToolbarSection>
         </form>
-        <p className="summary" aria-live="polite">
-          {summaryMessage}
-          {eventsQuery.isFetching && <span> · {t("events.list.updating")}</span>}
-        </p>
-        {eventsQuery.isLoading ? (
-          <div aria-busy="true" aria-live="polite">
+        {summaryMessage && (
+          <div className="events-panel__summary" aria-live="polite">
+            <p className="events-panel__summary-text">{summaryMessage}</p>
+            {eventsQuery.isFetching && (
+              <span className="events-panel__summary-badge">{t("events.list.updating")}</span>
+            )}
+          </div>
+        )}
+        {isInitialLoading ? (
+          <div className="events-panel__loading" aria-live="polite">
             <div className="loading-skeleton" style={{ width: "45%" }} />
             <div className="loading-skeleton" style={{ height: "140px", marginTop: "1.5rem" }} />
           </div>
@@ -516,8 +579,8 @@ export const EventsPage = () => {
             }
           />
         ) : (
-          <TableWrapper>
-            <table className="data-table">
+          <TableWrapper className="events-table-wrapper">
+            <table className="data-table events-table">
               <thead>
                 <tr>
                   <th>{t("events.table.title")}</th>
@@ -547,7 +610,7 @@ export const EventsPage = () => {
                       </td>
                       <td>{t("events.list.period", { start: event.start_date, end: event.end_date })}</td>
                       <td>
-                        <span className="tag">{event.branch}</span>
+                        <span className="tag">{t(`events.branches.${event.branch}`, event.branch)}</span>
                       </td>
                       <td>
                         <StatusBadge status={event.status}>{statusLabel}</StatusBadge>
