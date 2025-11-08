@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
-from app.models.event import EventBranch, EventStatus
+from app.models.event import EventAccommodation, EventBranch, EventStatus
 from app.models.event_candidate import EventStructureCandidateStatus
 from app.models.event_contact_task import (
     EventContactTaskOutcome,
@@ -26,6 +26,34 @@ class EventParticipants(BaseModel):
     }
 
 
+class EventBranchSegmentBase(BaseModel):
+    branch: EventBranch
+    start_date: date
+    end_date: date
+    youth_count: int = Field(default=0, ge=0)
+    leaders_count: int = Field(default=0, ge=0)
+    accommodation: EventAccommodation
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def validate_branch_segment(self) -> "EventBranchSegmentBase":
+        if self.end_date < self.start_date:
+            raise ValueError("Segment end_date cannot be earlier than start_date")
+        if self.branch == EventBranch.ALL:
+            raise ValueError("Segment branch must be specific")
+        return self
+
+
+class EventBranchSegmentCreate(EventBranchSegmentBase):
+    pass
+
+
+class EventBranchSegmentRead(EventBranchSegmentBase):
+    id: int
+
+    model_config = {"from_attributes": True}
+
+
 class EventBase(BaseModel):
     title: str = Field(..., min_length=1)
     branch: EventBranch
@@ -35,6 +63,7 @@ class EventBase(BaseModel):
     budget_total: Decimal | None = Field(default=None, ge=0)
     status: EventStatus = EventStatus.DRAFT
     notes: str | None = None
+    branch_segments: list[EventBranchSegmentRead] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_dates(self) -> "EventBase":
@@ -44,7 +73,14 @@ class EventBase(BaseModel):
 
 
 class EventCreate(EventBase):
-    pass
+    branch_segments: list[EventBranchSegmentCreate] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_segments(self) -> "EventCreate":
+        for segment in self.branch_segments:
+            if segment.start_date < self.start_date or segment.end_date > self.end_date:
+                raise ValueError("Segment dates must be within event dates")
+        return self
 
 
 class EventUpdate(BaseModel):
@@ -56,6 +92,7 @@ class EventUpdate(BaseModel):
     budget_total: Decimal | None = Field(default=None, ge=0)
     status: EventStatus | None = None
     notes: str | None = None
+    branch_segments: list[EventBranchSegmentCreate] | None = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "EventUpdate":

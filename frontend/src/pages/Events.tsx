@@ -14,6 +14,7 @@ import {
 } from "../shared/api";
 import {
   Event,
+  EventAccommodation,
   EventBranch,
   EventSuggestion,
   EventStatus,
@@ -34,26 +35,37 @@ import {
   TableWrapper,
   ToolbarSection,
 } from "../shared/ui/designSystem";
+import {
+  NormalizedBranchSegment,
+  computeAccommodationRequirements,
+  computeParticipantTotals
+} from "../shared/eventUtils";
 
 const branches: EventBranch[] = ["LC", "EG", "RS", "ALL"];
 const statuses: EventStatus[] = ["draft", "planning", "booked", "archived"];
 
 type WizardStep = 1 | 2 | 3;
 
+type BranchSegmentFormValue = {
+  id: string;
+  branch: EventBranch;
+  startDate: string;
+  endDate: string;
+  youthCount: string;
+  leadersCount: string;
+  accommodation: EventAccommodation;
+  notes: string;
+};
+
 interface WizardState {
   title: string;
   branch: EventBranch;
   start_date: string;
   end_date: string;
-  participants: {
-    lc: number;
-    eg: number;
-    rs: number;
-    leaders: number;
-  };
   budget_total: string;
   notes: string;
   status: EventStatus;
+  branchSegments: BranchSegmentFormValue[];
 }
 
 const defaultWizardState: WizardState = {
@@ -61,18 +73,13 @@ const defaultWizardState: WizardState = {
   branch: "LC",
   start_date: "",
   end_date: "",
-  participants: { lc: 0, eg: 0, rs: 0, leaders: 0 },
   budget_total: "",
   notes: "",
-  status: "draft"
+  status: "draft",
+  branchSegments: []
 };
 
-const participantLabelKeys: Record<keyof WizardState["participants"], string> = {
-  lc: "events.wizard.participants.labels.lc",
-  eg: "events.wizard.participants.labels.eg",
-  rs: "events.wizard.participants.labels.rs",
-  leaders: "events.wizard.participants.labels.leaders"
-};
+const generateSegmentId = (): string => Math.random().toString(36).slice(2, 10);
 
 interface EventWizardProps {
   onClose: () => void;
@@ -91,7 +98,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
   const queryClient = useQueryClient();
   const wizardSteps: Array<{ id: WizardStep; label: string }> = [
     { id: 1, label: t("events.wizard.steps.details") },
-    { id: 2, label: t("events.wizard.steps.participants") },
+    { id: 2, label: t("events.wizard.steps.branches") },
     { id: 3, label: t("events.wizard.steps.review") },
   ];
   const branchOptions = useMemo(
@@ -109,6 +116,79 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
         label: t(`events.status.${status}`, status),
       })),
     [t],
+  );
+
+  const segmentBranchOptions = useMemo(
+    () => branchOptions.filter((option) => option.value !== "ALL"),
+    [branchOptions],
+  );
+  const accommodationOptions = useMemo(
+    () => [
+      {
+        value: "indoor",
+        label: t("events.wizard.segments.accommodation.options.indoor"),
+      },
+      {
+        value: "tents",
+        label: t("events.wizard.segments.accommodation.options.tents"),
+      },
+    ],
+    [t],
+  );
+
+  const parseCount = (value: string): number => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      return 0;
+    }
+    return parsed;
+  };
+
+  const normalizedSegments = useMemo<NormalizedBranchSegment[]>(
+    () =>
+      state.branchSegments.map((segment) => ({
+        branch: segment.branch,
+        startDate: segment.startDate,
+        endDate: segment.endDate,
+        youthCount: parseCount(segment.youthCount),
+        leadersCount: parseCount(segment.leadersCount),
+        accommodation: segment.accommodation,
+        notes: segment.notes.trim() ? segment.notes.trim() : undefined,
+      })),
+    [state.branchSegments],
+  );
+
+  const segmentsTotals = useMemo(() => computeParticipantTotals(normalizedSegments), [normalizedSegments]);
+  const accommodationSummary = useMemo(
+    () => computeAccommodationRequirements(normalizedSegments),
+    [normalizedSegments],
+  );
+  const totalParticipants = useMemo(
+    () => Object.values(segmentsTotals).reduce((acc, value) => acc + value, 0),
+    [segmentsTotals],
+  );
+
+  const createdNormalizedSegments = useMemo<NormalizedBranchSegment[]>(() => {
+    if (!createdEvent) {
+      return [];
+    }
+    return (createdEvent.branch_segments ?? []).map((segment) => ({
+      branch: segment.branch,
+      startDate: segment.start_date,
+      endDate: segment.end_date,
+      youthCount: segment.youth_count,
+      leadersCount: segment.leaders_count,
+      accommodation: segment.accommodation as EventAccommodation,
+      notes: segment.notes ?? undefined,
+    }));
+  }, [createdEvent]);
+  const createdSegmentsTotals = useMemo(
+    () => computeParticipantTotals(createdNormalizedSegments),
+    [createdNormalizedSegments],
+  );
+  const createdAccommodationSummary = useMemo(
+    () => computeAccommodationRequirements(createdNormalizedSegments),
+    [createdNormalizedSegments],
   );
 
   const createMutation = useMutation({
@@ -137,21 +217,113 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     setStep(2);
   };
 
+  const updateSegment = (id: string, partial: Partial<BranchSegmentFormValue>) => {
+    setState((prev) => ({
+      ...prev,
+      branchSegments: prev.branchSegments.map((segment) =>
+        segment.id === id ? { ...segment, ...partial } : segment,
+      ),
+    }));
+  };
+
+  const handleAddSegment = () => {
+    const fallbackBranch =
+      state.branch === "ALL"
+        ? (segmentBranchOptions[0]?.value as EventBranch | undefined) ?? "LC"
+        : state.branch;
+    const defaultAccommodation: EventAccommodation = fallbackBranch === "LC" ? "indoor" : "tents";
+    setState((prev) => ({
+      ...prev,
+      branchSegments: [
+        ...prev.branchSegments,
+        {
+          id: generateSegmentId(),
+          branch: fallbackBranch,
+          startDate: prev.start_date,
+          endDate: prev.end_date,
+          youthCount: "",
+          leadersCount: "",
+          accommodation: defaultAccommodation,
+          notes: "",
+        },
+      ],
+    }));
+  };
+
+  const handleRemoveSegment = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      branchSegments: prev.branchSegments.filter((segment) => segment.id !== id),
+    }));
+  };
+
+  const validateSegments = (): string | null => {
+    if (state.branchSegments.length === 0) {
+      return t("events.wizard.errors.segmentsRequired");
+    }
+    if (!state.start_date || !state.end_date) {
+      return t("events.wizard.errors.dates");
+    }
+    const eventStart = new Date(state.start_date);
+    const eventEnd = new Date(state.end_date);
+    if (Number.isNaN(eventStart.getTime()) || Number.isNaN(eventEnd.getTime())) {
+      return t("events.wizard.errors.dates");
+    }
+    for (const segment of state.branchSegments) {
+      if (segment.branch === "ALL") {
+        return t("events.wizard.errors.segmentBranch");
+      }
+      if (!segment.startDate || !segment.endDate) {
+        return t("events.wizard.errors.segmentDates");
+      }
+      const start = new Date(segment.startDate);
+      const end = new Date(segment.endDate);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return t("events.wizard.errors.segmentDates");
+      }
+      if (end < start) {
+        return t("events.wizard.errors.segmentOrder");
+      }
+      if (start < eventStart || end > eventEnd) {
+        return t("events.wizard.errors.segmentRange");
+      }
+    }
+    return null;
+  };
+
   const handleCreateEvent = async () => {
     if (!state.start_date || !state.end_date) {
       setError(t("events.wizard.errors.dates"));
       return;
     }
+    const segmentError = validateSegments();
+    if (segmentError) {
+      setError(segmentError);
+      return;
+    }
     setError(null);
+    const segmentPayload = state.branchSegments.map((segment, index) => {
+      const normalized = normalizedSegments[index];
+      return {
+        branch: normalized.branch,
+        start_date: segment.startDate,
+        end_date: segment.endDate,
+        youth_count: normalized.youthCount,
+        leaders_count: normalized.leadersCount,
+        accommodation: normalized.accommodation,
+        notes: normalized.notes,
+      };
+    });
     const dto: EventCreateDto = {
       title: state.title.trim(),
       branch: state.branch,
       start_date: state.start_date,
       end_date: state.end_date,
-      participants: state.participants,
+      participants: segmentsTotals,
       status: state.status,
       notes: state.notes.trim() || undefined,
-      budget_total: state.budget_total ? Number.parseFloat(state.budget_total) : undefined
+      budget_total: state.budget_total ? Number.parseFloat(state.budget_total) : undefined,
+      branch_segments: segmentPayload,
     };
 
     try {
@@ -286,31 +458,178 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                   handleCreateEvent();
                 }}
               >
-                <fieldset>
-                  <legend>{t("events.wizard.participants.title")}</legend>
-                  {Object.entries(state.participants).map(([key, value]) => {
-                    const participantKey = key as keyof WizardState["participants"];
-                    return (
-                      <label key={key}>
-                        {t(participantLabelKeys[participantKey])}
-                        <input
-                          type="number"
-                          min={0}
-                          value={value}
-                          onChange={(event) =>
-                            setState((prev) => ({
-                              ...prev,
-                              participants: {
-                                ...prev.participants,
-                                [participantKey]: Number.parseInt(event.target.value || "0", 10),
-                              },
-                            }))
-                          }
-                        />
-                      </label>
-                    );
-                  })}
+                <fieldset className="branch-segments">
+                  <legend>{t("events.wizard.segments.title")}</legend>
+                  {state.branchSegments.length === 0 ? (
+                    <p className="branch-segments__empty">{t("events.wizard.segments.empty")}</p>
+                  ) : (
+                    state.branchSegments.map((segment, index) => (
+                      <div key={segment.id} className="branch-segment">
+                        <div className="branch-segment__header">
+                          <h4>{t("events.wizard.segments.segmentLabel", { index: index + 1 })}</h4>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveSegment(segment.id)}
+                          >
+                            {t("events.wizard.segments.remove")}
+                          </Button>
+                        </div>
+                        <InlineFields>
+                          <label>
+                            {t("events.wizard.segments.branch")}
+                            <select
+                              value={segment.branch}
+                              onChange={(event) =>
+                                updateSegment(segment.id, {
+                                  branch: event.target.value as EventBranch,
+                                })
+                              }
+                            >
+                              {segmentBranchOptions.map((branch) => (
+                                <option key={branch.value} value={branch.value}>
+                                  {branch.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            {t("events.wizard.segments.accommodation.label")}
+                            <select
+                              value={segment.accommodation}
+                              onChange={(event) =>
+                                updateSegment(segment.id, {
+                                  accommodation: event.target.value as EventAccommodation,
+                                })
+                              }
+                            >
+                              {accommodationOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </InlineFields>
+                        <InlineFields>
+                          <label>
+                            {t("events.wizard.fields.start")}
+                            <input
+                              type="date"
+                              value={segment.startDate}
+                              min={state.start_date || undefined}
+                              max={state.end_date || undefined}
+                              onChange={(event) =>
+                                updateSegment(segment.id, { startDate: event.target.value })
+                              }
+                              required
+                            />
+                          </label>
+                          <label>
+                            {t("events.wizard.fields.end")}
+                            <input
+                              type="date"
+                              value={segment.endDate}
+                              min={state.start_date || undefined}
+                              max={state.end_date || undefined}
+                              onChange={(event) =>
+                                updateSegment(segment.id, { endDate: event.target.value })
+                              }
+                              required
+                            />
+                          </label>
+                        </InlineFields>
+                        <InlineFields>
+                          <label>
+                            {t("events.wizard.segments.youthCount")}
+                            <input
+                              type="number"
+                              min={0}
+                              value={segment.youthCount}
+                              onChange={(event) =>
+                                updateSegment(segment.id, { youthCount: event.target.value })
+                              }
+                            />
+                          </label>
+                          <label>
+                            {t("events.wizard.segments.leadersCount")}
+                            <input
+                              type="number"
+                              min={0}
+                              value={segment.leadersCount}
+                              onChange={(event) =>
+                                updateSegment(segment.id, { leadersCount: event.target.value })
+                              }
+                            />
+                          </label>
+                        </InlineFields>
+                        <label>
+                          {t("events.wizard.segments.notes")}
+                          <textarea
+                            value={segment.notes}
+                            onChange={(event) => updateSegment(segment.id, { notes: event.target.value })}
+                            rows={2}
+                          />
+                        </label>
+                      </div>
+                    ))
+                  )}
+                  <div className="branch-segments__actions">
+                    <Button type="button" variant="secondary" onClick={handleAddSegment}>
+                      {t("events.wizard.segments.add")}
+                    </Button>
+                  </div>
                 </fieldset>
+                {state.branchSegments.length > 0 && (
+                  <div className="branch-segments__summary" aria-live="polite">
+                    <h4>{t("events.wizard.segments.summaryTitle")}</h4>
+                    <ul>
+                      {segmentsTotals.lc > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryBranch", {
+                            branch: t("events.branches.LC"),
+                            count: segmentsTotals.lc,
+                          })}
+                        </li>
+                      )}
+                      {segmentsTotals.eg > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryBranch", {
+                            branch: t("events.branches.EG"),
+                            count: segmentsTotals.eg,
+                          })}
+                        </li>
+                      )}
+                      {segmentsTotals.rs > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryBranch", {
+                            branch: t("events.branches.RS"),
+                            count: segmentsTotals.rs,
+                          })}
+                        </li>
+                      )}
+                      {segmentsTotals.leaders > 0 && (
+                        <li>{t("events.wizard.segments.summaryLeaders", { count: segmentsTotals.leaders })}</li>
+                      )}
+                      <li>{t("events.wizard.segments.summaryTotal", { count: totalParticipants })}</li>
+                      {accommodationSummary.needsIndoor && (
+                        <li>
+                          {t("events.wizard.segments.summaryIndoor", {
+                            count: accommodationSummary.indoorCapacity,
+                          })}
+                        </li>
+                      )}
+                      {accommodationSummary.needsTents && (
+                        <li>
+                          {t("events.wizard.segments.summaryTents", {
+                            count: accommodationSummary.tentsCapacity,
+                          })}
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
                 <label>
                   {t("events.wizard.fields.budget")}
                   <input
@@ -359,6 +678,85 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
             {step === 3 && createdEvent && (
               <div className="wizard-step" aria-live="polite">
                 <p>{t("events.wizard.summary.created", { title: createdEvent.title })}</p>
+                {createdNormalizedSegments.length > 0 && (
+                  <div className="branch-segments__summary">
+                    <h4>{t("events.wizard.summary.requirementsTitle")}</h4>
+                    <ul>
+                      {createdSegmentsTotals.lc > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryBranch", {
+                            branch: t("events.branches.LC"),
+                            count: createdSegmentsTotals.lc,
+                          })}
+                        </li>
+                      )}
+                      {createdSegmentsTotals.eg > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryBranch", {
+                            branch: t("events.branches.EG"),
+                            count: createdSegmentsTotals.eg,
+                          })}
+                        </li>
+                      )}
+                      {createdSegmentsTotals.rs > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryBranch", {
+                            branch: t("events.branches.RS"),
+                            count: createdSegmentsTotals.rs,
+                          })}
+                        </li>
+                      )}
+                      {createdSegmentsTotals.leaders > 0 && (
+                        <li>{t("events.wizard.segments.summaryLeaders", { count: createdSegmentsTotals.leaders })}</li>
+                      )}
+                      <li>
+                        {t("events.wizard.segments.summaryTotal", {
+                          count: Object.values(createdSegmentsTotals).reduce((acc, value) => acc + value, 0),
+                        })}
+                      </li>
+                      {createdAccommodationSummary.needsIndoor && (
+                        <li>
+                          {t("events.wizard.segments.summaryIndoor", {
+                            count: createdAccommodationSummary.indoorCapacity,
+                          })}
+                        </li>
+                      )}
+                      {createdAccommodationSummary.needsTents && (
+                        <li>
+                          {t("events.wizard.segments.summaryTents", {
+                            count: createdAccommodationSummary.tentsCapacity,
+                          })}
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                {createdEvent.branch_segments && createdEvent.branch_segments.length > 0 && (
+                  <ul className="branch-segments__list">
+                    {createdEvent.branch_segments.map((segment) => {
+                      const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
+                      const accommodationLabel = t(
+                        `events.wizard.segments.accommodation.options.${segment.accommodation}`,
+                      );
+                      return (
+                        <li key={segment.id}>
+                          <div className="branch-segments__list-info">
+                            <strong>{branchLabel}</strong>
+                            <span>{t("events.list.period", { start: segment.start_date, end: segment.end_date })}</span>
+                            <span>
+                              {t("events.wizard.summary.segmentParticipants", {
+                                youth: segment.youth_count,
+                                leaders: segment.leaders_count,
+                              })}
+                            </span>
+                            <span>{accommodationLabel}</span>
+                          </div>
+                          {segment.notes && <p className="branch-segments__list-notes">{segment.notes}</p>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
                 {isLoadingSuggestions && <InlineMessage>{t("events.wizard.suggestions.loading")}</InlineMessage>}
                 {!isLoadingSuggestions && suggestions.length === 0 && (
                   <InlineMessage>{t("events.wizard.suggestions.empty")}</InlineMessage>
