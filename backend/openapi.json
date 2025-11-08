@@ -8757,7 +8757,6 @@
         "type": "string",
         "enum": [
           "none",
-          "fountain",
           "tap",
           "river",
           "lake",

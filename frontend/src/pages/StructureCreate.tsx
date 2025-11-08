@@ -67,7 +67,6 @@ const waterSourceOptions: WaterSource[] = [
   "lake",
   "river",
   "field_shower",
-  "fountain",
   "tap",
   "none",
   "unknown",

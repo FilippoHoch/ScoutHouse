@@ -506,7 +506,7 @@ describe("StructureCreatePage", () => {
       has_kitchen: true,
       hot_water: false,
       land_area_m2: 1.5,
-      water_sources: ["fountain", "tap"],
+      water_sources: ["tap"],
       fire_policy: "allowed",
       shelter_on_field: true,
       electricity_available: false,

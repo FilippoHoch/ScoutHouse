@@ -2,7 +2,6 @@ export type StructureType = "house" | "land" | "mixed";
 export type FirePolicy = "allowed" | "with_permit" | "forbidden";
 export type WaterSource =
   | "none"
-  | "fountain"
   | "tap"
   | "river"
   | "lake"
