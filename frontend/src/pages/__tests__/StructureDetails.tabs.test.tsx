@@ -29,7 +29,7 @@ const Wrapper = ({ initialPath, children }: { initialPath: string; children: Rea
   );
 };
 
-const structureWithDetails: Structure = {
+const structureWithDetails = {
   id: 99,
   name: "Test Base",
   slug: "test-base",
@@ -158,7 +158,7 @@ const structureWithDetails: Structure = {
   ],
   contacts: [],
   open_periods: []
-};
+} as Structure;
 
 describe("StructureDetailsPage tabs", () => {
   beforeEach(() => {
