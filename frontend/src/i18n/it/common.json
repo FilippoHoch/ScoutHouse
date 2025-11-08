@@ -1073,8 +1073,24 @@
   },
   "events": {
     "title": "Eventi",
+    "hero": {
+      "badge": "Pianificazione eventi",
+      "subtitle": "Monitora stati e candidature: tutto ciò che serve per organizzare i tuoi eventi in un unico pannello."
+    },
     "actions": {
       "new": "Nuovo evento"
+    },
+    "metrics": {
+      "total": "Eventi totali",
+      "pageHint_one": "Visualizzato ora {{count}} evento",
+      "pageHint_other": "Visualizzati ora {{count}} eventi",
+      "refreshing": "Aggiornamento dati…"
+    },
+    "branches": {
+      "LC": "Lupetti e Coccinelle",
+      "EG": "Esploratori e Guide",
+      "RS": "Rover e Scolte",
+      "ALL": "Tutte le branche"
     },
     "details": {
       "downloadIcal": "Scarica iCal",
