@@ -46,6 +46,10 @@ import {
   WaterSource
 } from "../shared/types";
 import {
+  extractAdvancedStructureData,
+  mergeAdvancedStructurePayload
+} from "../shared/structureMetadata";
+import {
   Button,
   InlineMessage,
   SectionHeader,
@@ -295,6 +299,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [seasonalAmenities, setSeasonalAmenities] = useState<SeasonalAmenityRow[]>([]);
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
+  const [advancedMetadata, setAdvancedMetadata] = useState("");
+  const [advancedMetadataError, setAdvancedMetadataError] = useState<string | null>(null);
   const [structureId, setStructureId] = useState<number | null>(null);
   const [isPrefilled, setIsPrefilled] = useState(!isEditing);
   const [addContact, setAddContact] = useState(false);
@@ -333,6 +339,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const advancedMetadataRef = useRef<HTMLTextAreaElement | null>(null);
   const shouldFetchStructure = isEditing && Boolean(editingSlug);
   const {
     data: existingStructure,
@@ -803,6 +810,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const handleAddressChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setAddress(event.target.value);
     setApiError(null);
+  };
+
+  const handleAdvancedMetadataChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setAdvancedMetadata(event.target.value);
+    setAdvancedMetadataError(null);
   };
 
   const handleLatitudeChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -1363,6 +1375,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setNotesLogistics(existingStructure.notes_logistics ?? "");
     setNotes(existingStructure.notes ?? "");
 
+    const advancedData = extractAdvancedStructureData(existingStructure);
+    if (Object.keys(advancedData).length > 0) {
+      setAdvancedMetadata(JSON.stringify(advancedData, null, 2));
+    } else {
+      setAdvancedMetadata("");
+    }
+    setAdvancedMetadataError(null);
+
     const mappedOpenPeriods = (existingStructure.open_periods ?? []).map((period) => ({
       key: createOpenPeriodKey(),
       id: period.id,
@@ -1766,6 +1786,25 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       return;
     }
 
+    let parsedAdvancedMetadata: Record<string, unknown> | null = null;
+    const trimmedAdvancedMetadata = advancedMetadata.trim();
+    if (trimmedAdvancedMetadata) {
+      try {
+        const parsed = JSON.parse(trimmedAdvancedMetadata);
+        if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+          throw new Error("invalid");
+        }
+        parsedAdvancedMetadata = parsed as Record<string, unknown>;
+        setAdvancedMetadataError(null);
+      } catch (error) {
+        setAdvancedMetadataError(t("structures.create.form.advancedMetadata.error"));
+        advancedMetadataRef.current?.focus();
+        return;
+      }
+    } else {
+      setAdvancedMetadataError(null);
+    }
+
     if (addContact && contactHasDetails()) {
       const duplicatesOk = await checkContactDuplicates();
       if (!duplicatesOk) {
@@ -1957,6 +1996,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     payload.in_area_protetta = inAreaProtetta;
     payload.ente_area_protetta = trimmedEnteAreaProtetta || null;
     payload.environmental_notes = trimmedEnvironmentalNotes || null;
+
+    if (parsedAdvancedMetadata) {
+      mergeAdvancedStructurePayload(payload as Record<string, unknown>, parsedAdvancedMetadata);
+    }
 
     if (seasonalAmenities.length > 0) {
       const amenities = seasonalAmenities.reduce<Record<string, unknown>>((acc, row) => {
@@ -2212,6 +2255,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const enteAreaProtettaHintId = "structure-ente-area-protetta-hint";
   const environmentalNotesHintId = "structure-environmental-notes-hint";
   const seasonalAmenitiesHintId = "structure-seasonal-amenities-hint";
+  const advancedMetadataHintId = "structure-advanced-metadata-hint";
+  const advancedMetadataErrorId = advancedMetadataError
+    ? "structure-advanced-metadata-error"
+    : undefined;
+  const advancedMetadataDescribedBy =
+    [advancedMetadataHintId, advancedMetadataErrorId].filter(Boolean).join(" ") || undefined;
   const openPeriodsHintId = "structure-open-periods-hint";
   const openPeriodsDescribedBy = [openPeriodsHintId, openPeriodsErrorId]
     .filter(Boolean)
@@ -3748,6 +3797,39 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                       )}
                     </div>
                   </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.advanced.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.advanced.description")}
+              </p>
+              <div className="structure-field-grid">
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-advanced-metadata">
+                    {t("structures.create.form.advancedMetadata.label")}
+                    <textarea
+                      id="structure-advanced-metadata"
+                      ref={advancedMetadataRef}
+                      value={advancedMetadata}
+                      onChange={handleAdvancedMetadataChange}
+                      rows={10}
+                      spellCheck={false}
+                      aria-describedby={advancedMetadataDescribedBy}
+                      aria-invalid={advancedMetadataError ? "true" : undefined}
+                      placeholder={t("structures.create.form.advancedMetadata.placeholder")}
+                    />
+                  </label>
+                  <span className="helper-text" id={advancedMetadataHintId}>
+                    {t("structures.create.form.advancedMetadata.hint")}
+                  </span>
+                  {advancedMetadataError && (
+                    <p className="error-text" id={advancedMetadataErrorId!}>
+                      {advancedMetadataError}
+                    </p>
+                  )}
                 </div>
               </div>
             </fieldset>
