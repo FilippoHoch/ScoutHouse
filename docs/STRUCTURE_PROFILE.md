@@ -32,7 +32,7 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 - `fire_policy` (`allowed`, `with_permit`, `forbidden`).
 
 ### Accessibilità e trasporti
-- Flag tri-stato `access_by_car`, `access_by_coach`, `access_by_public_transport`, `coach_turning_area`, `wheelchair_accessibile`, `step_free_access`.
+- Flag tri-stato `access_by_car`, `access_by_coach`, `access_by_public_transport`, `coach_turning_area`, `wheelchair_accessible`, `step_free_access`.
 - Campi numerici `parking_car_slots`, `parking_bus_slots` con note libere `parking_notes`.
 - Campo libero `nearest_bus_stop`.
 - Textarea `accessibility_notes`.
@@ -116,3 +116,4 @@ Quando si estende il modello dati:
 4. Estendere le traduzioni (`frontend/src/i18n/it/common.json`).
 5. Aggiornare i test (`StructureCreate.test.tsx`, `StructureDetails.test.tsx`) per coprire il nuovo campo.
 6. Aggiornare questa pagina e la sezione API se il campo è editabile dall'interfaccia.
+7. Eseguire `scripts/verify_structure_profile.py` per verificare che documentazione e costanti della UI coprano tutti i campi dello schema.
