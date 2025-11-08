@@ -46,6 +46,7 @@ const managedKeys = new Set<keyof Structure | string>([
   "in_area_protetta",
   "ente_area_protetta",
   "environmental_notes",
+  "flood_risk",
   "seasonal_amenities",
   "notes_logistics",
   "notes",

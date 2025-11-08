@@ -45,6 +45,7 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 - Textarea `usage_rules`.
 - Select `animal_policy` (`allowed`, `allowed_on_request`, `forbidden`) + textarea `animal_policy_notes`.
 - Flag tri-stato `in_area_protetta` con campo libero `ente_area_protetta`.
+- Select `flood_risk` (`none`, `low`, `medium`, `high`).
 - Textarea `environmental_notes`.
 - Mappa chiave/valore `seasonal_amenities` (servizi stagionali serializzati in oggetto JSON).
 
@@ -57,7 +58,7 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 - Tramite questo canale è possibile impostare tutti gli altri attributi previsti da `StructureCreateDto`. Di seguito l'elenco dei campi oggi non coperti dal wizard ma gestibili tramite JSON:
   - `activity_equipment`, `activity_spaces`, `aed_on_site`, `booking_notes`, `booking_required`, `booking_url`, `bridge_weight_limit_tonnes`, `bus_type_access`, `cell_coverage`, `cell_coverage_notes`, `communications_infrastructure`, `country`.
   - `data_last_verified`, `data_quality_flags`, `data_quality_notes`, `data_quality_score`, `data_source`, `data_source_url`, `documents_required`, `dry_toilet`, `emergency_coordinates`, `emergency_phone_available`, `emergency_plan_notes`, `emergency_response_time_minutes`, `evacuation_plan_url`.
-  - `event_rules_notes`, `event_rules_url`, `fire_rules`, `fiscal_notes`, `flood_risk`, `generator_available`, `generator_notes`, `governance_notes`, `iban`, `inclusion_notes`, `inclusion_services`, `indoor_rooms`.
+  - `event_rules_notes`, `event_rules_url`, `fire_rules`, `fiscal_notes`, `generator_available`, `generator_notes`, `governance_notes`, `iban`, `inclusion_notes`, `inclusion_services`, `indoor_rooms`.
   - `invoice_available`, `locality`, `logistics_arrival_notes`, `logistics_departure_notes`, `map_resources_urls`, `max_vehicle_height_m`, `municipality`, `municipality_code`, `outdoor_bathrooms`, `outdoor_showers`, `payment_methods`, `pec_email`, `plus_code`.
   - `power_capacity_kw`, `power_outlet_types`, `power_outlets_count`, `risk_assessment_template_url`, `river_swimming`, `road_access_notes`, `road_weight_limit_tonnes`, `sdi_recipient_code`, `wastewater_notes`, `wastewater_type`, `water_tank_capacity_liters`, `weather_risk_notes`, `what3words`, `whatsapp`, `wildlife_notes`, `winter_access_notes`.
 - I valori impostati nei metadati avanzati vengono mostrati anche nella pagina di dettaglio all'interno del riquadro "Metadati avanzati".

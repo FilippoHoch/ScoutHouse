@@ -110,7 +110,7 @@ const sampleStructure: Structure = {
   risk_assessment_template_url: null,
   wildlife_notes: null,
   river_swimming: "si",
-  flood_risk: null,
+  flood_risk: "medium",
   weather_risk_notes: null,
   activity_spaces: [],
   activity_equipment: [],
@@ -233,6 +233,14 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Rubinetto/i)).toBeInTheDocument();
     expect(screen.getByText(/Fermata centro/i)).toBeInTheDocument();
     expect(screen.getByText(/Contattare il custode/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t("structures.details.overview.floodRisk"))
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        i18n.t("structures.details.overview.floodRiskOptions.medium")
+      )
+    ).toBeInTheDocument();
     expect(screen.getByText(/Note generiche/i)).toBeInTheDocument();
     expect(
       screen.getByText((content, element) =>
@@ -267,7 +275,8 @@ describe("StructureDetailsPage", () => {
       slug: "base-senza-extra",
       country: null,
       municipality: null,
-      river_swimming: null
+      river_swimming: null,
+      flood_risk: null
     };
     vi.mocked(getStructureBySlug).mockResolvedValueOnce(fallbackStructure);
 

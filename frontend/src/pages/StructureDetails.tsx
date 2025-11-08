@@ -20,6 +20,7 @@ import type {
   CostBand,
   FirePolicy,
   FieldSlope,
+  FloodRiskLevel,
   Structure,
   StructureOpenPeriod,
   WaterSource
@@ -157,6 +158,13 @@ export const StructureDetailsPage = () => {
     return sources
       .map((source) => t(`structures.create.form.waterSourceOptions.${source}`))
       .join(", ");
+  };
+
+  const formatFloodRisk = (risk: FloodRiskLevel | null | undefined) => {
+    if (!risk) {
+      return null;
+    }
+    return t(`structures.details.overview.floodRiskOptions.${risk}`);
   };
 
   const formatFirePolicy = (policy: FirePolicy | null | undefined) => {
@@ -385,6 +393,48 @@ export const StructureDetailsPage = () => {
     }
   }, [data]);
 
+  const structure = data ?? null;
+
+  const locationDetails = useMemo(
+    () => {
+      if (!structure) {
+        return [];
+      }
+      return [
+        {
+          label: t("structures.details.location.details.address"),
+          value: structure.address
+        },
+        {
+          label: t("structures.details.location.details.locality"),
+          value: structure.locality
+        },
+        {
+          label: t("structures.details.location.details.municipality"),
+          value: structure.municipality
+        },
+        {
+          label: t("structures.details.location.details.postalCode"),
+          value: structure.postal_code
+        },
+        {
+          label: t("structures.details.location.details.province"),
+          value: structure.province
+        },
+        {
+          label: t("structures.details.location.details.country"),
+          value: structure.country
+        }
+      ].filter((item) => {
+        if (item.value === null || item.value === undefined) {
+          return false;
+        }
+        return String(item.value).trim().length > 0;
+      });
+    },
+    [structure, t]
+  );
+
   if (!slug) {
     return (
       <section>
@@ -431,7 +481,10 @@ export const StructureDetailsPage = () => {
     );
   }
 
-  const structure = data as Structure;
+  if (!structure) {
+    return null;
+  }
+
   const createdAt = new Date(structure.created_at).toLocaleDateString();
   const hasCoordinates = structure.latitude !== null && structure.longitude !== null;
   const altitudeValue =
@@ -460,49 +513,6 @@ export const StructureDetailsPage = () => {
   const googleMapsEmbedAriaLabel = t("structures.details.location.mapAriaLabel", {
     name: mapDisplayName
   });
-  const locationDetails = useMemo(
-    () =>
-      [
-        {
-          label: t("structures.details.location.details.address"),
-          value: structure.address
-        },
-        {
-          label: t("structures.details.location.details.locality"),
-          value: structure.locality
-        },
-        {
-          label: t("structures.details.location.details.municipality"),
-          value: structure.municipality
-        },
-        {
-          label: t("structures.details.location.details.postalCode"),
-          value: structure.postal_code
-        },
-        {
-          label: t("structures.details.location.details.province"),
-          value: structure.province
-        },
-        {
-          label: t("structures.details.location.details.country"),
-          value: structure.country
-        }
-      ].filter((item) => {
-        if (item.value === null || item.value === undefined) {
-          return false;
-        }
-        return String(item.value).trim().length > 0;
-      }),
-    [
-      structure.address,
-      structure.locality,
-      structure.municipality,
-      structure.postal_code,
-      structure.province,
-      structure.country,
-      t
-    ]
-  );
   const kitchenLabel =
     structure.has_kitchen === true
       ? t("structures.details.overview.hasKitchen.yes")
@@ -753,6 +763,12 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.enteAreaProtetta"),
       value: formatOptionalText(structure.ente_area_protetta),
       icon: "🏛️"
+    },
+    {
+      id: "floodRisk",
+      label: t("structures.details.overview.floodRisk"),
+      value: formatFloodRisk(structure.flood_risk),
+      icon: "🌊"
     },
     {
       id: "environmentalNotes",

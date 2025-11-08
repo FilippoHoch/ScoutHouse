@@ -35,6 +35,7 @@ import {
   GeocodingResult,
   FieldSlope,
   FirePolicy,
+  FloodRiskLevel,
   StructureCreateDto,
   StructureOperationalStatus,
   StructureType,
@@ -73,6 +74,7 @@ const waterSourceOptions: WaterSource[] = [
 ];
 const firePolicyOptions: FirePolicy[] = ["allowed", "with_permit", "forbidden"];
 const fieldSlopeOptions: FieldSlope[] = ["flat", "gentle", "moderate", "steep"];
+const floodRiskOptions: FloodRiskLevel[] = ["none", "low", "medium", "high"];
 const operationalStatusOptions: StructureOperationalStatus[] = [
   "operational",
   "seasonal",
@@ -310,10 +312,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
   const [allowedAudiences, setAllowedAudiences] = useState<string[]>([""]);
   const [usageRules, setUsageRules] = useState("");
-  
+
   const [inAreaProtetta, setInAreaProtetta] = useState<boolean | null>(null);
   const [enteAreaProtetta, setEnteAreaProtetta] = useState("");
   const [environmentalNotes, setEnvironmentalNotes] = useState("");
+  const [floodRisk, setFloodRisk] = useState<FloodRiskLevel | "">("");
   const [seasonalAmenities, setSeasonalAmenities] = useState<SeasonalAmenityRow[]>([]);
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
@@ -1191,6 +1194,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
+  const handleFloodRiskChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setFloodRisk(event.target.value as FloodRiskLevel | "");
+    setApiError(null);
+  };
+
   const handleFieldSlopeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setFieldSlope(event.target.value as FieldSlope | "");
     setApiError(null);
@@ -1504,6 +1512,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setInAreaProtetta(toTriState(existingStructure.in_area_protetta));
     setEnteAreaProtetta(existingStructure.ente_area_protetta ?? "");
     setEnvironmentalNotes(existingStructure.environmental_notes ?? "");
+    setFloodRisk(existingStructure.flood_risk ?? "");
 
     const amenitiesEntries = existingStructure.seasonal_amenities ?? {};
     const amenitiesRows = Object.entries(amenitiesEntries).map(([key, value]) =>
@@ -2326,6 +2335,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     payload.in_area_protetta = inAreaProtetta;
     payload.ente_area_protetta = trimmedEnteAreaProtetta || null;
     payload.environmental_notes = trimmedEnvironmentalNotes || null;
+    if (floodRisk) {
+      payload.flood_risk = floodRisk as FloodRiskLevel;
+    } else {
+      payload.flood_risk = null;
+    }
 
     if (parsedAdvancedMetadata) {
       mergeAdvancedStructurePayload(
@@ -2668,6 +2682,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const usageRulesHintId = "structure-usage-rules-hint";
   const inAreaProtettaHintId = "structure-in-area-protetta-hint";
   const enteAreaProtettaHintId = "structure-ente-area-protetta-hint";
+  const floodRiskHintId = "structure-flood-risk-hint";
   const environmentalNotesHintId = "structure-environmental-notes-hint";
   const seasonalAmenitiesHintId = "structure-seasonal-amenities-hint";
   const advancedMetadataHintId = "structure-advanced-metadata-hint";
@@ -3818,6 +3833,30 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </label>
                   <span className="helper-text" id={enteAreaProtettaHintId}>
                     {t("structures.create.form.enteAreaProtettaHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-flood-risk">
+                    {t("structures.create.form.floodRisk")}
+                    <select
+                      id="structure-flood-risk"
+                      value={floodRisk}
+                      onChange={handleFloodRiskChange}
+                      aria-describedby={floodRiskHintId}
+                    >
+                      <option value="">
+                        {t("structures.create.form.floodRiskPlaceholder")}
+                      </option>
+                      {floodRiskOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.floodRiskOptions.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={floodRiskHintId}>
+                    {t("structures.create.form.floodRiskHint")}
                   </span>
                 </div>
 
