@@ -118,6 +118,12 @@ type SeasonalAmenityRow = {
   value: string;
 };
 
+type MetadataEntry = {
+  id: string;
+  key: string;
+  value: string;
+};
+
 export const StructureCreatePage = () => <StructureFormPage mode="create" />;
 
 export const StructureEditPage = () => <StructureFormPage mode="edit" />;
@@ -164,6 +170,108 @@ const createSeasonalAmenityRow = (key = "", value = ""): SeasonalAmenityRow => (
   value
 });
 
+const createMetadataEntryId = () =>
+  `metadata-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+
+const createMetadataEntry = (key = "", value = ""): MetadataEntry => ({
+  id: createMetadataEntryId(),
+  key,
+  value
+});
+
+const serializeMetadataValue = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+};
+
+const convertMetadataObjectToEntries = (
+  metadata: Record<string, unknown>
+): MetadataEntry[] =>
+  Object.entries(metadata).map(([key, value]) =>
+    createMetadataEntry(key, serializeMetadataValue(value))
+  );
+
+type MetadataConversionErrorType =
+  | "missingKey"
+  | "missingValue"
+  | "duplicateKey"
+  | "invalidJson";
+
+type MetadataConversionResult =
+  | { ok: true; value: Record<string, unknown> }
+  | { ok: false; type: MetadataConversionErrorType; focusId?: string };
+
+const parseMetadataValue = (raw: string): { ok: true; value: unknown } | { ok: false } => {
+  const trimmed = raw.trim();
+  if (trimmed === "true") {
+    return { ok: true, value: true };
+  }
+  if (trimmed === "false") {
+    return { ok: true, value: false };
+  }
+  if (trimmed === "null") {
+    return { ok: true, value: null };
+  }
+  if (/^-?\d+(?:[.,]\d+)?$/.test(trimmed)) {
+    const normalized = trimmed.replace(",", ".");
+    const parsed = Number.parseFloat(normalized);
+    if (!Number.isNaN(parsed)) {
+      return { ok: true, value: parsed };
+    }
+  }
+  if ((trimmed.startsWith("[") && trimmed.endsWith("]")) || (trimmed.startsWith("{") && trimmed.endsWith("}"))) {
+    try {
+      return { ok: true, value: JSON.parse(trimmed) };
+    } catch {
+      return { ok: false };
+    }
+  }
+  return { ok: true, value: raw };
+};
+
+const buildMetadataObjectFromEntries = (
+  entries: MetadataEntry[],
+  idPrefix: string
+): MetadataConversionResult => {
+  const result: Record<string, unknown> = {};
+  for (const entry of entries) {
+    const keyId = `${idPrefix}-${entry.id}-key`;
+    const valueId = `${idPrefix}-${entry.id}-value`;
+    const key = entry.key.trim();
+    const value = entry.value.trim();
+    if (!key && !value) {
+      continue;
+    }
+    if (!key) {
+      return { ok: false, type: "missingKey", focusId: keyId };
+    }
+    if (!value) {
+      return { ok: false, type: "missingValue", focusId: valueId };
+    }
+    if (Object.prototype.hasOwnProperty.call(result, key)) {
+      return { ok: false, type: "duplicateKey", focusId: keyId };
+    }
+    const parsed = parseMetadataValue(value);
+    if (!parsed.ok) {
+      return { ok: false, type: "invalidJson", focusId: valueId };
+    }
+    result[key] = parsed.value;
+  }
+  return { ok: true, value: result };
+};
+
 const costModelOptions: CostModel[] = ["per_person_day", "per_person_night", "forfait"];
 
 type CostOptionFormRow = {
@@ -182,7 +290,7 @@ type CostOptionFormRow = {
   paymentTerms: string;
   minTotal: string;
   maxTotal: string;
-  advancedMetadata: string;
+  metadataEntries: MetadataEntry[];
   advancedMetadataError: string | null;
 };
 
@@ -203,7 +311,7 @@ const createCostOptionRow = (): CostOptionFormRow => ({
   paymentTerms: "",
   minTotal: "",
   maxTotal: "",
-  advancedMetadata: "",
+  metadataEntries: [],
   advancedMetadataError: null
 });
 
@@ -320,7 +428,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [seasonalAmenities, setSeasonalAmenities] = useState<SeasonalAmenityRow[]>([]);
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
-  const [advancedMetadata, setAdvancedMetadata] = useState("");
+  const [advancedMetadataEntries, setAdvancedMetadataEntries] = useState<MetadataEntry[]>([]);
   const [advancedMetadataError, setAdvancedMetadataError] = useState<string | null>(null);
   const [structureId, setStructureId] = useState<number | null>(null);
   const [isPrefilled, setIsPrefilled] = useState(!isEditing);
@@ -360,7 +468,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
-  const advancedMetadataRef = useRef<HTMLTextAreaElement | null>(null);
   const geocodingRequestId = useRef(0);
   const geocodingDebounceRef = useRef<number | null>(null);
   const geocodingAbortController = useRef<AbortController | null>(null);
@@ -893,34 +1000,29 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setGeocodingApplied(false);
   };
 
-  const normalizeAdvancedMetadataInput = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return { formatted: "", isValid: true } as const;
-    }
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
-        throw new Error("invalid");
-      }
-      return { formatted: JSON.stringify(parsed, null, 2), isValid: true } as const;
-    } catch {
-      return { formatted: value, isValid: false } as const;
-    }
-  };
+  const advancedMetadataIdPrefix = "structure-advanced-metadata";
 
-  const handleAdvancedMetadataChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setAdvancedMetadata(event.target.value);
+  const handleAdvancedMetadataKeyChange = (id: string, value: string) => {
+    setAdvancedMetadataEntries((prev) =>
+      prev.map((entry) => (entry.id === id ? { ...entry, key: value } : entry))
+    );
     setAdvancedMetadataError(null);
   };
 
-  const handleAdvancedMetadataBlur = () => {
-    const { formatted, isValid } = normalizeAdvancedMetadataInput(advancedMetadata);
-    if (!isValid) {
-      setAdvancedMetadataError(t("structures.create.form.advancedMetadata.error"));
-      return;
-    }
-    setAdvancedMetadata(formatted);
+  const handleAdvancedMetadataValueChange = (id: string, value: string) => {
+    setAdvancedMetadataEntries((prev) =>
+      prev.map((entry) => (entry.id === id ? { ...entry, value } : entry))
+    );
+    setAdvancedMetadataError(null);
+  };
+
+  const handleAddAdvancedMetadataEntry = () => {
+    setAdvancedMetadataEntries((prev) => [...prev, createMetadataEntry()]);
+    setAdvancedMetadataError(null);
+  };
+
+  const handleRemoveAdvancedMetadataEntry = (id: string) => {
+    setAdvancedMetadataEntries((prev) => prev.filter((entry) => entry.id !== id));
     setAdvancedMetadataError(null);
   };
 
@@ -1123,39 +1225,81 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       | "paymentMethods"
       | "paymentTerms"
       | "minTotal"
-      | "maxTotal"
-      | "advancedMetadata",
+      | "maxTotal",
     value: string
   ) => {
     const updates: Partial<CostOptionFormRow> = { [field]: value } as Partial<CostOptionFormRow>;
-    if (field === "advancedMetadata") {
-      updates.advancedMetadataError = null;
-    }
     if (field === "utilitiesIncluded" && value === "") {
       updates.utilitiesIncluded = "";
     }
     updateCostOption(key, updates);
   };
 
-  const handleCostOptionAdvancedMetadataBlur = (key: string) => {
+  const handleCostOptionMetadataKeyChange = (
+    optionKey: string,
+    entryId: string,
+    value: string
+  ) => {
     setCostOptions((prev) =>
-      prev.map((row) => {
-        if (row.key !== key) {
-          return row;
-        }
-        const { formatted, isValid } = normalizeAdvancedMetadataInput(row.advancedMetadata);
-        if (!isValid) {
-          return {
-            ...row,
-            advancedMetadataError: t("structures.create.errors.costOptionsAdvancedInvalid")
-          };
-        }
-        return {
-          ...row,
-          advancedMetadata: formatted,
-          advancedMetadataError: null
-        };
-      })
+      prev.map((row) =>
+        row.key === optionKey
+          ? {
+              ...row,
+              metadataEntries: row.metadataEntries.map((entry) =>
+                entry.id === entryId ? { ...entry, key: value } : entry
+              ),
+              advancedMetadataError: null
+            }
+          : row
+      )
+    );
+  };
+
+  const handleCostOptionMetadataValueChange = (
+    optionKey: string,
+    entryId: string,
+    value: string
+  ) => {
+    setCostOptions((prev) =>
+      prev.map((row) =>
+        row.key === optionKey
+          ? {
+              ...row,
+              metadataEntries: row.metadataEntries.map((entry) =>
+                entry.id === entryId ? { ...entry, value } : entry
+              ),
+              advancedMetadataError: null
+            }
+          : row
+      )
+    );
+  };
+
+  const handleAddCostOptionMetadataEntry = (key: string) => {
+    setCostOptions((prev) =>
+      prev.map((row) =>
+        row.key === key
+          ? {
+              ...row,
+              metadataEntries: [...row.metadataEntries, createMetadataEntry()],
+              advancedMetadataError: null
+            }
+          : row
+      )
+    );
+  };
+
+  const handleRemoveCostOptionMetadataEntry = (optionKey: string, entryId: string) => {
+    setCostOptions((prev) =>
+      prev.map((row) =>
+        row.key === optionKey
+          ? {
+              ...row,
+              metadataEntries: row.metadataEntries.filter((entry) => entry.id !== entryId),
+              advancedMetadataError: null
+            }
+          : row
+      )
     );
   };
 
@@ -1527,11 +1671,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setNotes(existingStructure.notes ?? "");
 
     const advancedData = extractAdvancedStructureData(existingStructure);
-    if (Object.keys(advancedData).length > 0) {
-      setAdvancedMetadata(JSON.stringify(advancedData, null, 2));
-    } else {
-      setAdvancedMetadata("");
-    }
+    setAdvancedMetadataEntries(convertMetadataObjectToEntries(advancedData));
     setAdvancedMetadataError(null);
 
     const mappedOpenPeriods = (existingStructure.open_periods ?? []).map((period) => ({
@@ -1588,10 +1728,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           option.max_total !== null && option.max_total !== undefined
             ? String(option.max_total)
             : "",
-        advancedMetadata:
-          Object.keys(advancedCostData).length > 0
-            ? JSON.stringify(advancedCostData, null, 2)
-            : "",
+        metadataEntries: convertMetadataObjectToEntries(advancedCostData),
         advancedMetadataError: null
       } satisfies CostOptionFormRow;
     });
@@ -1880,7 +2017,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       paymentTerms: option.paymentTerms.trim(),
       minTotal: option.minTotal.trim(),
       maxTotal: option.maxTotal.trim(),
-      advancedMetadata: option.advancedMetadata.trim()
+      metadataEntries: option.metadataEntries.map((entry) => ({
+        id: entry.id,
+        key: entry.key.trim(),
+        value: entry.value.trim()
+      }))
     }));
 
     const errors: FieldErrors = {};
@@ -2041,7 +2182,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       !option.paymentMethods &&
       !option.paymentTerms &&
       option.utilitiesIncluded === "" &&
-      !option.advancedMetadata;
+      option.metadataEntries.every((entry) => !entry.key && !entry.value);
 
     for (const option of trimmedCostOptions) {
       if (isCostOptionEmpty(option)) {
@@ -2114,24 +2255,27 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       return;
     }
 
-    let parsedAdvancedMetadata: Record<string, unknown> | null = null;
-    const trimmedAdvancedMetadata = advancedMetadata.trim();
-    if (trimmedAdvancedMetadata) {
-      try {
-        const parsed = JSON.parse(trimmedAdvancedMetadata);
-        if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
-          throw new Error("invalid");
-        }
-        parsedAdvancedMetadata = parsed as Record<string, unknown>;
-        setAdvancedMetadataError(null);
-      } catch (error) {
-        setAdvancedMetadataError(t("structures.create.form.advancedMetadata.error"));
-        advancedMetadataRef.current?.focus();
-        return;
+    const advancedMetadataResult = buildMetadataObjectFromEntries(
+      advancedMetadataEntries,
+      advancedMetadataIdPrefix
+    );
+    if (!advancedMetadataResult.ok) {
+      const message = t(
+        `structures.create.form.advancedMetadata.errors.${advancedMetadataResult.type}`
+      );
+      setAdvancedMetadataError(message);
+      if (advancedMetadataResult.focusId) {
+        requestAnimationFrame(() => {
+          const element = document.getElementById(advancedMetadataResult.focusId!);
+          if (element instanceof HTMLElement) {
+            element.focus();
+          }
+        });
       }
-    } else {
-      setAdvancedMetadataError(null);
+      return;
     }
+    setAdvancedMetadataError(null);
+    const advancedMetadataPayload = advancedMetadataResult.value;
 
     if (addContact && contactHasDetails()) {
       const duplicatesOk = await checkContactDuplicates();
@@ -2184,7 +2328,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       paymentTerms: option.paymentTerms.trim(),
       minTotal: option.minTotal.trim(),
       maxTotal: option.maxTotal.trim(),
-      advancedMetadata: option.advancedMetadata.trim()
+      metadataEntries: option.metadataEntries.map((entry) => ({
+        id: entry.id,
+        key: entry.key.trim(),
+        value: entry.value.trim()
+      }))
     }));
 
     const payload: StructureCreateDto = {
@@ -2352,10 +2500,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.flood_risk = null;
     }
 
-    if (parsedAdvancedMetadata) {
+    if (Object.keys(advancedMetadataPayload).length > 0) {
       mergeAdvancedStructurePayload(
         payload as unknown as Record<string, unknown>,
-        parsedAdvancedMetadata
+        advancedMetadataPayload
       );
     }
 
@@ -2402,6 +2550,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     const advancedCostErrors: Record<string, string> = {};
 
+    let firstAdvancedCostFocusId: string | null = null;
+
     const costOptionPayloads: StructureCostOptionInput[] = trimmedCostOptions
       .map((option) => {
         const isEmpty =
@@ -2417,7 +2567,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           !option.paymentMethods &&
           !option.paymentTerms &&
           option.utilitiesIncluded === "" &&
-          !option.advancedMetadata;
+          option.metadataEntries.every((entry) => !entry.key && !entry.value);
         if (isEmpty) {
           return null;
         }
@@ -2481,28 +2631,24 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         if (trimmedPaymentTerms) {
           payloadItem.payment_terms = trimmedPaymentTerms;
         }
-        const trimmedAdvancedMetadata = option.advancedMetadata.trim();
-        if (trimmedAdvancedMetadata) {
-          try {
-            const parsedAdvanced = JSON.parse(trimmedAdvancedMetadata);
-            if (
-              parsedAdvanced &&
-              typeof parsedAdvanced === "object" &&
-              !Array.isArray(parsedAdvanced)
-            ) {
-              mergeAdvancedCostOptionPayload(
-                payloadItem as unknown as Record<string, unknown>,
-                parsedAdvanced as Record<string, unknown>
-              );
-            } else {
-              throw new Error("invalid");
-            }
-          } catch {
-            advancedCostErrors[option.key] = t(
-              "structures.create.errors.costOptionsAdvancedInvalid"
-            );
-            return null;
+        const costMetadataResult = buildMetadataObjectFromEntries(
+          option.metadataEntries,
+          `structure-cost-option-${option.key}-advanced`
+        );
+        if (!costMetadataResult.ok) {
+          advancedCostErrors[option.key] = t(
+            `structures.create.form.costOptions.advancedMetadata.errors.${costMetadataResult.type}`
+          );
+          if (!firstAdvancedCostFocusId && costMetadataResult.focusId) {
+            firstAdvancedCostFocusId = costMetadataResult.focusId;
           }
+          return null;
+        }
+        if (Object.keys(costMetadataResult.value).length > 0) {
+          mergeAdvancedCostOptionPayload(
+            payloadItem as unknown as Record<string, unknown>,
+            costMetadataResult.value
+          );
         }
         return payloadItem;
       })
@@ -2519,6 +2665,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         ...prev,
         cost_options: t("structures.create.errors.costOptionsAdvancedInvalid")
       }));
+      if (firstAdvancedCostFocusId) {
+        requestAnimationFrame(() => {
+          const element = document.getElementById(firstAdvancedCostFocusId!);
+          if (element instanceof HTMLElement) {
+            element.focus();
+          }
+        });
+      }
       return;
     }
 
@@ -4456,23 +4610,92 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                               </label>
                             </div>
                             <div className="structure-cost-option-field structure-cost-option-field--wide">
-                              <label htmlFor={advancedMetadataId}>
+                              <div className="structure-field-label">
                                 {t("structures.create.form.costOptions.advancedMetadata.label")}
-                                <textarea
-                                  id={advancedMetadataId}
-                                  value={option.advancedMetadata}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "advancedMetadata",
-                                      event.target.value
-                                    )
-                                  }
-                                  onBlur={() => handleCostOptionAdvancedMetadataBlur(option.key)}
-                                  rows={3}
-                                  aria-describedby={advancedMetadataDescribedBy}
-                                />
-                              </label>
+                              </div>
+                              {option.metadataEntries.length === 0 ? (
+                                <p className="helper-text">
+                                  {t("structures.create.form.costOptions.advancedMetadata.empty")}
+                                </p>
+                              ) : (
+                                <div className="structure-website-list" aria-describedby={advancedMetadataDescribedBy}>
+                                  {option.metadataEntries.map((entry, index) => {
+                                    const keyId = `${advancedMetadataId}-${entry.id}-key`;
+                                    const valueId = `${advancedMetadataId}-${entry.id}-value`;
+                                    const ariaLabels = [advancedMetadataHintId, advancedMetadataErrorId]
+                                      .filter(Boolean)
+                                      .join(" ")
+                                      || undefined;
+                                    return (
+                                      <div className="structure-website-list__row" key={entry.id}>
+                                        <div className="structure-website-list__input">
+                                          <label htmlFor={keyId}>
+                                            {t(
+                                              "structures.create.form.costOptions.advancedMetadata.keyLabel",
+                                              { index: index + 1 }
+                                            )}
+                                            <input
+                                              id={keyId}
+                                              value={entry.key}
+                                              onChange={(event) =>
+                                                handleCostOptionMetadataKeyChange(
+                                                  option.key,
+                                                  entry.id,
+                                                  event.target.value
+                                                )
+                                              }
+                                              aria-describedby={ariaLabels}
+                                              placeholder={t(
+                                                "structures.create.form.costOptions.advancedMetadata.keyPlaceholder"
+                                              )}
+                                            />
+                                          </label>
+                                        </div>
+                                        <div className="structure-website-list__input">
+                                          <label htmlFor={valueId}>
+                                            {t(
+                                              "structures.create.form.costOptions.advancedMetadata.valueLabel",
+                                              { index: index + 1 }
+                                            )}
+                                            <input
+                                              id={valueId}
+                                              value={entry.value}
+                                              onChange={(event) =>
+                                                handleCostOptionMetadataValueChange(
+                                                  option.key,
+                                                  entry.id,
+                                                  event.target.value
+                                                )
+                                              }
+                                              aria-describedby={ariaLabels}
+                                              placeholder={t(
+                                                "structures.create.form.costOptions.advancedMetadata.valuePlaceholder"
+                                              )}
+                                            />
+                                          </label>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          className="link-button"
+                                          onClick={() => handleRemoveCostOptionMetadataEntry(option.key, entry.id)}
+                                        >
+                                          {t("structures.create.form.costOptions.advancedMetadata.remove")}
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <div className="structure-website-actions">
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleAddCostOptionMetadataEntry(option.key)}
+                                >
+                                  {t("structures.create.form.costOptions.advancedMetadata.add")}
+                                </Button>
+                              </div>
                               <span className="helper-text" id={advancedMetadataHintId}>
                                 {t("structures.create.form.costOptions.advancedMetadata.hint")}
                               </span>
@@ -4590,21 +4813,67 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
               </p>
               <div className="structure-field-grid">
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-advanced-metadata">
+                  <div className="structure-field-label">
                     {t("structures.create.form.advancedMetadata.label")}
-                    <textarea
-                      id="structure-advanced-metadata"
-                      ref={advancedMetadataRef}
-                      value={advancedMetadata}
-                      onChange={handleAdvancedMetadataChange}
-                      onBlur={handleAdvancedMetadataBlur}
-                      rows={10}
-                      spellCheck={false}
-                      aria-describedby={advancedMetadataDescribedBy}
-                      aria-invalid={advancedMetadataError ? "true" : undefined}
-                      placeholder={t("structures.create.form.advancedMetadata.placeholder")}
-                    />
-                  </label>
+                  </div>
+                  {advancedMetadataEntries.length === 0 ? (
+                    <p className="helper-text">
+                      {t("structures.create.form.advancedMetadata.empty")}
+                    </p>
+                  ) : (
+                    <div className="structure-website-list">
+                      {advancedMetadataEntries.map((entry, index) => {
+                        const keyId = `${advancedMetadataIdPrefix}-${entry.id}-key`;
+                        const valueId = `${advancedMetadataIdPrefix}-${entry.id}-value`;
+                        return (
+                          <div className="structure-website-list__row" key={entry.id}>
+                            <div className="structure-website-list__input">
+                              <label htmlFor={keyId}>
+                                {t("structures.create.form.advancedMetadata.keyLabel", { index: index + 1 })}
+                                <input
+                                  id={keyId}
+                                  value={entry.key}
+                                  onChange={(event) =>
+                                    handleAdvancedMetadataKeyChange(entry.id, event.target.value)
+                                  }
+                                  aria-describedby={advancedMetadataDescribedBy}
+                                  placeholder={t("structures.create.form.advancedMetadata.keyPlaceholder")}
+                                />
+                              </label>
+                            </div>
+                            <div className="structure-website-list__input">
+                              <label htmlFor={valueId}>
+                                {t("structures.create.form.advancedMetadata.valueLabel", {
+                                  index: index + 1
+                                })}
+                                <input
+                                  id={valueId}
+                                  value={entry.value}
+                                  onChange={(event) =>
+                                    handleAdvancedMetadataValueChange(entry.id, event.target.value)
+                                  }
+                                  aria-describedby={advancedMetadataDescribedBy}
+                                  placeholder={t("structures.create.form.advancedMetadata.valuePlaceholder")}
+                                />
+                              </label>
+                            </div>
+                            <button
+                              type="button"
+                              className="link-button"
+                              onClick={() => handleRemoveAdvancedMetadataEntry(entry.id)}
+                            >
+                              {t("structures.create.form.advancedMetadata.remove")}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="structure-website-actions">
+                    <Button type="button" variant="secondary" size="sm" onClick={handleAddAdvancedMetadataEntry}>
+                      {t("structures.create.form.advancedMetadata.add")}
+                    </Button>
+                  </div>
                   <span className="helper-text" id={advancedMetadataHintId}>
                     {t("structures.create.form.advancedMetadata.hint")}
                   </span>
