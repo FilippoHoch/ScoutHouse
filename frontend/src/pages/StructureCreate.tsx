@@ -836,8 +836,34 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
+  const normalizeAdvancedMetadataInput = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return { formatted: "", isValid: true } as const;
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+        throw new Error("invalid");
+      }
+      return { formatted: JSON.stringify(parsed, null, 2), isValid: true } as const;
+    } catch {
+      return { formatted: value, isValid: false } as const;
+    }
+  };
+
   const handleAdvancedMetadataChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setAdvancedMetadata(event.target.value);
+    setAdvancedMetadataError(null);
+  };
+
+  const handleAdvancedMetadataBlur = () => {
+    const { formatted, isValid } = normalizeAdvancedMetadataInput(advancedMetadata);
+    if (!isValid) {
+      setAdvancedMetadataError(t("structures.create.form.advancedMetadata.error"));
+      return;
+    }
+    setAdvancedMetadata(formatted);
     setAdvancedMetadataError(null);
   };
 
@@ -1048,6 +1074,28 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       updates.utilitiesIncluded = "";
     }
     updateCostOption(key, updates);
+  };
+
+  const handleCostOptionAdvancedMetadataBlur = (key: string) => {
+    setCostOptions((prev) =>
+      prev.map((row) => {
+        if (row.key !== key) {
+          return row;
+        }
+        const { formatted, isValid } = normalizeAdvancedMetadataInput(row.advancedMetadata);
+        if (!isValid) {
+          return {
+            ...row,
+            advancedMetadataError: t("structures.create.errors.costOptionsAdvancedInvalid")
+          };
+        }
+        return {
+          ...row,
+          advancedMetadata: formatted,
+          advancedMetadataError: null
+        };
+      })
+    );
   };
 
   const handleWaterSourceToggle = (option: WaterSource, checked: boolean) => {
@@ -2088,7 +2136,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     payload.environmental_notes = trimmedEnvironmentalNotes || null;
 
     if (parsedAdvancedMetadata) {
-      mergeAdvancedStructurePayload(payload as Record<string, unknown>, parsedAdvancedMetadata);
+      mergeAdvancedStructurePayload(
+        payload as unknown as Record<string, unknown>,
+        parsedAdvancedMetadata
+      );
     }
 
     if (seasonalAmenities.length > 0) {
@@ -2223,7 +2274,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
               !Array.isArray(parsedAdvanced)
             ) {
               mergeAdvancedCostOptionPayload(
-                payloadItem as Record<string, unknown>,
+                payloadItem as unknown as Record<string, unknown>,
                 parsedAdvanced as Record<string, unknown>
               );
             } else {
@@ -3998,6 +4049,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                                       event.target.value
                                     )
                                   }
+                                  onBlur={() => handleCostOptionAdvancedMetadataBlur(option.key)}
                                   rows={3}
                                   aria-describedby={advancedMetadataDescribedBy}
                                 />
@@ -4126,6 +4178,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                       ref={advancedMetadataRef}
                       value={advancedMetadata}
                       onChange={handleAdvancedMetadataChange}
+                      onBlur={handleAdvancedMetadataBlur}
                       rows={10}
                       spellCheck={false}
                       aria-describedby={advancedMetadataDescribedBy}

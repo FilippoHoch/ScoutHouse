@@ -252,7 +252,7 @@ export const StructureDetailsPage = () => {
           }
           return <li key={index}>{formatted}</li>;
         })
-        .filter((item): item is ReactNode => item !== null);
+        .filter((item): item is NonNullable<typeof item> => item !== null);
       if (items.length === 0) {
         return null;
       }
@@ -275,7 +275,7 @@ export const StructureDetailsPage = () => {
             </li>
           );
         })
-        .filter((item): item is ReactNode => item !== null);
+        .filter((item): item is NonNullable<typeof item> => item !== null);
       if (entries.length === 0) {
         return null;
       }
@@ -301,7 +301,7 @@ export const StructureDetailsPage = () => {
           </li>
         );
       })
-      .filter((item): item is ReactNode => item !== null);
+      .filter((item): item is NonNullable<typeof item> => item !== null);
     if (entries.length === 0) {
       return null;
     }
@@ -488,6 +488,9 @@ export const StructureDetailsPage = () => {
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
   const advancedMetadata = extractAdvancedStructureData(structure);
+  const formattedAdvancedMetadata = formatAdvancedMetadata(advancedMetadata);
+  const advancedMetadataDisplay =
+    formattedAdvancedMetadata ?? t("structures.details.overview.advancedMetadataFallback");
 
   const indoorDetails: LogisticsDetail[] = filterVisibleDetails([
     {
@@ -775,7 +778,7 @@ export const StructureDetailsPage = () => {
     {
       id: "advancedMetadata",
       label: t("structures.details.overview.advancedMetadata"),
-      value: formatAdvancedMetadata(advancedMetadata),
+      value: advancedMetadataDisplay,
       icon: "🧩",
       isFull: true
     }

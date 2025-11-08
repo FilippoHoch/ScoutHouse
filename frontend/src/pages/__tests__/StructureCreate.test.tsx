@@ -44,7 +44,7 @@ vi.mock("../../shared/api", async () => {
   };
 });
 
-const createdStructure: Structure = {
+const createdStructure = {
   id: 1,
   name: "Base Bosco",
   slug: "base-bosco",
@@ -151,7 +151,7 @@ const createdStructure: Structure = {
   cost_options: null,
   contacts: null,
   open_periods: []
-};
+} as Structure;
 
 const createWrapper = (queryClient: QueryClient) =>
   ({ children }: { children: ReactNode }) => (
@@ -291,6 +291,98 @@ describe("StructureCreatePage", () => {
       river_swimming: "si"
     });
     expect(payload).not.toHaveProperty("id");
+  });
+
+  it("normalizes advanced metadata JSON on blur", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    const advancedField = screen.getByLabelText(/Metadati aggiuntivi \(JSON\)/i);
+    fireEvent.change(advancedField, {
+      target: { value: '{   "municipality"  :  "Brescia" }' }
+    });
+
+    fireEvent.blur(advancedField);
+
+    await waitFor(() =>
+      expect(advancedField).toHaveValue(
+        JSON.stringify({ municipality: "Brescia" }, null, 2)
+      )
+    );
+    expect(
+      screen.queryByText(/Metadati avanzati non validi/i)
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows an error when advanced metadata JSON is invalid on blur", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    const advancedField = screen.getByLabelText(/Metadati aggiuntivi \(JSON\)/i);
+    fireEvent.change(advancedField, {
+      target: { value: '{"municipality": }' }
+    });
+
+    fireEvent.blur(advancedField);
+
+    expect(
+      await screen.findByText(/Metadati avanzati non validi/i)
+    ).toBeInTheDocument();
+  });
+
+  it("validates cost option advanced metadata JSON on blur", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.click(screen.getByRole("button", { name: /Aggiungi opzione di costo/i }));
+
+    const costAdvancedField = screen.getByLabelText(/Metadati avanzati \(JSON\)/i);
+    fireEvent.change(costAdvancedField, {
+      target: { value: '{"modifiers":[{"kind":"weekend"}]}' }
+    });
+
+    fireEvent.blur(costAdvancedField);
+
+    await waitFor(() =>
+      expect(costAdvancedField).toHaveValue(
+        JSON.stringify({ modifiers: [{ kind: "weekend" }] }, null, 2)
+      )
+    );
+    expect(
+      screen.queryByText(/I metadati avanzati delle opzioni di costo non sono validi/i)
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(costAdvancedField, {
+      target: { value: '{"modifiers": [}' }
+    });
+
+    fireEvent.blur(costAdvancedField);
+
+    expect(
+      await screen.findByText(/I metadati avanzati delle opzioni di costo non sono validi/i)
+    ).toBeInTheDocument();
   });
 
   it("alerts when the API reports unreachable websites", async () => {
