@@ -221,6 +221,93 @@ export const StructureDetailsPage = () => {
     return true;
   };
 
+  const formatAdvancedMetadataKey = (key: string) =>
+    key
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (char) => char.toLocaleUpperCase("it-IT"));
+
+  const formatAdvancedMetadataValue = (value: unknown): ReactNode => {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+    if (typeof value === "number") {
+      return new Intl.NumberFormat("it-IT").format(value);
+    }
+    if (typeof value === "boolean") {
+      return value ? fallbackLabels.yes : fallbackLabels.no;
+    }
+    if (Array.isArray(value)) {
+      const items = value
+        .map((item, index) => {
+          const formatted = formatAdvancedMetadataValue(item);
+          if (!isValuePresent(formatted)) {
+            return null;
+          }
+          return <li key={index}>{formatted}</li>;
+        })
+        .filter((item): item is ReactNode => item !== null);
+      if (items.length === 0) {
+        return null;
+      }
+      return (
+        <ul className="structure-details__advanced-list structure-details__advanced-list--nested">
+          {items}
+        </ul>
+      );
+    }
+    if (typeof value === "object") {
+      const entries = Object.entries(value as Record<string, unknown>)
+        .map(([childKey, childValue]) => {
+          const formatted = formatAdvancedMetadataValue(childValue);
+          if (!isValuePresent(formatted)) {
+            return null;
+          }
+          return (
+            <li key={childKey}>
+              <strong>{formatAdvancedMetadataKey(childKey)}</strong>: {formatted}
+            </li>
+          );
+        })
+        .filter((item): item is ReactNode => item !== null);
+      if (entries.length === 0) {
+        return null;
+      }
+      return (
+        <ul className="structure-details__advanced-list structure-details__advanced-list--nested">
+          {entries}
+        </ul>
+      );
+    }
+    return String(value);
+  };
+
+  const formatAdvancedMetadata = (metadata: Record<string, unknown>): ReactNode => {
+    const entries = Object.entries(metadata)
+      .map(([key, value]) => {
+        const formattedValue = formatAdvancedMetadataValue(value);
+        if (!isValuePresent(formattedValue)) {
+          return null;
+        }
+        return (
+          <li key={key}>
+            <strong>{formatAdvancedMetadataKey(key)}</strong>: {formattedValue}
+          </li>
+        );
+      })
+      .filter((item): item is ReactNode => item !== null);
+    if (entries.length === 0) {
+      return null;
+    }
+    return <ul className="structure-details__advanced-list">{entries}</ul>;
+  };
+
   const filterVisibleDetails = (items: LogisticsDetail[]): LogisticsDetail[] =>
     items.filter(({ value }) => isValuePresent(value));
 
@@ -401,10 +488,6 @@ export const StructureDetailsPage = () => {
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
   const advancedMetadata = extractAdvancedStructureData(structure);
-  const advancedMetadataJson =
-    Object.keys(advancedMetadata).length > 0
-      ? JSON.stringify(advancedMetadata, null, 2)
-      : null;
 
   const indoorDetails: LogisticsDetail[] = filterVisibleDetails([
     {
@@ -692,9 +775,7 @@ export const StructureDetailsPage = () => {
     {
       id: "advancedMetadata",
       label: t("structures.details.overview.advancedMetadata"),
-      value: advancedMetadataJson ? (
-        <pre className="structure-details__advanced-json">{advancedMetadataJson}</pre>
-      ) : null,
+      value: formatAdvancedMetadata(advancedMetadata),
       icon: "🧩",
       isFull: true
     }

@@ -234,17 +234,29 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Fermata centro/i)).toBeInTheDocument();
     expect(screen.getByText(/Contattare il custode/i)).toBeInTheDocument();
     expect(screen.getByText(/Note generiche/i)).toBeInTheDocument();
-    expect(screen.getByText(/"country": "IT"/i)).toBeInTheDocument();
-    expect(screen.getByText(/"municipality": "Brescia"/i)).toBeInTheDocument();
-    expect(screen.getByText(/"river_swimming": "si"/i)).toBeInTheDocument();
-    expect(screen.getByText(/"documents_required": \[\]/i)).toBeInTheDocument();
-    expect(screen.getByText(/"map_resources_urls": \[\]/i)).toBeInTheDocument();
-    expect(screen.getByText(/"communications_infrastructure": \[\]/i)).toBeInTheDocument();
-    expect(screen.getByText(/"activity_spaces": \[\]/i)).toBeInTheDocument();
-    expect(screen.getByText(/"activity_equipment": \[\]/i)).toBeInTheDocument();
-    expect(screen.getByText(/"inclusion_services": \[\]/i)).toBeInTheDocument();
-    expect(screen.getByText(/"payment_methods": \[\]/i)).toBeInTheDocument();
-    expect(screen.getByText(/"data_quality_flags": \[\]/i)).toBeInTheDocument();
+    expect(
+      screen.getByText((content, element) =>
+        element?.tagName === "LI" && /Country: IT/i.test(element.textContent ?? "")
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText((content, element) =>
+        element?.tagName === "LI" && /Municipality: Brescia/i.test(element.textContent ?? "")
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText((content, element) =>
+        element?.tagName === "LI" && /River Swimming: si/i.test(element.textContent ?? "")
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Documents Required/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Map Resources Urls/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Communications Infrastructure/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Activity Spaces/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Activity Equipment/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Inclusion Services/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Payment Methods/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Data Quality Flags/i)).not.toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 
