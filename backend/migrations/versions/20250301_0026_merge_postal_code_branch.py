@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-revision = "20250301_0026_merge_postal_code_branch"
+revision = "20250301_0026"
 down_revision = ("20250220_0025", "20240703_0001")
 branch_labels = None
 depends_on = None
