@@ -27,12 +27,16 @@ import {
   upsertStructureCostOptions
 } from "../shared/api";
 import {
+  AnimalPolicy,
   CostModel,
   Contact,
   ContactCreateDto,
   ContactPreferredChannel,
+  FieldSlope,
   FirePolicy,
   StructureCreateDto,
+  StructureContactStatus,
+  StructureOperationalStatus,
   StructureType,
   StructureOpenPeriodKind,
   StructureOpenPeriodInput,
@@ -55,6 +59,25 @@ import { isImageFile } from "../shared/utils/image";
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
 const waterSourceOptions: WaterSource[] = ["none", "fountain", "tap", "river"];
 const firePolicyOptions: FirePolicy[] = ["allowed", "with_permit", "forbidden"];
+const fieldSlopeOptions: FieldSlope[] = ["flat", "gentle", "moderate", "steep"];
+const contactStatusOptions: StructureContactStatus[] = [
+  "unknown",
+  "to_contact",
+  "contacted",
+  "confirmed",
+  "stale"
+];
+const operationalStatusOptions: StructureOperationalStatus[] = [
+  "operational",
+  "seasonal",
+  "temporarily_closed",
+  "permanently_closed"
+];
+const animalPolicyOptions: AnimalPolicy[] = [
+  "allowed",
+  "allowed_on_request",
+  "forbidden"
+];
 
 type FieldErrorKey =
   | "name"
@@ -84,6 +107,12 @@ type OpenPeriodFormRow = {
   dateEnd: string;
   notes: string;
   units: Unit[];
+};
+
+type SeasonalAmenityRow = {
+  id: string;
+  key: string;
+  value: string;
 };
 
 export const StructureCreatePage = () => <StructureFormPage mode="create" />;
@@ -121,6 +150,15 @@ const createOpenPeriodRow = (kind: StructureOpenPeriodKind = "season"): OpenPeri
   dateEnd: "",
   notes: "",
   units: []
+});
+
+const createSeasonalAmenityId = () =>
+  `amenity-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+
+const createSeasonalAmenityRow = (key = "", value = ""): SeasonalAmenityRow => ({
+  id: createSeasonalAmenityId(),
+  key,
+  value
 });
 
 const costModelOptions: CostModel[] = ["per_person_day", "per_person_night", "forfait"];
@@ -211,6 +249,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [longitude, setLongitude] = useState("");
   const [altitude, setAltitude] = useState("");
   const [type, setType] = useState<StructureType | "">("");
+  const [contactStatus, setContactStatus] = useState<StructureContactStatus>("unknown");
+  const [operationalStatus, setOperationalStatus] =
+    useState<StructureOperationalStatus | "">("");
   const [indoorBeds, setIndoorBeds] = useState("");
   const [indoorBathrooms, setIndoorBathrooms] = useState("");
   const [indoorShowers, setIndoorShowers] = useState("");
@@ -218,6 +259,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [hasKitchen, setHasKitchen] = useState<boolean | null>(null);
   const [hotWater, setHotWater] = useState<boolean | null>(null);
   const [landArea, setLandArea] = useState("");
+  const [fieldSlope, setFieldSlope] = useState<FieldSlope | "">("");
+  const [pitchesTende, setPitchesTende] = useState("");
+  const [waterAtField, setWaterAtField] = useState<boolean | null>(null);
   const [shelterOnField, setShelterOnField] = useState<boolean | null>(null);
   const [pitLatrineAllowed, setPitLatrineAllowed] = useState<boolean | null>(null);
   const [waterSources, setWaterSources] = useState<WaterSource[]>([]);
@@ -228,6 +272,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [accessByPublicTransport, setAccessByPublicTransport] = useState<boolean | null>(null);
   const [coachTurningArea, setCoachTurningArea] = useState<boolean | null>(null);
   const [nearestBusStop, setNearestBusStop] = useState("");
+  const [wheelchairAccessible, setWheelchairAccessible] = useState<boolean | null>(null);
+  const [stepFreeAccess, setStepFreeAccess] = useState<boolean | null>(null);
+  const [parkingCarSlots, setParkingCarSlots] = useState("");
+  const [parkingBusSlots, setParkingBusSlots] = useState("");
+  const [parkingNotes, setParkingNotes] = useState("");
+  const [accessibilityNotes, setAccessibilityNotes] = useState("");
   const [weekendOnly, setWeekendOnly] = useState<boolean | null>(null);
   const [hasFieldPoles, setHasFieldPoles] = useState<boolean | null>(null);
   type WebsiteUrlStatus = "idle" | "valid" | "invalid";
@@ -235,6 +285,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [contactEmails, setContactEmails] = useState<string[]>([""]);
   const [websiteUrls, setWebsiteUrls] = useState<string[]>([""]);
   const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
+  const [allowedAudiences, setAllowedAudiences] = useState<string[]>([""]);
+  const [usageRules, setUsageRules] = useState("");
+  const [animalPolicy, setAnimalPolicy] = useState<AnimalPolicy | "">("");
+  const [animalPolicyNotes, setAnimalPolicyNotes] = useState("");
+  const [inAreaProtetta, setInAreaProtetta] = useState<boolean | null>(null);
+  const [enteAreaProtetta, setEnteAreaProtetta] = useState("");
+  const [environmentalNotes, setEnvironmentalNotes] = useState("");
+  const [seasonalAmenities, setSeasonalAmenities] = useState<SeasonalAmenityRow[]>([]);
   const [notesLogistics, setNotesLogistics] = useState("");
   const [notes, setNotes] = useState("");
   const [structureId, setStructureId] = useState<number | null>(null);
@@ -363,6 +421,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const resetOutdoorFields = () => {
     setLandArea("");
+    setFieldSlope("");
+    setPitchesTende("");
+    setWaterAtField(null);
     setShelterOnField(null);
     setPitLatrineAllowed(null);
     setWaterSources([]);
@@ -967,6 +1028,21 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
+  const handleFieldSlopeChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setFieldSlope(event.target.value as FieldSlope | "");
+    setApiError(null);
+  };
+
+  const handlePitchesTendeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setPitchesTende(event.target.value);
+    setApiError(null);
+  };
+
+  const handleWaterAtFieldChange = (value: boolean | null) => {
+    setWaterAtField(value);
+    setApiError(null);
+  };
+
   const handleAccessByCarChange = (value: boolean | null) => {
     setAccessByCar(value);
     setApiError(null);
@@ -992,6 +1068,36 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
+  const handleWheelchairAccessibleChange = (value: boolean | null) => {
+    setWheelchairAccessible(value);
+    setApiError(null);
+  };
+
+  const handleStepFreeAccessChange = (value: boolean | null) => {
+    setStepFreeAccess(value);
+    setApiError(null);
+  };
+
+  const handleParkingCarSlotsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setParkingCarSlots(event.target.value);
+    setApiError(null);
+  };
+
+  const handleParkingBusSlotsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setParkingBusSlots(event.target.value);
+    setApiError(null);
+  };
+
+  const handleParkingNotesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setParkingNotes(event.target.value);
+    setApiError(null);
+  };
+
+  const handleAccessibilityNotesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setAccessibilityNotes(event.target.value);
+    setApiError(null);
+  };
+
   const handleWeekendOnlyChange = (value: boolean | null) => {
     setWeekendOnly(value);
     setApiError(null);
@@ -1010,6 +1116,92 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     });
     setApiError(null);
     clearFieldError("contact_emails");
+  };
+
+  const handleAllowedAudienceChange = (index: number, value: string) => {
+    setAllowedAudiences((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleUsageRulesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setUsageRules(event.target.value);
+    setApiError(null);
+  };
+
+  const handleAnimalPolicyChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setAnimalPolicy(event.target.value as AnimalPolicy | "");
+    setApiError(null);
+  };
+
+  const handleAnimalPolicyNotesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setAnimalPolicyNotes(event.target.value);
+    setApiError(null);
+  };
+
+  const handleInAreaProtettaChange = (value: boolean | null) => {
+    setInAreaProtetta(value);
+    setApiError(null);
+  };
+
+  const handleEnteAreaProtettaChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setEnteAreaProtetta(event.target.value);
+    setApiError(null);
+  };
+
+  const handleEnvironmentalNotesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setEnvironmentalNotes(event.target.value);
+    setApiError(null);
+  };
+
+  const handleSeasonalAmenityChange = (
+    amenityId: string,
+    field: "key" | "value",
+    value: string
+  ) => {
+    setSeasonalAmenities((current) =>
+      current.map((row) =>
+        row.id === amenityId
+          ? {
+              ...row,
+              [field]: value
+            }
+          : row
+      )
+    );
+    setApiError(null);
+  };
+
+  const handleAddSeasonalAmenity = () => {
+    setSeasonalAmenities((current) => [...current, createSeasonalAmenityRow()]);
+    setApiError(null);
+  };
+
+  const handleRemoveSeasonalAmenity = (amenityId: string) => {
+    setSeasonalAmenities((current) => {
+      const next = current.filter((row) => row.id !== amenityId);
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddAllowedAudience = () => {
+    setAllowedAudiences((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemoveAllowedAudience = (index: number) => {
+    setAllowedAudiences((current) => {
+      if (current.length === 1) {
+        return [""];
+      }
+      const next = current.filter((_, position) => position !== index);
+      return next.length > 0 ? next : [""];
+    });
+    setApiError(null);
   };
 
   const handleAddContactEmail = () => {
@@ -1070,6 +1262,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         : ""
     );
     setType(existingStructure.type ?? "");
+    setContactStatus(existingStructure.contact_status ?? "unknown");
+    setOperationalStatus(existingStructure.operational_status ?? "");
     setIndoorBeds(
       existingStructure.indoor_beds !== null && existingStructure.indoor_beds !== undefined
         ? String(existingStructure.indoor_beds)
@@ -1098,6 +1292,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         ? String(existingStructure.land_area_m2)
         : ""
     );
+    setFieldSlope(existingStructure.field_slope ?? "");
+    setPitchesTende(
+      existingStructure.pitches_tende !== null && existingStructure.pitches_tende !== undefined
+        ? String(existingStructure.pitches_tende)
+        : ""
+    );
+    setWaterAtField(toTriState(existingStructure.water_at_field));
     setShelterOnField(toTriState(existingStructure.shelter_on_field));
     setPitLatrineAllowed(toTriState(existingStructure.pit_latrine_allowed));
     setWaterSources(existingStructure.water_sources ?? []);
@@ -1108,6 +1309,20 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setAccessByPublicTransport(toTriState(existingStructure.access_by_public_transport));
     setCoachTurningArea(toTriState(existingStructure.coach_turning_area));
     setNearestBusStop(existingStructure.nearest_bus_stop ?? "");
+    setWheelchairAccessible(toTriState(existingStructure.wheelchair_accessible));
+    setStepFreeAccess(toTriState(existingStructure.step_free_access));
+    setParkingCarSlots(
+      existingStructure.parking_car_slots !== null && existingStructure.parking_car_slots !== undefined
+        ? String(existingStructure.parking_car_slots)
+        : ""
+    );
+    setParkingBusSlots(
+      existingStructure.parking_bus_slots !== null && existingStructure.parking_bus_slots !== undefined
+        ? String(existingStructure.parking_bus_slots)
+        : ""
+    );
+    setParkingNotes(existingStructure.parking_notes ?? "");
+    setAccessibilityNotes(existingStructure.accessibility_notes ?? "");
     setWeekendOnly(toTriState(existingStructure.weekend_only));
     setHasFieldPoles(toTriState(existingStructure.has_field_poles));
 
@@ -1123,6 +1338,27 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         : [""];
     setWebsiteUrls(websiteValues);
     setWebsiteUrlStatuses(websiteValues.map(evaluateWebsiteUrlStatus));
+
+    const audiences =
+      existingStructure.allowed_audiences && existingStructure.allowed_audiences.length > 0
+        ? [...existingStructure.allowed_audiences]
+        : [""];
+    setAllowedAudiences(audiences);
+    setUsageRules(existingStructure.usage_rules ?? "");
+    setAnimalPolicy(existingStructure.animal_policy ?? "");
+    setAnimalPolicyNotes(existingStructure.animal_policy_notes ?? "");
+    setInAreaProtetta(toTriState(existingStructure.in_area_protetta));
+    setEnteAreaProtetta(existingStructure.ente_area_protetta ?? "");
+    setEnvironmentalNotes(existingStructure.environmental_notes ?? "");
+
+    const amenitiesEntries = existingStructure.seasonal_amenities ?? {};
+    const amenitiesRows = Object.entries(amenitiesEntries).map(([key, value]) =>
+      createSeasonalAmenityRow(
+        key,
+        typeof value === "string" ? value : JSON.stringify(value)
+      )
+    );
+    setSeasonalAmenities(amenitiesRows);
 
     setNotesLogistics(existingStructure.notes_logistics ?? "");
     setNotes(existingStructure.notes ?? "");
@@ -1252,6 +1488,16 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const handleContactSectionDisable = () => {
     setAddContact(false);
     resetContactSection();
+  };
+
+  const handleContactStatusChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setContactStatus(event.target.value as StructureContactStatus);
+    setApiError(null);
+  };
+
+  const handleOperationalStatusChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setOperationalStatus(event.target.value as StructureOperationalStatus | "");
+    setApiError(null);
   };
 
   const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -1538,10 +1784,20 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedIndoorActivityRooms = indoorActivityRooms.trim();
     const trimmedLandArea = landArea.trim();
     const trimmedNearestBusStop = nearestBusStop.trim();
+    const trimmedPitchesTende = pitchesTende.trim();
+    const trimmedParkingCarSlots = parkingCarSlots.trim();
+    const trimmedParkingBusSlots = parkingBusSlots.trim();
+    const trimmedParkingNotes = parkingNotes.trim();
+    const trimmedAccessibilityNotes = accessibilityNotes.trim();
     const trimmedWebsiteUrls = websiteUrls.map((value) => value.trim());
     const trimmedContactEmails = contactEmails.map((value) => value.trim());
+    const trimmedAllowedAudiences = allowedAudiences.map((value) => value.trim());
     const trimmedNotesLogistics = notesLogistics.trim();
     const trimmedNotes = notes.trim();
+    const trimmedUsageRules = usageRules.trim();
+    const trimmedAnimalPolicyNotes = animalPolicyNotes.trim();
+    const trimmedEnteAreaProtetta = enteAreaProtetta.trim();
+    const trimmedEnvironmentalNotes = environmentalNotes.trim();
     const trimmedCostOptions = costOptions.map((option) => ({
       id: option.id,
       model: option.model,
@@ -1570,6 +1826,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       has_field_poles: hasFieldPoles,
       pit_latrine_allowed: pitLatrineAllowed,
     };
+
+    payload.contact_status = contactStatus;
+
+    if (operationalStatus) {
+      payload.operational_status = operationalStatus as StructureOperationalStatus;
+    } else {
+      payload.operational_status = null;
+    }
 
     const showIndoorSection = type !== "land";
     const showOutdoorSection = type !== "house";
@@ -1624,8 +1888,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.nearest_bus_stop = trimmedNearestBusStop || null;
       payload.water_sources = waterSources.length > 0 ? [...waterSources] : null;
       payload.fire_policy = firePolicy ? (firePolicy as FirePolicy) : null;
+      payload.field_slope = fieldSlope ? (fieldSlope as FieldSlope) : null;
+      payload.water_at_field = waterAtField;
     } else {
       payload.land_area_m2 = null;
+      payload.field_slope = null;
+      payload.water_at_field = null;
       payload.shelter_on_field = null;
       payload.water_sources = null;
       payload.electricity_available = null;
@@ -1651,6 +1919,63 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (trimmedNotes) {
       payload.notes = trimmedNotes;
+    }
+
+    payload.wheelchair_accessible = wheelchairAccessible;
+    payload.step_free_access = stepFreeAccess;
+    const parsedPitchesTende = trimmedPitchesTende ? Number.parseInt(trimmedPitchesTende, 10) : null;
+    const parsedParkingCarSlots = trimmedParkingCarSlots
+      ? Number.parseInt(trimmedParkingCarSlots, 10)
+      : null;
+    const parsedParkingBusSlots = trimmedParkingBusSlots
+      ? Number.parseInt(trimmedParkingBusSlots, 10)
+      : null;
+
+    payload.pitches_tende = parsedPitchesTende !== null && Number.isNaN(parsedPitchesTende)
+      ? null
+      : parsedPitchesTende;
+    payload.parking_car_slots = parsedParkingCarSlots !== null && Number.isNaN(parsedParkingCarSlots)
+      ? null
+      : parsedParkingCarSlots;
+    payload.parking_bus_slots = parsedParkingBusSlots !== null && Number.isNaN(parsedParkingBusSlots)
+      ? null
+      : parsedParkingBusSlots;
+    payload.parking_notes = trimmedParkingNotes || null;
+    payload.accessibility_notes = trimmedAccessibilityNotes || null;
+
+    const normalizedAudiences = trimmedAllowedAudiences.filter((value) => value.length > 0);
+    payload.allowed_audiences = normalizedAudiences;
+
+    if (trimmedUsageRules) {
+      payload.usage_rules = trimmedUsageRules;
+    } else {
+      payload.usage_rules = null;
+    }
+
+    payload.animal_policy = animalPolicy ? (animalPolicy as AnimalPolicy) : null;
+    payload.animal_policy_notes = trimmedAnimalPolicyNotes || null;
+    payload.in_area_protetta = inAreaProtetta;
+    payload.ente_area_protetta = trimmedEnteAreaProtetta || null;
+    payload.environmental_notes = trimmedEnvironmentalNotes || null;
+
+    if (seasonalAmenities.length > 0) {
+      const amenities = seasonalAmenities.reduce<Record<string, unknown>>((acc, row) => {
+        const key = row.key.trim();
+        const valueText = row.value.trim();
+        if (!key || !valueText) {
+          return acc;
+        }
+        try {
+          acc[key] = JSON.parse(valueText);
+        } catch (error) {
+          void error;
+          acc[key] = valueText;
+        }
+        return acc;
+      }, {});
+      payload.seasonal_amenities = Object.keys(amenities).length > 0 ? amenities : {};
+    } else {
+      payload.seasonal_amenities = {};
     }
 
     payload.open_periods = openPeriods.map((period): StructureOpenPeriodInput => {
@@ -1827,6 +2152,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const typeHintId = "structure-type-hint";
   const typeDescribedBy = [typeHintId, typeErrorId].filter(Boolean).join(" ") || undefined;
+  const contactStatusHintId = "structure-contact-status-hint";
+  const contactStatusDescribedBy = contactStatusHintId;
+  const operationalStatusHintId = "structure-operational-status-hint";
+  const operationalStatusDescribedBy = operationalStatusHintId;
   const provinceHintId = "structure-province-hint";
   const provinceDescribedBy = [provinceHintId, provinceErrorId].filter(Boolean).join(" ") || undefined;
   const addressHintId = "structure-address-hint";
@@ -1857,14 +2186,32 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     .join(" ") || undefined;
   const landAreaHintId = "structure-land-area-hint";
   const landAreaDescribedBy = [landAreaHintId, landAreaErrorId].filter(Boolean).join(" ") || undefined;
+  const fieldSlopeHintId = "structure-field-slope-hint";
+  const pitchesTendeHintId = "structure-pitches-tende-hint";
+  const waterAtFieldHintId = "structure-water-at-field-hint";
   const waterSourcesLabelId = "structure-water-sources-label";
   const waterSourcesHintId = "structure-water-sources-hint";
   const waterSourcesOptionIdPrefix = "structure-water-source";
+  const wheelchairHintId = "structure-wheelchair-hint";
+  const stepFreeHintId = "structure-step-free-hint";
+  const parkingCarHintId = "structure-parking-car-hint";
+  const parkingBusHintId = "structure-parking-bus-hint";
+  const parkingNotesHintId = "structure-parking-notes-hint";
+  const accessibilityNotesHintId = "structure-accessibility-notes-hint";
   const contactEmailsHintId = "structure-contact-emails-hint";
   const contactEmailsDescribedBy =
     [contactEmailsHintId, contactEmailsErrorId].filter(Boolean).join(" ") || undefined;
   const websiteHintId = "structure-website-hint";
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
+  const allowedAudiencesHintId = "structure-allowed-audiences-hint";
+  const allowedAudiencesDescribedBy = allowedAudiencesHintId;
+  const usageRulesHintId = "structure-usage-rules-hint";
+  const animalPolicyHintId = "structure-animal-policy-hint";
+  const animalPolicyNotesHintId = "structure-animal-policy-notes-hint";
+  const inAreaProtettaHintId = "structure-in-area-protetta-hint";
+  const enteAreaProtettaHintId = "structure-ente-area-protetta-hint";
+  const environmentalNotesHintId = "structure-environmental-notes-hint";
+  const seasonalAmenitiesHintId = "structure-seasonal-amenities-hint";
   const openPeriodsHintId = "structure-open-periods-hint";
   const openPeriodsDescribedBy = [openPeriodsHintId, openPeriodsErrorId]
     .filter(Boolean)
@@ -2009,6 +2356,51 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                       {fieldErrors.type}
                     </p>
                   )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-contact-status">
+                    {t("structures.create.form.contactStatus")}
+                    <select
+                      id="structure-contact-status"
+                      value={contactStatus}
+                      onChange={handleContactStatusChange}
+                      aria-describedby={contactStatusDescribedBy}
+                    >
+                      {contactStatusOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.contactStatusOptions.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={contactStatusHintId}>
+                    {t("structures.create.form.contactStatusHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-operational-status">
+                    {t("structures.create.form.operationalStatus")}
+                    <select
+                      id="structure-operational-status"
+                      value={operationalStatus}
+                      onChange={handleOperationalStatusChange}
+                      aria-describedby={operationalStatusDescribedBy}
+                    >
+                      <option value="">
+                        {t("structures.create.form.operationalStatusPlaceholder")}
+                      </option>
+                      {operationalStatusOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.operationalStatusOptions.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={operationalStatusHintId}>
+                    {t("structures.create.form.operationalStatusHint")}
+                  </span>
                 </div>
               </div>
             </fieldset>
@@ -2225,6 +2617,61 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </div>
 
                   <div className="structure-form-field">
+                    <label htmlFor="structure-field-slope">
+                      {t("structures.create.form.fieldSlope")}
+                      <select
+                        id="structure-field-slope"
+                        value={fieldSlope}
+                        onChange={handleFieldSlopeChange}
+                        aria-describedby={fieldSlopeHintId}
+                      >
+                        <option value="">
+                          {t("structures.create.form.fieldSlopePlaceholder")}
+                        </option>
+                        {fieldSlopeOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {t(`structures.create.form.fieldSlopeOptions.${option}`)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <span className="helper-text" id={fieldSlopeHintId}>
+                      {t("structures.create.form.fieldSlopeHint")}
+                    </span>
+                  </div>
+
+                  <div className="structure-form-field">
+                    <label htmlFor="structure-pitches-tende">
+                      {t("structures.create.form.pitchesTende")}
+                      <input
+                        id="structure-pitches-tende"
+                        value={pitchesTende}
+                        onChange={handlePitchesTendeChange}
+                        inputMode="numeric"
+                        aria-describedby={pitchesTendeHintId}
+                      />
+                    </label>
+                    <span className="helper-text" id={pitchesTendeHintId}>
+                      {t("structures.create.form.pitchesTendeHint")}
+                    </span>
+                  </div>
+
+                  <div className="structure-form-field tri-state-field">
+                    <label htmlFor="structure-water-at-field" className="tri-state-field__label">
+                      {t("structures.create.form.waterAtField")}
+                    </label>
+                    <TriStateToggle
+                      id="structure-water-at-field"
+                      value={waterAtField}
+                      onChange={handleWaterAtFieldChange}
+                      labels={triStateLabels}
+                    />
+                    <span className="helper-text" id={waterAtFieldHintId}>
+                      {t("structures.create.form.waterAtFieldHint")}
+                    </span>
+                  </div>
+
+                  <div className="structure-form-field">
                     <span className="field-label" id={waterSourcesLabelId}>
                       {t("structures.create.form.waterSource")}
                     </span>
@@ -2423,6 +2870,100 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </label>
                   <span className="helper-text">
                     {t("structures.create.form.nearestBusStopHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-wheelchair-accessible" className="tri-state-field__label">
+                    {t("structures.create.form.wheelchairAccessible")}
+                  </label>
+                  <TriStateToggle
+                    id="structure-wheelchair-accessible"
+                    value={wheelchairAccessible}
+                    onChange={handleWheelchairAccessibleChange}
+                    labels={triStateLabels}
+                  />
+                  <span className="helper-text" id={wheelchairHintId}>
+                    {t("structures.create.form.wheelchairAccessibleHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-step-free-access" className="tri-state-field__label">
+                    {t("structures.create.form.stepFreeAccess")}
+                  </label>
+                  <TriStateToggle
+                    id="structure-step-free-access"
+                    value={stepFreeAccess}
+                    onChange={handleStepFreeAccessChange}
+                    labels={triStateLabels}
+                  />
+                  <span className="helper-text" id={stepFreeHintId}>
+                    {t("structures.create.form.stepFreeAccessHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-parking-car-slots">
+                    {t("structures.create.form.parkingCarSlots")}
+                    <input
+                      id="structure-parking-car-slots"
+                      value={parkingCarSlots}
+                      onChange={handleParkingCarSlotsChange}
+                      inputMode="numeric"
+                      aria-describedby={parkingCarHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={parkingCarHintId}>
+                    {t("structures.create.form.parkingCarSlotsHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-parking-bus-slots">
+                    {t("structures.create.form.parkingBusSlots")}
+                    <input
+                      id="structure-parking-bus-slots"
+                      value={parkingBusSlots}
+                      onChange={handleParkingBusSlotsChange}
+                      inputMode="numeric"
+                      aria-describedby={parkingBusHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={parkingBusHintId}>
+                    {t("structures.create.form.parkingBusSlotsHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-parking-notes">
+                    {t("structures.create.form.parkingNotes")}
+                    <textarea
+                      id="structure-parking-notes"
+                      value={parkingNotes}
+                      onChange={handleParkingNotesChange}
+                      rows={3}
+                      aria-describedby={parkingNotesHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={parkingNotesHintId}>
+                    {t("structures.create.form.parkingNotesHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-accessibility-notes">
+                    {t("structures.create.form.accessibilityNotes")}
+                    <textarea
+                      id="structure-accessibility-notes"
+                      value={accessibilityNotes}
+                      onChange={handleAccessibilityNotesChange}
+                      rows={3}
+                      aria-describedby={accessibilityNotesHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={accessibilityNotesHintId}>
+                    {t("structures.create.form.accessibilityNotesHint")}
                   </span>
                 </div>
               </div>
@@ -2666,6 +3207,237 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   />
                   <span className="helper-text">
                     {t("structures.create.form.weekendOnlyHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-allowed-audience-0" id="structure-allowed-audience-label">
+                    {t("structures.create.form.allowedAudiences.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {allowedAudiences.map((value, index) => {
+                      const inputId = `structure-allowed-audience-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? t("structures.create.form.allowedAudiences.entryLabel", { index: index + 1 })
+                          : t("structures.create.form.allowedAudiences.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) => handleAllowedAudienceChange(index, event.target.value)}
+                              aria-describedby={allowedAudiencesDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {allowedAudiences.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAllowedAudience(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.allowedAudiences.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddAllowedAudience}
+                    >
+                      {t("structures.create.form.allowedAudiences.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={allowedAudiencesHintId}>
+                    {t("structures.create.form.allowedAudiences.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-usage-rules">
+                    {t("structures.create.form.usageRules")}
+                    <textarea
+                      id="structure-usage-rules"
+                      value={usageRules}
+                      onChange={handleUsageRulesChange}
+                      rows={3}
+                      aria-describedby={usageRulesHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={usageRulesHintId}>
+                    {t("structures.create.form.usageRulesHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-animal-policy">
+                    {t("structures.create.form.animalPolicy")}
+                    <select
+                      id="structure-animal-policy"
+                      value={animalPolicy}
+                      onChange={handleAnimalPolicyChange}
+                      aria-describedby={animalPolicyHintId}
+                    >
+                      <option value="">
+                        {t("structures.create.form.animalPolicyPlaceholder")}
+                      </option>
+                      {animalPolicyOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.animalPolicyOptions.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={animalPolicyHintId}>
+                    {t("structures.create.form.animalPolicyHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-animal-policy-notes">
+                    {t("structures.create.form.animalPolicyNotes")}
+                    <textarea
+                      id="structure-animal-policy-notes"
+                      value={animalPolicyNotes}
+                      onChange={handleAnimalPolicyNotesChange}
+                      rows={3}
+                      aria-describedby={animalPolicyNotesHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={animalPolicyNotesHintId}>
+                    {t("structures.create.form.animalPolicyNotesHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-in-area-protetta" className="tri-state-field__label">
+                    {t("structures.create.form.inAreaProtetta")}
+                  </label>
+                  <TriStateToggle
+                    id="structure-in-area-protetta"
+                    value={inAreaProtetta}
+                    onChange={handleInAreaProtettaChange}
+                    labels={triStateLabels}
+                  />
+                  <span className="helper-text" id={inAreaProtettaHintId}>
+                    {t("structures.create.form.inAreaProtettaHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-ente-area-protetta">
+                    {t("structures.create.form.enteAreaProtetta")}
+                    <input
+                      id="structure-ente-area-protetta"
+                      value={enteAreaProtetta}
+                      onChange={handleEnteAreaProtettaChange}
+                      aria-describedby={enteAreaProtettaHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={enteAreaProtettaHintId}>
+                    {t("structures.create.form.enteAreaProtettaHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-environmental-notes">
+                    {t("structures.create.form.environmentalNotes")}
+                    <textarea
+                      id="structure-environmental-notes"
+                      value={environmentalNotes}
+                      onChange={handleEnvironmentalNotesChange}
+                      rows={3}
+                      aria-describedby={environmentalNotesHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={environmentalNotesHintId}>
+                    {t("structures.create.form.environmentalNotesHint")}
+                  </span>
+                </div>
+
+                <div
+                  className="structure-form-field"
+                  data-span="full"
+                  id="structure-seasonal-amenities"
+                  aria-describedby={seasonalAmenitiesHintId}
+                >
+                  <span className="form-label" id="structure-seasonal-amenities-label">
+                    {t("structures.create.form.seasonalAmenities.label")}
+                  </span>
+                  {seasonalAmenities.length === 0 ? (
+                    <p className="helper-text">
+                      {t("structures.create.form.seasonalAmenities.empty")}
+                    </p>
+                  ) : (
+                    <div className="structure-website-list">
+                      {seasonalAmenities.map((row, index) => {
+                        const keyId = `structure-seasonal-amenity-${index}-key`;
+                        const valueId = `structure-seasonal-amenity-${index}-value`;
+                        return (
+                          <div className="structure-website-list__row" key={row.id}>
+                            <div className="structure-website-list__input">
+                              <input
+                                id={keyId}
+                                value={row.key}
+                                placeholder={t("structures.create.form.seasonalAmenities.keyPlaceholder")}
+                                onChange={(event) =>
+                                  handleSeasonalAmenityChange(row.id, "key", event.target.value)
+                                }
+                                aria-label={t(
+                                  "structures.create.form.seasonalAmenities.keyAriaLabel",
+                                  { index: index + 1 }
+                                )}
+                              />
+                            </div>
+                            <div className="structure-website-list__input">
+                              <textarea
+                                id={valueId}
+                                value={row.value}
+                                onChange={(event) =>
+                                  handleSeasonalAmenityChange(row.id, "value", event.target.value)
+                                }
+                                rows={2}
+                                aria-label={t(
+                                  "structures.create.form.seasonalAmenities.valueAriaLabel",
+                                  { index: index + 1 }
+                                )}
+                                placeholder={t(
+                                  "structures.create.form.seasonalAmenities.valuePlaceholder"
+                                )}
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveSeasonalAmenity(row.id)}
+                            >
+                              {t("structures.create.form.seasonalAmenities.remove")}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddSeasonalAmenity}
+                    >
+                      {t("structures.create.form.seasonalAmenities.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={seasonalAmenitiesHintId}>
+                    {t("structures.create.form.seasonalAmenities.hint")}
                   </span>
                 </div>
 
