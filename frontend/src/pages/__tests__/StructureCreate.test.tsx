@@ -212,6 +212,10 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
     await user.type(screen.getByLabelText(/Provincia/i), "bs");
     await user.type(screen.getByLabelText(/Altitudine/i), "350");
+    await user.selectOptions(
+      screen.getByLabelText(/Rischio alluvionale/i),
+      "medium"
+    );
 
     await user.type(screen.getByLabelText(/Email di riferimento/i), "info@example.org");
     await user.click(screen.getByRole("button", { name: /Aggiungi un'altra email/i }));
@@ -252,6 +256,7 @@ describe("StructureCreatePage", () => {
       land_area_m2: null,
       water_sources: null,
       fire_policy: null,
+      flood_risk: "medium",
       altitude: 350,
       contact_emails: ["info@example.org", "booking@example.org"],
       open_periods: []
@@ -553,7 +558,7 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(screen.getByLabelText(/Acqua calda disponibile/i), "No");
 
     await user.type(screen.getByLabelText(/Superficie esterna/i), "1.500");
-    await user.click(screen.getByRole("checkbox", { name: /Fontana/i }));
+    await user.click(screen.getByRole("checkbox", { name: /Nessuno/i }));
     await user.click(screen.getByRole("checkbox", { name: /Rubinetto/i }));
     await user.selectOptions(screen.getByLabelText(/Regole per i fuochi/i), "Consentiti");
     await user.selectOptions(

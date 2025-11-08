@@ -496,6 +496,15 @@
         "inAreaProtettaHint": "Usa le opzioni Sì/No/Non specificato per indicare se la struttura ricade in un parco o area tutelata.",
         "enteAreaProtetta": "Ente dell'area protetta",
         "enteAreaProtettaHint": "Inserisci l'ente gestore o di riferimento se applicabile.",
+        "floodRisk": "Rischio alluvionale",
+        "floodRiskPlaceholder": "Seleziona il livello",
+        "floodRiskHint": "Indica il livello di rischio idraulico dell'area, se disponibile.",
+        "floodRiskOptions": {
+          "none": "Nessuno",
+          "low": "Basso",
+          "medium": "Medio",
+          "high": "Alto"
+        },
         "environmentalNotes": "Note ambientali",
         "environmentalNotesHint": "Aggiungi informazioni su vincoli ambientali, buone pratiche o attenzioni particolari.",
         "seasonalAmenities": {
@@ -513,7 +522,7 @@
         "notesLogisticsHint": "Indica istruzioni operative (chiavi, accessi, limitazioni) utili per i capi.",
         "advancedMetadata": {
           "label": "Metadati aggiuntivi (JSON)",
-          "placeholder": "{\n  \"municipality\": \"Comune\",\n  \"flood_risk\": \"low\"\n}",
+          "placeholder": "{\n  \"generator_available\": true,\n  \"river_swimming\": \"si\"\n}",
           "hint": "Inserisci un oggetto JSON con coppie chiave/valore per campi non coperti dal modulo. I campi di sola lettura verranno ignorati.",
           "error": "Metadati avanzati non validi. Controlla che il contenuto sia un oggetto JSON."
         },
@@ -771,6 +780,13 @@
         "usageRulesFallback": "Nessuna regola specificata",
         "inAreaProtetta": "In area protetta",
         "enteAreaProtetta": "Ente area protetta",
+        "floodRisk": "Rischio alluvionale",
+        "floodRiskOptions": {
+          "none": "Nessuno",
+          "low": "Basso",
+          "medium": "Medio",
+          "high": "Alto"
+        },
         "environmentalNotes": "Note ambientali",
         "environmentalNotesFallback": "Nessuna nota ambientale specificata",
         "seasonalAmenities": "Servizi stagionali",
