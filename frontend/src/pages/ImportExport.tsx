@@ -126,7 +126,7 @@ export const ImportExportPage = () => {
     type: "" as "" | StructureType,
     season: "" as "" | Season,
     unit: "" as "" | Unit,
-    cost_band: "" as "" | CostBand
+    cost_band: "" as "" | CostBand,
   });
   const [eventFilters, setEventFilters] = useState({ from: "", to: "" });
   const [structureExportStatus, setStructureExportStatus] = useState<string | null>(null);
@@ -209,11 +209,18 @@ export const ImportExportPage = () => {
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = event.target;
-    setStructureFilters((previous) => ({ ...previous, [name]: value }));
+    clearStructureExportMessages();
+    const nextValue =
+      name === "province" ? value.toUpperCase().slice(0, 2) : value;
+    setStructureFilters((previous) => ({
+      ...previous,
+      [name]: nextValue,
+    }));
   };
 
   const handleEventFilterChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
+    clearEventsExportMessages();
     setEventFilters((previous) => ({ ...previous, [name]: value }));
   };
 
@@ -290,7 +297,9 @@ export const ImportExportPage = () => {
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = event.target.files?.[0] ?? null;
+      const input = event.currentTarget;
+      const selectedFile = input.files?.[0] ?? null;
+      input.value = "";
       setFile(selectedFile);
       setImportResult(null);
       setErrorMessage(null);
@@ -360,7 +369,9 @@ export const ImportExportPage = () => {
 
   const handleOpenPeriodsFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = event.target.files?.[0] ?? null;
+      const input = event.currentTarget;
+      const selectedFile = input.files?.[0] ?? null;
+      input.value = "";
       setOpenPeriodsFile(selectedFile);
       setOpenPeriodsResult(null);
       setOpenPeriodsErrorMessage(null);
@@ -429,398 +440,452 @@ export const ImportExportPage = () => {
   }, [openPeriodsFile, parseError]);
 
   return (
-    <section>
-      <div className="card">
-        <h1>{t("importExport.pageTitle")}</h1>
-
-        <section aria-labelledby="export-section-title" className="export-section">
-          <h2 id="export-section-title">{t("importExport.export.title")}</h2>
-          <div className="export-block">
-            <h3>{t("importExport.export.structures.title")}</h3>
-            <p>{t("importExport.export.structures.description")}</p>
-            <div className="grid">
-              <label>
-                <span>{t("importExport.export.structures.filters.q")}</span>
-                <input
-                  type="text"
-                  name="q"
-                  value={structureFilters.q}
-                  onChange={handleStructureFilterChange}
-                />
-              </label>
-              <label>
-                <span>{t("importExport.export.structures.filters.province")}</span>
-                <input
-                  type="text"
-                  name="province"
-                  value={structureFilters.province}
-                  onChange={handleStructureFilterChange}
-                  maxLength={2}
-                />
-              </label>
-              <label>
-                <span>{t("importExport.export.structures.filters.type")}</span>
-                <select
-                  name="type"
-                  value={structureFilters.type}
-                  onChange={handleStructureFilterChange}
-                >
-                  <option value="">{t("importExport.export.structures.filters.any")}</option>
-                  {structureTypeOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>{t("importExport.export.structures.filters.season")}</span>
-                <select
-                  name="season"
-                  value={structureFilters.season}
-                  onChange={handleStructureFilterChange}
-                >
-                  <option value="">{t("importExport.export.structures.filters.any")}</option>
-                  {seasonOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>{t("importExport.export.structures.filters.unit")}</span>
-                <select
-                  name="unit"
-                  value={structureFilters.unit}
-                  onChange={handleStructureFilterChange}
-                >
-                  <option value="">{t("importExport.export.structures.filters.any")}</option>
-                  {unitOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>{t("importExport.export.structures.filters.costBand")}</span>
-                <select
-                  name="cost_band"
-                  value={structureFilters.cost_band}
-                  onChange={handleStructureFilterChange}
-                >
-                  <option value="">{t("importExport.export.structures.filters.any")}</option>
-                  {costBandOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            {structureExportError && <p className="error">{structureExportError}</p>}
-            {structureExportStatus && <p className="success">{structureExportStatus}</p>}
-            <div className="actions export-actions">
-              <button
-                type="button"
-                className="button ghost"
-                onClick={() => handleStructureExport("csv")}
-                disabled={structureExportLoading}
-              >
-                {structureExportLoading
-                  ? t("common.loading")
-                  : t("importExport.export.structures.actions.csv")}
-              </button>
-              <button
-                type="button"
-                className="button ghost"
-                onClick={() => handleStructureExport("xlsx")}
-                disabled={structureExportLoading}
-              >
-                {structureExportLoading
-                  ? t("common.loading")
-                  : t("importExport.export.structures.actions.xlsx")}
-              </button>
-              <button
-                type="button"
-                className="button ghost"
-                onClick={() => handleStructureExport("json")}
-                disabled={structureExportLoading}
-              >
-                {structureExportLoading
-                  ? t("common.loading")
-                  : t("importExport.export.structures.actions.json")}
-              </button>
-            </div>
+    <section className="import-export">
+      <div className="card import-export__card">
+        <header className="import-export__header">
+          <div>
+            <h1>{t("importExport.pageTitle")}</h1>
+            <p className="muted">{t("importExport.pageDescription")}</p>
           </div>
-          <div className="export-block">
-            <h3>{t("importExport.export.events.title")}</h3>
-            <p>{t("importExport.export.events.description")}</p>
-            <div className="grid">
-              <label>
-                <span>{t("importExport.export.events.filters.from")}</span>
-                <input
-                  type="date"
-                  name="from"
-                  value={eventFilters.from}
-                  onChange={handleEventFilterChange}
-                />
-              </label>
-              <label>
-                <span>{t("importExport.export.events.filters.to")}</span>
-                <input
-                  type="date"
-                  name="to"
-                  value={eventFilters.to}
-                  onChange={handleEventFilterChange}
-                />
-              </label>
+        </header>
+
+        <section aria-labelledby="export-section-title" className="import-export__section">
+          <header className="section-header">
+            <div>
+              <h2 id="export-section-title">{t("importExport.export.title")}</h2>
+              <p className="muted">{t("importExport.export.description")}</p>
             </div>
-            {eventsExportError && <p className="error">{eventsExportError}</p>}
-            {eventsExportStatus && <p className="success">{eventsExportStatus}</p>}
-            <div className="actions export-actions">
-              <button
-                type="button"
-                className="button ghost"
-                onClick={() => handleEventsExport("csv")}
-                disabled={eventsExportLoading}
-              >
-                {eventsExportLoading
-                  ? t("common.loading")
-                  : t("importExport.export.events.actions.csv")}
-              </button>
-              <button
-                type="button"
-                className="button ghost"
-                onClick={() => handleEventsExport("xlsx")}
-                disabled={eventsExportLoading}
-              >
-                {eventsExportLoading
-                  ? t("common.loading")
-                  : t("importExport.export.events.actions.xlsx")}
-              </button>
-              <button
-                type="button"
-                className="button ghost"
-                onClick={() => handleEventsExport("json")}
-                disabled={eventsExportLoading}
-              >
-                {eventsExportLoading
-                  ? t("common.loading")
-                  : t("importExport.export.events.actions.json")}
-              </button>
-            </div>
+          </header>
+
+          <div className="import-export__grid">
+            <article className="import-export__panel">
+              <header className="import-export__panel-header">
+                <h3>{t("importExport.export.structures.title")}</h3>
+                <p className="muted">{t("importExport.export.structures.description")}</p>
+              </header>
+              <div className="import-export__filters">
+                <label>
+                  <span>{t("importExport.export.structures.filters.q")}</span>
+                  <input
+                    type="text"
+                    name="q"
+                    value={structureFilters.q}
+                    onChange={handleStructureFilterChange}
+                  />
+                </label>
+                <label>
+                  <span>{t("importExport.export.structures.filters.province")}</span>
+                  <input
+                    type="text"
+                    name="province"
+                    value={structureFilters.province}
+                    onChange={handleStructureFilterChange}
+                    maxLength={2}
+                  />
+                </label>
+                <label>
+                  <span>{t("importExport.export.structures.filters.type")}</span>
+                  <select
+                    name="type"
+                    value={structureFilters.type}
+                    onChange={handleStructureFilterChange}
+                  >
+                    <option value="">{t("importExport.export.structures.filters.any")}</option>
+                    {structureTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>{t("importExport.export.structures.filters.season")}</span>
+                  <select
+                    name="season"
+                    value={structureFilters.season}
+                    onChange={handleStructureFilterChange}
+                  >
+                    <option value="">{t("importExport.export.structures.filters.any")}</option>
+                    {seasonOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>{t("importExport.export.structures.filters.unit")}</span>
+                  <select
+                    name="unit"
+                    value={structureFilters.unit}
+                    onChange={handleStructureFilterChange}
+                  >
+                    <option value="">{t("importExport.export.structures.filters.any")}</option>
+                    {unitOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>{t("importExport.export.structures.filters.costBand")}</span>
+                  <select
+                    name="cost_band"
+                    value={structureFilters.cost_band}
+                    onChange={handleStructureFilterChange}
+                  >
+                    <option value="">{t("importExport.export.structures.filters.any")}</option>
+                    {costBandOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {(structureExportError || structureExportStatus) && (
+                <div className="import-export__feedback" role="status" aria-live="polite">
+                  {structureExportError && <p className="error">{structureExportError}</p>}
+                  {structureExportStatus && <p className="success">{structureExportStatus}</p>}
+                </div>
+              )}
+              <div className="actions export-actions">
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => handleStructureExport("csv")}
+                  disabled={structureExportLoading}
+                >
+                  {structureExportLoading
+                    ? t("common.loading")
+                    : t("importExport.export.structures.actions.csv")}
+                </button>
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => handleStructureExport("xlsx")}
+                  disabled={structureExportLoading}
+                >
+                  {structureExportLoading
+                    ? t("common.loading")
+                    : t("importExport.export.structures.actions.xlsx")}
+                </button>
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => handleStructureExport("json")}
+                  disabled={structureExportLoading}
+                >
+                  {structureExportLoading
+                    ? t("common.loading")
+                    : t("importExport.export.structures.actions.json")}
+                </button>
+              </div>
+            </article>
+
+            <article className="import-export__panel">
+              <header className="import-export__panel-header">
+                <h3>{t("importExport.export.events.title")}</h3>
+                <p className="muted">{t("importExport.export.events.description")}</p>
+              </header>
+              <div className="import-export__filters">
+                <label>
+                  <span>{t("importExport.export.events.filters.from")}</span>
+                  <input
+                    type="date"
+                    name="from"
+                    value={eventFilters.from}
+                    onChange={handleEventFilterChange}
+                  />
+                </label>
+                <label>
+                  <span>{t("importExport.export.events.filters.to")}</span>
+                  <input
+                    type="date"
+                    name="to"
+                    value={eventFilters.to}
+                    onChange={handleEventFilterChange}
+                  />
+                </label>
+              </div>
+              {(eventsExportError || eventsExportStatus) && (
+                <div className="import-export__feedback" role="status" aria-live="polite">
+                  {eventsExportError && <p className="error">{eventsExportError}</p>}
+                  {eventsExportStatus && <p className="success">{eventsExportStatus}</p>}
+                </div>
+              )}
+              <div className="actions export-actions">
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => handleEventsExport("csv")}
+                  disabled={eventsExportLoading}
+                >
+                  {eventsExportLoading
+                    ? t("common.loading")
+                    : t("importExport.export.events.actions.csv")}
+                </button>
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => handleEventsExport("xlsx")}
+                  disabled={eventsExportLoading}
+                >
+                  {eventsExportLoading
+                    ? t("common.loading")
+                    : t("importExport.export.events.actions.xlsx")}
+                </button>
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => handleEventsExport("json")}
+                  disabled={eventsExportLoading}
+                >
+                  {eventsExportLoading
+                    ? t("common.loading")
+                    : t("importExport.export.events.actions.json")}
+                </button>
+              </div>
+            </article>
           </div>
         </section>
 
         {auth.user?.is_admin ? (
-          <section aria-labelledby="import-section-title" className="import-section">
-            <h2 id="import-section-title">{t("importExport.importTitle")}</h2>
-            <p>{t("importExport.importDescription")}</p>
-            <div className="import-block">
-              <h3>{t("importExport.structures.title")}</h3>
-              <p>{t("importExport.structures.description")}</p>
-              <div className="actions">
-                <a href="/api/v1/templates/structures.xlsx" className="button" download>
-                  {t("importExport.structures.downloadTemplateXlsx")}
-                </a>
-                <a href="/api/v1/templates/structures.csv" className="button" download>
-                  {t("importExport.structures.downloadTemplateCsv")}
-                </a>
+          <section aria-labelledby="import-section-title" className="import-export__section">
+            <header className="section-header">
+              <div>
+                <h2 id="import-section-title">{t("importExport.importTitle")}</h2>
+                <p className="muted">{t("importExport.importDescription")}</p>
               </div>
-              <label className="file-input">
-                <span>{t("importExport.structures.fileLabel")}</span>
-                <input type="file" accept=".xlsx,.csv" onChange={handleFileChange} />
-              </label>
-              {loading && <p>{t("importExport.structures.loading")}</p>}
-              {errorMessage && <p className="error">{errorMessage}</p>}
-              {preview && (
-                <div className="import-preview">
-                  <p>
-                    {t("importExport.structures.summary", {
-                      valid: preview.valid_rows,
-                      invalid: preview.invalid_rows,
-                    })}
-                  </p>
-                  {preview.errors.length > 0 && (
-                    <div>
-                      <h3>{t("importExport.errors.title")}</h3>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th scope="col">{t("importExport.errors.row")}</th>
-                            <th scope="col">{t("importExport.errors.field")}</th>
-                            <th scope="col">{t("importExport.errors.message")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {preview.errors.map((error) => (
-                            <tr key={`${error.row}-${error.field}`}>
-                              <td>{error.row}</td>
-                              <td>{error.field}</td>
-                              <td>{error.msg}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  {preview.preview.length > 0 && (
-                    <div>
-                      <h3>{t("importExport.preview.title")}</h3>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th scope="col">{t("importExport.preview.slug")}</th>
-                            <th scope="col">{t("importExport.preview.action")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {preview.preview.map((item) => (
-                            <tr key={item.slug}>
-                              <td>{item.slug}</td>
-                              <td>{t(`importExport.preview.actions.${item.action}`)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleImport}
-                    disabled={!file || hasBlockingErrors || loading}
-                  >
-                    {loading ? t("common.loading") : t("importExport.structures.actions.import")}
-                  </button>
+            </header>
+
+            <div className="import-export__grid">
+              <article className="import-export__panel">
+                <header className="import-export__panel-header">
+                  <h3>{t("importExport.structures.title")}</h3>
+                  <p className="muted">{t("importExport.structures.description")}</p>
+                </header>
+                <div className="import-export__panel-actions">
+                  <a href="/api/v1/templates/structures.xlsx" className="button" download>
+                    {t("importExport.structures.downloadTemplateXlsx")}
+                  </a>
+                  <a href="/api/v1/templates/structures.csv" className="button" download>
+                    {t("importExport.structures.downloadTemplateCsv")}
+                  </a>
                 </div>
-              )}
-              {importResult && (
-                <p className="success">
-                  {t("importExport.structures.success", {
-                    created: importResult.created,
-                    updated: importResult.updated,
-                    skipped: importResult.skipped,
-                  })}
-                </p>
-              )}
-            </div>
-            <div className="import-block">
-              <h3>{t("importExport.openPeriods.title")}</h3>
-              <p>{t("importExport.openPeriods.description")}</p>
-              <div className="actions">
-                <a
-                  href="/api/v1/templates/structure-open-periods.xlsx"
-                  className="button"
-                  download
-                >
-                  {t("importExport.openPeriods.downloadTemplateXlsx")}
-                </a>
-                <a
-                  href="/api/v1/templates/structure-open-periods.csv"
-                  className="button"
-                  download
-                >
-                  {t("importExport.openPeriods.downloadTemplateCsv")}
-                </a>
-              </div>
-              <label className="file-input">
-                <span>{t("importExport.openPeriods.fileLabel")}</span>
-                <input
-                  type="file"
-                  accept=".xlsx,.csv"
-                  onChange={handleOpenPeriodsFileChange}
-                />
-              </label>
-              {openPeriodsLoading && <p>{t("importExport.openPeriods.loading")}</p>}
-              {openPeriodsErrorMessage && <p className="error">{openPeriodsErrorMessage}</p>}
-              {openPeriodsPreview && (
-                <div className="import-preview">
-                  <p>
-                    {t("importExport.openPeriods.summary", {
-                      valid: openPeriodsPreview.valid_rows,
-                      invalid: openPeriodsPreview.invalid_rows,
-                      create: openPeriodsStats.create,
-                      skip: openPeriodsStats.skip,
-                    })}
-                  </p>
-                  {openPeriodsPreview.errors.length > 0 && (
-                    <div>
-                      <h3>{t("importExport.errors.title")}</h3>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th scope="col">{t("importExport.errors.row")}</th>
-                            <th scope="col">{t("importExport.errors.field")}</th>
-                            <th scope="col">{t("importExport.errors.message")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {openPeriodsPreview.errors.map((error) => (
-                            <tr key={`${error.row}-${error.field}`}>
-                              <td>{error.row}</td>
-                              <td>{error.field}</td>
-                              <td>{error.msg}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  {openPeriodsMissingSlugs.length > 0 && (
-                    <p className="error">
-                      {t("importExport.openPeriods.blockingMissing", {
-                        count: openPeriodsMissingSlugs.length,
-                        slugs: openPeriodsMissingSlugs.join(", "),
+                <label className="file-input">
+                  <span>{t("importExport.structures.fileLabel")}</span>
+                  <input type="file" accept=".xlsx,.csv" onChange={handleFileChange} />
+                </label>
+                {loading && <p>{t("importExport.structures.loading")}</p>}
+                {errorMessage && <p className="error">{errorMessage}</p>}
+                {preview && (
+                  <div className="import-preview" aria-live="polite">
+                    <p>
+                      {t("importExport.structures.summary", {
+                        valid: preview.valid_rows,
+                        invalid: preview.invalid_rows,
                       })}
                     </p>
-                  )}
-                  {openPeriodsPreview.preview.length > 0 && (
-                    <div>
-                      <h3>{t("importExport.preview.title")}</h3>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th scope="col">{t("importExport.preview.slug")}</th>
-                            <th scope="col">{t("importExport.preview.action")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {openPeriodsPreview.preview.map((item) => (
-                            <tr key={`${item.slug}-${item.action}`}>
-                              <td>{item.slug}</td>
-                              <td>{t(`importExport.preview.actions.${item.action}`)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    {preview.errors.length > 0 && (
+                      <div className="import-preview__section">
+                        <h3>{t("importExport.errors.title")}</h3>
+                        <div className="table-wrapper">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th scope="col">{t("importExport.errors.row")}</th>
+                                <th scope="col">{t("importExport.errors.field")}</th>
+                                <th scope="col">{t("importExport.errors.message")}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {preview.errors.map((error) => (
+                                <tr key={`${error.row}-${error.field}`}>
+                                  <td>{error.row}</td>
+                                  <td>{error.field}</td>
+                                  <td>{error.msg}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    {preview.preview.length > 0 && (
+                      <div className="import-preview__section">
+                        <h3>{t("importExport.preview.title")}</h3>
+                        <div className="table-wrapper">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th scope="col">{t("importExport.preview.slug")}</th>
+                                <th scope="col">{t("importExport.preview.action")}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {preview.preview.map((item) => (
+                                <tr key={`${item.slug}-${item.action}`}>
+                                  <td>{item.slug}</td>
+                                  <td>{t(`importExport.preview.actions.${item.action}`)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    <div className="import-preview__actions">
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={handleImport}
+                        disabled={!file || hasBlockingErrors || loading}
+                      >
+                        {loading
+                          ? t("common.loading")
+                          : t("importExport.structures.actions.import")}
+                      </button>
                     </div>
-                  )}
-                  {openPeriodsPreview.invalid_rows > 0 && (
-                    <p className="error">{t("importExport.openPeriods.blockingErrors")}</p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleOpenPeriodsImport}
-                    disabled={
-                      !openPeriodsFile || openPeriodsHasBlockingErrors || openPeriodsLoading
-                    }
+                  </div>
+                )}
+                {importResult && (
+                  <div className="import-export__feedback" role="status" aria-live="polite">
+                    <p className="success">
+                      {t("importExport.structures.success", {
+                        created: importResult.created,
+                        updated: importResult.updated,
+                        skipped: importResult.skipped,
+                      })}
+                    </p>
+                  </div>
+                )}
+              </article>
+
+              <article className="import-export__panel">
+                <header className="import-export__panel-header">
+                  <h3>{t("importExport.openPeriods.title")}</h3>
+                  <p className="muted">{t("importExport.openPeriods.description")}</p>
+                </header>
+                <div className="import-export__panel-actions">
+                  <a
+                    href="/api/v1/templates/structure-open-periods.xlsx"
+                    className="button"
+                    download
                   >
-                    {openPeriodsLoading
-                      ? t("common.loading")
-                      : t("importExport.openPeriods.actions.import")}
-                  </button>
+                    {t("importExport.openPeriods.downloadTemplateXlsx")}
+                  </a>
+                  <a
+                    href="/api/v1/templates/structure-open-periods.csv"
+                    className="button"
+                    download
+                  >
+                    {t("importExport.openPeriods.downloadTemplateCsv")}
+                  </a>
                 </div>
-              )}
-              {openPeriodsResult && (
-                <p className="success">
-                  {t("importExport.openPeriods.success", {
-                    created: openPeriodsResult.created,
-                    skipped: openPeriodsResult.skipped,
-                  })}
-                </p>
-              )}
+                <label className="file-input">
+                  <span>{t("importExport.openPeriods.fileLabel")}</span>
+                  <input type="file" accept=".xlsx,.csv" onChange={handleOpenPeriodsFileChange} />
+                </label>
+                {openPeriodsLoading && <p>{t("importExport.openPeriods.loading")}</p>}
+                {openPeriodsErrorMessage && <p className="error">{openPeriodsErrorMessage}</p>}
+                {openPeriodsPreview && (
+                  <div className="import-preview" aria-live="polite">
+                    <p>
+                      {t("importExport.openPeriods.summary", {
+                        valid: openPeriodsPreview.valid_rows,
+                        invalid: openPeriodsPreview.invalid_rows,
+                        create: openPeriodsStats.create,
+                        skip: openPeriodsStats.skip,
+                      })}
+                    </p>
+                    {openPeriodsPreview.errors.length > 0 && (
+                      <div className="import-preview__section">
+                        <h3>{t("importExport.errors.title")}</h3>
+                        <div className="table-wrapper">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th scope="col">{t("importExport.errors.row")}</th>
+                                <th scope="col">{t("importExport.errors.field")}</th>
+                                <th scope="col">{t("importExport.errors.message")}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {openPeriodsPreview.errors.map((error) => (
+                                <tr key={`${error.row}-${error.field}`}>
+                                  <td>{error.row}</td>
+                                  <td>{error.field}</td>
+                                  <td>{error.msg}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    {openPeriodsMissingSlugs.length > 0 && (
+                      <p className="error">
+                        {t("importExport.openPeriods.blockingMissing", {
+                          count: openPeriodsMissingSlugs.length,
+                          slugs: openPeriodsMissingSlugs.join(", "),
+                        })}
+                      </p>
+                    )}
+                    {openPeriodsPreview.preview.length > 0 && (
+                      <div className="import-preview__section">
+                        <h3>{t("importExport.preview.title")}</h3>
+                        <div className="table-wrapper">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th scope="col">{t("importExport.preview.slug")}</th>
+                                <th scope="col">{t("importExport.preview.action")}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {openPeriodsPreview.preview.map((item) => (
+                                <tr key={`${item.slug}-${item.action}`}>
+                                  <td>{item.slug}</td>
+                                  <td>{t(`importExport.preview.actions.${item.action}`)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    {openPeriodsPreview.invalid_rows > 0 && (
+                      <p className="error">{t("importExport.openPeriods.blockingErrors")}</p>
+                    )}
+                    <div className="import-preview__actions">
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={handleOpenPeriodsImport}
+                        disabled={
+                          !openPeriodsFile || openPeriodsHasBlockingErrors || openPeriodsLoading
+                        }
+                      >
+                        {openPeriodsLoading
+                          ? t("common.loading")
+                          : t("importExport.openPeriods.actions.import")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {openPeriodsResult && (
+                  <div className="import-export__feedback" role="status" aria-live="polite">
+                    <p className="success">
+                      {t("importExport.openPeriods.success", {
+                        created: openPeriodsResult.created,
+                        skipped: openPeriodsResult.skipped,
+                      })}
+                    </p>
+                  </div>
+                )}
+              </article>
             </div>
           </section>
         ) : (

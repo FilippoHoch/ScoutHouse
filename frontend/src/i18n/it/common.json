@@ -143,10 +143,12 @@
   },
   "importExport": {
     "pageTitle": "Import/Export strutture ed eventi",
+    "pageDescription": "Gestisci esportazioni e import sempre aggiornati per strutture ed eventi.",
     "importTitle": "Import dataset",
     "importDescription": "Valida e carica i file CSV/XLSX con le strutture e i periodi di apertura.",
     "export": {
       "title": "Export",
+      "description": "Scarica i dataset aggiornati applicando i filtri disponibili.",
       "structures": {
         "title": "Strutture",
         "description": "Scarica l'elenco applicando filtri opzionali.",
