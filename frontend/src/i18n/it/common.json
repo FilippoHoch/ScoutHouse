@@ -273,6 +273,18 @@
         "province": "Provincia",
         "provincePlaceholder": "Es. MI",
         "provinceHint": "Usa il codice a due lettere (es. MI).",
+        "postalCode": "CAP",
+        "postalCodePlaceholder": "Es. 20121",
+        "postalCodeHint": "Inserisci il codice di avviamento postale, se conosciuto.",
+        "municipality": "Comune",
+        "municipalityPlaceholder": "Es. Milano",
+        "municipalityHint": "Indica il comune o la città di riferimento (opzionale).",
+        "locality": "Località / Frazione",
+        "localityPlaceholder": "Es. Frazione, località o quartiere",
+        "localityHint": "Aggiungi località, frazione o quartiere utili a chi deve raggiungere la struttura.",
+        "municipalityCode": "Codice ISTAT del comune",
+        "municipalityCodePlaceholder": "Es. F205",
+        "municipalityCodeHint": "Inserisci il codice ISTAT o catastale, se disponibile (facoltativo).",
         "address": "Indirizzo",
         "addressPlaceholder": "Via e numero civico, comune, eventuali indicazioni…",
         "addressHint": "Indica via, numero civico e località se disponibili.",
@@ -296,6 +308,13 @@
           "empty": "Fai clic sulla mappa per scegliere un punto e impostare automaticamente le coordinate.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
           "ariaLabel": "Mappa incorporata di Google per anteprima delle coordinate"
+        },
+        "geocoding": {
+          "searching": "Ricerca coordinate basata sull'indirizzo…",
+          "suggestion": "Coordinate suggerite per {{label}}",
+          "apply": "Usa coordinate suggerite",
+          "applied": "Coordinate aggiornate automaticamente dalle informazioni inserite.",
+          "error": "Impossibile suggerire le coordinate al momento."
         },
         "indoorActivityRooms": "Sale attività interne",
         "indoorActivityRoomsHint": "Numero di stanze interne utilizzabili per attività o riunioni.",
@@ -609,8 +628,8 @@
         "costOptionsAmountInvalid": "Inserisci importi validi maggiori di zero.",
         "costOptionsCurrencyInvalid": "La valuta deve contenere tre lettere.",
         "costOptionsExtraInvalid": "Inserisci importi validi maggiori o uguali a zero per caparra, tassa o utenze.",
-        "costOptionsTotalsInvalid": "Il totale minimo deve essere minore o uguale al totale massimo."
-        ,
+        "costOptionsTotalsInvalid": "Il totale minimo deve essere minore o uguale al totale massimo.",
+        "postalCodeInvalid": "Inserisci un CAP valido composto da lettere o numeri.",
         "costOptionsAdvancedInvalid": "I metadati avanzati delle opzioni di costo non sono validi. Inserisci un oggetto JSON."
       },
       "warnings": {
@@ -780,6 +799,14 @@
         "placeholder": "La mappa mostra la posizione indicativa della struttura su Google Maps.",
         "mapTitle": "Mappa di Google Maps per {{name}}",
         "mapAriaLabel": "Mappa incorporata di Google Maps per {{name}}",
+        "details": {
+          "address": "Indirizzo",
+          "locality": "Località / frazione",
+          "municipality": "Comune",
+          "postalCode": "CAP",
+          "province": "Provincia",
+          "country": "Paese"
+        },
         "unavailable": "Le coordinate non sono state specificate per questa struttura."
       },
       "openPeriods": {

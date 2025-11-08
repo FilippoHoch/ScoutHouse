@@ -44,6 +44,7 @@ def test_structures_flow() -> None:
         "name": "Scout Training Center",
         "slug": "scout-training-center",
         "province": "mi",
+        "postal_code": "20121",
         "type": "house",
         "address": "Via Scout 1, Milano",
         "latitude": 45.4642,
@@ -82,6 +83,7 @@ def test_structures_flow() -> None:
     assert create_resp.status_code == 201
     created = create_resp.json()
     assert created["province"] == "MI"
+    assert created["postal_code"] == "20121"
     assert created["latitude"] == pytest.approx(payload["latitude"], rel=1e-3)
     assert created["longitude"] == pytest.approx(payload["longitude"], rel=1e-3)
     assert created["altitude"] == pytest.approx(payload["altitude"], rel=1e-3)

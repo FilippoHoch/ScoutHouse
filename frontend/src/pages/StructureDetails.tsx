@@ -460,6 +460,49 @@ export const StructureDetailsPage = () => {
   const googleMapsEmbedAriaLabel = t("structures.details.location.mapAriaLabel", {
     name: mapDisplayName
   });
+  const locationDetails = useMemo(
+    () =>
+      [
+        {
+          label: t("structures.details.location.details.address"),
+          value: structure.address
+        },
+        {
+          label: t("structures.details.location.details.locality"),
+          value: structure.locality
+        },
+        {
+          label: t("structures.details.location.details.municipality"),
+          value: structure.municipality
+        },
+        {
+          label: t("structures.details.location.details.postalCode"),
+          value: structure.postal_code
+        },
+        {
+          label: t("structures.details.location.details.province"),
+          value: structure.province
+        },
+        {
+          label: t("structures.details.location.details.country"),
+          value: structure.country
+        }
+      ].filter((item) => {
+        if (item.value === null || item.value === undefined) {
+          return false;
+        }
+        return String(item.value).trim().length > 0;
+      }),
+    [
+      structure.address,
+      structure.locality,
+      structure.municipality,
+      structure.postal_code,
+      structure.province,
+      structure.country,
+      t
+    ]
+  );
   const kitchenLabel =
     structure.has_kitchen === true
       ? t("structures.details.overview.hasKitchen.yes")
@@ -1069,11 +1112,11 @@ export const StructureDetailsPage = () => {
             <h3 className="structure-details-card__title">
               {t("structures.details.location.title")}
             </h3>
-            <div
-              className="structure-details__map"
-              data-has-coordinates={hasCoordinates ? "true" : "false"}
-            >
-              {hasCoordinates ? (
+          <div
+            className="structure-details__map"
+            data-has-coordinates={hasCoordinates ? "true" : "false"}
+          >
+            {hasCoordinates ? (
                 <>
                   {googleMapsEmbedUrl && (
                     <iframe
@@ -1105,6 +1148,23 @@ export const StructureDetailsPage = () => {
                 </p>
               )}
             </div>
+            {locationDetails.length > 0 && (
+              <dl className="structure-details__location-list">
+                {locationDetails.map((detail) => (
+                  <div
+                    className="structure-details__location-list-item"
+                    key={detail.label}
+                  >
+                    <dt className="structure-details__location-label">
+                      {detail.label}
+                    </dt>
+                    <dd className="structure-details__location-value">
+                      {detail.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
             {googleMapsUrl && (
               <a
                 className="structure-details__map-link"

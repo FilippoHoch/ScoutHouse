@@ -850,6 +850,7 @@ def search_structures(
             slug=structure.slug,
             name=structure.name,
             province=structure.province,
+            postal_code=structure.postal_code,
             type=structure.type,
             address=structure.address,
             latitude=float(structure.latitude)

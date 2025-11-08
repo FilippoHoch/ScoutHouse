@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     gzip_min_length: int = Field(1024, alias="GZIP_MIN_LENGTH")
     redis_url: str = Field("redis://cache:6379/0", alias="REDIS_URL")
     rq_queue_name: str = Field("scouthouse", alias="RQ_QUEUE_NAME")
+    geocoding_base_url: str = Field(
+        "https://nominatim.openstreetmap.org",
+        alias="GEOCODING_BASE_URL",
+    )
+    geocoding_user_agent: str = Field(
+        "ScoutHouse/0.2 (+https://scouthouse.local)",
+        alias="GEOCODING_USER_AGENT",
+    )
     s3_endpoint: str | None = Field(default=None, alias="S3_ENDPOINT")
     s3_bucket: str | None = Field(default=None, alias="S3_BUCKET")
     s3_access_key: str | None = Field(default=None, alias="S3_ACCESS_KEY")

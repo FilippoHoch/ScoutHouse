@@ -203,6 +203,7 @@ export interface Structure {
   municipality: string | null;
   municipality_code: string | null;
   locality: string | null;
+  postal_code: string | null;
   address: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -330,6 +331,7 @@ export interface StructureCreateDto {
   municipality?: string | null;
   municipality_code?: string | null;
   locality?: string | null;
+  postal_code?: string | null;
   address?: string;
   latitude?: number;
   longitude?: number;
@@ -447,6 +449,7 @@ export interface StructureSearchItem {
   slug: string;
   name: string;
   province: string | null;
+  postal_code: string | null;
   address: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -484,6 +487,23 @@ export interface StructureSearchResponse {
     lat: number;
     lon: number;
   };
+}
+
+export interface GeocodingAddress {
+  street: string | null;
+  house_number: string | null;
+  locality: string | null;
+  municipality: string | null;
+  province: string | null;
+  postal_code: string | null;
+  country: string | null;
+}
+
+export interface GeocodingResult {
+  latitude: number;
+  longitude: number;
+  label: string;
+  address: GeocodingAddress | null;
 }
 
 export type StructureImportSourceFormat = "csv" | "xlsx";

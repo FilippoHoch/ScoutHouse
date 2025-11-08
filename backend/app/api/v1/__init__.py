@@ -5,6 +5,7 @@ from . import (
     auth,
     events,
     export,
+    geocoding,
     health,
     imports,
     mail,
@@ -21,6 +22,7 @@ api_router.include_router(auth.router)
 api_router.include_router(attachments.router, tags=["attachments"])
 api_router.include_router(imports.router, prefix="/import", tags=["import"])
 api_router.include_router(templates.router, prefix="/templates", tags=["templates"])
+api_router.include_router(geocoding.router)
 api_router.include_router(structures.router, prefix="/structures", tags=["structures"])
 api_router.include_router(events.router, prefix="/events", tags=["events"])
 api_router.include_router(quotes.router, tags=["quotes"])
