@@ -27,7 +27,6 @@ import {
   upsertStructureCostOptions
 } from "../shared/api";
 import {
-  AnimalPolicy,
   CostModel,
   Contact,
   ContactCreateDto,
@@ -86,12 +85,6 @@ const operationalStatusOptions: StructureOperationalStatus[] = [
   "temporarily_closed",
   "permanently_closed"
 ];
-const animalPolicyOptions: AnimalPolicy[] = [
-  "allowed",
-  "allowed_on_request",
-  "forbidden"
-];
-
 type FieldErrorKey =
   | "name"
   | "province"
@@ -314,8 +307,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
   const [allowedAudiences, setAllowedAudiences] = useState<string[]>([""]);
   const [usageRules, setUsageRules] = useState("");
-  const [animalPolicy, setAnimalPolicy] = useState<AnimalPolicy | "">("");
-  const [animalPolicyNotes, setAnimalPolicyNotes] = useState("");
+  
   const [inAreaProtetta, setInAreaProtetta] = useState<boolean | null>(null);
   const [enteAreaProtetta, setEnteAreaProtetta] = useState("");
   const [environmentalNotes, setEnvironmentalNotes] = useState("");
@@ -1188,16 +1180,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handleAnimalPolicyChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setAnimalPolicy(event.target.value as AnimalPolicy | "");
-    setApiError(null);
-  };
-
-  const handleAnimalPolicyNotesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setAnimalPolicyNotes(event.target.value);
-    setApiError(null);
-  };
-
   const handleInAreaProtettaChange = (value: boolean | null) => {
     setInAreaProtetta(value);
     setApiError(null);
@@ -1401,8 +1383,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         : [""];
     setAllowedAudiences(audiences);
     setUsageRules(existingStructure.usage_rules ?? "");
-    setAnimalPolicy(existingStructure.animal_policy ?? "");
-    setAnimalPolicyNotes(existingStructure.animal_policy_notes ?? "");
     setInAreaProtetta(toTriState(existingStructure.in_area_protetta));
     setEnteAreaProtetta(existingStructure.ente_area_protetta ?? "");
     setEnvironmentalNotes(existingStructure.environmental_notes ?? "");
@@ -1916,7 +1896,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedNotesLogistics = notesLogistics.trim();
     const trimmedNotes = notes.trim();
     const trimmedUsageRules = usageRules.trim();
-    const trimmedAnimalPolicyNotes = animalPolicyNotes.trim();
     const trimmedEnteAreaProtetta = enteAreaProtetta.trim();
     const trimmedEnvironmentalNotes = environmentalNotes.trim();
     const trimmedCostOptions = costOptions.map((option) => ({
@@ -2080,8 +2059,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.usage_rules = null;
     }
 
-    payload.animal_policy = animalPolicy ? (animalPolicy as AnimalPolicy) : null;
-    payload.animal_policy_notes = trimmedAnimalPolicyNotes || null;
     payload.in_area_protetta = inAreaProtetta;
     payload.ente_area_protetta = trimmedEnteAreaProtetta || null;
     payload.environmental_notes = trimmedEnvironmentalNotes || null;
@@ -2416,8 +2393,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const allowedAudiencesHintId = "structure-allowed-audiences-hint";
   const allowedAudiencesDescribedBy = allowedAudiencesHintId;
   const usageRulesHintId = "structure-usage-rules-hint";
-  const animalPolicyHintId = "structure-animal-policy-hint";
-  const animalPolicyNotesHintId = "structure-animal-policy-notes-hint";
   const inAreaProtettaHintId = "structure-in-area-protetta-hint";
   const enteAreaProtettaHintId = "structure-ente-area-protetta-hint";
   const environmentalNotesHintId = "structure-environmental-notes-hint";
@@ -3489,46 +3464,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </label>
                   <span className="helper-text" id={usageRulesHintId}>
                     {t("structures.create.form.usageRulesHint")}
-                  </span>
-                </div>
-
-                <div className="structure-form-field">
-                  <label htmlFor="structure-animal-policy">
-                    {t("structures.create.form.animalPolicy")}
-                    <select
-                      id="structure-animal-policy"
-                      value={animalPolicy}
-                      onChange={handleAnimalPolicyChange}
-                      aria-describedby={animalPolicyHintId}
-                    >
-                      <option value="">
-                        {t("structures.create.form.animalPolicyPlaceholder")}
-                      </option>
-                      {animalPolicyOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {t(`structures.create.form.animalPolicyOptions.${option}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <span className="helper-text" id={animalPolicyHintId}>
-                    {t("structures.create.form.animalPolicyHint")}
-                  </span>
-                </div>
-
-                <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-animal-policy-notes">
-                    {t("structures.create.form.animalPolicyNotes")}
-                    <textarea
-                      id="structure-animal-policy-notes"
-                      value={animalPolicyNotes}
-                      onChange={handleAnimalPolicyNotesChange}
-                      rows={3}
-                      aria-describedby={animalPolicyNotesHintId}
-                    />
-                  </label>
-                  <span className="helper-text" id={animalPolicyNotesHintId}>
-                    {t("structures.create.form.animalPolicyNotesHint")}
                   </span>
                 </div>
 

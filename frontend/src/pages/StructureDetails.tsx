@@ -19,7 +19,6 @@ import type {
   CostOption,
   CostBand,
   FirePolicy,
-  AnimalPolicy,
   FieldSlope,
   Structure,
   StructureOpenPeriod,
@@ -172,13 +171,6 @@ export const StructureDetailsPage = () => {
       return null;
     }
     return t(`structures.create.form.fieldSlopeOptions.${value}`);
-  };
-
-  const formatAnimalPolicy = (policy: AnimalPolicy | null | undefined) => {
-    if (!policy) {
-      return null;
-    }
-    return t(`structures.create.form.animalPolicyOptions.${policy}`);
   };
 
   const formatAllowedAudiences = (audiences: string[] | null | undefined) => {
@@ -705,22 +697,6 @@ export const StructureDetailsPage = () => {
         "structures.details.overview.usageRulesFallback"
       ),
       icon: "📘",
-      isFull: true
-    },
-    {
-      id: "animalPolicy",
-      label: t("structures.details.overview.animalPolicy"),
-      value: formatAnimalPolicy(structure.animal_policy),
-      icon: "🐾"
-    },
-    {
-      id: "animalPolicyNotes",
-      label: t("structures.details.overview.animalPolicyNotes"),
-      value: formatOptionalText(
-        structure.animal_policy_notes,
-        "structures.details.overview.animalPolicyNotesFallback"
-      ),
-      icon: "📝",
       isFull: true
     },
     {
