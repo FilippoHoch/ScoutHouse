@@ -42,6 +42,7 @@ const sampleStructure: Structure = {
   municipality: "Brescia",
   municipality_code: null,
   locality: null,
+  postal_code: null,
   address: "Via Roma 1",
   latitude: 45.6,
   longitude: 10.16,

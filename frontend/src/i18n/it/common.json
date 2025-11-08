@@ -271,9 +271,18 @@
         "province": "Provincia",
         "provincePlaceholder": "Es. MI",
         "provinceHint": "Usa il codice a due lettere (es. MI).",
+        "municipality": "Comune",
+        "municipalityPlaceholder": "Es. Milano",
+        "municipalityHint": "Indica il comune per migliorare la ricerca automatica delle coordinate.",
+        "locality": "Località / Frazione",
+        "localityPlaceholder": "Es. Località, frazione o zona",
+        "localityHint": "Opzionale: specifica località, frazione o riferimenti utili all'arrivo.",
+        "postalCode": "CAP",
+        "postalCodePlaceholder": "Es. 20121",
+        "postalCodeHint": "Il CAP aiuta a ridurre le ambiguità nella geolocalizzazione automatica.",
         "address": "Indirizzo",
         "addressPlaceholder": "Via e numero civico, comune, eventuali indicazioni…",
-        "addressHint": "Indica via, numero civico e località se disponibili.",
+        "addressHint": "Indica via, numero civico e dettagli utili: useremo queste informazioni per posizionare automaticamente la mappa.",
         "contactStatus": "Stato dei contatti",
         "contactStatusHint": "Indica il livello di aggiornamento dei contatti per aiutare lo staff a capire se serve un nuovo ingaggio.",
         "contactStatusOptions": {
@@ -299,10 +308,16 @@
         "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
         "map": {
           "title": "Anteprima su Google Maps",
-          "hint": "Fai clic sulla mappa per posizionare il segnaposto oppure inserisci manualmente le coordinate nei campi dedicati.",
+          "hint": "Completa i campi dell'indirizzo: proveremo a posizionare automaticamente il segnaposto, oppure clicca sulla mappa per scegliere il punto esatto.",
           "empty": "Fai clic sulla mappa per scegliere un punto e impostare automaticamente le coordinate.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
-          "ariaLabel": "Mappa incorporata di Google per anteprima delle coordinate"
+          "ariaLabel": "Mappa incorporata di Google per anteprima delle coordinate",
+          "geocoding": {
+            "searching": "Sto cercando le coordinate in base ai dati inseriti…",
+            "success": "Coordinate aggiornate automaticamente dai dati dell'indirizzo.",
+            "error": "Non è stato possibile ricavare le coordinate. Puoi inserirle o selezionarle manualmente.",
+            "noResults": "Non abbiamo trovato coordinate per i dati inseriti. Verifica l'indirizzo o aggiungi più informazioni."
+          }
         },
         "indoorActivityRooms": "Sale attività interne",
         "indoorActivityRoomsHint": "Numero di stanze interne utilizzabili per attività o riunioni.",

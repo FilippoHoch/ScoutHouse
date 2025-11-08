@@ -44,6 +44,10 @@ vi.mock("../../shared/api", async () => {
   };
 });
 
+vi.mock("../../shared/utils/geocoding", () => ({
+  geocodeAddress: vi.fn().mockResolvedValue(null)
+}));
+
 const createdStructure: Structure = {
   id: 1,
   name: "Base Bosco",
@@ -53,6 +57,7 @@ const createdStructure: Structure = {
   municipality: null,
   municipality_code: null,
   locality: null,
+  postal_code: null,
   address: "Via Bosco 1",
   latitude: 45.12,
   longitude: 9.12,
@@ -205,6 +210,7 @@ describe("StructureCreatePage", () => {
 
     await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.type(screen.getByLabelText(/Comune/i), "Brescia");
     await user.type(screen.getByLabelText(/Provincia/i), "bs");
     await user.type(screen.getByLabelText(/Altitudine/i), "350");
 
@@ -277,8 +283,7 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
 
     const advancedField = screen.getByLabelText(/Metadati aggiuntivi \(JSON\)/i);
-    const advancedValue =
-      '{"municipality":"Brescia","river_swimming":"si","id":123}';
+    const advancedValue = '{"river_swimming":"si","id":123}';
     fireEvent.change(advancedField, { target: { value: advancedValue } });
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));

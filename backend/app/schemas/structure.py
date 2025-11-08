@@ -167,6 +167,7 @@ class StructureBase(BaseModel):
     municipality: str | None = Field(default=None, max_length=255)
     municipality_code: str | None = Field(default=None, max_length=16)
     locality: str | None = Field(default=None, max_length=255)
+    postal_code: str | None = Field(default=None, max_length=16)
     address: str | None = None
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)

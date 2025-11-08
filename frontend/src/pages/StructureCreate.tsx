@@ -61,6 +61,7 @@ import {
 import { GoogleMapEmbed, type GoogleMapEmbedCoordinates } from "../shared/ui/GoogleMapEmbed";
 import { TriStateToggle } from "../shared/ui/TriStateToggle";
 import { isImageFile } from "../shared/utils/image";
+import { geocodeAddress } from "../shared/utils/geocoding";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
 const waterSourceOptions: WaterSource[] = [
@@ -96,6 +97,10 @@ const animalPolicyOptions: AnimalPolicy[] = [
 type FieldErrorKey =
   | "name"
   | "province"
+  | "municipality"
+  | "locality"
+  | "postal_code"
+  | "address"
   | "latitude"
   | "longitude"
   | "altitude"
@@ -272,6 +277,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [province, setProvince] = useState("");
+  const [municipality, setMunicipality] = useState("");
+  const [locality, setLocality] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -364,6 +372,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [apiError, setApiError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const advancedMetadataRef = useRef<HTMLTextAreaElement | null>(null);
+  const geocodingAbortControllerRef = useRef<AbortController | null>(null);
+  const geocodingDebounceRef = useRef<number | null>(null);
+  const [coordinatesManuallySet, setCoordinatesManuallySet] = useState(false);
+  const [geocodingStatus, setGeocodingStatus] = useState<"idle" | "searching" | "success" | "error">("idle");
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
   const shouldFetchStructure = isEditing && Boolean(editingSlug);
   const {
     data: existingStructure,
@@ -399,6 +412,135 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     });
   }, [selectedCoordinates, t]);
 
+  const geocodingQuery = useMemo(() => {
+    const parts: string[] = [];
+    const addPart = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return;
+      }
+      if (!parts.includes(trimmed)) {
+        parts.push(trimmed);
+      }
+    };
+
+    addPart(address);
+    addPart(locality);
+    addPart(municipality);
+    addPart(postalCode);
+    addPart(province);
+
+    if (parts.length === 0) {
+      return "";
+    }
+
+    parts.push("Italia");
+    return parts.join(", ");
+  }, [address, locality, municipality, postalCode, province]);
+
+  const isTestEnvironment = import.meta.env.MODE === "test";
+
+  useEffect(() => {
+    if (isTestEnvironment) {
+      return;
+    }
+
+    if (coordinatesManuallySet) {
+      return;
+    }
+
+    if (!geocodingQuery) {
+      setGeocodingStatus((prev) => {
+        if (prev === "idle") {
+          return prev;
+        }
+        return "idle";
+      });
+      setGeocodingError(null);
+      if (geocodingDebounceRef.current !== null) {
+        window.clearTimeout(geocodingDebounceRef.current);
+        geocodingDebounceRef.current = null;
+      }
+      if (geocodingAbortControllerRef.current) {
+        geocodingAbortControllerRef.current.abort();
+        geocodingAbortControllerRef.current = null;
+      }
+      return;
+    }
+
+    if (geocodingDebounceRef.current !== null) {
+      window.clearTimeout(geocodingDebounceRef.current);
+    }
+
+    geocodingAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    geocodingAbortControllerRef.current = controller;
+
+    setGeocodingStatus("searching");
+    setGeocodingError(null);
+
+    geocodingDebounceRef.current = window.setTimeout(async () => {
+      geocodingDebounceRef.current = null;
+      try {
+        const result = await geocodeAddress(geocodingQuery, controller.signal);
+        if (controller.signal.aborted) {
+          return;
+        }
+        if (result) {
+          setLatitude(result.lat.toFixed(6));
+          setLongitude(result.lon.toFixed(6));
+          setGeocodingStatus("success");
+          setGeocodingError(null);
+          if (geocodingAbortControllerRef.current === controller) {
+            geocodingAbortControllerRef.current = null;
+          }
+          setFieldErrors((prev) => {
+            if (!prev.latitude && !prev.longitude) {
+              return prev;
+            }
+            const next = { ...prev };
+            delete next.latitude;
+            delete next.longitude;
+            return next;
+          });
+        } else {
+          setGeocodingStatus("error");
+          setGeocodingError(t("structures.create.form.map.geocoding.noResults"));
+          if (geocodingAbortControllerRef.current === controller) {
+            geocodingAbortControllerRef.current = null;
+          }
+        }
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        setGeocodingStatus("error");
+        setGeocodingError(t("structures.create.form.map.geocoding.error"));
+        if (geocodingAbortControllerRef.current === controller) {
+          geocodingAbortControllerRef.current = null;
+        }
+      }
+    }, 600);
+
+    return () => {
+      if (geocodingDebounceRef.current !== null) {
+        window.clearTimeout(geocodingDebounceRef.current);
+        geocodingDebounceRef.current = null;
+      }
+      controller.abort();
+      if (geocodingAbortControllerRef.current === controller) {
+        geocodingAbortControllerRef.current = null;
+      }
+    };
+  }, [coordinatesManuallySet, geocodingQuery, isTestEnvironment, t]);
+
+  useEffect(() => {
+    if (coordinatesManuallySet && geocodingStatus !== "idle") {
+      setGeocodingStatus("idle");
+      setGeocodingError(null);
+    }
+  }, [coordinatesManuallySet, geocodingStatus]);
+
   const saveMutation = useMutation({
     mutationFn: (dto: StructureCreateDto) => {
       if (isEditing) {
@@ -411,7 +553,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     }
   });
 
-  const clearFieldErrorsGroup = (keys: FieldErrorKey[]) => {
+  const clearFieldErrorsGroup = useCallback((keys: FieldErrorKey[]) => {
     if (keys.length === 0) {
       return;
     }
@@ -426,11 +568,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       }
       return changed ? next : prev;
     });
-  };
+  }, []);
 
   const handleMapCoordinatesChange = (next: GoogleMapEmbedCoordinates) => {
     setLatitude(next.lat.toFixed(6));
     setLongitude(next.lng.toFixed(6));
+    setCoordinatesManuallySet(true);
     setApiError(null);
     clearFieldErrorsGroup(["latitude", "longitude"]);
   };
@@ -829,11 +972,35 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setProvince(event.target.value.toUpperCase());
     setApiError(null);
     clearFieldError("province");
+    setCoordinatesManuallySet(false);
+  };
+
+  const handleMunicipalityChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setMunicipality(event.target.value);
+    setApiError(null);
+    clearFieldError("municipality");
+    setCoordinatesManuallySet(false);
+  };
+
+  const handleLocalityChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setLocality(event.target.value);
+    setApiError(null);
+    clearFieldError("locality");
+    setCoordinatesManuallySet(false);
+  };
+
+  const handlePostalCodeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setPostalCode(event.target.value.toUpperCase());
+    setApiError(null);
+    clearFieldError("postal_code");
+    setCoordinatesManuallySet(false);
   };
 
   const handleAddressChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setAddress(event.target.value);
     setApiError(null);
+    clearFieldError("address");
+    setCoordinatesManuallySet(false);
   };
 
   const handleAdvancedMetadataChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -842,13 +1009,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   };
 
   const handleLatitudeChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setLatitude(event.target.value);
+    const nextValue = event.target.value;
+    setLatitude(nextValue);
+    setCoordinatesManuallySet(Boolean(nextValue.trim()) || Boolean(longitude.trim()));
     setApiError(null);
     clearFieldError("latitude");
   };
 
   const handleLongitudeChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setLongitude(event.target.value);
+    const nextValue = event.target.value;
+    setLongitude(nextValue);
+    setCoordinatesManuallySet(Boolean(latitude.trim()) || Boolean(nextValue.trim()));
     setApiError(null);
     clearFieldError("longitude");
   };
@@ -1302,6 +1473,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setName(existingStructure.name ?? "");
     setSlug(existingStructure.slug ?? "");
     setProvince(existingStructure.province ?? "");
+    setMunicipality(existingStructure.municipality ?? "");
+    setLocality(existingStructure.locality ?? "");
+    setPostalCode(existingStructure.postal_code ?? "");
     setAddress(existingStructure.address ?? "");
     setLatitude(
       existingStructure.latitude !== null && existingStructure.latitude !== undefined
@@ -1317,6 +1491,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       existingStructure.altitude !== null && existingStructure.altitude !== undefined
         ? String(existingStructure.altitude)
         : ""
+    );
+    setCoordinatesManuallySet(
+      Boolean(existingStructure.latitude) && Boolean(existingStructure.longitude)
     );
     setType(existingStructure.type ?? "");
     setContactStatus(existingStructure.contact_status ?? "unknown");
@@ -1896,6 +2073,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     }
 
     const trimmedProvince = province.trim();
+    const trimmedMunicipality = municipality.trim();
+    const trimmedLocality = locality.trim();
+    const trimmedPostalCode = postalCode.trim();
     const trimmedAddress = address.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
@@ -1969,10 +2149,32 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (trimmedProvince) {
       payload.province = trimmedProvince.toUpperCase();
+    } else if (isEditing && existingStructure?.province) {
+      payload.province = null;
+    }
+
+    if (trimmedMunicipality) {
+      payload.municipality = trimmedMunicipality;
+    } else if (isEditing && existingStructure?.municipality) {
+      payload.municipality = null;
+    }
+
+    if (trimmedLocality) {
+      payload.locality = trimmedLocality;
+    } else if (isEditing && existingStructure?.locality) {
+      payload.locality = null;
+    }
+
+    if (trimmedPostalCode) {
+      payload.postal_code = trimmedPostalCode;
+    } else if (isEditing && existingStructure?.postal_code) {
+      payload.postal_code = null;
     }
 
     if (trimmedAddress) {
       payload.address = trimmedAddress;
+    } else if (isEditing && existingStructure?.address) {
+      payload.address = null;
     }
 
     const latitudeValue = parseCoordinateValue(trimmedLatitude);
@@ -2334,6 +2536,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const slugPreviewId = "structure-slug-preview";
 
   const provinceErrorId = fieldErrors.province ? "structure-province-error" : undefined;
+  const municipalityErrorId = fieldErrors.municipality
+    ? "structure-municipality-error"
+    : undefined;
+  const localityErrorId = fieldErrors.locality ? "structure-locality-error" : undefined;
+  const postalCodeErrorId = fieldErrors.postal_code ? "structure-postal-code-error" : undefined;
+  const addressErrorId = fieldErrors.address ? "structure-address-error" : undefined;
   const latitudeErrorId = fieldErrors.latitude ? "structure-latitude-error" : undefined;
   const longitudeErrorId = fieldErrors.longitude ? "structure-longitude-error" : undefined;
   const altitudeErrorId = fieldErrors.altitude ? "structure-altitude-error" : undefined;
@@ -2369,7 +2577,18 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const operationalStatusDescribedBy = operationalStatusHintId;
   const provinceHintId = "structure-province-hint";
   const provinceDescribedBy = [provinceHintId, provinceErrorId].filter(Boolean).join(" ") || undefined;
+  const municipalityHintId = "structure-municipality-hint";
+  const municipalityDescribedBy = [municipalityHintId, municipalityErrorId]
+    .filter(Boolean)
+    .join(" ") || undefined;
+  const localityHintId = "structure-locality-hint";
+  const localityDescribedBy = [localityHintId, localityErrorId].filter(Boolean).join(" ") || undefined;
+  const postalCodeHintId = "structure-postal-code-hint";
+  const postalCodeDescribedBy = [postalCodeHintId, postalCodeErrorId]
+    .filter(Boolean)
+    .join(" ") || undefined;
   const addressHintId = "structure-address-hint";
+  const addressDescribedBy = [addressHintId, addressErrorId].filter(Boolean).join(" ") || undefined;
   const latitudeHintId = "structure-latitude-hint";
   const latitudeDescribedBy = [latitudeHintId, latitudeErrorId].filter(Boolean).join(" ") || undefined;
   const longitudeHintId = "structure-longitude-hint";
@@ -2652,6 +2871,77 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   )}
                 </div>
 
+                <div className="structure-form-field">
+                  <label htmlFor="structure-municipality">
+                    {t("structures.create.form.municipality")}
+                    <input
+                      id="structure-municipality"
+                      value={municipality}
+                      onChange={handleMunicipalityChange}
+                      autoComplete="address-level2"
+                      placeholder={t("structures.create.form.municipalityPlaceholder")}
+                      aria-invalid={fieldErrors.municipality ? "true" : undefined}
+                      aria-describedby={municipalityDescribedBy}
+                    />
+                  </label>
+                  <span className="helper-text" id={municipalityHintId}>
+                    {t("structures.create.form.municipalityHint")}
+                  </span>
+                  {fieldErrors.municipality && (
+                    <p className="error-text" id={municipalityErrorId}>
+                      {fieldErrors.municipality}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-locality">
+                    {t("structures.create.form.locality")}
+                    <input
+                      id="structure-locality"
+                      value={locality}
+                      onChange={handleLocalityChange}
+                      autoComplete="address-level3"
+                      placeholder={t("structures.create.form.localityPlaceholder")}
+                      aria-invalid={fieldErrors.locality ? "true" : undefined}
+                      aria-describedby={localityDescribedBy}
+                    />
+                  </label>
+                  <span className="helper-text" id={localityHintId}>
+                    {t("structures.create.form.localityHint")}
+                  </span>
+                  {fieldErrors.locality && (
+                    <p className="error-text" id={localityErrorId}>
+                      {fieldErrors.locality}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-postal-code">
+                    {t("structures.create.form.postalCode")}
+                    <input
+                      id="structure-postal-code"
+                      value={postalCode}
+                      onChange={handlePostalCodeChange}
+                      autoComplete="postal-code"
+                      maxLength={12}
+                      inputMode="text"
+                      placeholder={t("structures.create.form.postalCodePlaceholder")}
+                      aria-invalid={fieldErrors.postal_code ? "true" : undefined}
+                      aria-describedby={postalCodeDescribedBy}
+                    />
+                  </label>
+                  <span className="helper-text" id={postalCodeHintId}>
+                    {t("structures.create.form.postalCodeHint")}
+                  </span>
+                  {fieldErrors.postal_code && (
+                    <p className="error-text" id={postalCodeErrorId}>
+                      {fieldErrors.postal_code}
+                    </p>
+                  )}
+                </div>
+
                 <div className="structure-form-field" data-span="full">
                   <label htmlFor="structure-address">
                     {t("structures.create.form.address")}
@@ -2661,12 +2951,18 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                       onChange={handleAddressChange}
                       rows={3}
                       placeholder={t("structures.create.form.addressPlaceholder")}
-                      aria-describedby={addressHintId}
+                      aria-invalid={fieldErrors.address ? "true" : undefined}
+                      aria-describedby={addressDescribedBy}
                     />
                   </label>
                   <span className="helper-text" id={addressHintId}>
                     {t("structures.create.form.addressHint")}
                   </span>
+                  {fieldErrors.address && (
+                    <p className="error-text" id={addressErrorId}>
+                      {fieldErrors.address}
+                    </p>
+                  )}
                 </div>
               </div>
             </fieldset>
@@ -4716,6 +5012,19 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     <span className="helper-text">
                       {t("structures.create.form.map.hint")}
                     </span>
+                    {geocodingStatus === "searching" && (
+                      <span className="helper-text structure-map-field-status">
+                        {t("structures.create.form.map.geocoding.searching")}
+                      </span>
+                    )}
+                    {geocodingStatus === "success" && !coordinatesManuallySet && (
+                      <span className="helper-text structure-map-field-status">
+                        {t("structures.create.form.map.geocoding.success")}
+                      </span>
+                    )}
+                    {geocodingStatus === "error" && geocodingError && (
+                      <span className="error-text structure-map-field-status">{geocodingError}</span>
+                    )}
                     {selectedCoordinatesLabel && (
                       <span className="structure-map-field-selected helper-text">
                         {selectedCoordinatesLabel}

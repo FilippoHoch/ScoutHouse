@@ -1629,6 +1629,10 @@ table tbody tr:hover {
   font-size: 0.9rem;
 }
 
+.structure-map-field-status {
+  display: block;
+}
+
 .structure-open-periods-table th,
 .structure-open-periods-table td {
   padding: 0.75rem;

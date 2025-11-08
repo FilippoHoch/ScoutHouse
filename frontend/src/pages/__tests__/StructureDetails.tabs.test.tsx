@@ -38,6 +38,7 @@ const structureWithDetails: Structure = {
   municipality: null,
   municipality_code: null,
   locality: null,
+  postal_code: null,
   address: null,
   latitude: null,
   longitude: null,

@@ -146,6 +146,7 @@ class Structure(Base):
     municipality: Mapped[str | None] = mapped_column(String(255), nullable=True)
     municipality_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
     locality: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    postal_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
     latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)

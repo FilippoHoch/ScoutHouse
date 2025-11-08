@@ -204,6 +204,7 @@ export interface Structure {
   municipality: string | null;
   municipality_code: string | null;
   locality: string | null;
+  postal_code: string | null;
   address: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -327,10 +328,11 @@ export interface StructureCreateDto {
   name: string;
   slug: string;
   country?: string;
-  province?: string;
+  province?: string | null;
   municipality?: string | null;
   municipality_code?: string | null;
   locality?: string | null;
+  postal_code?: string | null;
   address?: string;
   latitude?: number;
   longitude?: number;
