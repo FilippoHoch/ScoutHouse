@@ -139,17 +139,19 @@ export const AdminPage = () => {
   }, [auth.user?.is_admin, loadUsers]);
 
   const selectedUser = useMemo(
-    () => users.find((user) => user.id === selectedUserId) ?? null,
+    () =>
+      users.find((user) => String(user.id) === selectedUserId) ?? null,
     [selectedUserId, users]
   );
 
   useEffect(() => {
     if (!selectedUser && users.length > 0) {
       setSelectedUserId((previous) => {
-        if (previous && users.some((user) => user.id === previous)) {
+        if (previous && users.some((user) => String(user.id) === previous)) {
           return previous;
         }
-        return users[0]?.id ?? null;
+        const first = users[0]?.id;
+        return first != null ? String(first) : null;
       });
       return;
     }
@@ -199,7 +201,7 @@ export const AdminPage = () => {
         is_active: true
       });
       await loadUsers();
-      setSelectedUserId(created.id);
+      setSelectedUserId(String(created.id));
     } catch (error) {
       setCreateError(parseApiError(error, t("admin.users.errors.create")));
     } finally {
@@ -250,7 +252,7 @@ export const AdminPage = () => {
         return;
       }
 
-      const updated = await updateUser(selectedUser.id, payload);
+      const updated = await updateUser(String(selectedUser.id), payload);
       setEditStatus(t("admin.users.updateSuccess", { name: updated.name }));
       await loadUsers();
     } catch (error) {
@@ -351,7 +353,7 @@ export const AdminPage = () => {
                       <button
                         type="button"
                         className="button small"
-                        onClick={() => setSelectedUserId(user.id)}
+                        onClick={() => setSelectedUserId(String(user.id))}
                       >
                         {t("admin.users.editAction")}
                       </button>
