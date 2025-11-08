@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -41,6 +41,7 @@ export const AdminPage = () => {
   const [editForm, setEditForm] = useState<UserFormState | null>(null);
   const [editStatus, setEditStatus] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [shouldFocusEditForm, setShouldFocusEditForm] = useState(false);
   const [createForm, setCreateForm] = useState<UserFormState>({
     name: "",
     email: "",
@@ -52,6 +53,8 @@ export const AdminPage = () => {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const editCardRef = useRef<HTMLDivElement | null>(null);
+  const editNameInputRef = useRef<HTMLInputElement | null>(null);
 
   const templates = useMemo(
     () =>
@@ -166,10 +169,22 @@ export const AdminPage = () => {
       });
       setEditStatus(null);
       setEditError(null);
+      if (shouldFocusEditForm) {
+        setShouldFocusEditForm(false);
+        window.setTimeout(() => {
+          editCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          editNameInputRef.current?.focus();
+        }, 0);
+      }
     } else {
       setEditForm(null);
     }
-  }, [selectedUser, users]);
+  }, [selectedUser, shouldFocusEditForm, users]);
+
+  const handleSelectUser = (userId: string) => {
+    setSelectedUserId(userId);
+    setShouldFocusEditForm(true);
+  };
 
   const handleCreateChange = (field: keyof UserFormState, value: string | boolean) => {
     setCreateForm((previous) => ({
@@ -201,7 +216,7 @@ export const AdminPage = () => {
         is_active: true
       });
       await loadUsers();
-      setSelectedUserId(String(created.id));
+      handleSelectUser(String(created.id));
     } catch (error) {
       setCreateError(parseApiError(error, t("admin.users.errors.create")));
     } finally {
@@ -353,7 +368,7 @@ export const AdminPage = () => {
                       <button
                         type="button"
                         className="button small"
-                        onClick={() => setSelectedUserId(String(user.id))}
+                        onClick={() => handleSelectUser(String(user.id))}
                       >
                         {t("admin.users.editAction")}
                       </button>
@@ -419,7 +434,7 @@ export const AdminPage = () => {
           </button>
         </form>
       </div>
-      <div className="card">
+      <div className="card" ref={editCardRef}>
         <h2>{t("admin.users.editTitle")}</h2>
         {editError && <p className="error">{editError}</p>}
         {editStatus && <p className="success">{editStatus}</p>}
@@ -431,6 +446,7 @@ export const AdminPage = () => {
                 type="text"
                 value={editForm.name}
                 onChange={(event) => handleEditChange("name", event.target.value)}
+                ref={editNameInputRef}
                 required
               />
             </label>
