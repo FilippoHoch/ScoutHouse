@@ -339,12 +339,22 @@ impediscono il commit e vengono restituiti con l'indicazione della sorgente
 ## POST `/api/v1/structures/`
 
 Create a new structure. Payload must include `name`, `slug`, `type` and may
-optionally include `province`, `address`, geographic coordinates, logistic
-metadata such as `indoor_beds`, `indoor_bathrooms`, `indoor_showers`,
-`indoor_activity_rooms`, `has_kitchen`, `hot_water`, outdoor accessibility flags
-(`access_by_car`, `access_by_coach`, `access_by_public_transport`),
-`pit_latrine_allowed`, `website_urls`, `notes_logistics`, free-form `notes`, and
-an array of `open_periods`. La creazione è riservata agli utenti amministratori
+optionally include the following groups of fields handled dalla UI di creazione
+e modifica:
+
+- Dati geografici: `province`, `address`, `latitude`, `longitude`, `altitude`.
+- Capacità indoor: `indoor_beds`, `indoor_bathrooms`, `indoor_showers`,
+  `indoor_activity_rooms`, flag `has_kitchen` e `hot_water`.
+- Sezioni outdoor/logistica: `land_area_m2`, `shelter_on_field`,
+  `water_sources` (array), `electricity_available`, `fire_policy`,
+  `has_field_poles`, `pit_latrine_allowed`.
+- Accessibilità: `access_by_car`, `access_by_coach`,
+  `access_by_public_transport`, `coach_turning_area`, `nearest_bus_stop`.
+- Operatività: `weekend_only`, `notes_logistics`, `notes`, insieme alle liste
+  pubbliche `contact_emails` e `website_urls`.
+- Periodi di apertura strutturati in `open_periods` (`season` o `range`).
+
+La creazione è riservata agli utenti amministratori
 salvo esplicita abilitazione del flag `ALLOW_NON_ADMIN_STRUCTURE_EDIT=true`, che
 estende il permesso anche agli altri utenti autenticati.
 
@@ -362,7 +372,10 @@ Validation rules:
   `false`, `1`, `0`) and default to `false`.
 - `open_periods` may include rows of `kind="season"` (richiede `season`) oppure
   `kind="range"` (richiede `date_start` e `date_end`).
-- `website_urls`, when provided, must only contain valid HTTP or HTTPS URLs.
+- `website_urls` e `contact_emails`, when provided, must only contain valid HTTP
+  or HTTPS URLs / indirizzi e-mail.
+
+Costi e listini vengono salvati con una chiamata separata `PUT /api/v1/structures/{id}/cost-options` che rimpiazza l'elenco esistente. La UI esegue questa chiamata subito dopo la creazione o la modifica della struttura.
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/structures/ \

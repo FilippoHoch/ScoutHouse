@@ -62,10 +62,10 @@ const sampleStructure: Structure = {
   indoor_rooms: null,
   has_kitchen: true,
   hot_water: true,
-  land_area_m2: null,
+  land_area_m2: 1200,
   field_slope: null,
-  shelter_on_field: false,
-  water_sources: null,
+  shelter_on_field: true,
+  water_sources: ["tap"],
   electricity_available: true,
   power_capacity_kw: null,
   power_outlets_count: null,
@@ -84,7 +84,7 @@ const sampleStructure: Structure = {
   nearest_bus_stop: "Fermata centro",
   bus_type_access: null,
   weekend_only: false,
-  has_field_poles: false,
+  has_field_poles: true,
   pit_latrine_allowed: false,
   dry_toilet: null,
   outdoor_bathrooms: null,
@@ -125,7 +125,7 @@ const sampleStructure: Structure = {
   notes_logistics: "Contattare il custode",
   logistics_arrival_notes: null,
   logistics_departure_notes: null,
-  notes: null,
+  notes: "Note generiche",
   data_source: null,
   data_source_url: null,
   data_last_verified: null,
@@ -217,6 +217,16 @@ describe("StructureDetailsPage", () => {
       alt: sampleStructure.altitude?.toFixed(0)
     });
     expect(screen.getByText(altitudeLabel)).toBeInTheDocument();
+    const landAreaLabel = i18n.t("structures.details.overview.landAreaValue", {
+      value: new Intl.NumberFormat("it-IT").format(sampleStructure.land_area_m2!)
+    });
+    expect(screen.getByText(landAreaLabel)).toBeInTheDocument();
+    expect(screen.getByText(/Cucina attrezzata disponibile/i)).toBeInTheDocument();
+    expect(screen.getByText(/Solo con autorizzazione/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rubinetto/i)).toBeInTheDocument();
+    expect(screen.getByText(/Fermata centro/i)).toBeInTheDocument();
+    expect(screen.getByText(/Contattare il custode/i)).toBeInTheDocument();
+    expect(screen.getByText(/Note generiche/i)).toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 
