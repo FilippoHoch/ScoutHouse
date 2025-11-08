@@ -115,26 +115,25 @@ export const StructureDetailsPage = () => {
     () => ({
       yes: t("structures.details.common.yes"),
       no: t("structures.details.common.no"),
-      notAvailable: t("structures.details.overview.notAvailable"),
     }),
     [t]
   );
 
   const formatBoolean = (value: boolean | null | undefined) => {
     if (value === null || value === undefined) {
-      return fallbackLabels.notAvailable;
+      return null;
     }
     return value ? fallbackLabels.yes : fallbackLabels.no;
   };
 
   const formatCount = (value: number | null | undefined) =>
     value === null || value === undefined
-      ? fallbackLabels.notAvailable
+      ? null
       : new Intl.NumberFormat("it-IT").format(value);
 
   const formatLandArea = (value: number | null | undefined) =>
     value === null || value === undefined
-      ? fallbackLabels.notAvailable
+      ? null
       : t("structures.details.overview.landAreaValue", {
           value: new Intl.NumberFormat("it-IT").format(value)
         });
@@ -147,14 +146,14 @@ export const StructureDetailsPage = () => {
       return value;
     }
     if (fallbackKey) {
-      return t(fallbackKey);
+      return null;
     }
-    return fallbackLabels.notAvailable;
+    return null;
   };
 
   const formatWaterSources = (sources: WaterSource[] | null | undefined) => {
     if (!sources || sources.length === 0) {
-      return t("structures.details.overview.waterSources.none");
+      return null;
     }
     return sources
       .map((source) => t(`structures.create.form.waterSourceOptions.${source}`))
@@ -163,28 +162,28 @@ export const StructureDetailsPage = () => {
 
   const formatFirePolicy = (policy: FirePolicy | null | undefined) => {
     if (!policy) {
-      return fallbackLabels.notAvailable;
+      return null;
     }
     return t(`structures.create.form.firePolicyOptions.${policy}`);
   };
 
   const formatFieldSlope = (value: FieldSlope | string | null | undefined) => {
     if (!value) {
-      return fallbackLabels.notAvailable;
+      return null;
     }
     return t(`structures.create.form.fieldSlopeOptions.${value}`);
   };
 
   const formatAnimalPolicy = (policy: AnimalPolicy | null | undefined) => {
     if (!policy) {
-      return fallbackLabels.notAvailable;
+      return null;
     }
     return t(`structures.create.form.animalPolicyOptions.${policy}`);
   };
 
   const formatAllowedAudiences = (audiences: string[] | null | undefined) => {
     if (!audiences || audiences.length === 0) {
-      return fallbackLabels.notAvailable;
+      return null;
     }
     return audiences.join(", ");
   };
@@ -193,7 +192,7 @@ export const StructureDetailsPage = () => {
     amenities: Record<string, unknown> | null | undefined
   ): ReactNode => {
     if (!amenities || Object.keys(amenities).length === 0) {
-      return fallbackLabels.notAvailable;
+      return null;
     }
     return (
       <ul className="structure-website-links">
@@ -208,6 +207,22 @@ export const StructureDetailsPage = () => {
       </ul>
     );
   };
+
+  const isValuePresent = (value: ReactNode) => {
+    if (value === null || value === undefined || value === false) {
+      return false;
+    }
+    if (typeof value === "string") {
+      return value.trim().length > 0;
+    }
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    return true;
+  };
+
+  const filterVisibleDetails = (items: LogisticsDetail[]): LogisticsDetail[] =>
+    items.filter(({ value }) => isValuePresent(value));
 
   const renderLogisticsDetails = (items: LogisticsDetail[]) => (
     <dl className="structure-logistics-grid">
@@ -371,7 +386,7 @@ export const StructureDetailsPage = () => {
       ? t("structures.details.overview.hasKitchen.yes")
       : structure.has_kitchen === false
         ? t("structures.details.overview.hasKitchen.no")
-        : fallbackLabels.notAvailable;
+        : null;
   const structureTypeLabel = structure.type
     ? t(`structures.types.${structure.type}`, { defaultValue: structure.type })
     : null;
@@ -391,7 +406,7 @@ export const StructureDetailsPage = () => {
       ? JSON.stringify(advancedMetadata, null, 2)
       : null;
 
-  const indoorDetails: LogisticsDetail[] = [
+  const indoorDetails: LogisticsDetail[] = filterVisibleDetails([
     {
       id: "kitchen",
       label: t("structures.details.overview.hasKitchen.label"),
@@ -428,9 +443,9 @@ export const StructureDetailsPage = () => {
       value: formatCount(structure.indoor_activity_rooms),
       icon: "🎯"
     }
-  ];
+  ]);
 
-  const outdoorDetails: LogisticsDetail[] = [
+  const outdoorDetails: LogisticsDetail[] = filterVisibleDetails([
     {
       id: "landArea",
       label: t("structures.details.overview.landArea"),
@@ -491,9 +506,9 @@ export const StructureDetailsPage = () => {
       value: formatFirePolicy(structure.fire_policy),
       icon: "🔥"
     }
-  ];
+  ]);
 
-  const accessibilityDetails: LogisticsDetail[] = [
+  const accessibilityDetails: LogisticsDetail[] = filterVisibleDetails([
     {
       id: "accessByCar",
       label: t("structures.details.overview.accessByCar"),
@@ -562,7 +577,7 @@ export const StructureDetailsPage = () => {
       icon: "ℹ️",
       isFull: true
     }
-  ];
+  ]);
 
   const websiteValue = structure.website_urls.length > 0
     ? (
@@ -576,9 +591,9 @@ export const StructureDetailsPage = () => {
           ))}
         </ul>
       )
-    : t("structures.details.overview.websiteFallback");
+    : null;
 
-  const operationsDetails: LogisticsDetail[] = [
+  const operationsDetails: LogisticsDetail[] = filterVisibleDetails([
     {
       id: "website",
       label: t("structures.details.overview.website"),
@@ -679,13 +694,20 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.advancedMetadata"),
       value: advancedMetadataJson ? (
         <pre className="structure-details__advanced-json">{advancedMetadataJson}</pre>
-      ) : (
-        t("structures.details.overview.advancedMetadataFallback")
-      ),
+      ) : null,
       icon: "🧩",
       isFull: true
     }
-  ];
+  ]);
+
+  const hasIndoorDetails = indoorDetails.length > 0;
+  const hasOutdoorDetails = outdoorDetails.length > 0;
+  const hasAccessibilityDetails = accessibilityDetails.length > 0;
+  const hasOperationsDetails = operationsDetails.length > 0;
+  const hasLogisticsDetails =
+    hasIndoorDetails || hasOutdoorDetails || hasAccessibilityDetails || hasOperationsDetails;
+  const hasOpenPeriods = (structure.open_periods?.length ?? 0) > 0;
+  const shouldShowLogisticsCard = hasLogisticsDetails || hasOpenPeriods;
 
   const resetContactForm = () => {
     setEditingContact(null);
@@ -1041,82 +1063,94 @@ export const StructureDetailsPage = () => {
             )}
           </div>
 
-          <div className="structure-details-card">
-            <div className="structure-details-card__section">
-              <h3 className="structure-details-card__title">
-                {t("structures.details.overview.logistics")}
-              </h3>
-              <div className="structure-logistics-groups">
-                <section className="structure-logistics-group">
-                  <header className="structure-logistics-group__header">
-                    <span className="structure-logistics-group__icon" aria-hidden="true">
-                      🏠
-                    </span>
-                    <h4 className="structure-logistics-group__title">
-                      {t("structures.create.form.sections.indoor.title")}
-                    </h4>
-                  </header>
-                  {renderLogisticsDetails(indoorDetails)}
-                </section>
-                <section className="structure-logistics-group">
-                  <header className="structure-logistics-group__header">
-                    <span className="structure-logistics-group__icon" aria-hidden="true">
-                      🌳
-                    </span>
-                    <h4 className="structure-logistics-group__title">
-                      {t("structures.create.form.sections.outdoor.title")}
-                    </h4>
-                  </header>
-                  {renderLogisticsDetails(outdoorDetails)}
-                </section>
-                <section className="structure-logistics-group">
-                  <header className="structure-logistics-group__header">
-                    <span className="structure-logistics-group__icon" aria-hidden="true">
-                      🧭
-                    </span>
-                    <h4 className="structure-logistics-group__title">
-                      {t("structures.create.form.sections.accessibility.title")}
-                    </h4>
-                  </header>
-                  {renderLogisticsDetails(accessibilityDetails)}
-                </section>
-                <section className="structure-logistics-group">
-                  <header className="structure-logistics-group__header">
-                    <span className="structure-logistics-group__icon" aria-hidden="true">
-                      ⚙️
-                    </span>
-                    <h4 className="structure-logistics-group__title">
-                      {t("structures.create.form.sections.operations.title")}
-                    </h4>
-                  </header>
-                  {renderLogisticsDetails(operationsDetails)}
-                </section>
-              </div>
-            </div>
-
-            {structure.open_periods && structure.open_periods.length > 0 && (
-              <div className="structure-details-card__section">
-                <h3 className="structure-details-card__title">
-                  {t("structures.details.openPeriods.title")}
-                </h3>
-                <div className="structure-open-periods-detail">
-                  <ul className="structure-open-periods-detail__list">
-                    {structure.open_periods.map((period) => {
-                      const description = describeOpenPeriod(period);
-                      return (
-                        <li key={period.id} className="structure-open-periods-detail__item">
-                          <span className="structure-open-periods-detail__main">{description.main}</span>
-                          {description.note && (
-                            <span className="structure-open-periods-detail__note">{description.note}</span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
+          {shouldShowLogisticsCard && (
+            <div className="structure-details-card">
+              {hasLogisticsDetails && (
+                <div className="structure-details-card__section">
+                  <h3 className="structure-details-card__title">
+                    {t("structures.details.overview.logistics")}
+                  </h3>
+                  <div className="structure-logistics-groups">
+                    {hasIndoorDetails && (
+                      <section className="structure-logistics-group">
+                        <header className="structure-logistics-group__header">
+                          <span className="structure-logistics-group__icon" aria-hidden="true">
+                            🏠
+                          </span>
+                          <h4 className="structure-logistics-group__title">
+                            {t("structures.create.form.sections.indoor.title")}
+                          </h4>
+                        </header>
+                        {renderLogisticsDetails(indoorDetails)}
+                      </section>
+                    )}
+                    {hasOutdoorDetails && (
+                      <section className="structure-logistics-group">
+                        <header className="structure-logistics-group__header">
+                          <span className="structure-logistics-group__icon" aria-hidden="true">
+                            🌳
+                          </span>
+                          <h4 className="structure-logistics-group__title">
+                            {t("structures.create.form.sections.outdoor.title")}
+                          </h4>
+                        </header>
+                        {renderLogisticsDetails(outdoorDetails)}
+                      </section>
+                    )}
+                    {hasAccessibilityDetails && (
+                      <section className="structure-logistics-group">
+                        <header className="structure-logistics-group__header">
+                          <span className="structure-logistics-group__icon" aria-hidden="true">
+                            🧭
+                          </span>
+                          <h4 className="structure-logistics-group__title">
+                            {t("structures.create.form.sections.accessibility.title")}
+                          </h4>
+                        </header>
+                        {renderLogisticsDetails(accessibilityDetails)}
+                      </section>
+                    )}
+                    {hasOperationsDetails && (
+                      <section className="structure-logistics-group">
+                        <header className="structure-logistics-group__header">
+                          <span className="structure-logistics-group__icon" aria-hidden="true">
+                            ⚙️
+                          </span>
+                          <h4 className="structure-logistics-group__title">
+                            {t("structures.create.form.sections.operations.title")}
+                          </h4>
+                        </header>
+                        {renderLogisticsDetails(operationsDetails)}
+                      </section>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+
+              {hasOpenPeriods && (
+                <div className="structure-details-card__section">
+                  <h3 className="structure-details-card__title">
+                    {t("structures.details.openPeriods.title")}
+                  </h3>
+                  <div className="structure-open-periods-detail">
+                    <ul className="structure-open-periods-detail__list">
+                      {structure.open_periods!.map((period) => {
+                        const description = describeOpenPeriod(period);
+                        return (
+                          <li key={period.id} className="structure-open-periods-detail__item">
+                            <span className="structure-open-periods-detail__main">{description.main}</span>
+                            {description.note && (
+                              <span className="structure-open-periods-detail__note">{description.note}</span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="structure-details-card structure-details-card--tabs">
             <div className="detail-tabs">
