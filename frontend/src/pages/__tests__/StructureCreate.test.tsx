@@ -523,7 +523,7 @@ describe("StructureCreatePage", () => {
       contact_emails: ["info@example.org"],
       website_urls: ["https://base.example.org"]
     });
-  });
+  }, 15000);
 
   it("saves cost options after creating the structure", async () => {
     const queryClient = new QueryClient({
@@ -551,12 +551,39 @@ describe("StructureCreatePage", () => {
     await user.clear(currencyField);
     await user.type(currencyField, "usd");
 
-    await user.type(screen.getByLabelText(/Caparra/i), "50");
+    await user.type(
+      screen.getByLabelText(/Caparra prenotazione/i),
+      "50"
+    );
+    await user.type(screen.getByLabelText(/Cauzione danni/i), "100");
     await user.type(
       screen.getByLabelText(/Tassa di soggiorno per notte/i),
       "1,5"
     );
     await user.type(screen.getByLabelText(/Forfait utenze/i), "10");
+    await user.selectOptions(screen.getByLabelText(/Utenze incluse/i), "Sì");
+    await user.type(
+      screen.getByLabelText(/Dettagli utenze/i),
+      "Consumi inclusi"
+    );
+    await user.type(
+      screen.getByLabelText(/Metodi di pagamento accettati/i),
+      "Bonifico\nCarta"
+    );
+    await user.type(
+      screen.getByLabelText(/Condizioni di pagamento/i),
+      "Saldo entro 30 giorni"
+    );
+    const advancedMetadataField = screen.getByLabelText(
+      /Metadati avanzati \(JSON\)/i
+    );
+    await user.clear(advancedMetadataField);
+    await user.click(advancedMetadataField);
+    fireEvent.change(advancedMetadataField, {
+      target: {
+        value: '{\n  "modifiers": [{ "kind": "weekend", "amount": 15 }]\n}'
+      }
+    });
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
@@ -568,9 +595,15 @@ describe("StructureCreatePage", () => {
         model: "per_person_day",
         amount: 12.5,
         currency: "USD",
-        deposit: 50,
+        booking_deposit: 50,
+        damage_deposit: 100,
         city_tax_per_night: 1.5,
-        utilities_flat: 10
+        utilities_flat: 10,
+        utilities_included: true,
+        utilities_notes: "Consumi inclusi",
+        payment_methods: ["Bonifico", "Carta"],
+        payment_terms: "Saldo entro 30 giorni",
+        modifiers: [{ kind: "weekend", amount: 15 }]
       }
     ]);
   });

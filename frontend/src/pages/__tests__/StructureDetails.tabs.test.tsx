@@ -141,12 +141,19 @@ const structureWithDetails: Structure = {
       model: "per_person_day",
       amount: 9.5,
       currency: "EUR",
-      deposit: 50,
+      booking_deposit: 50,
+      damage_deposit: null,
       city_tax_per_night: 1.2,
       utilities_flat: null,
+      utilities_included: true,
+      utilities_notes: "Consumi inclusi",
       min_total: null,
       max_total: null,
-      age_rules: null
+      age_rules: null,
+      payment_methods: ["Bonifico"],
+      payment_terms: "Saldo in 30 giorni",
+      price_per_resource: null,
+      modifiers: null
     }
   ],
   contacts: [],
@@ -177,7 +184,7 @@ describe("StructureDetailsPage tabs", () => {
 
     await user.click(screen.getByRole("button", { name: /Costi/i }));
     expect(screen.getByText(/Per persona al giorno/i)).toBeInTheDocument();
-    expect(screen.getByText(/Deposit:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Caparra prenotazione/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Allegati/i }));
     expect(screen.getByText(/Accedi per visualizzare gli allegati/)).toBeInTheDocument();

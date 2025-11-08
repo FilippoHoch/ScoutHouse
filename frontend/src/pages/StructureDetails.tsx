@@ -33,7 +33,10 @@ import {
   createGoogleMapsEmbedUrl,
   createGoogleMapsViewUrl
 } from "../shared/utils/googleMaps";
-import { extractAdvancedStructureData } from "../shared/structureMetadata";
+import {
+  extractAdvancedCostOptionData,
+  extractAdvancedStructureData
+} from "../shared/structureMetadata";
 
 const formatCurrency = (value: number, currency: string) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency }).format(value);
@@ -1220,6 +1223,7 @@ export const StructureDetailsPage = () => {
                         `structures.create.form.costOptions.models.${option.model}`,
                         { defaultValue: option.model }
                       );
+                      const advancedCostMetadata = extractAdvancedCostOptionData(option);
 
                       return (
                         <li key={option.id}>
@@ -1230,16 +1234,47 @@ export const StructureDetailsPage = () => {
                             </span>
                           </div>
                           <div className="cost-breakdown">
-                            {option.deposit !== null && (
-                              <span>Deposit: {formatCurrency(option.deposit, option.currency)}</span>
+                            {option.booking_deposit !== null && (
+                              <span>
+                                {t("structures.details.costs.bookingDeposit", {
+                                  value: formatCurrency(option.booking_deposit, option.currency)
+                                })}
+                              </span>
+                            )}
+                            {option.damage_deposit !== null && (
+                              <span>
+                                {t("structures.details.costs.damageDeposit", {
+                                  value: formatCurrency(option.damage_deposit, option.currency)
+                                })}
+                              </span>
                             )}
                             {option.city_tax_per_night !== null && (
                               <span>
-                                City tax: {formatCurrency(option.city_tax_per_night, option.currency)} per night
+                                {t("structures.details.costs.cityTax", {
+                                  value: formatCurrency(option.city_tax_per_night, option.currency)
+                                })}
                               </span>
                             )}
                             {option.utilities_flat !== null && (
-                              <span>Utilities: {formatCurrency(option.utilities_flat, option.currency)}</span>
+                              <span>
+                                {t("structures.details.costs.utilitiesFlat", {
+                                  value: formatCurrency(option.utilities_flat, option.currency)
+                                })}
+                              </span>
+                            )}
+                            {option.utilities_included !== null && (
+                              <span>
+                                {t("structures.details.costs.utilitiesIncluded", {
+                                  value: formatBoolean(option.utilities_included)
+                                })}
+                              </span>
+                            )}
+                            {option.utilities_notes && (
+                              <span>
+                                {t("structures.details.costs.utilitiesNotes", {
+                                  value: option.utilities_notes
+                                })}
+                              </span>
                             )}
                             {option.min_total !== null && (
                               <span>
@@ -1255,7 +1290,29 @@ export const StructureDetailsPage = () => {
                                 })}
                               </span>
                             )}
+                            {option.payment_methods && option.payment_methods.length > 0 && (
+                              <span>
+                                {t("structures.details.costs.paymentMethods", {
+                                  value: option.payment_methods.join(", ")
+                                })}
+                              </span>
+                            )}
+                            {option.payment_terms && (
+                              <span>
+                                {t("structures.details.costs.paymentTerms", {
+                                  value: formatOptionalText(option.payment_terms)
+                                })}
+                              </span>
+                            )}
                           </div>
+                          {Object.keys(advancedCostMetadata).length > 0 && (
+                            <details className="cost-option__advanced">
+                              <summary>
+                                {t("structures.details.costs.advancedMetadata")}
+                              </summary>
+                              <pre>{JSON.stringify(advancedCostMetadata, null, 2)}</pre>
+                            </details>
+                          )}
                         </li>
                       );
                     })}

@@ -145,12 +145,19 @@ const sampleStructure: Structure = {
       model: "per_person_day",
       amount: 18.5,
       currency: "EUR",
-      deposit: null,
+      booking_deposit: null,
+      damage_deposit: null,
       city_tax_per_night: null,
       utilities_flat: null,
+      utilities_included: null,
+      utilities_notes: null,
       min_total: null,
       max_total: null,
-      age_rules: null
+      age_rules: null,
+      payment_methods: null,
+      payment_terms: null,
+      price_per_resource: null,
+      modifiers: null
     }
   ],
   contacts: [],

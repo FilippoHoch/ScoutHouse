@@ -49,7 +49,8 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 - Mappa chiave/valore `seasonal_amenities` (servizi stagionali serializzati in oggetto JSON).
 
 ### Costi
-- Lista dinamica di `StructureCostOptionInput` (`model`, `amount`, `currency`, `deposit`, `city_tax_per_night`, `utilities_flat`, `min_total`, `max_total`).
+- Lista dinamica di `StructureCostOptionInput` (`model`, `amount`, `currency`, `booking_deposit`, `damage_deposit`, `city_tax_per_night`, `utilities_flat`, `utilities_included`, `utilities_notes`, `payment_methods`, `payment_terms`, `min_total`, `max_total`).
+- Textarea "Metadati avanzati (JSON)" per ogni opzione di costo: consente di impostare campi aggiuntivi come `modifiers`, `age_rules`, `price_per_resource` senza sovrascrivere i valori gestiti dal modulo.
 
 ### Metadati avanzati
 - Textarea dedicata ai metadati avanzati: accetta un oggetto JSON arbitrario che viene fuso nel payload di creazione/aggiornamento. I campi di sola lettura (`id`, `created_at`, `updated_at`, `estimated_cost`, `cost_band`, `availabilities`, `contacts`, `open_periods`, `cost_options`, `warnings`, `photos`) vengono ignorati automaticamente e non vengono sovrascritti i valori già compilati tramite il modulo principale.
@@ -94,7 +95,8 @@ La pagina dettaglio mostra gli stessi campi organizzati in tab.
 - Tabella delle `availabilities` (stagione, branche, capacità) e `open_periods` con note/unità.
 
 ### Tab "Costi"
-- Elenco formattato delle `cost_options`, inclusi depositi, tasse di soggiorno e soglie min/max.
+- Elenco formattato delle `cost_options`, inclusi depositi (prenotazione/danni), tassa di soggiorno, forfait utenze con flag di inclusione e note, soglie min/max e metodi/condizioni di pagamento.
+- Per ogni voce viene mostrato un riquadro espandibile con i metadati avanzati serializzati via JSON (es. `modifiers`, `age_rules`, `price_per_resource`).
 
 ### Tab "Contatti"
 - Sezione link per `website_urls` e `contact_emails`.
