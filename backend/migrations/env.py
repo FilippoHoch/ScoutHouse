@@ -30,6 +30,8 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         compare_type=True,
         compare_server_default=True,
+        version_table="alembic_version",
+        version_table_column_length=64,
         dialect_opts={"paramstyle": "named"},
     )
 
@@ -52,6 +54,8 @@ def run_migrations_online() -> None:
                 target_metadata=target_metadata,
                 compare_type=True,
                 compare_server_default=True,
+                version_table="alembic_version",
+                version_table_column_length=64,
             )
 
             with context.begin_transaction():
