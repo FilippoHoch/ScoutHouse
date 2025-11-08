@@ -1860,6 +1860,18 @@ table tbody tr:hover {
   grid-column: 1 / -1;
 }
 
+.structure-details__advanced-json {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-family-mono, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace);
+  font-size: 0.875rem;
+  background: var(--color-surface-subtle, #f5f5f5);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  max-height: 20rem;
+  overflow: auto;
+}
+
 .structure-open-periods-detail {
   margin: 0;
   padding: var(--space-md);

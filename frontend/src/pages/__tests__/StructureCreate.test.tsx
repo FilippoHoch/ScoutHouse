@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -258,6 +258,39 @@ describe("StructureCreatePage", () => {
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
+  });
+
+  it("merges advanced metadata JSON into the payload", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Lago");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+
+    const advancedField = screen.getByLabelText(/Metadati aggiuntivi \(JSON\)/i);
+    const advancedValue =
+      '{"municipality":"Brescia","river_swimming":"si","id":123}';
+    fireEvent.change(advancedField, { target: { value: advancedValue } });
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+    const payload = vi.mocked(createStructure).mock.calls[0][0];
+
+    expect(payload).toMatchObject({
+      municipality: "Brescia",
+      river_swimming: "si"
+    });
+    expect(payload).not.toHaveProperty("id");
   });
 
   it("alerts when the API reports unreachable websites", async () => {

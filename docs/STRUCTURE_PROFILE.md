@@ -51,6 +51,16 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 ### Costi
 - Lista dinamica di `StructureCostOptionInput` (`model`, `amount`, `currency`, `deposit`, `city_tax_per_night`, `utilities_flat`, `min_total`, `max_total`).
 
+### Metadati avanzati
+- Textarea dedicata ai metadati avanzati: accetta un oggetto JSON arbitrario che viene fuso nel payload di creazione/aggiornamento. I campi di sola lettura (`id`, `created_at`, `updated_at`, `estimated_cost`, `cost_band`, `availabilities`, `contacts`, `open_periods`, `cost_options`, `warnings`, `photos`) vengono ignorati automaticamente e non vengono sovrascritti i valori già compilati tramite il modulo principale.
+- Tramite questo canale è possibile impostare tutti gli altri attributi previsti da `StructureCreateDto`. Di seguito l'elenco dei campi oggi non coperti dal wizard ma gestibili tramite JSON:
+  - `activity_equipment`, `activity_spaces`, `aed_on_site`, `booking_notes`, `booking_required`, `booking_url`, `bridge_weight_limit_tonnes`, `bus_type_access`, `cell_coverage`, `cell_coverage_notes`, `communications_infrastructure`, `country`.
+  - `data_last_verified`, `data_quality_flags`, `data_quality_notes`, `data_quality_score`, `data_source`, `data_source_url`, `documents_required`, `dry_toilet`, `emergency_coordinates`, `emergency_phone_available`, `emergency_plan_notes`, `emergency_response_time_minutes`, `evacuation_plan_url`.
+  - `event_rules_notes`, `event_rules_url`, `fire_rules`, `fiscal_notes`, `flood_risk`, `generator_available`, `generator_notes`, `governance_notes`, `iban`, `inclusion_notes`, `inclusion_services`, `indoor_rooms`.
+  - `invoice_available`, `locality`, `logistics_arrival_notes`, `logistics_departure_notes`, `map_resources_urls`, `max_vehicle_height_m`, `municipality`, `municipality_code`, `outdoor_bathrooms`, `outdoor_showers`, `payment_methods`, `pec_email`, `plus_code`.
+  - `power_capacity_kw`, `power_outlet_types`, `power_outlets_count`, `risk_assessment_template_url`, `river_swimming`, `road_access_notes`, `road_weight_limit_tonnes`, `sdi_recipient_code`, `wastewater_notes`, `wastewater_type`, `water_tank_capacity_liters`, `weather_risk_notes`, `what3words`, `whatsapp`, `wildlife_notes`, `winter_access_notes`.
+- I valori impostati nei metadati avanzati vengono mostrati anche nella pagina di dettaglio all'interno del riquadro "Metadati avanzati".
+
 ### Contatti, link e note
 - Array `contact_emails`.
 - Array `website_urls` con validazione client.
@@ -63,7 +73,8 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 #### Copertura test
 
 - `StructureCreate.test.tsx > collects full logistics metadata for mixed structures` esercita l'inserimento combinato di campi interni, esterni, accessibilità e note operative garantendo la serializzazione completa del payload.
-- `StructureDetails.test.tsx > renders structure details when found` verifica il rendering della scheda con i campi di logistica, posizione e costi riportati qui.
+- `StructureCreate.test.tsx > merges advanced metadata JSON into the payload` valida l'integrazione dei campi aggiuntivi impostati tramite la textarea di metadati avanzati, inclusa l'esclusione delle chiavi bloccate.
+- `StructureDetails.test.tsx > renders structure details when found` verifica il rendering della scheda con i campi di logistica, posizione, costi e include asserzioni sui metadati avanzati mostrati nel riquadro dedicato.
 
 ## Visualizzazione (`/structures/:slug`)
 
@@ -77,6 +88,7 @@ La pagina dettaglio mostra gli stessi campi organizzati in tab.
 - Griglia "Spazi esterni" con `land_area_m2`, `field_slope`, `pitches_tende`, `water_at_field`, `shelter_on_field`, `has_field_poles`, `water_sources`, `pit_latrine_allowed`, `electricity_available`, `fire_policy`.
 - Griglia "Accessibilità" con `access_by_car`, `access_by_coach`, `coach_turning_area`, `access_by_public_transport`, `nearest_bus_stop`, `wheelchair_accessible`, `step_free_access`, `parking_car_slots`, `parking_bus_slots`, `parking_notes`, `accessibility_notes`.
 - Sezione Operatività con `website_urls`, `weekend_only`, `allowed_audiences`, `usage_rules`, `animal_policy`, `animal_policy_notes`, `in_area_protetta`, `ente_area_protetta`, `environmental_notes`, `seasonal_amenities`, `notes_logistics`, `notes`.
+- Box "Metadati avanzati" che visualizza (in JSON formattato) i campi extra presenti sull'entità.
 
 ### Tab "Disponibilità"
 - Tabella delle `availabilities` (stagione, branche, capacità) e `open_periods` con note/unità.

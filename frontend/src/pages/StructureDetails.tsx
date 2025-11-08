@@ -33,6 +33,7 @@ import {
   createGoogleMapsEmbedUrl,
   createGoogleMapsViewUrl
 } from "../shared/utils/googleMaps";
+import { extractAdvancedStructureData } from "../shared/structureMetadata";
 
 const formatCurrency = (value: number, currency: string) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency }).format(value);
@@ -378,6 +379,11 @@ export const StructureDetailsPage = () => {
 
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
+  const advancedMetadata = extractAdvancedStructureData(structure);
+  const advancedMetadataJson =
+    Object.keys(advancedMetadata).length > 0
+      ? JSON.stringify(advancedMetadata, null, 2)
+      : null;
 
   const indoorDetails: LogisticsDetail[] = [
     {
@@ -660,6 +666,17 @@ export const StructureDetailsPage = () => {
         "structures.details.overview.notesFallback"
       ),
       icon: "💬",
+      isFull: true
+    },
+    {
+      id: "advancedMetadata",
+      label: t("structures.details.overview.advancedMetadata"),
+      value: advancedMetadataJson ? (
+        <pre className="structure-details__advanced-json">{advancedMetadataJson}</pre>
+      ) : (
+        t("structures.details.overview.advancedMetadataFallback")
+      ),
+      icon: "🧩",
       isFull: true
     }
   ];

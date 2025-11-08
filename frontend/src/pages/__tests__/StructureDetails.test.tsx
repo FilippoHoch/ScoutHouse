@@ -39,7 +39,7 @@ const sampleStructure: Structure = {
   slug: "casa-alpina",
   country: "IT",
   province: "BS",
-  municipality: null,
+  municipality: "Brescia",
   municipality_code: null,
   locality: null,
   address: "Via Roma 1",
@@ -109,7 +109,7 @@ const sampleStructure: Structure = {
   evacuation_plan_url: null,
   risk_assessment_template_url: null,
   wildlife_notes: null,
-  river_swimming: null,
+  river_swimming: "si",
   flood_risk: null,
   weather_risk_notes: null,
   activity_spaces: [],
@@ -227,6 +227,8 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Fermata centro/i)).toBeInTheDocument();
     expect(screen.getByText(/Contattare il custode/i)).toBeInTheDocument();
     expect(screen.getByText(/Note generiche/i)).toBeInTheDocument();
+    expect(screen.getByText(/"municipality": "Brescia"/i)).toBeInTheDocument();
+    expect(screen.getByText(/"river_swimming": "si"/i)).toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 
