@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -270,7 +270,7 @@ describe("StructureCreatePage", () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
   });
 
-  it("merges advanced metadata JSON into the payload", async () => {
+  it("merges advanced metadata entries into the payload", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -286,10 +286,35 @@ describe("StructureCreatePage", () => {
     await user.type(screen.getByLabelText(/Nome/i), "Base Lago");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
 
-    const advancedField = screen.getByLabelText(/Metadati aggiuntivi \(JSON\)/i);
-    const advancedValue =
-      '{"municipality":"Brescia","river_swimming":"si","id":123}';
-    fireEvent.change(advancedField, { target: { value: advancedValue } });
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi dettaglio/i })
+    );
+    await user.type(
+      screen.getByLabelText(/Chiave metadato 1/i),
+      "municipality"
+    );
+    await user.type(
+      screen.getByLabelText(/Valore metadato 1/i),
+      "Brescia"
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi dettaglio/i })
+    );
+    await user.type(
+      screen.getByLabelText(/Chiave metadato 2/i),
+      "river_swimming"
+    );
+    await user.type(
+      screen.getByLabelText(/Valore metadato 2/i),
+      "si"
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi dettaglio/i })
+    );
+    await user.type(screen.getByLabelText(/Chiave metadato 3/i), "id");
+    await user.type(screen.getByLabelText(/Valore metadato 3/i), "123");
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
@@ -303,58 +328,7 @@ describe("StructureCreatePage", () => {
     expect(payload).not.toHaveProperty("id");
   });
 
-  it("normalizes advanced metadata JSON on blur", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    const advancedField = screen.getByLabelText(/Metadati aggiuntivi \(JSON\)/i);
-    fireEvent.change(advancedField, {
-      target: { value: '{   "municipality"  :  "Brescia" }' }
-    });
-
-    fireEvent.blur(advancedField);
-
-    await waitFor(() =>
-      expect(advancedField).toHaveValue(
-        JSON.stringify({ municipality: "Brescia" }, null, 2)
-      )
-    );
-    expect(
-      screen.queryByText(/Metadati avanzati non validi/i)
-    ).not.toBeInTheDocument();
-  });
-
-  it("shows an error when advanced metadata JSON is invalid on blur", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    const advancedField = screen.getByLabelText(/Metadati aggiuntivi \(JSON\)/i);
-    fireEvent.change(advancedField, {
-      target: { value: '{"municipality": }' }
-    });
-
-    fireEvent.blur(advancedField);
-
-    expect(
-      await screen.findByText(/Metadati avanzati non validi/i)
-    ).toBeInTheDocument();
-  });
-
-  it("validates cost option advanced metadata JSON on blur", async () => {
+  it("validates required fields for advanced metadata entries", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -366,33 +340,69 @@ describe("StructureCreatePage", () => {
 
     render(<StructureCreatePage />, { wrapper: Wrapper });
 
-    await user.click(screen.getByRole("button", { name: /Aggiungi opzione di costo/i }));
+    await user.type(screen.getByLabelText(/Nome/i), "Base Fiume");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
 
-    const costAdvancedField = screen.getByLabelText(/Metadati avanzati \(JSON\)/i);
-    fireEvent.change(costAdvancedField, {
-      target: { value: '{"modifiers":[{"kind":"weekend"}]}' }
-    });
-
-    fireEvent.blur(costAdvancedField);
-
-    await waitFor(() =>
-      expect(costAdvancedField).toHaveValue(
-        JSON.stringify({ modifiers: [{ kind: "weekend" }] }, null, 2)
-      )
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi dettaglio/i })
     );
-    expect(
-      screen.queryByText(/I metadati avanzati delle opzioni di costo non sono validi/i)
-    ).not.toBeInTheDocument();
+    await user.type(
+      screen.getByLabelText(/Chiave metadato 1/i),
+      "river_swimming"
+    );
 
-    fireEvent.change(costAdvancedField, {
-      target: { value: '{"modifiers": [}' }
-    });
-
-    fireEvent.blur(costAdvancedField);
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
     expect(
-      await screen.findByText(/I metadati avanzati delle opzioni di costo non sono validi/i)
+      await screen.findByText(/Specifica un valore per ogni dettaglio aggiuntivo/i)
     ).toBeInTheDocument();
+    expect(createStructure).not.toHaveBeenCalled();
+  });
+
+  it("validates cost option advanced metadata entries", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi opzione di costo/i })
+    );
+
+    await user.selectOptions(
+      screen.getByLabelText(/Modello di costo/i),
+      "per_person_day"
+    );
+    await user.type(screen.getByLabelText(/Importo principale/i), "10");
+
+    const addMetadataButton = screen.getByRole("button", {
+      name: /Aggiungi metadato/i
+    });
+    await user.click(addMetadataButton);
+
+    await user.type(
+      screen.getByLabelText(/Chiave metadato 1/i),
+      "modifiers"
+    );
+    await user.type(
+      screen.getByLabelText(/Valore metadato 1/i),
+      "{]"
+    );
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    expect(
+      await screen.findByText(
+        /Il valore non è valido\. Usa numeri, true\/false, null o JSON valido/i
+      )
+    ).toBeInTheDocument();
+    expect(createStructure).not.toHaveBeenCalled();
   });
 
   it("alerts when the API reports unreachable websites", async () => {
@@ -676,16 +686,17 @@ describe("StructureCreatePage", () => {
       screen.getByLabelText(/Condizioni di pagamento/i),
       "Saldo entro 30 giorni"
     );
-    const advancedMetadataField = screen.getByLabelText(
-      /Metadati avanzati \(JSON\)/i
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi metadato/i })
     );
-    await user.clear(advancedMetadataField);
-    await user.click(advancedMetadataField);
-    fireEvent.change(advancedMetadataField, {
-      target: {
-        value: '{\n  "modifiers": [{ "kind": "weekend", "amount": 15 }]\n}'
-      }
-    });
+    await user.type(
+      screen.getByLabelText(/Chiave metadato 1/i),
+      "modifiers"
+    );
+    await user.type(
+      screen.getByLabelText(/Valore metadato 1/i),
+      '[{"kind":"weekend","amount":15}]'
+    );
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
