@@ -43,8 +43,6 @@ const managedKeys = new Set<keyof Structure | string>([
   "website_urls",
   "allowed_audiences",
   "usage_rules",
-  "animal_policy",
-  "animal_policy_notes",
   "in_area_protetta",
   "ente_area_protetta",
   "environmental_notes",
