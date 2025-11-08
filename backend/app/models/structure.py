@@ -74,7 +74,6 @@ class StructureContactStatus(str, Enum):
 
 class WaterSource(str, Enum):
     NONE = "none"
-    FOUNTAIN = "fountain"
     TAP = "tap"
     RIVER = "river"
     LAKE = "lake"
