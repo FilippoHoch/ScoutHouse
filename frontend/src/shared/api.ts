@@ -39,7 +39,8 @@ import {
   StructureImportResult,
   StructureOpenPeriodsImportDryRunResponse,
   StructureOpenPeriodsImportResult,
-  User
+  User,
+  GeocodingResult
 } from "./types";
 import { clearSession, getAccessToken, refreshAccessToken } from "./auth";
 import { API_URL, ApiError } from "./http";
@@ -47,6 +48,16 @@ import { API_URL, ApiError } from "./http";
 export { ApiError } from "./http";
 
 export type ExportFormat = "csv" | "xlsx" | "json";
+
+export interface GeocodingSearchParams {
+  address?: string;
+  locality?: string;
+  municipality?: string;
+  province?: string;
+  postal_code?: string;
+  country?: string;
+  limit?: number;
+}
 
 export interface AttachmentUploadSignature {
   url: string;
@@ -388,6 +399,42 @@ export async function getStructureBySlug(
 ): Promise<Structure> {
   const query = options.include ? `?include=${encodeURIComponent(options.include)}` : "";
   return apiFetch<Structure>(`/api/v1/structures/by-slug/${slug}${query}`);
+}
+
+export async function searchGeocoding(
+  params: GeocodingSearchParams,
+  options: { signal?: AbortSignal } = {}
+): Promise<GeocodingResult[]> {
+  const searchParams = new URLSearchParams();
+  const append = (key: string, value: string | undefined) => {
+    if (!value) {
+      return;
+    }
+    const trimmed = value.trim();
+    if (trimmed) {
+      searchParams.set(key, trimmed);
+    }
+  };
+
+  append("address", params.address);
+  append("locality", params.locality);
+  append("municipality", params.municipality);
+  append("province", params.province);
+  append("postal_code", params.postal_code);
+  append("country", params.country);
+  if (typeof params.limit === "number") {
+    searchParams.set("limit", String(params.limit));
+  }
+
+  const query = searchParams.toString();
+  const response = await apiFetch<{ results: GeocodingResult[] }>(
+    `/api/v1/geocoding/search${query ? `?${query}` : ""}`,
+    {
+      auth: true,
+      signal: options.signal,
+    }
+  );
+  return response.results;
 }
 
 export async function createStructure(dto: StructureCreateDto): Promise<Structure> {

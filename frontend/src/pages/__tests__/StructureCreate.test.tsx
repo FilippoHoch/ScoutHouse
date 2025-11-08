@@ -11,6 +11,7 @@ import {
   createStructure,
   createStructurePhoto,
   getStructureBySlug,
+  searchGeocoding,
   signAttachmentUpload,
   updateStructure,
   upsertStructureCostOptions
@@ -37,6 +38,7 @@ vi.mock("../../shared/api", async () => {
     createStructure: vi.fn(),
     createStructurePhoto: vi.fn(),
     getStructureBySlug: vi.fn(),
+    searchGeocoding: vi.fn(),
     signAttachmentUpload: vi.fn(),
     confirmAttachmentUpload: vi.fn(),
     updateStructure: vi.fn(),
@@ -53,6 +55,7 @@ const createdStructure = {
   municipality: null,
   municipality_code: null,
   locality: null,
+  postal_code: null,
   address: "Via Bosco 1",
   latitude: 45.12,
   longitude: 9.12,
@@ -176,10 +179,12 @@ beforeEach(() => {
   vi.mocked(createStructure).mockReset();
   vi.mocked(createStructurePhoto).mockReset();
   vi.mocked(getStructureBySlug).mockReset();
+  vi.mocked(searchGeocoding).mockReset();
   vi.mocked(signAttachmentUpload).mockReset();
   vi.mocked(confirmAttachmentUpload).mockReset();
   vi.mocked(updateStructure).mockReset();
   vi.mocked(upsertStructureCostOptions).mockReset();
+  vi.mocked(searchGeocoding).mockResolvedValue([]);
   alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
 });
 

@@ -22,6 +22,7 @@ import {
   createStructurePhoto,
   getStructureBySlug,
   searchContacts,
+  searchGeocoding,
   signAttachmentUpload,
   updateStructure,
   upsertStructureCostOptions
@@ -31,6 +32,7 @@ import {
   Contact,
   ContactCreateDto,
   ContactPreferredChannel,
+  GeocodingResult,
   FieldSlope,
   FirePolicy,
   StructureCreateDto,
@@ -80,6 +82,7 @@ const operationalStatusOptions: StructureOperationalStatus[] = [
 type FieldErrorKey =
   | "name"
   | "province"
+  | "postal_code"
   | "latitude"
   | "longitude"
   | "altitude"
@@ -256,10 +259,19 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [province, setProvince] = useState("");
+  const [municipality, setMunicipality] = useState("");
+  const [municipalityCode, setMunicipalityCode] = useState("");
+  const [locality, setLocality] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [altitude, setAltitude] = useState("");
+  const [coordinatesManuallyEdited, setCoordinatesManuallyEdited] = useState(false);
+  const [geocodingStatus, setGeocodingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [geocodingSuggestion, setGeocodingSuggestion] = useState<GeocodingResult | null>(null);
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
+  const [geocodingApplied, setGeocodingApplied] = useState(false);
   const [type, setType] = useState<StructureType | "">("");
   const [operationalStatus, setOperationalStatus] =
     useState<StructureOperationalStatus | "">("");
@@ -346,6 +358,24 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [apiError, setApiError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const advancedMetadataRef = useRef<HTMLTextAreaElement | null>(null);
+  const geocodingRequestId = useRef(0);
+  const geocodingDebounceRef = useRef<number | null>(null);
+  const geocodingAbortController = useRef<AbortController | null>(null);
+  const coordinatesEditedRef = useRef(false);
+  const latitudeRef = useRef("");
+  const longitudeRef = useRef("");
+
+  useEffect(() => {
+    coordinatesEditedRef.current = coordinatesManuallyEdited;
+  }, [coordinatesManuallyEdited]);
+
+  useEffect(() => {
+    latitudeRef.current = latitude.trim();
+  }, [latitude]);
+
+  useEffect(() => {
+    longitudeRef.current = longitude.trim();
+  }, [longitude]);
   const shouldFetchStructure = isEditing && Boolean(editingSlug);
   const {
     data: existingStructure,
@@ -413,6 +443,22 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const handleMapCoordinatesChange = (next: GoogleMapEmbedCoordinates) => {
     setLatitude(next.lat.toFixed(6));
     setLongitude(next.lng.toFixed(6));
+    setApiError(null);
+    clearFieldErrorsGroup(["latitude", "longitude"]);
+    setCoordinatesManuallyEdited(true);
+    setGeocodingApplied(false);
+  };
+
+  const handleApplyGeocodingSuggestion = () => {
+    if (!geocodingSuggestion) {
+      return;
+    }
+    const latString = geocodingSuggestion.latitude.toFixed(6);
+    const lonString = geocodingSuggestion.longitude.toFixed(6);
+    setLatitude(latString);
+    setLongitude(lonString);
+    setCoordinatesManuallyEdited(false);
+    setGeocodingApplied(true);
     setApiError(null);
     clearFieldErrorsGroup(["latitude", "longitude"]);
   };
@@ -811,11 +857,37 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setProvince(event.target.value.toUpperCase());
     setApiError(null);
     clearFieldError("province");
+    setGeocodingApplied(false);
+  };
+
+  const handleMunicipalityChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setMunicipality(event.target.value);
+    setApiError(null);
+    setGeocodingApplied(false);
+  };
+
+  const handleMunicipalityCodeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setMunicipalityCode(event.target.value.toUpperCase());
+    setApiError(null);
+  };
+
+  const handleLocalityChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setLocality(event.target.value);
+    setApiError(null);
+    setGeocodingApplied(false);
+  };
+
+  const handlePostalCodeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setPostalCode(event.target.value.toUpperCase());
+    setApiError(null);
+    clearFieldError("postal_code");
+    setGeocodingApplied(false);
   };
 
   const handleAddressChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setAddress(event.target.value);
     setApiError(null);
+    setGeocodingApplied(false);
   };
 
   const normalizeAdvancedMetadataInput = (value: string) => {
@@ -853,12 +925,16 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setLatitude(event.target.value);
     setApiError(null);
     clearFieldError("latitude");
+    setCoordinatesManuallyEdited(true);
+    setGeocodingApplied(false);
   };
 
   const handleLongitudeChange = (event: ChangeEvent<HTMLInputElement>) => {
     setLongitude(event.target.value);
     setApiError(null);
     clearFieldError("longitude");
+    setCoordinatesManuallyEdited(true);
+    setGeocodingApplied(false);
   };
 
   const handleAltitudeChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -1322,6 +1398,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setName(existingStructure.name ?? "");
     setSlug(existingStructure.slug ?? "");
     setProvince(existingStructure.province ?? "");
+    setMunicipality(existingStructure.municipality ?? "");
+    setMunicipalityCode(existingStructure.municipality_code ?? "");
+    setLocality(existingStructure.locality ?? "");
+    setPostalCode(existingStructure.postal_code ?? "");
     setAddress(existingStructure.address ?? "");
     setLatitude(
       existingStructure.latitude !== null && existingStructure.latitude !== undefined
@@ -1516,6 +1596,18 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setContactCheckingDuplicates(false);
     setApiError(null);
     setFieldErrors({});
+    setCoordinatesManuallyEdited(
+      Boolean(
+        (existingStructure.latitude !== null &&
+          existingStructure.latitude !== undefined) ||
+          (existingStructure.longitude !== null &&
+            existingStructure.longitude !== undefined)
+      )
+    );
+    setGeocodingStatus("idle");
+    setGeocodingSuggestion(null);
+    setGeocodingError(null);
+    setGeocodingApplied(false);
     setIsPrefilled(true);
   }, [
     existingStructure,
@@ -1524,6 +1616,119 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     evaluateWebsiteUrlStatus,
     resetContactSection
   ]);
+
+  useEffect(() => {
+    const trimmedAddress = address.trim();
+    const trimmedLocality = locality.trim();
+    const trimmedMunicipality = municipality.trim();
+    const trimmedProvince = province.trim();
+    const trimmedPostal = postalCode.trim();
+
+    if (!trimmedAddress && !trimmedLocality && !trimmedMunicipality && !trimmedPostal) {
+      if (geocodingDebounceRef.current !== null) {
+        window.clearTimeout(geocodingDebounceRef.current);
+        geocodingDebounceRef.current = null;
+      }
+      if (geocodingAbortController.current) {
+        geocodingAbortController.current.abort();
+        geocodingAbortController.current = null;
+      }
+      setGeocodingStatus("idle");
+      setGeocodingSuggestion(null);
+      setGeocodingError(null);
+      setGeocodingApplied(false);
+      return;
+    }
+
+    if (geocodingDebounceRef.current !== null) {
+      window.clearTimeout(geocodingDebounceRef.current);
+      geocodingDebounceRef.current = null;
+    }
+
+    if (geocodingAbortController.current) {
+      geocodingAbortController.current.abort();
+    }
+
+    const controller = new AbortController();
+    geocodingAbortController.current = controller;
+    const requestId = geocodingRequestId.current + 1;
+    geocodingRequestId.current = requestId;
+
+    setGeocodingStatus("loading");
+    setGeocodingError(null);
+    setGeocodingApplied(false);
+
+    geocodingDebounceRef.current = window.setTimeout(() => {
+      const params = {
+        address: trimmedAddress || undefined,
+        locality: trimmedLocality || undefined,
+        municipality: trimmedMunicipality || undefined,
+        province: trimmedProvince || undefined,
+        postal_code: trimmedPostal || undefined,
+        country: "IT"
+      };
+
+      searchGeocoding(params, { signal: controller.signal })
+        .then((results) => {
+          if (controller.signal.aborted || requestId !== geocodingRequestId.current) {
+            return;
+          }
+          const [first] = results;
+          setGeocodingStatus("success");
+          setGeocodingSuggestion(first ?? null);
+          if (!first) {
+            setGeocodingApplied(false);
+            return;
+          }
+
+          const suggestedLatitude = first.latitude.toFixed(6);
+          const suggestedLongitude = first.longitude.toFixed(6);
+
+          if (
+            !coordinatesEditedRef.current &&
+            !latitudeRef.current &&
+            !longitudeRef.current
+          ) {
+            setLatitude(suggestedLatitude);
+            setLongitude(suggestedLongitude);
+            setGeocodingApplied(true);
+          } else {
+            setGeocodingApplied(false);
+          }
+        })
+        .catch((error: unknown) => {
+          if (controller.signal.aborted || requestId !== geocodingRequestId.current) {
+            return;
+          }
+          if (error instanceof ApiError) {
+            setGeocodingError(error.message);
+          } else if (error instanceof Error) {
+            setGeocodingError(error.message);
+          } else {
+            setGeocodingError(String(error));
+          }
+          setGeocodingSuggestion(null);
+          setGeocodingStatus("error");
+          setGeocodingApplied(false);
+        })
+        .finally(() => {
+          if (geocodingDebounceRef.current !== null) {
+            geocodingDebounceRef.current = null;
+          }
+          if (geocodingAbortController.current === controller) {
+            geocodingAbortController.current = null;
+          }
+        });
+    }, 800);
+
+    return () => {
+      if (geocodingDebounceRef.current !== null) {
+        window.clearTimeout(geocodingDebounceRef.current);
+        geocodingDebounceRef.current = null;
+      }
+      controller.abort();
+    };
+  }, [address, locality, municipality, province, postalCode]);
 
   const handleWebsiteUrlChange = (index: number, value: string) => {
     setWebsiteUrls((current) => {
@@ -1628,6 +1833,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const validate = (): boolean => {
     const trimmedName = name.trim();
     const trimmedProvince = province.trim();
+    const trimmedPostalCode = postalCode.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
     const trimmedAltitude = altitude.trim();
@@ -1669,6 +1875,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (trimmedProvince && !/^[A-Z]{2}$/.test(trimmedProvince)) {
       errors.province = t("structures.create.errors.provinceInvalid");
+    }
+
+    if (trimmedPostalCode) {
+      const normalizedPostalCode = trimmedPostalCode.toUpperCase();
+      if (!/^[A-Z0-9][A-Z0-9\s-]{2,15}$/.test(normalizedPostalCode)) {
+        errors.postal_code = t("structures.create.errors.postalCodeInvalid");
+      }
     }
 
     if (trimmedLatitude) {
@@ -1908,6 +2121,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     }
 
     const trimmedProvince = province.trim();
+    const trimmedMunicipality = municipality.trim();
+    const trimmedMunicipalityCode = municipalityCode.trim();
+    const trimmedLocality = locality.trim();
+    const trimmedPostalCode = postalCode.trim();
     const trimmedAddress = address.trim();
     const trimmedLatitude = latitude.trim();
     const trimmedLongitude = longitude.trim();
@@ -1978,6 +2195,22 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (trimmedProvince) {
       payload.province = trimmedProvince.toUpperCase();
+    }
+
+    if (trimmedMunicipality) {
+      payload.municipality = trimmedMunicipality;
+    }
+
+    if (trimmedMunicipalityCode) {
+      payload.municipality_code = trimmedMunicipalityCode.toUpperCase();
+    }
+
+    if (trimmedLocality) {
+      payload.locality = trimmedLocality;
+    }
+
+    if (trimmedPostalCode) {
+      payload.postal_code = trimmedPostalCode.toUpperCase();
     }
 
     if (trimmedAddress) {
@@ -2344,6 +2577,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const slugPreviewId = "structure-slug-preview";
 
   const provinceErrorId = fieldErrors.province ? "structure-province-error" : undefined;
+  const postalCodeErrorId = fieldErrors.postal_code ? "structure-postal-code-error" : undefined;
   const latitudeErrorId = fieldErrors.latitude ? "structure-latitude-error" : undefined;
   const longitudeErrorId = fieldErrors.longitude ? "structure-longitude-error" : undefined;
   const altitudeErrorId = fieldErrors.altitude ? "structure-altitude-error" : undefined;
@@ -2377,7 +2611,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const operationalStatusDescribedBy = operationalStatusHintId;
   const provinceHintId = "structure-province-hint";
   const provinceDescribedBy = [provinceHintId, provinceErrorId].filter(Boolean).join(" ") || undefined;
+  const municipalityHintId = "structure-municipality-hint";
+  const municipalityCodeHintId = "structure-municipality-code-hint";
+  const localityHintId = "structure-locality-hint";
   const addressHintId = "structure-address-hint";
+  const postalCodeHintId = "structure-postal-code-hint";
+  const postalCodeDescribedBy = [postalCodeHintId, postalCodeErrorId]
+    .filter(Boolean)
+    .join(" ") || undefined;
   const latitudeHintId = "structure-latitude-hint";
   const latitudeDescribedBy = [latitudeHintId, latitudeErrorId].filter(Boolean).join(" ") || undefined;
   const longitudeHintId = "structure-longitude-hint";
@@ -2635,6 +2876,78 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                       {fieldErrors.province}
                     </p>
                   )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-postal-code">
+                    {t("structures.create.form.postalCode")}
+                    <input
+                      id="structure-postal-code"
+                      value={postalCode}
+                      onChange={handlePostalCodeChange}
+                      maxLength={16}
+                      placeholder={t("structures.create.form.postalCodePlaceholder")}
+                      aria-invalid={fieldErrors.postal_code ? "true" : undefined}
+                      aria-describedby={postalCodeDescribedBy}
+                    />
+                  </label>
+                  <span className="helper-text" id={postalCodeHintId}>
+                    {t("structures.create.form.postalCodeHint")}
+                  </span>
+                  {fieldErrors.postal_code && (
+                    <p className="error-text" id={postalCodeErrorId!}>
+                      {fieldErrors.postal_code}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-municipality">
+                    {t("structures.create.form.municipality")}
+                    <input
+                      id="structure-municipality"
+                      value={municipality}
+                      onChange={handleMunicipalityChange}
+                      placeholder={t("structures.create.form.municipalityPlaceholder")}
+                      aria-describedby={municipalityHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={municipalityHintId}>
+                    {t("structures.create.form.municipalityHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-locality">
+                    {t("structures.create.form.locality")}
+                    <input
+                      id="structure-locality"
+                      value={locality}
+                      onChange={handleLocalityChange}
+                      placeholder={t("structures.create.form.localityPlaceholder")}
+                      aria-describedby={localityHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={localityHintId}>
+                    {t("structures.create.form.localityHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-municipality-code">
+                    {t("structures.create.form.municipalityCode")}
+                    <input
+                      id="structure-municipality-code"
+                      value={municipalityCode}
+                      onChange={handleMunicipalityCodeChange}
+                      maxLength={16}
+                      placeholder={t("structures.create.form.municipalityCodePlaceholder")}
+                      aria-describedby={municipalityCodeHintId}
+                    />
+                  </label>
+                  <span className="helper-text" id={municipalityCodeHintId}>
+                    {t("structures.create.form.municipalityCodeHint")}
+                  </span>
                 </div>
 
                 <div className="structure-form-field" data-span="full">
@@ -4663,6 +4976,42 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     <span className="helper-text">
                       {t("structures.create.form.map.hint")}
                     </span>
+                    {geocodingStatus === "loading" && (
+                      <span className="structure-geocode-status">
+                        {t("structures.create.form.geocoding.searching")}
+                      </span>
+                    )}
+                    {geocodingStatus === "error" && (
+                      <p className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--error">
+                        {geocodingError ?? t("structures.create.form.geocoding.error")}
+                      </p>
+                    )}
+                    {geocodingSuggestion && (
+                      <div className="structure-geocode-status structure-geocode-status__suggestion">
+                        <span>
+                          {t("structures.create.form.geocoding.suggestion", {
+                            label: geocodingSuggestion.label
+                          })}
+                        </span>
+                        <span className="structure-geocode-status__coords">
+                          {geocodingSuggestion.latitude.toFixed(6)}, {" "}
+                          {geocodingSuggestion.longitude.toFixed(6)}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleApplyGeocodingSuggestion}
+                        >
+                          {t("structures.create.form.geocoding.apply")}
+                        </Button>
+                      </div>
+                    )}
+                    {geocodingApplied && (
+                      <span className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--success">
+                        {t("structures.create.form.geocoding.applied")}
+                      </span>
+                    )}
                     {selectedCoordinatesLabel && (
                       <span className="structure-map-field-selected helper-text">
                         {selectedCoordinatesLabel}

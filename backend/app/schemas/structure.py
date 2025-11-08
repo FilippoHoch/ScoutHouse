@@ -167,6 +167,7 @@ class StructureBase(BaseModel):
     municipality: str | None = Field(default=None, max_length=255)
     municipality_code: str | None = Field(default=None, max_length=16)
     locality: str | None = Field(default=None, max_length=255)
+    postal_code: str | None = Field(default=None, max_length=16)
     address: str | None = None
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
@@ -448,6 +449,14 @@ class StructureBase(BaseModel):
         normalized = value.strip().upper()
         return normalized or None
 
+    @field_validator("postal_code")
+    @classmethod
+    def normalize_postal_code(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().upper()
+        return normalized or None
+
     @field_validator("latitude")
     @classmethod
     def validate_latitude(cls, value: float | None) -> float | None:
@@ -724,6 +733,7 @@ class StructureSearchItem(BaseModel):
     slug: str
     name: str
     province: str | None = None
+    postal_code: str | None = None
     type: StructureType
     address: str | None = None
     latitude: float | None = None
