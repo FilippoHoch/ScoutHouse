@@ -77,6 +77,9 @@ class WaterSource(str, Enum):
     FOUNTAIN = "fountain"
     TAP = "tap"
     RIVER = "river"
+    LAKE = "lake"
+    FIELD_SHOWER = "field_shower"
+    UNKNOWN = "unknown"
 
 
 class AnimalPolicy(str, Enum):
