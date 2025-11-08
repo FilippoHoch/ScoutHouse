@@ -3306,18 +3306,20 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                         )}
                       </div>
                     </div>
+                    </div>
                   </div>
-                </section>
-              </div>
-            </fieldset>
+                </div>
+              </section>
+            </div>
+          </fieldset>
 
-            {showIndoorSection && (
-              <fieldset className="structure-form-section">
-                <legend>{t("structures.create.form.sections.indoor.title")}</legend>
-                <p className="helper-text">
-                  {t("structures.create.form.sections.indoor.description")}
-                </p>
-                <div className="structure-field-grid">
+          {showIndoorSection && (
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.indoor.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.indoor.description")}
+              </p>
+              <div className="structure-field-grid">
                   <div className="structure-form-field">
                     <label htmlFor="structure-indoor-beds">
                       {t("structures.create.form.indoorBeds")}
