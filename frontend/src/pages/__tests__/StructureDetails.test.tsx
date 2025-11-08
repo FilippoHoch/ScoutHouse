@@ -95,13 +95,13 @@ const sampleStructure: Structure = {
   whatsapp: null,
   booking_required: null,
   booking_notes: null,
-  documents_required: [],
-  map_resources_urls: [],
+  documents_required: ["Modulo iscrizione"],
+  map_resources_urls: ["https://maps.example.org/casa-alpina.pdf"],
   event_rules_url: null,
   event_rules_notes: null,
   cell_coverage: null,
   cell_coverage_notes: null,
-  communications_infrastructure: [],
+  communications_infrastructure: ["Wi-Fi", "Radio"],
   aed_on_site: null,
   emergency_phone_available: null,
   emergency_response_time_minutes: null,
@@ -112,15 +112,15 @@ const sampleStructure: Structure = {
   river_swimming: "si",
   flood_risk: null,
   weather_risk_notes: null,
-  activity_spaces: [],
-  activity_equipment: [],
-  inclusion_services: [],
-  inclusion_notes: null,
+  activity_spaces: ["Sala riunioni"],
+  activity_equipment: ["Proiettore"],
+  inclusion_services: ["Pasti senza glutine"],
+  inclusion_notes: "Supporto per bisogni specifici",
   pec_email: null,
   sdi_recipient_code: null,
   invoice_available: null,
   iban: null,
-  payment_methods: [],
+  payment_methods: ["Bonifico", "Carta"],
   fiscal_notes: null,
   notes_logistics: "Contattare il custode",
   logistics_arrival_notes: null,
@@ -132,7 +132,7 @@ const sampleStructure: Structure = {
   governance_notes: null,
   data_quality_score: null,
   data_quality_notes: null,
-  data_quality_flags: [],
+  data_quality_flags: ["verified", "needs_photos"],
   created_at: new Date("2024-01-01T00:00:00Z").toISOString(),
   estimated_cost: 18.5,
   cost_band: "medium",
@@ -234,6 +234,23 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Fermata centro/i)).toBeInTheDocument();
     expect(screen.getByText(/Contattare il custode/i)).toBeInTheDocument();
     expect(screen.getByText(/Note generiche/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t("structures.details.overview.advancedGroupTitle"))
+    ).toBeInTheDocument();
+    const documentsMatches = screen.getAllByText(/Modulo iscrizione/i);
+    expect(documentsMatches.some((node) => node.tagName === "DD")).toBe(true);
+    expect(
+      screen.getByRole("link", {
+        name: "https://maps.example.org/casa-alpina.pdf"
+      })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Wi-Fi, Radio/)).toBeInTheDocument();
+    expect(screen.getByText(/Sala riunioni/)).toBeInTheDocument();
+    expect(screen.getByText(/Proiettore/)).toBeInTheDocument();
+    expect(screen.getByText(/Pasti senza glutine/)).toBeInTheDocument();
+    expect(screen.getByText(/Supporto per bisogni specifici/)).toBeInTheDocument();
+    expect(screen.getByText(/Bonifico, Carta/)).toBeInTheDocument();
+    expect(screen.getByText(/verified, needs_photos/)).toBeInTheDocument();
     expect(screen.getByText(/"municipality": "Brescia"/i)).toBeInTheDocument();
     expect(screen.getByText(/"river_swimming": "si"/i)).toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();

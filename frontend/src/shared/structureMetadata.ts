@@ -53,6 +53,15 @@ const managedKeys = new Set<keyof Structure | string>([
   "notes",
   "open_periods",
   "cost_options",
+  "documents_required",
+  "map_resources_urls",
+  "communications_infrastructure",
+  "activity_spaces",
+  "activity_equipment",
+  "inclusion_services",
+  "inclusion_notes",
+  "payment_methods",
+  "data_quality_flags",
 ]);
 
 const blockedAdvancedKeys = new Set<string>([

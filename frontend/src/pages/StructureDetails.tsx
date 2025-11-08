@@ -152,6 +152,43 @@ export const StructureDetailsPage = () => {
     return fallbackLabels.notAvailable;
   };
 
+  const formatStringList = (
+    items: string[] | null | undefined,
+    fallbackKey?: string
+  ): ReactNode => {
+    if (!items || items.length === 0) {
+      if (fallbackKey) {
+        return t(fallbackKey);
+      }
+      return fallbackLabels.notAvailable;
+    }
+    return items.join(", ");
+  };
+
+  const formatUrlList = (
+    urls: string[] | null | undefined,
+    fallbackKey?: string
+  ): ReactNode => {
+    if (!urls || urls.length === 0) {
+      if (fallbackKey) {
+        return t(fallbackKey);
+      }
+      return fallbackLabels.notAvailable;
+    }
+
+    return (
+      <ul className="structure-website-links">
+        {urls.map((url) => (
+          <li key={url}>
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              {url}
+            </a>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   const formatWaterSources = (sources: WaterSource[] | null | undefined) => {
     if (!sources || sources.length === 0) {
       return t("structures.details.overview.waterSources.none");
@@ -670,6 +707,99 @@ export const StructureDetailsPage = () => {
       ),
       icon: "💬",
       isFull: true
+    }
+  ];
+
+  const advancedDetails: LogisticsDetail[] = [
+    {
+      id: "documentsRequired",
+      label: t("structures.details.overview.documentsRequired"),
+      value: formatStringList(
+        structure.documents_required,
+        "structures.details.overview.documentsRequiredFallback"
+      ),
+      icon: "📄",
+      isFull: true
+    },
+    {
+      id: "mapResources",
+      label: t("structures.details.overview.mapResources"),
+      value: formatUrlList(
+        structure.map_resources_urls,
+        "structures.details.overview.mapResourcesFallback"
+      ),
+      icon: "🗺️",
+      isFull: true
+    },
+    {
+      id: "communicationsInfrastructure",
+      label: t("structures.details.overview.communicationsInfrastructure"),
+      value: formatStringList(
+        structure.communications_infrastructure,
+        "structures.details.overview.communicationsInfrastructureFallback"
+      ),
+      icon: "📡",
+      isFull: true
+    },
+    {
+      id: "activitySpaces",
+      label: t("structures.details.overview.activitySpaces"),
+      value: formatStringList(
+        structure.activity_spaces,
+        "structures.details.overview.activitySpacesFallback"
+      ),
+      icon: "🏕️",
+      isFull: true
+    },
+    {
+      id: "activityEquipment",
+      label: t("structures.details.overview.activityEquipment"),
+      value: formatStringList(
+        structure.activity_equipment,
+        "structures.details.overview.activityEquipmentFallback"
+      ),
+      icon: "🎒",
+      isFull: true
+    },
+    {
+      id: "inclusionServices",
+      label: t("structures.details.overview.inclusionServices"),
+      value: formatStringList(
+        structure.inclusion_services,
+        "structures.details.overview.inclusionServicesFallback"
+      ),
+      icon: "🤝",
+      isFull: true
+    },
+    {
+      id: "inclusionNotes",
+      label: t("structures.details.overview.inclusionNotes"),
+      value: formatOptionalText(
+        structure.inclusion_notes,
+        "structures.details.overview.inclusionNotesFallback"
+      ),
+      icon: "📝",
+      isFull: true
+    },
+    {
+      id: "paymentMethods",
+      label: t("structures.details.overview.paymentMethods"),
+      value: formatStringList(
+        structure.payment_methods,
+        "structures.details.overview.paymentMethodsFallback"
+      ),
+      icon: "💳",
+      isFull: true
+    },
+    {
+      id: "dataQualityFlags",
+      label: t("structures.details.overview.dataQualityFlags"),
+      value: formatStringList(
+        structure.data_quality_flags,
+        "structures.details.overview.dataQualityFlagsFallback"
+      ),
+      icon: "✅",
+      isFull: true
     },
     {
       id: "advancedMetadata",
@@ -1087,6 +1217,17 @@ export const StructureDetailsPage = () => {
                     </h4>
                   </header>
                   {renderLogisticsDetails(operationsDetails)}
+                </section>
+                <section className="structure-logistics-group">
+                  <header className="structure-logistics-group__header">
+                    <span className="structure-logistics-group__icon" aria-hidden="true">
+                      🧾
+                    </span>
+                    <h4 className="structure-logistics-group__title">
+                      {t("structures.details.overview.advancedGroupTitle")}
+                    </h4>
+                  </header>
+                  {renderLogisticsDetails(advancedDetails)}
                 </section>
               </div>
             </div>
