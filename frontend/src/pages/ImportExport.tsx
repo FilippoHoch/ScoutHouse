@@ -553,7 +553,7 @@ export const ImportExportPage = () => {
               <div className="actions export-actions">
                 <button
                   type="button"
-                  className="button ghost"
+                  className="button button--option"
                   onClick={() => handleStructureExport("csv")}
                   disabled={structureExportLoading}
                 >
@@ -563,7 +563,7 @@ export const ImportExportPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="button ghost"
+                  className="button button--option"
                   onClick={() => handleStructureExport("xlsx")}
                   disabled={structureExportLoading}
                 >
@@ -573,7 +573,7 @@ export const ImportExportPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="button ghost"
+                  className="button button--option"
                   onClick={() => handleStructureExport("json")}
                   disabled={structureExportLoading}
                 >
@@ -618,7 +618,7 @@ export const ImportExportPage = () => {
               <div className="actions export-actions">
                 <button
                   type="button"
-                  className="button ghost"
+                  className="button button--option"
                   onClick={() => handleEventsExport("csv")}
                   disabled={eventsExportLoading}
                 >
@@ -628,7 +628,7 @@ export const ImportExportPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="button ghost"
+                  className="button button--option"
                   onClick={() => handleEventsExport("xlsx")}
                   disabled={eventsExportLoading}
                 >
@@ -638,7 +638,7 @@ export const ImportExportPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="button ghost"
+                  className="button button--option"
                   onClick={() => handleEventsExport("json")}
                   disabled={eventsExportLoading}
                 >
