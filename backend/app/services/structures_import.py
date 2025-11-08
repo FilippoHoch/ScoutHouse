@@ -688,15 +688,22 @@ def _process_rows(
             water_sources = None
         else:
             water_sources = water_sources_list
-            if water_sources and WaterSource.NONE in water_sources and len(water_sources) > 1:
-                row_errors.append(
-                    RowError(
-                        row=index,
-                        field="water_sources",
-                        message="Value 'none' cannot be combined with other entries",
-                        source_format=source_format,
+            if water_sources:
+                exclusive_sources = {WaterSource.NONE, WaterSource.UNKNOWN}
+                selected_exclusive = [
+                    source for source in water_sources if source in exclusive_sources
+                ]
+                if selected_exclusive and len(water_sources) > 1:
+                    joined = ", ".join(f"'{item.value}'" for item in selected_exclusive)
+                    prefix = "Values" if len(selected_exclusive) > 1 else "Value"
+                    row_errors.append(
+                        RowError(
+                            row=index,
+                            field="water_sources",
+                            message=f"{prefix} {joined} cannot be combined with other entries",
+                            source_format=source_format,
+                        )
                     )
-                )
 
         try:
             electricity_available = _validate_bool(electricity_available_raw)

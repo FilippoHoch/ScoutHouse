@@ -1,6 +1,13 @@
 export type StructureType = "house" | "land" | "mixed";
 export type FirePolicy = "allowed" | "with_permit" | "forbidden";
-export type WaterSource = "none" | "fountain" | "tap" | "river";
+export type WaterSource =
+  | "none"
+  | "fountain"
+  | "tap"
+  | "river"
+  | "lake"
+  | "field_shower"
+  | "unknown";
 export type CellCoverageQuality = "none" | "limited" | "good" | "excellent";
 export type WastewaterType = "none" | "septic" | "holding_tank" | "mains" | "unknown";
 export type FloodRiskLevel = "none" | "low" | "medium" | "high";

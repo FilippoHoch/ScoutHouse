@@ -63,7 +63,15 @@ import { TriStateToggle } from "../shared/ui/TriStateToggle";
 import { isImageFile } from "../shared/utils/image";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
-const waterSourceOptions: WaterSource[] = ["none", "fountain", "tap", "river"];
+const waterSourceOptions: WaterSource[] = [
+  "lake",
+  "river",
+  "field_shower",
+  "fountain",
+  "tap",
+  "none",
+  "unknown",
+];
 const firePolicyOptions: FirePolicy[] = ["allowed", "with_permit", "forbidden"];
 const fieldSlopeOptions: FieldSlope[] = ["flat", "gentle", "moderate", "steep"];
 const contactStatusOptions: StructureContactStatus[] = [
@@ -1044,16 +1052,24 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const handleWaterSourceToggle = (option: WaterSource, checked: boolean) => {
     setWaterSources((prev) => {
+      const exclusiveOptions: WaterSource[] = ["none", "unknown"];
+
       if (checked) {
-        if (option === "none") {
-          return ["none"];
+        if (exclusiveOptions.includes(option)) {
+          return [option];
         }
-        const withoutNone = prev.filter((value) => value !== "none");
-        if (withoutNone.includes(option)) {
-          return withoutNone;
+
+        const withoutExclusive = prev.filter(
+          (value) => !exclusiveOptions.includes(value)
+        );
+
+        if (withoutExclusive.includes(option)) {
+          return withoutExclusive;
         }
-        return [...withoutNone, option];
+
+        return [...withoutExclusive, option];
       }
+
       return prev.filter((value) => value !== option);
     });
     setApiError(null);

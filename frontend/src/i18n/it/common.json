@@ -436,13 +436,13 @@
         },
         "pitchesTende": "Piazzole per tende",
         "pitchesTendeHint": "Quante piazzole standard da tenda sono disponibili (numero indicativo).",
-        "waterAtField": "Acqua sul campo",
-        "waterAtFieldHint": "Usa le opzioni Sì/No/Non specificato per indicare se c'è un punto acqua direttamente nell'area campo.",
+        "waterAtField": "Punto bagno sul campo",
+        "waterAtFieldHint": "Usa le opzioni Sì/No/Non specificato per indicare se è disponibile un punto bagno direttamente nell'area campo.",
         "shelterOnField": "Tettoia o rifugio sul campo",
         "shelterOnFieldHint": "Usa le opzioni Sì/No/Non specificato per indicare se è presente una tettoia o un riparo fisso nell'area esterna.",
-        "waterSource": "Fonti d'acqua",
-        "waterSourcePlaceholder": "Seleziona le fonti",
-        "waterSourceHint": "Indica tutte le fonti d'acqua disponibili nell'area esterna. Se non è presente acqua, seleziona \"Nessuna\".",
+        "waterSource": "Punti bagno disponibili",
+        "waterSourcePlaceholder": "Seleziona i punti",
+        "waterSourceHint": "Indica tutti i punti bagno disponibili nell'area esterna (ad esempio lago, fiume, doccia da campo). Se non è presente nulla, seleziona \"Nessuno\". Se l'informazione non è disponibile, seleziona \"Non specificato\".",
         "electricityAvailable": "Presa elettrica disponibile",
         "electricityAvailableHint": "Usa le opzioni Sì/No/Non specificato per indicare se nell'area esterna è disponibile un punto corrente utilizzabile.",
         "firePolicy": "Regole per i fuochi",
@@ -592,10 +592,13 @@
         "hasFieldPoles": "Pali già presenti sul campo",
         "hasFieldPolesHint": "Usa le opzioni Sì/No/Non specificato per indicare se nell'area esterna sono disponibili pali fissi o strutture pronte.",
         "waterSourceOptions": {
-          "none": "Nessuna",
+          "lake": "Lago",
+          "river": "Fiume o ruscello",
+          "field_shower": "Doccia da campo già presente",
           "fountain": "Fontana",
           "tap": "Rubinetto",
-          "river": "Fiume o ruscello"
+          "none": "Nessuno",
+          "unknown": "Non specificato"
         },
         "firePolicyOptions": {
           "allowed": "Consentiti",
@@ -741,12 +744,12 @@
         "landAreaValue": "{{value}} m²",
         "fieldSlope": "Pendenza del terreno",
         "pitchesTende": "Piazzole tende",
-        "waterAtField": "Acqua sul campo",
+        "waterAtField": "Punto bagno sul campo",
         "shelterOnField": "Tettoia o rifugio sul campo",
         "hasFieldPoles": "Pali già presenti sul campo",
         "waterSources": {
-          "label": "Fonti d'acqua",
-          "none": "Nessuna fonte indicata"
+          "label": "Punti bagno disponibili",
+          "none": "Nessun punto indicato"
         },
         "electricityAvailable": "Presa elettrica disponibile",
         "firePolicy": "Regole per i fuochi",

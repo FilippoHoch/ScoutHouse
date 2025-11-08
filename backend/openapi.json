@@ -8759,7 +8759,10 @@
           "none",
           "fountain",
           "tap",
-          "river"
+          "river",
+          "lake",
+          "field_shower",
+          "unknown"
         ],
         "title": "WaterSource"
       }
