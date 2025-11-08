@@ -314,7 +314,8 @@
           "suggestion": "Coordinate suggerite per {{label}}",
           "apply": "Usa coordinate suggerite",
           "applied": "Coordinate aggiornate automaticamente dalle informazioni inserite.",
-          "error": "Impossibile suggerire le coordinate al momento."
+          "error": "Impossibile suggerire le coordinate al momento.",
+          "unableToResolve": "Non siamo riusciti a trovare coordinate con i dati inseriti. Controlla indirizzo, comune, provincia e CAP oppure aggiungi maggiori dettagli."
         },
         "indoorActivityRooms": "Sale attività interne",
         "indoorActivityRoomsHint": "Numero di stanze interne utilizzabili per attività o riunioni.",
@@ -380,10 +381,12 @@
           }
         },
         "location": {
-          "addressTitle": "Dettagli indirizzo",
-          "addressDescription": "Indica via/piazza, numero civico, località, comune, provincia e CAP. Tutti i campi sono opzionali, ma più dettagli inserisci più sarà facile posizionare automaticamente la struttura.",
-          "coordinatesTitle": "Coordinate e mappa",
-          "coordinatesDescription": "Controlla il risultato sulla mappa: proviamo a posizionare il segnaposto in base all'indirizzo, ma puoi correggere manualmente valori e posizione se necessario."
+          "detailsTitle": "Riepilogo posizione",
+          "detailsDescription": "Completa l'indirizzo con il maggior numero di dettagli possibile: useremo queste informazioni per suggerire automaticamente le coordinate.",
+          "addressGroupTitle": "Indirizzo e riferimenti",
+          "addressGroupDescription": "Via/piazza, numero civico, località, comune, provincia e CAP sono facoltativi ma utili per ottenere un posizionamento preciso.",
+          "coordinatesGroupTitle": "Coordinate e mappa",
+          "coordinatesGroupDescription": "Verifica le coordinate proposte, correggi manualmente se necessario oppure clicca sulla mappa per spostare il segnaposto."
         },
         "sections": {
           "general": {
@@ -392,7 +395,7 @@
           },
           "location": {
             "title": "Posizione, indirizzo e coordinate",
-            "description": "Raccogli tutti i dati necessari per individuare la struttura sulla mappa e raggiungerla facilmente."
+            "description": "Inserisci le informazioni utili per raggiungere la struttura e aiutaci a posizionarla automaticamente sulla mappa."
           },
           "coordinates": {
             "title": "Coordinate geografiche",
