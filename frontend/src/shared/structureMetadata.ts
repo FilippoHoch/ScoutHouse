@@ -1,4 +1,4 @@
-import type { Structure } from "./types";
+import type { CostOption, Structure } from "./types";
 
 const managedKeys = new Set<keyof Structure | string>([
   "name",
@@ -95,6 +95,63 @@ export const mergeAdvancedStructurePayload = <T extends Record<string, unknown>>
 ): T => {
   for (const [key, value] of Object.entries(advanced)) {
     if (blockedAdvancedKeys.has(key)) {
+      continue;
+    }
+    if (Object.prototype.hasOwnProperty.call(base, key) && base[key as keyof T] !== undefined) {
+      continue;
+    }
+    (base as Record<string, unknown>)[key] = value;
+  }
+  return base;
+};
+
+const costOptionManagedKeys = new Set<string>([
+  "id",
+  "model",
+  "amount",
+  "currency",
+  "booking_deposit",
+  "damage_deposit",
+  "city_tax_per_night",
+  "utilities_flat",
+  "utilities_included",
+  "utilities_notes",
+  "min_total",
+  "max_total",
+  "payment_methods",
+  "payment_terms"
+]);
+
+const costOptionBlockedKeys = new Set<string>(["id"]);
+
+export const STRUCTURE_COST_FORM_MANAGED_KEYS = costOptionManagedKeys;
+export const STRUCTURE_COST_ADVANCED_BLOCKED_KEYS = costOptionBlockedKeys;
+
+export const extractAdvancedCostOptionData = (
+  costOption: Partial<CostOption>
+): Record<string, unknown> => {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(costOption)) {
+    if (costOptionManagedKeys.has(key) || costOptionBlockedKeys.has(key)) {
+      continue;
+    }
+    if (value === null || value === undefined) {
+      continue;
+    }
+    result[key] = value;
+  }
+  return result;
+};
+
+export const mergeAdvancedCostOptionPayload = <T extends Record<string, unknown>>(
+  base: T,
+  advanced: Record<string, unknown>
+): T => {
+  for (const [key, value] of Object.entries(advanced)) {
+    if (costOptionBlockedKeys.has(key)) {
+      continue;
+    }
+    if (costOptionManagedKeys.has(key)) {
       continue;
     }
     if (Object.prototype.hasOwnProperty.call(base, key) && base[key as keyof T] !== undefined) {

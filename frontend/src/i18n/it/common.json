@@ -525,13 +525,25 @@
           "modelPlaceholder": "Seleziona modello",
           "amount": "Importo principale",
           "currency": "Valuta",
-          "deposit": "Caparra (facoltativa)",
+          "bookingDeposit": "Caparra prenotazione (facoltativa)",
+          "damageDeposit": "Cauzione danni (facoltativa)",
           "cityTax": "Tassa di soggiorno per notte (facoltativa)",
           "utilities": "Forfait utenze (facoltativo)",
+          "utilitiesIncluded": "Utenze incluse",
+          "utilitiesIncludedUnset": "Non specificato",
+          "utilitiesNotes": "Dettagli utenze",
+          "utilitiesNotesHint": "Descrivi cosa include il forfait o eventuali note sulle utenze.",
           "minTotal": "Totale minimo (facoltativo)",
           "minTotalHint": "Importo minimo complessivo applicato alle tariffe a persona.",
           "maxTotal": "Totale massimo (facoltativo)",
           "maxTotalHint": "Importo massimo complessivo applicato alle tariffe a persona.",
+          "paymentMethods": "Metodi di pagamento accettati",
+          "paymentMethodsHint": "Inserisci un metodo per riga (es. bonifico, contanti, carta).",
+          "paymentTerms": "Condizioni di pagamento",
+          "advancedMetadata": {
+            "label": "Metadati avanzati (JSON)",
+            "hint": "Inserisci coppie chiave/valore aggiuntive (es. modifiers, age_rules, price_per_resource)."
+          },
           "models": {
             "per_person_day": "Per persona al giorno",
             "per_person_night": "Per persona a notte",
@@ -613,6 +625,8 @@
         "costOptionsCurrencyInvalid": "La valuta deve contenere tre lettere.",
         "costOptionsExtraInvalid": "Inserisci importi validi maggiori o uguali a zero per caparra, tassa o utenze.",
         "costOptionsTotalsInvalid": "Il totale minimo deve essere minore o uguale al totale massimo."
+        ,
+        "costOptionsAdvancedInvalid": "I metadati avanzati delle opzioni di costo non sono validi. Inserisci un oggetto JSON."
       },
       "warnings": {
         "websiteUnreachable": "Attenzione: {{count, plural, one {il seguente link non risponde} other {i seguenti link non rispondono}}:\n{{urls}}\nLa struttura è stata creata comunque."
@@ -823,8 +837,17 @@
         "costsEmpty": "Non sono state definite opzioni di costo per questa struttura."
       },
       "costs": {
+        "bookingDeposit": "Caparra prenotazione: {{value}}",
+        "damageDeposit": "Cauzione danni: {{value}}",
+        "cityTax": "Tassa di soggiorno: {{value}} a notte",
+        "utilitiesFlat": "Forfait utenze: {{value}}",
+        "utilitiesIncluded": "Utenze incluse: {{value}}",
+        "utilitiesNotes": "Note utenze: {{value}}",
         "minimumTotal": "Totale minimo: {{value}}",
-        "maximumTotal": "Totale massimo: {{value}}"
+        "maximumTotal": "Totale massimo: {{value}}",
+        "paymentMethods": "Metodi di pagamento: {{value}}",
+        "paymentTerms": "Condizioni di pagamento: {{value}}",
+        "advancedMetadata": "Metadati avanzati"
       },
       "actions": {
         "edit": "Modifica struttura"

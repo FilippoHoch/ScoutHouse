@@ -93,17 +93,46 @@ export interface Availability {
   capacity_max: number | null;
 }
 
+export type CostModifierKind = "season" | "date_range" | "weekend";
+
+export interface StructureCostModifier {
+  id: number;
+  kind: CostModifierKind;
+  amount: number;
+  season: Season | null;
+  date_start: string | null;
+  date_end: string | null;
+  price_per_resource?: Record<string, number> | null;
+}
+
+export interface StructureCostModifierInput {
+  id?: number;
+  kind: CostModifierKind;
+  amount: number;
+  season?: Season | null;
+  date_start?: string | null;
+  date_end?: string | null;
+  price_per_resource?: Record<string, number> | null;
+}
+
 export interface CostOption {
   id: number;
   model: CostModel;
   amount: number;
   currency: string;
-  deposit: number | null;
+  booking_deposit: number | null;
+  damage_deposit: number | null;
   city_tax_per_night: number | null;
   utilities_flat: number | null;
+  utilities_included: boolean | null;
+  utilities_notes: string | null;
   min_total: number | null;
   max_total: number | null;
   age_rules?: Record<string, unknown> | null;
+  payment_methods?: string[] | null;
+  payment_terms?: string | null;
+  price_per_resource?: Record<string, number> | null;
+  modifiers?: StructureCostModifier[] | null;
 }
 
 export interface StructureCostOptionInput {
@@ -111,12 +140,19 @@ export interface StructureCostOptionInput {
   model: CostModel;
   amount: number;
   currency: string;
-  deposit?: number | null;
+  booking_deposit?: number | null;
+  damage_deposit?: number | null;
   city_tax_per_night?: number | null;
   utilities_flat?: number | null;
+  utilities_included?: boolean | null;
+  utilities_notes?: string | null;
   min_total?: number | null;
   max_total?: number | null;
   age_rules?: Record<string, unknown> | null;
+  payment_methods?: string[] | null;
+  payment_terms?: string | null;
+  price_per_resource?: Record<string, number> | null;
+  modifiers?: StructureCostModifierInput[] | null;
 }
 
 export interface Contact {

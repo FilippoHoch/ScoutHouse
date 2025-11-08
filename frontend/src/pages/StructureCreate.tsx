@@ -47,6 +47,8 @@ import {
 } from "../shared/types";
 import {
   extractAdvancedStructureData,
+  extractAdvancedCostOptionData,
+  mergeAdvancedCostOptionPayload,
   mergeAdvancedStructurePayload
 } from "../shared/structureMetadata";
 import {
@@ -173,11 +175,18 @@ type CostOptionFormRow = {
   model: CostModel | "";
   amount: string;
   currency: string;
-  deposit: string;
+  bookingDeposit: string;
+  damageDeposit: string;
   cityTaxPerNight: string;
   utilitiesFlat: string;
+  utilitiesIncluded: "" | "yes" | "no";
+  utilitiesNotes: string;
+  paymentMethods: string;
+  paymentTerms: string;
   minTotal: string;
   maxTotal: string;
+  advancedMetadata: string;
+  advancedMetadataError: string | null;
 };
 
 const createCostOptionKey = () => `co-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
@@ -187,11 +196,18 @@ const createCostOptionRow = (): CostOptionFormRow => ({
   model: "",
   amount: "",
   currency: "EUR",
-  deposit: "",
+  bookingDeposit: "",
+  damageDeposit: "",
   cityTaxPerNight: "",
   utilitiesFlat: "",
+  utilitiesIncluded: "",
+  utilitiesNotes: "",
+  paymentMethods: "",
+  paymentTerms: "",
   minTotal: "",
-  maxTotal: ""
+  maxTotal: "",
+  advancedMetadata: "",
+  advancedMetadataError: null
 });
 
 const parseCoordinateValue = (value: string): number | null => {
@@ -1003,14 +1019,27 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     field:
       | "amount"
       | "currency"
-      | "deposit"
+      | "bookingDeposit"
+      | "damageDeposit"
       | "cityTaxPerNight"
       | "utilitiesFlat"
+      | "utilitiesIncluded"
+      | "utilitiesNotes"
+      | "paymentMethods"
+      | "paymentTerms"
       | "minTotal"
-      | "maxTotal",
+      | "maxTotal"
+      | "advancedMetadata",
     value: string
   ) => {
-    updateCostOption(key, { [field]: value } as Partial<CostOptionFormRow>);
+    const updates: Partial<CostOptionFormRow> = { [field]: value } as Partial<CostOptionFormRow>;
+    if (field === "advancedMetadata") {
+      updates.advancedMetadataError = null;
+    }
+    if (field === "utilitiesIncluded" && value === "") {
+      updates.utilitiesIncluded = "";
+    }
+    updateCostOption(key, updates);
   };
 
   const handleWaterSourceToggle = (option: WaterSource, checked: boolean) => {
@@ -1395,30 +1424,55 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     }));
     setOpenPeriods(mappedOpenPeriods);
 
-    const mappedCostOptions = (existingStructure.cost_options ?? []).map((option) => ({
-      key: createCostOptionKey(),
-      id: option.id,
-      model: option.model,
-      amount: option.amount !== null && option.amount !== undefined ? String(option.amount) : "",
-      currency: option.currency,
-      deposit: option.deposit !== null && option.deposit !== undefined ? String(option.deposit) : "",
-      cityTaxPerNight:
-        option.city_tax_per_night !== null && option.city_tax_per_night !== undefined
-          ? String(option.city_tax_per_night)
-          : "",
-      utilitiesFlat:
-        option.utilities_flat !== null && option.utilities_flat !== undefined
-          ? String(option.utilities_flat)
-          : "",
-      minTotal:
-        option.min_total !== null && option.min_total !== undefined
-          ? String(option.min_total)
-          : "",
-      maxTotal:
-        option.max_total !== null && option.max_total !== undefined
-          ? String(option.max_total)
-          : ""
-    }));
+    const mappedCostOptions = (existingStructure.cost_options ?? []).map((option) => {
+      const advancedCostData = extractAdvancedCostOptionData(option);
+      return {
+        key: createCostOptionKey(),
+        id: option.id,
+        model: option.model,
+        amount:
+          option.amount !== null && option.amount !== undefined ? String(option.amount) : "",
+        currency: option.currency,
+        bookingDeposit:
+          option.booking_deposit !== null && option.booking_deposit !== undefined
+            ? String(option.booking_deposit)
+            : "",
+        damageDeposit:
+          option.damage_deposit !== null && option.damage_deposit !== undefined
+            ? String(option.damage_deposit)
+            : "",
+        cityTaxPerNight:
+          option.city_tax_per_night !== null && option.city_tax_per_night !== undefined
+            ? String(option.city_tax_per_night)
+            : "",
+        utilitiesFlat:
+          option.utilities_flat !== null && option.utilities_flat !== undefined
+            ? String(option.utilities_flat)
+            : "",
+        utilitiesIncluded:
+          option.utilities_included === true
+            ? "yes"
+            : option.utilities_included === false
+            ? "no"
+            : "",
+        utilitiesNotes: option.utilities_notes ?? "",
+        paymentMethods: option.payment_methods?.join("\n") ?? "",
+        paymentTerms: option.payment_terms ?? "",
+        minTotal:
+          option.min_total !== null && option.min_total !== undefined
+            ? String(option.min_total)
+            : "",
+        maxTotal:
+          option.max_total !== null && option.max_total !== undefined
+            ? String(option.max_total)
+            : "",
+        advancedMetadata:
+          Object.keys(advancedCostData).length > 0
+            ? JSON.stringify(advancedCostData, null, 2)
+            : "",
+        advancedMetadataError: null
+      } satisfies CostOptionFormRow;
+    });
     setCostOptions(mappedCostOptions);
 
     setAddContact(false);
@@ -1562,11 +1616,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       model: option.model,
       amount: option.amount.trim(),
       currency: option.currency.trim(),
-      deposit: option.deposit.trim(),
+      bookingDeposit: option.bookingDeposit.trim(),
+      damageDeposit: option.damageDeposit.trim(),
       cityTaxPerNight: option.cityTaxPerNight.trim(),
       utilitiesFlat: option.utilitiesFlat.trim(),
+      utilitiesIncluded: option.utilitiesIncluded,
+      utilitiesNotes: option.utilitiesNotes.trim(),
+      paymentMethods: option.paymentMethods.trim(),
+      paymentTerms: option.paymentTerms.trim(),
       minTotal: option.minTotal.trim(),
-      maxTotal: option.maxTotal.trim()
+      maxTotal: option.maxTotal.trim(),
+      advancedMetadata: option.advancedMetadata.trim()
     }));
 
     const errors: FieldErrors = {};
@@ -1710,11 +1770,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const isCostOptionEmpty = (option: typeof trimmedCostOptions[number]) =>
       !option.model &&
       !option.amount &&
-      !option.deposit &&
+      !option.bookingDeposit &&
+      !option.damageDeposit &&
       !option.cityTaxPerNight &&
       !option.utilitiesFlat &&
       !option.minTotal &&
-      !option.maxTotal;
+      !option.maxTotal &&
+      !option.utilitiesNotes &&
+      !option.paymentMethods &&
+      !option.paymentTerms &&
+      option.utilitiesIncluded === "" &&
+      !option.advancedMetadata;
 
     for (const option of trimmedCostOptions) {
       if (isCostOptionEmpty(option)) {
@@ -1739,7 +1805,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         break;
       }
       const extraFields = [
-        option.deposit,
+        option.bookingDeposit,
+        option.damageDeposit,
         option.cityTaxPerNight,
         option.utilitiesFlat,
         option.minTotal,
@@ -1838,15 +1905,22 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedEnteAreaProtetta = enteAreaProtetta.trim();
     const trimmedEnvironmentalNotes = environmentalNotes.trim();
     const trimmedCostOptions = costOptions.map((option) => ({
+      key: option.key,
       id: option.id,
       model: option.model,
       amount: option.amount.trim(),
       currency: option.currency.trim(),
-      deposit: option.deposit.trim(),
+      bookingDeposit: option.bookingDeposit.trim(),
+      damageDeposit: option.damageDeposit.trim(),
       cityTaxPerNight: option.cityTaxPerNight.trim(),
       utilitiesFlat: option.utilitiesFlat.trim(),
+      utilitiesIncluded: option.utilitiesIncluded,
+      utilitiesNotes: option.utilitiesNotes.trim(),
+      paymentMethods: option.paymentMethods.trim(),
+      paymentTerms: option.paymentTerms.trim(),
       minTotal: option.minTotal.trim(),
-      maxTotal: option.maxTotal.trim()
+      maxTotal: option.maxTotal.trim(),
+      advancedMetadata: option.advancedMetadata.trim()
     }));
 
     const payload: StructureCreateDto = {
@@ -2042,16 +2116,24 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       return base;
     });
 
+    const advancedCostErrors: Record<string, string> = {};
+
     const costOptionPayloads: StructureCostOptionInput[] = trimmedCostOptions
       .map((option) => {
         const isEmpty =
           !option.model &&
           !option.amount &&
-          !option.deposit &&
+          !option.bookingDeposit &&
+          !option.damageDeposit &&
           !option.cityTaxPerNight &&
           !option.utilitiesFlat &&
           !option.minTotal &&
-          !option.maxTotal;
+          !option.maxTotal &&
+          !option.utilitiesNotes &&
+          !option.paymentMethods &&
+          !option.paymentTerms &&
+          option.utilitiesIncluded === "" &&
+          !option.advancedMetadata;
         if (isEmpty) {
           return null;
         }
@@ -2071,9 +2153,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           }
           return Number.parseFloat(value.replace(",", "."));
         };
-        const depositValue = parseOptional(option.deposit);
-        if (depositValue !== null) {
-          payloadItem.deposit = depositValue;
+        const bookingDepositValue = parseOptional(option.bookingDeposit);
+        if (bookingDepositValue !== null) {
+          payloadItem.booking_deposit = bookingDepositValue;
+        }
+        const damageDepositValue = parseOptional(option.damageDeposit);
+        if (damageDepositValue !== null) {
+          payloadItem.damage_deposit = damageDepositValue;
         }
         const cityTaxValue = parseOptional(option.cityTaxPerNight);
         if (cityTaxValue !== null) {
@@ -2083,6 +2169,15 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         if (utilitiesValue !== null) {
           payloadItem.utilities_flat = utilitiesValue;
         }
+        if (option.utilitiesIncluded === "yes") {
+          payloadItem.utilities_included = true;
+        } else if (option.utilitiesIncluded === "no") {
+          payloadItem.utilities_included = false;
+        }
+        const trimmedUtilitiesNotes = option.utilitiesNotes.trim();
+        if (trimmedUtilitiesNotes) {
+          payloadItem.utilities_notes = trimmedUtilitiesNotes;
+        }
         const minTotalValue = parseOptional(option.minTotal);
         if (minTotalValue !== null) {
           payloadItem.min_total = minTotalValue;
@@ -2091,9 +2186,66 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         if (maxTotalValue !== null) {
           payloadItem.max_total = maxTotalValue;
         }
+        const paymentMethods = option.paymentMethods
+          .split(/\r?\n|,/)
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0);
+        if (paymentMethods.length > 0) {
+          payloadItem.payment_methods = paymentMethods;
+        }
+        const trimmedPaymentTerms = option.paymentTerms.trim();
+        if (trimmedPaymentTerms) {
+          payloadItem.payment_terms = trimmedPaymentTerms;
+        }
+        const trimmedAdvancedMetadata = option.advancedMetadata.trim();
+        if (trimmedAdvancedMetadata) {
+          try {
+            const parsedAdvanced = JSON.parse(trimmedAdvancedMetadata);
+            if (
+              parsedAdvanced &&
+              typeof parsedAdvanced === "object" &&
+              !Array.isArray(parsedAdvanced)
+            ) {
+              mergeAdvancedCostOptionPayload(
+                payloadItem as Record<string, unknown>,
+                parsedAdvanced as Record<string, unknown>
+              );
+            } else {
+              throw new Error("invalid");
+            }
+          } catch {
+            advancedCostErrors[option.key] = t(
+              "structures.create.errors.costOptionsAdvancedInvalid"
+            );
+            return null;
+          }
+        }
         return payloadItem;
       })
       .filter((item): item is StructureCostOptionInput => item !== null);
+
+    if (Object.keys(advancedCostErrors).length > 0) {
+      setCostOptions((prev) =>
+        prev.map((row) => ({
+          ...row,
+          advancedMetadataError: advancedCostErrors[row.key] ?? null
+        }))
+      );
+      setFieldErrors((prev) => ({
+        ...prev,
+        cost_options: t("structures.create.errors.costOptionsAdvancedInvalid")
+      }));
+      return;
+    }
+
+    if (costOptions.some((row) => row.advancedMetadataError)) {
+      setCostOptions((prev) =>
+        prev.map((row) => ({
+          ...row,
+          advancedMetadataError: null
+        }))
+      );
+    }
 
     try {
       const saved = await saveMutation.mutateAsync(payload);
@@ -3538,11 +3690,27 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                         const modelId = `structure-cost-option-${option.key}-model`;
                         const amountId = `structure-cost-option-${option.key}-amount`;
                         const currencyId = `structure-cost-option-${option.key}-currency`;
-                        const depositId = `structure-cost-option-${option.key}-deposit`;
+                        const bookingDepositId = `structure-cost-option-${option.key}-booking-deposit`;
+                        const damageDepositId = `structure-cost-option-${option.key}-damage-deposit`;
                         const cityTaxId = `structure-cost-option-${option.key}-city-tax`;
-                        const utilitiesId = `structure-cost-option-${option.key}-utilities`;
+                        const utilitiesFlatId = `structure-cost-option-${option.key}-utilities`;
+                        const utilitiesIncludedId = `structure-cost-option-${option.key}-utilities-included`;
+                        const utilitiesNotesId = `structure-cost-option-${option.key}-utilities-notes`;
                         const minTotalId = `structure-cost-option-${option.key}-min-total`;
                         const maxTotalId = `structure-cost-option-${option.key}-max-total`;
+                        const paymentMethodsId = `structure-cost-option-${option.key}-payment-methods`;
+                        const paymentTermsId = `structure-cost-option-${option.key}-payment-terms`;
+                        const advancedMetadataId = `structure-cost-option-${option.key}-advanced`;
+                        const advancedMetadataHintId = `${advancedMetadataId}-hint`;
+                        const advancedMetadataErrorId = option.advancedMetadataError
+                          ? `${advancedMetadataId}-error`
+                          : undefined;
+                        const advancedMetadataDescribedBy = [
+                          advancedMetadataHintId,
+                          advancedMetadataErrorId
+                        ]
+                          .filter(Boolean)
+                          .join(" ") || undefined;
                         return (
                           <div className="structure-cost-option-row" key={option.key}>
                             <div className="structure-cost-option-field">
@@ -3605,15 +3773,33 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                               </label>
                             </div>
                             <div className="structure-cost-option-field">
-                              <label htmlFor={depositId}>
-                                {t("structures.create.form.costOptions.deposit")}
+                              <label htmlFor={bookingDepositId}>
+                                {t("structures.create.form.costOptions.bookingDeposit")}
                                 <input
-                                  id={depositId}
-                                  value={option.deposit}
+                                  id={bookingDepositId}
+                                  value={option.bookingDeposit}
                                   onChange={(event) =>
                                     handleCostOptionFieldChange(
                                       option.key,
-                                      "deposit",
+                                      "bookingDeposit",
+                                      event.target.value
+                                    )
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                />
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={damageDepositId}>
+                                {t("structures.create.form.costOptions.damageDeposit")}
+                                <input
+                                  id={damageDepositId}
+                                  value={option.damageDeposit}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "damageDeposit",
                                       event.target.value
                                     )
                                   }
@@ -3641,10 +3827,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                               </label>
                             </div>
                             <div className="structure-cost-option-field">
-                              <label htmlFor={utilitiesId}>
+                              <label htmlFor={utilitiesFlatId}>
                                 {t("structures.create.form.costOptions.utilities")}
                                 <input
-                                  id={utilitiesId}
+                                  id={utilitiesFlatId}
                                   value={option.utilitiesFlat}
                                   onChange={(event) =>
                                     handleCostOptionFieldChange(
@@ -3657,6 +3843,52 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                                   placeholder="0,00"
                                 />
                               </label>
+                            </div>
+                            <div className="structure-cost-option-field">
+                              <label htmlFor={utilitiesIncludedId}>
+                                {t("structures.create.form.costOptions.utilitiesIncluded")}
+                                <select
+                                  id={utilitiesIncludedId}
+                                  value={option.utilitiesIncluded}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "utilitiesIncluded",
+                                      event.target.value
+                                    )
+                                  }
+                                >
+                                  <option value="">
+                                    {t("structures.create.form.costOptions.utilitiesIncludedUnset")}
+                                  </option>
+                                  <option value="yes">
+                                    {t("structures.details.common.yes")}
+                                  </option>
+                                  <option value="no">
+                                    {t("structures.details.common.no")}
+                                  </option>
+                                </select>
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-field structure-cost-option-field--wide">
+                              <label htmlFor={utilitiesNotesId}>
+                                {t("structures.create.form.costOptions.utilitiesNotes")}
+                                <textarea
+                                  id={utilitiesNotesId}
+                                  value={option.utilitiesNotes}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "utilitiesNotes",
+                                      event.target.value
+                                    )
+                                  }
+                                  rows={2}
+                                />
+                              </label>
+                              <span className="helper-text">
+                                {t("structures.create.form.costOptions.utilitiesNotesHint")}
+                              </span>
                             </div>
                             <div className="structure-cost-option-field">
                               <label htmlFor={minTotalId}>
@@ -3699,6 +3931,69 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                               <span className="helper-text">
                                 {t("structures.create.form.costOptions.maxTotalHint")}
                               </span>
+                            </div>
+                            <div className="structure-cost-option-field structure-cost-option-field--wide">
+                              <label htmlFor={paymentMethodsId}>
+                                {t("structures.create.form.costOptions.paymentMethods")}
+                                <textarea
+                                  id={paymentMethodsId}
+                                  value={option.paymentMethods}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "paymentMethods",
+                                      event.target.value
+                                    )
+                                  }
+                                  rows={2}
+                                />
+                              </label>
+                              <span className="helper-text">
+                                {t("structures.create.form.costOptions.paymentMethodsHint")}
+                              </span>
+                            </div>
+                            <div className="structure-cost-option-field structure-cost-option-field--wide">
+                              <label htmlFor={paymentTermsId}>
+                                {t("structures.create.form.costOptions.paymentTerms")}
+                                <textarea
+                                  id={paymentTermsId}
+                                  value={option.paymentTerms}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "paymentTerms",
+                                      event.target.value
+                                    )
+                                  }
+                                  rows={2}
+                                />
+                              </label>
+                            </div>
+                            <div className="structure-cost-option-field structure-cost-option-field--wide">
+                              <label htmlFor={advancedMetadataId}>
+                                {t("structures.create.form.costOptions.advancedMetadata.label")}
+                                <textarea
+                                  id={advancedMetadataId}
+                                  value={option.advancedMetadata}
+                                  onChange={(event) =>
+                                    handleCostOptionFieldChange(
+                                      option.key,
+                                      "advancedMetadata",
+                                      event.target.value
+                                    )
+                                  }
+                                  rows={3}
+                                  aria-describedby={advancedMetadataDescribedBy}
+                                />
+                              </label>
+                              <span className="helper-text" id={advancedMetadataHintId}>
+                                {t("structures.create.form.costOptions.advancedMetadata.hint")}
+                              </span>
+                              {option.advancedMetadataError && (
+                                <p className="error-text" id={advancedMetadataErrorId}>
+                                  {option.advancedMetadataError}
+                                </p>
+                              )}
                             </div>
                             <div className="structure-cost-option-actions">
                               <Button
