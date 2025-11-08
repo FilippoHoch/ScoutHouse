@@ -391,6 +391,107 @@ describe("StructureCreatePage", () => {
     ]);
   });
 
+  it("collects full logistics metadata for mixed structures", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "mixed");
+    await user.type(screen.getByLabelText(/Provincia/i), "BS");
+    await user.type(screen.getByLabelText(/Indirizzo/i), "Via Bosco 1");
+    await user.type(screen.getByLabelText(/Latitudine/i), "45.1111");
+    await user.type(screen.getByLabelText(/Longitudine/i), "9.1111");
+    await user.type(screen.getByLabelText(/Altitudine/i), "350");
+
+    await user.type(screen.getByLabelText(/Posti letto interni/i), "36");
+    await user.type(screen.getByLabelText(/Bagni interni/i), "5");
+    await user.type(screen.getByLabelText(/Docce interne/i), "6");
+    await user.type(screen.getByLabelText(/Sale attività interne/i), "3");
+    await user.selectOptions(
+      screen.getByLabelText(/Cucina attrezzata disponibile/i),
+      "Sì"
+    );
+    await user.selectOptions(screen.getByLabelText(/Acqua calda disponibile/i), "No");
+
+    await user.type(screen.getByLabelText(/Superficie esterna/i), "1.500");
+    await user.click(screen.getByRole("checkbox", { name: /Fontana/i }));
+    await user.click(screen.getByRole("checkbox", { name: /Rubinetto/i }));
+    await user.selectOptions(screen.getByLabelText(/Regole per i fuochi/i), "Consentiti");
+    await user.selectOptions(
+      screen.getByLabelText(/Tettoia o rifugio sul campo/i),
+      "Sì"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Presa elettrica disponibile/i),
+      "No"
+    );
+    await user.selectOptions(screen.getByLabelText(/Pali già presenti sul campo/i), "Sì");
+    await user.selectOptions(
+      screen.getByLabelText(/È possibile scavare una latrina/i),
+      "No"
+    );
+
+    await user.selectOptions(screen.getByLabelText(/Accesso con auto/i), "Sì");
+    await user.selectOptions(screen.getByLabelText(/Accesso con pullman/i), "No");
+    await user.selectOptions(
+      screen.getByLabelText(/Raggiungibile con mezzi pubblici/i),
+      "Non specificato"
+    );
+    await user.selectOptions(screen.getByLabelText(/Area manovra per pullman/i), "Sì");
+    await user.type(screen.getByLabelText(/Fermata più vicina/i), "Fermata Centro");
+
+    await user.selectOptions(screen.getByLabelText(/Solo fine settimana/i), "Sì");
+    await user.type(screen.getByLabelText(/Note logistiche/i), "Consegnare le chiavi al custode");
+    await user.type(screen.getByLabelText(/Note aggiuntive/i), "Disponibile area tende");
+
+    await user.type(screen.getByLabelText(/Email di riferimento/i), "info@example.org");
+    await user.type(screen.getByLabelText(/Siti o link di riferimento/i), "https://base.example.org");
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+    const payload = vi.mocked(createStructure).mock.calls[0][0];
+
+    expect(payload).toMatchObject({
+      type: "mixed",
+      latitude: 45.1111,
+      longitude: 9.1111,
+      altitude: 350,
+      indoor_beds: 36,
+      indoor_bathrooms: 5,
+      indoor_showers: 6,
+      indoor_activity_rooms: 3,
+      has_kitchen: true,
+      hot_water: false,
+      land_area_m2: 1.5,
+      water_sources: ["fountain", "tap"],
+      fire_policy: "allowed",
+      shelter_on_field: true,
+      electricity_available: false,
+      has_field_poles: true,
+      pit_latrine_allowed: false,
+      access_by_car: true,
+      access_by_coach: false,
+      access_by_public_transport: null,
+      coach_turning_area: true,
+      nearest_bus_stop: "Fermata Centro",
+      weekend_only: true,
+      notes_logistics: "Consegnare le chiavi al custode",
+      notes: "Disponibile area tende",
+      contact_emails: ["info@example.org"],
+      website_urls: ["https://base.example.org"]
+    });
+  });
+
   it("saves cost options after creating the structure", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {

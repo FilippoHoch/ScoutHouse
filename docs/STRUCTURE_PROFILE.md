@@ -1,0 +1,90 @@
+# Scheda struttura – copertura UI
+
+Questo documento riepiloga quali campi del modello `Structure` sono gestiti dalla UI web nelle pagine di creazione, modifica e visualizzazione della scheda. L'obiettivo è avere una checklist rapida per verificare che tutti i dati esposti dal modello operativo siano coperti.
+
+## Creazione e modifica (`/structures/new`, `/structures/:slug/edit`)
+
+Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta i campi elencati di seguito.
+
+### Informazioni principali
+- `name` (obbligatorio) e slug generato automaticamente.
+- `type` (`house`, `land`, `mixed`).
+- `province` (codice a due lettere).
+- `address`.
+
+### Coordinate
+- `latitude`, `longitude` con anteprima Google Maps.
+- `altitude`.
+
+### Spazi interni (visualizzata per `type != land`)
+- `indoor_beds`, `indoor_bathrooms`, `indoor_showers`, `indoor_activity_rooms`.
+- Flag tri-stato `has_kitchen`, `hot_water`.
+
+### Spazi esterni (visualizzata per `type != house`)
+- `land_area_m2`.
+- Checkbox multiple `water_sources` (`none`, `fountain`, `tap`, `river`).
+- Flag tri-stato `shelter_on_field`, `electricity_available`, `has_field_poles`, `pit_latrine_allowed`.
+- `fire_policy` (`allowed`, `with_permit`, `forbidden`).
+
+### Accessibilità e trasporti
+- Flag tri-stato `access_by_car`, `access_by_coach`, `access_by_public_transport`, `coach_turning_area`.
+- Campo libero `nearest_bus_stop`.
+
+### Operatività
+- Tri-stato `weekend_only`.
+- Gestione tabelle `open_periods` (stagioni e intervalli con `units`, `notes`).
+- Textarea `notes_logistics`.
+
+### Costi
+- Lista dinamica di `StructureCostOptionInput` (`model`, `amount`, `currency`, `deposit`, `city_tax_per_night`, `utilities_flat`, `min_total`, `max_total`).
+
+### Contatti, link e note
+- Array `contact_emails`.
+- Array `website_urls` con validazione client.
+- Textarea `notes`.
+- Sezione opzionale per creare/collegare un `StructureContact`.
+
+### Foto
+- Coda di upload per `StructurePhoto` tramite S3 signed upload.
+
+#### Copertura test
+
+- `StructureCreate.test.tsx > collects full logistics metadata for mixed structures` esercita l'inserimento combinato di campi interni, esterni, accessibilità e note operative garantendo la serializzazione completa del payload.
+- `StructureDetails.test.tsx > renders structure details when found` verifica il rendering della scheda con i campi di logistica, posizione e costi riportati qui.
+
+## Visualizzazione (`/structures/:slug`)
+
+La pagina dettaglio mostra gli stessi campi organizzati in tab.
+
+### Tab "Panoramica"
+- Metadati (`slug`, `created_at`, `cost_band`, `estimated_cost`).
+- Blocco Posizione con indirizzo, coordinate, `altitude` e link Google Maps.
+- Griglia "Spazi interni" con `has_kitchen`, `hot_water`, `indoor_*`.
+- Griglia "Spazi esterni" con `land_area_m2`, `shelter_on_field`, `has_field_poles`, `water_sources`, `pit_latrine_allowed`, `electricity_available`, `fire_policy`.
+- Griglia "Accessibilità" con `access_by_car`, `access_by_coach`, `coach_turning_area`, `access_by_public_transport`, `nearest_bus_stop`.
+- Sezione Operatività con `website_urls`, `weekend_only`, `notes_logistics`, `notes`.
+
+### Tab "Disponibilità"
+- Tabella delle `availabilities` (stagione, branche, capacità) e `open_periods` con note/unità.
+
+### Tab "Costi"
+- Elenco formattato delle `cost_options`, inclusi depositi, tasse di soggiorno e soglie min/max.
+
+### Tab "Contatti"
+- Sezione link per `website_urls` e `contact_emails`.
+- Tabella CRUD dei `StructureContact` (con flag primario, email, telefono).
+
+### Tab "Foto" e "Allegati"
+- Galleria `photos` con carousel e azioni.
+- Placeholder allegati con prompt login (l'integrazione storage avverrà in fasi successive).
+
+## Checklist di verifica
+
+Quando si estende il modello dati:
+
+1. Aggiornare gli schema DTO (`Structure`, `StructureCreateDto`).
+2. Mappare il campo nella UI di creazione (controllando le condizioni di visibilità per `type`).
+3. Aggiungere la rappresentazione nel tab "Panoramica" o nella sezione pertinente della pagina dettagli.
+4. Estendere le traduzioni (`frontend/src/i18n/it/common.json`).
+5. Aggiornare i test (`StructureCreate.test.tsx`, `StructureDetails.test.tsx`) per coprire il nuovo campo.
+6. Aggiornare questa pagina e la sezione API se il campo è editabile dall'interfaccia.
