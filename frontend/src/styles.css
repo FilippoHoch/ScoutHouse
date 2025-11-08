@@ -1413,6 +1413,10 @@ table tbody tr:hover {
   gap: var(--space-lg);
 }
 
+.structure-location-panel--combined {
+  gap: var(--space-xl);
+}
+
 .structure-location-panel__header {
   display: flex;
   flex-direction: column;
@@ -1432,6 +1436,43 @@ table tbody tr:hover {
 
 .structure-location-panel__fields.structure-field-grid {
   margin-top: var(--space-md);
+}
+
+.structure-location-panel__groups {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-xl) * 1.1);
+}
+
+@media (min-width: 960px) {
+  .structure-location-panel__groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: calc(var(--space-xl) * 1.1);
+  }
+}
+
+.structure-location-panel__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.structure-location-panel__group-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.structure-location-panel__group-title {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-muted-strong);
+}
+
+.structure-location-panel__group-description {
+  margin: 0;
+  color: var(--color-muted);
 }
 
 .structure-field-grid {
