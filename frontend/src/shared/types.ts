@@ -5,6 +5,19 @@ export type CellCoverageQuality = "none" | "limited" | "good" | "excellent";
 export type WastewaterType = "none" | "septic" | "holding_tank" | "mains" | "unknown";
 export type FloodRiskLevel = "none" | "low" | "medium" | "high";
 export type RiverSwimmingOption = "si" | "no" | "unknown";
+export type FieldSlope = "flat" | "gentle" | "moderate" | "steep";
+export type AnimalPolicy = "allowed" | "allowed_on_request" | "forbidden";
+export type StructureContactStatus =
+  | "unknown"
+  | "to_contact"
+  | "contacted"
+  | "confirmed"
+  | "stale";
+export type StructureOperationalStatus =
+  | "operational"
+  | "seasonal"
+  | "temporarily_closed"
+  | "permanently_closed";
 export type Season = "winter" | "spring" | "summer" | "autumn";
 export type Unit = "LC" | "EG" | "RS" | "ALL";
 export type CostModel = "per_person_day" | "per_person_night" | "forfait";
@@ -169,7 +182,9 @@ export interface Structure {
   has_kitchen: boolean | null;
   hot_water: boolean | null;
   land_area_m2: number | null;
-  field_slope?: string | null;
+  field_slope?: FieldSlope | null;
+  pitches_tende: number | null;
+  water_at_field: boolean | null;
   shelter_on_field: boolean | null;
   water_sources: WaterSource[] | null;
   electricity_available: boolean | null;
@@ -195,6 +210,12 @@ export interface Structure {
   dry_toilet: boolean | null;
   outdoor_bathrooms: number | null;
   outdoor_showers: number | null;
+  wheelchair_accessible: boolean | null;
+  step_free_access: boolean | null;
+  parking_car_slots: number | null;
+  parking_bus_slots: number | null;
+  parking_notes: string | null;
+  accessibility_notes: string | null;
   contact_emails: string[];
   website_urls: string[];
   booking_url?: string | null;
@@ -205,6 +226,16 @@ export interface Structure {
   map_resources_urls: string[];
   event_rules_url: string | null;
   event_rules_notes: string | null;
+  allowed_audiences: string[];
+  usage_rules: string | null;
+  animal_policy: AnimalPolicy | null;
+  animal_policy_notes: string | null;
+  in_area_protetta: boolean | null;
+  ente_area_protetta: string | null;
+  environmental_notes: string | null;
+  seasonal_amenities?: Record<string, unknown> | null;
+  contact_status: StructureContactStatus;
+  operational_status: StructureOperationalStatus | null;
   cell_coverage: CellCoverageQuality | null;
   cell_coverage_notes: string | null;
   communications_infrastructure: string[];
@@ -278,7 +309,9 @@ export interface StructureCreateDto {
   has_kitchen?: boolean | null;
   hot_water?: boolean | null;
   land_area_m2?: number | null;
-  field_slope?: string | null;
+  field_slope?: FieldSlope | null;
+  pitches_tende?: number | null;
+  water_at_field?: boolean | null;
   shelter_on_field?: boolean | null;
   water_sources?: WaterSource[] | null;
   electricity_available?: boolean | null;
@@ -304,6 +337,12 @@ export interface StructureCreateDto {
   dry_toilet?: boolean | null;
   outdoor_bathrooms?: number | null;
   outdoor_showers?: number | null;
+  wheelchair_accessible?: boolean | null;
+  step_free_access?: boolean | null;
+  parking_car_slots?: number | null;
+  parking_bus_slots?: number | null;
+  parking_notes?: string | null;
+  accessibility_notes?: string | null;
   contact_emails?: string[];
   website_urls?: string[];
   booking_url?: string | null;
@@ -314,6 +353,16 @@ export interface StructureCreateDto {
   map_resources_urls?: string[];
   event_rules_url?: string | null;
   event_rules_notes?: string | null;
+  allowed_audiences?: string[];
+  usage_rules?: string | null;
+  animal_policy?: AnimalPolicy | null;
+  animal_policy_notes?: string | null;
+  in_area_protetta?: boolean | null;
+  ente_area_protetta?: string | null;
+  environmental_notes?: string | null;
+  seasonal_amenities?: Record<string, unknown> | null;
+  contact_status?: StructureContactStatus;
+  operational_status?: StructureOperationalStatus | null;
   cell_coverage?: CellCoverageQuality | null;
   cell_coverage_notes?: string | null;
   communications_infrastructure?: string[];

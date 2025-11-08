@@ -19,6 +19,8 @@ import type {
   CostOption,
   CostBand,
   FirePolicy,
+  AnimalPolicy,
+  FieldSlope,
   Structure,
   StructureOpenPeriod,
   WaterSource
@@ -160,6 +162,47 @@ export const StructureDetailsPage = () => {
       return fallbackLabels.notAvailable;
     }
     return t(`structures.create.form.firePolicyOptions.${policy}`);
+  };
+
+  const formatFieldSlope = (value: FieldSlope | string | null | undefined) => {
+    if (!value) {
+      return fallbackLabels.notAvailable;
+    }
+    return t(`structures.create.form.fieldSlopeOptions.${value}`);
+  };
+
+  const formatAnimalPolicy = (policy: AnimalPolicy | null | undefined) => {
+    if (!policy) {
+      return fallbackLabels.notAvailable;
+    }
+    return t(`structures.create.form.animalPolicyOptions.${policy}`);
+  };
+
+  const formatAllowedAudiences = (audiences: string[] | null | undefined) => {
+    if (!audiences || audiences.length === 0) {
+      return fallbackLabels.notAvailable;
+    }
+    return audiences.join(", ");
+  };
+
+  const formatSeasonalAmenities = (
+    amenities: Record<string, unknown> | null | undefined
+  ): ReactNode => {
+    if (!amenities || Object.keys(amenities).length === 0) {
+      return fallbackLabels.notAvailable;
+    }
+    return (
+      <ul className="structure-website-links">
+        {Object.entries(amenities).map(([key, value]) => {
+          const valueText = typeof value === "string" ? value : JSON.stringify(value);
+          return (
+            <li key={key}>
+              <strong>{key}</strong>: {valueText}
+            </li>
+          );
+        })}
+      </ul>
+    );
   };
 
   const renderLogisticsDetails = (items: LogisticsDetail[]) => (
@@ -325,6 +368,12 @@ export const StructureDetailsPage = () => {
   const structureTypeLabel = structure.type
     ? t(`structures.types.${structure.type}`, { defaultValue: structure.type })
     : null;
+  const contactStatusLabel = t(
+    `structures.details.meta.contactStatus.${structure.contact_status}`
+  );
+  const operationalStatusLabel = structure.operational_status
+    ? t(`structures.details.meta.operationalStatus.${structure.operational_status}`)
+    : null;
   const costBandLabel = formatCostBand(structure.cost_band);
 
   const availabilities = structure.availabilities ?? [];
@@ -375,6 +424,24 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.landArea"),
       value: formatLandArea(structure.land_area_m2),
       icon: "🌿"
+    },
+    {
+      id: "fieldSlope",
+      label: t("structures.details.overview.fieldSlope"),
+      value: formatFieldSlope(structure.field_slope),
+      icon: "⛰️"
+    },
+    {
+      id: "pitchesTende",
+      label: t("structures.details.overview.pitchesTende"),
+      value: formatCount(structure.pitches_tende),
+      icon: "🏕️"
+    },
+    {
+      id: "waterAtField",
+      label: t("structures.details.overview.waterAtField"),
+      value: formatBoolean(structure.water_at_field),
+      icon: "🚰"
     },
     {
       id: "shelterOnField",
@@ -444,6 +511,44 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.nearestBusStop"),
       value: formatOptionalText(structure.nearest_bus_stop),
       icon: "🚏"
+    },
+    {
+      id: "wheelchairAccessible",
+      label: t("structures.details.overview.wheelchairAccessible"),
+      value: formatBoolean(structure.wheelchair_accessible),
+      icon: "♿"
+    },
+    {
+      id: "stepFreeAccess",
+      label: t("structures.details.overview.stepFreeAccess"),
+      value: formatBoolean(structure.step_free_access),
+      icon: "🛤️"
+    },
+    {
+      id: "parkingCarSlots",
+      label: t("structures.details.overview.parkingCarSlots"),
+      value: formatCount(structure.parking_car_slots),
+      icon: "🅿️"
+    },
+    {
+      id: "parkingBusSlots",
+      label: t("structures.details.overview.parkingBusSlots"),
+      value: formatCount(structure.parking_bus_slots),
+      icon: "🚌"
+    },
+    {
+      id: "parkingNotes",
+      label: t("structures.details.overview.parkingNotes"),
+      value: formatOptionalText(structure.parking_notes),
+      icon: "📝",
+      isFull: true
+    },
+    {
+      id: "accessibilityNotes",
+      label: t("structures.details.overview.accessibilityNotes"),
+      value: formatOptionalText(structure.accessibility_notes),
+      icon: "ℹ️",
+      isFull: true
     }
   ];
 
@@ -474,6 +579,68 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.weekendOnly"),
       value: formatBoolean(structure.weekend_only),
       icon: "📅"
+    },
+    {
+      id: "allowedAudiences",
+      label: t("structures.details.overview.allowedAudiences"),
+      value: formatAllowedAudiences(structure.allowed_audiences),
+      icon: "🎯",
+      isFull: true
+    },
+    {
+      id: "usageRules",
+      label: t("structures.details.overview.usageRules"),
+      value: formatOptionalText(
+        structure.usage_rules,
+        "structures.details.overview.usageRulesFallback"
+      ),
+      icon: "📘",
+      isFull: true
+    },
+    {
+      id: "animalPolicy",
+      label: t("structures.details.overview.animalPolicy"),
+      value: formatAnimalPolicy(structure.animal_policy),
+      icon: "🐾"
+    },
+    {
+      id: "animalPolicyNotes",
+      label: t("structures.details.overview.animalPolicyNotes"),
+      value: formatOptionalText(
+        structure.animal_policy_notes,
+        "structures.details.overview.animalPolicyNotesFallback"
+      ),
+      icon: "📝",
+      isFull: true
+    },
+    {
+      id: "inAreaProtetta",
+      label: t("structures.details.overview.inAreaProtetta"),
+      value: formatBoolean(structure.in_area_protetta),
+      icon: "🌳"
+    },
+    {
+      id: "enteAreaProtetta",
+      label: t("structures.details.overview.enteAreaProtetta"),
+      value: formatOptionalText(structure.ente_area_protetta),
+      icon: "🏛️"
+    },
+    {
+      id: "environmentalNotes",
+      label: t("structures.details.overview.environmentalNotes"),
+      value: formatOptionalText(
+        structure.environmental_notes,
+        "structures.details.overview.environmentalNotesFallback"
+      ),
+      icon: "🌿",
+      isFull: true
+    },
+    {
+      id: "seasonalAmenities",
+      label: t("structures.details.overview.seasonalAmenities"),
+      value: formatSeasonalAmenities(structure.seasonal_amenities ?? null),
+      icon: "📅",
+      isFull: true
     },
     {
       id: "notesLogistics",
@@ -740,6 +907,12 @@ export const StructureDetailsPage = () => {
         <div className="structure-details__hero-content">
           <div className="structure-details__hero-tags">
             {structureTypeLabel && <span className="structure-details__badge">{structureTypeLabel}</span>}
+            {operationalStatusLabel && (
+              <span className="structure-details__chip">{operationalStatusLabel}</span>
+            )}
+            {contactStatusLabel && (
+              <span className="structure-details__chip">{contactStatusLabel}</span>
+            )}
             {structure.province && <span className="structure-details__chip">{structure.province}</span>}
           </div>
           <h2 id="structure-details-title">{structure.name}</h2>
