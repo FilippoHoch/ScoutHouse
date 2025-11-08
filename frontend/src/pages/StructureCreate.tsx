@@ -260,7 +260,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [slug, setSlug] = useState("");
   const [province, setProvince] = useState("");
   const [municipality, setMunicipality] = useState("");
-  const [municipalityCode, setMunicipalityCode] = useState("");
   const [locality, setLocality] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
@@ -866,11 +865,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setGeocodingApplied(false);
   };
 
-  const handleMunicipalityCodeChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setMunicipalityCode(event.target.value.toUpperCase());
-    setApiError(null);
-  };
-
   const handleLocalityChange = (event: ChangeEvent<HTMLInputElement>) => {
     setLocality(event.target.value);
     setApiError(null);
@@ -1399,7 +1393,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setSlug(existingStructure.slug ?? "");
     setProvince(existingStructure.province ?? "");
     setMunicipality(existingStructure.municipality ?? "");
-    setMunicipalityCode(existingStructure.municipality_code ?? "");
     setLocality(existingStructure.locality ?? "");
     setPostalCode(existingStructure.postal_code ?? "");
     setAddress(existingStructure.address ?? "");
@@ -2122,7 +2115,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     const trimmedProvince = province.trim();
     const trimmedMunicipality = municipality.trim();
-    const trimmedMunicipalityCode = municipalityCode.trim();
     const trimmedLocality = locality.trim();
     const trimmedPostalCode = postalCode.trim();
     const trimmedAddress = address.trim();
@@ -2199,10 +2191,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (trimmedMunicipality) {
       payload.municipality = trimmedMunicipality;
-    }
-
-    if (trimmedMunicipalityCode) {
-      payload.municipality_code = trimmedMunicipalityCode.toUpperCase();
     }
 
     if (trimmedLocality) {
@@ -2612,7 +2600,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const provinceHintId = "structure-province-hint";
   const provinceDescribedBy = [provinceHintId, provinceErrorId].filter(Boolean).join(" ") || undefined;
   const municipalityHintId = "structure-municipality-hint";
-  const municipalityCodeHintId = "structure-municipality-code-hint";
   const localityHintId = "structure-locality-hint";
   const addressHintId = "structure-address-hint";
   const postalCodeHintId = "structure-postal-code-hint";
@@ -2930,23 +2917,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </label>
                   <span className="helper-text" id={localityHintId}>
                     {t("structures.create.form.localityHint")}
-                  </span>
-                </div>
-
-                <div className="structure-form-field">
-                  <label htmlFor="structure-municipality-code">
-                    {t("structures.create.form.municipalityCode")}
-                    <input
-                      id="structure-municipality-code"
-                      value={municipalityCode}
-                      onChange={handleMunicipalityCodeChange}
-                      maxLength={16}
-                      placeholder={t("structures.create.form.municipalityCodePlaceholder")}
-                      aria-describedby={municipalityCodeHintId}
-                    />
-                  </label>
-                  <span className="helper-text" id={municipalityCodeHintId}>
-                    {t("structures.create.form.municipalityCodeHint")}
                   </span>
                 </div>
 
