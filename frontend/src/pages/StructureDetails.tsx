@@ -366,9 +366,12 @@ export const StructureDetailsPage = () => {
   const googleMapsEmbedAriaLabel = t("structures.details.location.mapAriaLabel", {
     name: mapDisplayName
   });
-  const kitchenLabel = structure.has_kitchen
-    ? t("structures.details.overview.hasKitchen.yes")
-    : t("structures.details.overview.hasKitchen.no");
+  const kitchenLabel =
+    structure.has_kitchen === true
+      ? t("structures.details.overview.hasKitchen.yes")
+      : structure.has_kitchen === false
+        ? t("structures.details.overview.hasKitchen.no")
+        : fallbackLabels.notAvailable;
   const structureTypeLabel = structure.type
     ? t(`structures.types.${structure.type}`, { defaultValue: structure.type })
     : null;
