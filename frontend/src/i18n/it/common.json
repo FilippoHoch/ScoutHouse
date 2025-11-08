@@ -726,7 +726,7 @@
         "showers": "Docce",
         "indoorActivityRooms": "Sale attività interne",
         "website": "Siti di riferimento",
-        "websiteFallback": "Non disponibili",
+        "websiteFallback": "Non specificati",
         "notes": "Note",
         "pitLatrineAllowed": "Latrina a fossa",
         "pitLatrineYes": "Consentita",
@@ -771,14 +771,14 @@
         "inAreaProtetta": "In area protetta",
         "enteAreaProtetta": "Ente area protetta",
         "environmentalNotes": "Note ambientali",
-        "environmentalNotesFallback": "Nessuna nota ambientale disponibile",
+        "environmentalNotesFallback": "Nessuna nota ambientale specificata",
         "seasonalAmenities": "Servizi stagionali",
         "notesLogistics": "Note logistiche",
-        "notesLogisticsFallback": "Nessuna nota logistica disponibile",
-        "notesFallback": "Nessuna nota disponibile",
+        "notesLogisticsFallback": "Nessuna nota logistica specificata",
+        "notesFallback": "Nessuna nota specificata",
         "advancedMetadata": "Metadati avanzati",
-        "advancedMetadataFallback": "Nessun metadato avanzato disponibile",
-        "notAvailable": "Non disponibile"
+        "advancedMetadataFallback": "Nessun metadato avanzato specificato",
+        "notAvailable": "Non specificato"
       },
       "meta": {
         "slug": "Slug",
@@ -805,7 +805,7 @@
         "placeholder": "La mappa mostra la posizione indicativa della struttura su Google Maps.",
         "mapTitle": "Mappa di Google Maps per {{name}}",
         "mapAriaLabel": "Mappa incorporata di Google Maps per {{name}}",
-        "unavailable": "Le coordinate non sono disponibili per questa struttura."
+        "unavailable": "Le coordinate non sono state specificate per questa struttura."
       },
       "openPeriods": {
         "title": "Periodi di apertura",
@@ -1059,7 +1059,7 @@
     "state": {
       "loading": "Caricamento allegati…",
       "error": "Impossibile caricare gli allegati.",
-      "empty": "Nessun allegato disponibile.",
+      "empty": "Nessun allegato fornito.",
       "authRequired": "Accedi per visualizzare gli allegati.",
       "forbidden": "Non hai i permessi per visualizzare questi allegati."
     },
@@ -1117,7 +1117,7 @@
       "contact": {
         "loading": "Caricamento contatti…",
         "error": "Impossibile caricare i contatti.",
-        "none": "Nessun contatto disponibile.",
+        "none": "Nessun contatto indicato.",
         "label": "Contatto struttura",
         "unassigned": "Nessun contatto",
         "primaryFlag": "primario",
@@ -1226,7 +1226,7 @@
       },
       "suggestions": {
         "loading": "Caricamento suggerimenti…",
-        "empty": "Nessun suggerimento disponibile per ora.",
+        "empty": "Nessun suggerimento al momento.",
         "distance": "{{value}} km",
         "distanceUnknown": "Distanza n/d",
         "added": "Aggiunta",
@@ -1235,7 +1235,7 @@
     },
     "quotes": {
       "structureTitle": "Struttura candidata",
-      "structureEmpty": "Nessuna struttura candidata disponibile.",
+      "structureEmpty": "Nessuna struttura candidata al momento.",
       "structureHint": "Aggiungi almeno una struttura candidata per generare preventivi.",
       "structureSelect": "Seleziona una struttura",
       "daysOverride": "Giorni (default {{value}})",
