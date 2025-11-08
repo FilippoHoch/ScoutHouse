@@ -2853,119 +2853,271 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
               <p className="helper-text">
                 {t("structures.create.form.sections.location.description")}
               </p>
-              <div className="structure-field-grid">
-                <div className="structure-form-field">
-                  <label htmlFor="structure-province">
-                    {t("structures.create.form.province")}
-                    <input
-                      id="structure-province"
-                      value={province}
-                      onChange={handleProvinceChange}
-                      autoComplete="off"
-                      maxLength={2}
-                      placeholder={t("structures.create.form.provincePlaceholder")}
-                      aria-invalid={fieldErrors.province ? "true" : undefined}
-                      aria-describedby={provinceDescribedBy}
-                    />
-                  </label>
-                  <span className="helper-text" id={provinceHintId}>
-                    {t("structures.create.form.provinceHint")}
-                  </span>
-                  {fieldErrors.province && (
-                    <p className="error-text" id={provinceErrorId}>
-                      {fieldErrors.province}
+              <div className="structure-location-layout">
+                <section className="structure-location-panel">
+                  <header className="structure-location-panel__header">
+                    <h3 className="structure-location-panel__title">
+                      {t("structures.create.form.location.addressTitle")}
+                    </h3>
+                    <p className="helper-text structure-location-panel__description">
+                      {t("structures.create.form.location.addressDescription")}
                     </p>
-                  )}
-                </div>
+                  </header>
+                  <div className="structure-location-panel__fields structure-field-grid">
+                    <div className="structure-form-field">
+                      <label htmlFor="structure-province">
+                        {t("structures.create.form.province")}
+                        <input
+                          id="structure-province"
+                          value={province}
+                          onChange={handleProvinceChange}
+                          autoComplete="off"
+                          maxLength={2}
+                          placeholder={t("structures.create.form.provincePlaceholder")}
+                          aria-invalid={fieldErrors.province ? "true" : undefined}
+                          aria-describedby={provinceDescribedBy}
+                        />
+                      </label>
+                      <span className="helper-text" id={provinceHintId}>
+                        {t("structures.create.form.provinceHint")}
+                      </span>
+                      {fieldErrors.province && (
+                        <p className="error-text" id={provinceErrorId}>
+                          {fieldErrors.province}
+                        </p>
+                      )}
+                    </div>
 
-                <div className="structure-form-field">
-                  <label htmlFor="structure-postal-code">
-                    {t("structures.create.form.postalCode")}
-                    <input
-                      id="structure-postal-code"
-                      value={postalCode}
-                      onChange={handlePostalCodeChange}
-                      maxLength={16}
-                      placeholder={t("structures.create.form.postalCodePlaceholder")}
-                      aria-invalid={fieldErrors.postal_code ? "true" : undefined}
-                      aria-describedby={postalCodeDescribedBy}
-                    />
-                  </label>
-                  <span className="helper-text" id={postalCodeHintId}>
-                    {t("structures.create.form.postalCodeHint")}
-                  </span>
-                  {fieldErrors.postal_code && (
-                    <p className="error-text" id={postalCodeErrorId!}>
-                      {fieldErrors.postal_code}
+                    <div className="structure-form-field">
+                      <label htmlFor="structure-postal-code">
+                        {t("structures.create.form.postalCode")}
+                        <input
+                          id="structure-postal-code"
+                          value={postalCode}
+                          onChange={handlePostalCodeChange}
+                          maxLength={16}
+                          placeholder={t("structures.create.form.postalCodePlaceholder")}
+                          aria-invalid={fieldErrors.postal_code ? "true" : undefined}
+                          aria-describedby={postalCodeDescribedBy}
+                        />
+                      </label>
+                      <span className="helper-text" id={postalCodeHintId}>
+                        {t("structures.create.form.postalCodeHint")}
+                      </span>
+                      {fieldErrors.postal_code && (
+                        <p className="error-text" id={postalCodeErrorId!}>
+                          {fieldErrors.postal_code}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="structure-form-field">
+                      <label htmlFor="structure-municipality">
+                        {t("structures.create.form.municipality")}
+                        <input
+                          id="structure-municipality"
+                          value={municipality}
+                          onChange={handleMunicipalityChange}
+                          placeholder={t("structures.create.form.municipalityPlaceholder")}
+                          aria-describedby={municipalityHintId}
+                        />
+                      </label>
+                      <span className="helper-text" id={municipalityHintId}>
+                        {t("structures.create.form.municipalityHint")}
+                      </span>
+                    </div>
+
+                    <div className="structure-form-field">
+                      <label htmlFor="structure-locality">
+                        {t("structures.create.form.locality")}
+                        <input
+                          id="structure-locality"
+                          value={locality}
+                          onChange={handleLocalityChange}
+                          placeholder={t("structures.create.form.localityPlaceholder")}
+                          aria-describedby={localityHintId}
+                        />
+                      </label>
+                      <span className="helper-text" id={localityHintId}>
+                        {t("structures.create.form.localityHint")}
+                      </span>
+                    </div>
+
+                    <div className="structure-form-field">
+                      <label htmlFor="structure-municipality-code">
+                        {t("structures.create.form.municipalityCode")}
+                        <input
+                          id="structure-municipality-code"
+                          value={municipalityCode}
+                          onChange={handleMunicipalityCodeChange}
+                          maxLength={16}
+                          placeholder={t("structures.create.form.municipalityCodePlaceholder")}
+                          aria-describedby={municipalityCodeHintId}
+                        />
+                      </label>
+                      <span className="helper-text" id={municipalityCodeHintId}>
+                        {t("structures.create.form.municipalityCodeHint")}
+                      </span>
+                    </div>
+
+                    <div className="structure-form-field" data-span="full">
+                      <label htmlFor="structure-address">
+                        {t("structures.create.form.address")}
+                        <textarea
+                          id="structure-address"
+                          value={address}
+                          onChange={handleAddressChange}
+                          rows={3}
+                          placeholder={t("structures.create.form.addressPlaceholder")}
+                          aria-describedby={addressHintId}
+                        />
+                      </label>
+                      <span className="helper-text" id={addressHintId}>
+                        {t("structures.create.form.addressHint")}
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="structure-location-panel">
+                  <header className="structure-location-panel__header">
+                    <h3 className="structure-location-panel__title">
+                      {t("structures.create.form.location.coordinatesTitle")}
+                    </h3>
+                    <p className="helper-text structure-location-panel__description">
+                      {t("structures.create.form.location.coordinatesDescription")}
                     </p>
-                  )}
-                </div>
+                  </header>
+                  <div className="structure-location-panel__fields structure-field-grid">
+                    <div className="structure-form-field">
+                      <label htmlFor="structure-latitude">
+                        {t("structures.create.form.latitude")}
+                        <input
+                          id="structure-latitude"
+                          value={latitude}
+                          onChange={handleLatitudeChange}
+                          inputMode="decimal"
+                          step="any"
+                          aria-invalid={fieldErrors.latitude ? "true" : undefined}
+                          aria-describedby={latitudeDescribedBy}
+                        />
+                      </label>
+                      <span className="helper-text" id={latitudeHintId}>
+                        {t("structures.create.form.coordinatesHint")}
+                      </span>
+                      {fieldErrors.latitude && (
+                        <p className="error-text" id={latitudeErrorId}>
+                          {fieldErrors.latitude}
+                        </p>
+                      )}
+                    </div>
 
-                <div className="structure-form-field">
-                  <label htmlFor="structure-municipality">
-                    {t("structures.create.form.municipality")}
-                    <input
-                      id="structure-municipality"
-                      value={municipality}
-                      onChange={handleMunicipalityChange}
-                      placeholder={t("structures.create.form.municipalityPlaceholder")}
-                      aria-describedby={municipalityHintId}
-                    />
-                  </label>
-                  <span className="helper-text" id={municipalityHintId}>
-                    {t("structures.create.form.municipalityHint")}
-                  </span>
-                </div>
+                    <div className="structure-form-field">
+                      <label htmlFor="structure-longitude">
+                        {t("structures.create.form.longitude")}
+                        <input
+                          id="structure-longitude"
+                          value={longitude}
+                          onChange={handleLongitudeChange}
+                          inputMode="decimal"
+                          step="any"
+                          aria-invalid={fieldErrors.longitude ? "true" : undefined}
+                          aria-describedby={longitudeDescribedBy}
+                        />
+                      </label>
+                      <span className="helper-text" id={longitudeHintId}>
+                        {t("structures.create.form.coordinatesHint")}
+                      </span>
+                      {fieldErrors.longitude && (
+                        <p className="error-text" id={longitudeErrorId}>
+                          {fieldErrors.longitude}
+                        </p>
+                      )}
+                    </div>
 
-                <div className="structure-form-field">
-                  <label htmlFor="structure-locality">
-                    {t("structures.create.form.locality")}
-                    <input
-                      id="structure-locality"
-                      value={locality}
-                      onChange={handleLocalityChange}
-                      placeholder={t("structures.create.form.localityPlaceholder")}
-                      aria-describedby={localityHintId}
-                    />
-                  </label>
-                  <span className="helper-text" id={localityHintId}>
-                    {t("structures.create.form.localityHint")}
-                  </span>
-                </div>
+                    <div className="structure-form-field">
+                      <label htmlFor="structure-altitude">
+                        {t("structures.create.form.altitude")}
+                        <input
+                          id="structure-altitude"
+                          value={altitude}
+                          onChange={handleAltitudeChange}
+                          inputMode="decimal"
+                          step="any"
+                          aria-invalid={fieldErrors.altitude ? "true" : undefined}
+                          aria-describedby={altitudeDescribedBy}
+                        />
+                      </label>
+                      <span className="helper-text" id={altitudeHintId}>
+                        {t("structures.create.form.altitudeHint")}
+                      </span>
+                      {fieldErrors.altitude && (
+                        <p className="error-text" id={altitudeErrorId}>
+                          {fieldErrors.altitude}
+                        </p>
+                      )}
+                    </div>
 
-                <div className="structure-form-field">
-                  <label htmlFor="structure-municipality-code">
-                    {t("structures.create.form.municipalityCode")}
-                    <input
-                      id="structure-municipality-code"
-                      value={municipalityCode}
-                      onChange={handleMunicipalityCodeChange}
-                      maxLength={16}
-                      placeholder={t("structures.create.form.municipalityCodePlaceholder")}
-                      aria-describedby={municipalityCodeHintId}
-                    />
-                  </label>
-                  <span className="helper-text" id={municipalityCodeHintId}>
-                    {t("structures.create.form.municipalityCodeHint")}
-                  </span>
-                </div>
-
-                <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-address">
-                    {t("structures.create.form.address")}
-                    <textarea
-                      id="structure-address"
-                      value={address}
-                      onChange={handleAddressChange}
-                      rows={3}
-                      placeholder={t("structures.create.form.addressPlaceholder")}
-                      aria-describedby={addressHintId}
-                    />
-                  </label>
-                  <span className="helper-text" id={addressHintId}>
-                    {t("structures.create.form.addressHint")}
-                  </span>
-                </div>
+                    <div className="structure-form-field" data-span="full">
+                      <div className="structure-map-field">
+                        <span className="structure-map-field-title">
+                          {t("structures.create.form.map.title")}
+                        </span>
+                        <GoogleMapEmbed
+                          coordinates={selectedCoordinates}
+                          title={t("structures.create.form.map.title")}
+                          ariaLabel={t("structures.create.form.map.ariaLabel")}
+                          emptyLabel={t("structures.create.form.map.empty")}
+                          onCoordinatesChange={handleMapCoordinatesChange}
+                        />
+                        <span className="helper-text">
+                          {t("structures.create.form.map.hint")}
+                        </span>
+                        {geocodingStatus === "loading" && (
+                          <span className="structure-geocode-status">
+                            {t("structures.create.form.geocoding.searching")}
+                          </span>
+                        )}
+                        {geocodingStatus === "error" && (
+                          <p className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--error">
+                            {geocodingError ?? t("structures.create.form.geocoding.error")}
+                          </p>
+                        )}
+                        {geocodingSuggestion && (
+                          <div className="structure-geocode-status structure-geocode-status__suggestion">
+                            <span>
+                              {t("structures.create.form.geocoding.suggestion", {
+                                label: geocodingSuggestion.label
+                              })}
+                            </span>
+                            <span className="structure-geocode-status__coords">
+                              {geocodingSuggestion.latitude.toFixed(6)}, {" "}
+                              {geocodingSuggestion.longitude.toFixed(6)}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleApplyGeocodingSuggestion}
+                            >
+                              {t("structures.create.form.geocoding.apply")}
+                            </Button>
+                          </div>
+                        )}
+                        {geocodingApplied && (
+                          <span className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--success">
+                            {t("structures.create.form.geocoding.applied")}
+                          </span>
+                        )}
+                        {selectedCoordinatesLabel && (
+                          <span className="structure-map-field-selected helper-text">
+                            {selectedCoordinatesLabel}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
             </fieldset>
 
@@ -4883,142 +5035,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     </div>
                   </div>
                 )}
-              </div>
-            </fieldset>
-
-            <fieldset className="structure-form-section">
-              <legend>{t("structures.create.form.sections.coordinates.title")}</legend>
-              <p className="helper-text">
-                {t("structures.create.form.sections.coordinates.description")}
-              </p>
-              <div className="structure-field-grid">
-                <div className="structure-form-field">
-                  <label htmlFor="structure-latitude">
-                    {t("structures.create.form.latitude")}
-                    <input
-                      id="structure-latitude"
-                      value={latitude}
-                      onChange={handleLatitudeChange}
-                      inputMode="decimal"
-                      step="any"
-                      aria-invalid={fieldErrors.latitude ? "true" : undefined}
-                      aria-describedby={latitudeDescribedBy}
-                    />
-                  </label>
-                  <span className="helper-text" id={latitudeHintId}>
-                    {t("structures.create.form.coordinatesHint")}
-                  </span>
-                  {fieldErrors.latitude && (
-                    <p className="error-text" id={latitudeErrorId}>
-                      {fieldErrors.latitude}
-                    </p>
-                  )}
-                </div>
-
-                <div className="structure-form-field">
-                  <label htmlFor="structure-longitude">
-                    {t("structures.create.form.longitude")}
-                    <input
-                      id="structure-longitude"
-                      value={longitude}
-                      onChange={handleLongitudeChange}
-                      inputMode="decimal"
-                      step="any"
-                      aria-invalid={fieldErrors.longitude ? "true" : undefined}
-                      aria-describedby={longitudeDescribedBy}
-                    />
-                  </label>
-                  <span className="helper-text" id={longitudeHintId}>
-                    {t("structures.create.form.coordinatesHint")}
-                  </span>
-                  {fieldErrors.longitude && (
-                    <p className="error-text" id={longitudeErrorId}>
-                      {fieldErrors.longitude}
-                    </p>
-                  )}
-                </div>
-
-                <div className="structure-form-field">
-                  <label htmlFor="structure-altitude">
-                    {t("structures.create.form.altitude")}
-                    <input
-                      id="structure-altitude"
-                      value={altitude}
-                      onChange={handleAltitudeChange}
-                      inputMode="decimal"
-                      step="any"
-                      aria-invalid={fieldErrors.altitude ? "true" : undefined}
-                      aria-describedby={altitudeDescribedBy}
-                    />
-                  </label>
-                  <span className="helper-text" id={altitudeHintId}>
-                    {t("structures.create.form.altitudeHint")}
-                  </span>
-                  {fieldErrors.altitude && (
-                    <p className="error-text" id={altitudeErrorId}>
-                      {fieldErrors.altitude}
-                    </p>
-                  )}
-                </div>
-
-                <div className="structure-form-field" data-span="full">
-                  <div className="structure-map-field">
-                    <span className="structure-map-field-title">
-                      {t("structures.create.form.map.title")}
-                    </span>
-                    <GoogleMapEmbed
-                      coordinates={selectedCoordinates}
-                      title={t("structures.create.form.map.title")}
-                      ariaLabel={t("structures.create.form.map.ariaLabel")}
-                      emptyLabel={t("structures.create.form.map.empty")}
-                      onCoordinatesChange={handleMapCoordinatesChange}
-                    />
-                    <span className="helper-text">
-                      {t("structures.create.form.map.hint")}
-                    </span>
-                    {geocodingStatus === "loading" && (
-                      <span className="structure-geocode-status">
-                        {t("structures.create.form.geocoding.searching")}
-                      </span>
-                    )}
-                    {geocodingStatus === "error" && (
-                      <p className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--error">
-                        {geocodingError ?? t("structures.create.form.geocoding.error")}
-                      </p>
-                    )}
-                    {geocodingSuggestion && (
-                      <div className="structure-geocode-status structure-geocode-status__suggestion">
-                        <span>
-                          {t("structures.create.form.geocoding.suggestion", {
-                            label: geocodingSuggestion.label
-                          })}
-                        </span>
-                        <span className="structure-geocode-status__coords">
-                          {geocodingSuggestion.latitude.toFixed(6)}, {" "}
-                          {geocodingSuggestion.longitude.toFixed(6)}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleApplyGeocodingSuggestion}
-                        >
-                          {t("structures.create.form.geocoding.apply")}
-                        </Button>
-                      </div>
-                    )}
-                    {geocodingApplied && (
-                      <span className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--success">
-                        {t("structures.create.form.geocoding.applied")}
-                      </span>
-                    )}
-                    {selectedCoordinatesLabel && (
-                      <span className="structure-map-field-selected helper-text">
-                        {selectedCoordinatesLabel}
-                      </span>
-                    )}
-                  </div>
-                </div>
               </div>
             </fieldset>
 

@@ -379,14 +379,20 @@
             "unknownContact": "Contatto senza nome"
           }
         },
+        "location": {
+          "addressTitle": "Dettagli indirizzo",
+          "addressDescription": "Indica via/piazza, numero civico, località, comune, provincia e CAP. Tutti i campi sono opzionali, ma più dettagli inserisci più sarà facile posizionare automaticamente la struttura.",
+          "coordinatesTitle": "Coordinate e mappa",
+          "coordinatesDescription": "Controlla il risultato sulla mappa: proviamo a posizionare il segnaposto in base all'indirizzo, ma puoi correggere manualmente valori e posizione se necessario."
+        },
         "sections": {
           "general": {
             "title": "Informazioni principali",
             "description": "Definisci i dati essenziali della struttura."
           },
           "location": {
-            "title": "Posizione e indirizzo",
-            "description": "Aiuta i volontari a raggiungere facilmente la struttura."
+            "title": "Posizione, indirizzo e coordinate",
+            "description": "Raccogli tutti i dati necessari per individuare la struttura sulla mappa e raggiungerla facilmente."
           },
           "coordinates": {
             "title": "Coordinate geografiche",
