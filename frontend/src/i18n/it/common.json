@@ -276,15 +276,6 @@
         "address": "Indirizzo",
         "addressPlaceholder": "Via e numero civico, comune, eventuali indicazioni…",
         "addressHint": "Indica via, numero civico e località se disponibili.",
-        "contactStatus": "Stato dei contatti",
-        "contactStatusHint": "Indica il livello di aggiornamento dei contatti per aiutare lo staff a capire se serve un nuovo ingaggio.",
-        "contactStatusOptions": {
-          "unknown": "Non verificato",
-          "to_contact": "Da contattare",
-          "contacted": "Contattato",
-          "confirmed": "Contatti confermati",
-          "stale": "Contatti da aggiornare"
-        },
         "operationalStatus": "Stato operativo",
         "operationalStatusPlaceholder": "Seleziona lo stato",
         "operationalStatusHint": "Segnala se la struttura è operativa o presenta limitazioni temporanee.",
@@ -775,13 +766,6 @@
         "slug": "Slug",
         "created": "Creata il",
         "estimatedDailyCost": "Costo medio stimato",
-        "contactStatus": {
-          "unknown": "Contatti da verificare",
-          "to_contact": "Da contattare",
-          "contacted": "Contatti aggiornati",
-          "confirmed": "Contatti confermati",
-          "stale": "Contatti da aggiornare"
-        },
         "operationalStatus": {
           "operational": "Struttura operativa",
           "seasonal": "Operativa stagionalmente",

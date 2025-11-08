@@ -469,9 +469,6 @@ export const StructureDetailsPage = () => {
   const structureTypeLabel = structure.type
     ? t(`structures.types.${structure.type}`, { defaultValue: structure.type })
     : null;
-  const contactStatusLabel = t(
-    `structures.details.meta.contactStatus.${structure.contact_status}`
-  );
   const operationalStatusLabel = structure.operational_status
     ? t(`structures.details.meta.operationalStatus.${structure.operational_status}`)
     : null;
@@ -1011,9 +1008,6 @@ export const StructureDetailsPage = () => {
             {structureTypeLabel && <span className="structure-details__badge">{structureTypeLabel}</span>}
             {operationalStatusLabel && (
               <span className="structure-details__chip">{operationalStatusLabel}</span>
-            )}
-            {contactStatusLabel && (
-              <span className="structure-details__chip">{contactStatusLabel}</span>
             )}
             {structure.province && <span className="structure-details__chip">{structure.province}</span>}
           </div>

@@ -34,7 +34,6 @@ import {
   FieldSlope,
   FirePolicy,
   StructureCreateDto,
-  StructureContactStatus,
   StructureOperationalStatus,
   StructureType,
   StructureOpenPeriodKind,
@@ -72,13 +71,6 @@ const waterSourceOptions: WaterSource[] = [
 ];
 const firePolicyOptions: FirePolicy[] = ["allowed", "with_permit", "forbidden"];
 const fieldSlopeOptions: FieldSlope[] = ["flat", "gentle", "moderate", "steep"];
-const contactStatusOptions: StructureContactStatus[] = [
-  "unknown",
-  "to_contact",
-  "contacted",
-  "confirmed",
-  "stale"
-];
 const operationalStatusOptions: StructureOperationalStatus[] = [
   "operational",
   "seasonal",
@@ -269,7 +261,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [longitude, setLongitude] = useState("");
   const [altitude, setAltitude] = useState("");
   const [type, setType] = useState<StructureType | "">("");
-  const [contactStatus, setContactStatus] = useState<StructureContactStatus>("unknown");
   const [operationalStatus, setOperationalStatus] =
     useState<StructureOperationalStatus | "">("");
   const [indoorBeds, setIndoorBeds] = useState("");
@@ -1300,7 +1291,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         : ""
     );
     setType(existingStructure.type ?? "");
-    setContactStatus(existingStructure.contact_status ?? "unknown");
     setOperationalStatus(existingStructure.operational_status ?? "");
     setIndoorBeds(
       existingStructure.indoor_beds !== null && existingStructure.indoor_beds !== undefined
@@ -1557,11 +1547,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const handleContactSectionDisable = () => {
     setAddContact(false);
     resetContactSection();
-  };
-
-  const handleContactStatusChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setContactStatus(event.target.value as StructureContactStatus);
-    setApiError(null);
   };
 
   const handleOperationalStatusChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -1933,8 +1918,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       has_field_poles: hasFieldPoles,
       pit_latrine_allowed: pitLatrineAllowed,
     };
-
-    payload.contact_status = contactStatus;
 
     if (operationalStatus) {
       payload.operational_status = operationalStatus as StructureOperationalStatus;
@@ -2339,8 +2322,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const typeHintId = "structure-type-hint";
   const typeDescribedBy = [typeHintId, typeErrorId].filter(Boolean).join(" ") || undefined;
-  const contactStatusHintId = "structure-contact-status-hint";
-  const contactStatusDescribedBy = contactStatusHintId;
   const operationalStatusHintId = "structure-operational-status-hint";
   const operationalStatusDescribedBy = operationalStatusHintId;
   const provinceHintId = "structure-province-hint";
@@ -2547,27 +2528,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                       {fieldErrors.type}
                     </p>
                   )}
-                </div>
-
-                <div className="structure-form-field">
-                  <label htmlFor="structure-contact-status">
-                    {t("structures.create.form.contactStatus")}
-                    <select
-                      id="structure-contact-status"
-                      value={contactStatus}
-                      onChange={handleContactStatusChange}
-                      aria-describedby={contactStatusDescribedBy}
-                    >
-                      {contactStatusOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {t(`structures.create.form.contactStatusOptions.${option}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <span className="helper-text" id={contactStatusHintId}>
-                    {t("structures.create.form.contactStatusHint")}
-                  </span>
                 </div>
 
                 <div className="structure-form-field">
