@@ -234,8 +234,17 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Fermata centro/i)).toBeInTheDocument();
     expect(screen.getByText(/Contattare il custode/i)).toBeInTheDocument();
     expect(screen.getByText(/Note generiche/i)).toBeInTheDocument();
+    expect(screen.getByText(/"country": "IT"/i)).toBeInTheDocument();
     expect(screen.getByText(/"municipality": "Brescia"/i)).toBeInTheDocument();
     expect(screen.getByText(/"river_swimming": "si"/i)).toBeInTheDocument();
+    expect(screen.getByText(/"documents_required": \[\]/i)).toBeInTheDocument();
+    expect(screen.getByText(/"map_resources_urls": \[\]/i)).toBeInTheDocument();
+    expect(screen.getByText(/"communications_infrastructure": \[\]/i)).toBeInTheDocument();
+    expect(screen.getByText(/"activity_spaces": \[\]/i)).toBeInTheDocument();
+    expect(screen.getByText(/"activity_equipment": \[\]/i)).toBeInTheDocument();
+    expect(screen.getByText(/"inclusion_services": \[\]/i)).toBeInTheDocument();
+    expect(screen.getByText(/"payment_methods": \[\]/i)).toBeInTheDocument();
+    expect(screen.getByText(/"data_quality_flags": \[\]/i)).toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 
