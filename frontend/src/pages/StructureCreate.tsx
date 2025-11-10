@@ -522,15 +522,15 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [contactEmails, setContactEmails] = useState<string[]>([""]);
   const [websiteUrls, setWebsiteUrls] = useState<string[]>([""]);
   const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
-  const [allowedAudiences, setAllowedAudiences] = useState<string[]>([""]);
+  const [allowedAudiences, setAllowedAudiences] = useState<string[]>([]);
   const [documentsRequired, setDocumentsRequired] = useState<string[]>([""]);
   const [mapResourcesUrls, setMapResourcesUrls] = useState<string[]>([""]);
-  const [communicationsInfrastructure, setCommunicationsInfrastructure] = useState<string[]>([""]);
-  const [activitySpaces, setActivitySpaces] = useState<string[]>([""]);
-  const [activityEquipment, setActivityEquipment] = useState<string[]>([""]);
-  const [inclusionServices, setInclusionServices] = useState<string[]>([""]);
+  const [communicationsInfrastructure, setCommunicationsInfrastructure] = useState<string[]>([]);
+  const [activitySpaces, setActivitySpaces] = useState<string[]>([]);
+  const [activityEquipment, setActivityEquipment] = useState<string[]>([]);
+  const [inclusionServices, setInclusionServices] = useState<string[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([""]);
-  const [dataQualityFlags, setDataQualityFlags] = useState<string[]>([""]);
+  const [dataQualityFlags, setDataQualityFlags] = useState<string[]>([]);
   const [usageRecommendation, setUsageRecommendation] = useState<
     StructureUsageRecommendation | ""
   >("");
@@ -1785,13 +1785,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   };
 
   const handleRemoveAllowedAudience = (index: number) => {
-    setAllowedAudiences((current) => {
-      if (current.length === 1) {
-        return [""];
-      }
-      const next = current.filter((_, position) => position !== index);
-      return next.length > 0 ? next : [""];
-    });
+    setAllowedAudiences((current) => current.filter((_, position) => position !== index));
     setApiError(null);
   };
 
@@ -1949,25 +1943,25 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       existingStructure.communications_infrastructure &&
       existingStructure.communications_infrastructure.length > 0
         ? [...existingStructure.communications_infrastructure]
-        : [""];
+        : [];
     setCommunicationsInfrastructure(communicationsValues);
 
     const activitySpaceValues =
       existingStructure.activity_spaces && existingStructure.activity_spaces.length > 0
         ? [...existingStructure.activity_spaces]
-        : [""];
+        : [];
     setActivitySpaces(activitySpaceValues);
 
     const activityEquipmentValues =
       existingStructure.activity_equipment && existingStructure.activity_equipment.length > 0
         ? [...existingStructure.activity_equipment]
-        : [""];
+        : [];
     setActivityEquipment(activityEquipmentValues);
 
     const inclusionServiceValues =
       existingStructure.inclusion_services && existingStructure.inclusion_services.length > 0
         ? [...existingStructure.inclusion_services]
-        : [""];
+        : [];
     setInclusionServices(inclusionServiceValues);
 
     const paymentMethodValues =
@@ -1979,13 +1973,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const dataQualityFlagValues =
       existingStructure.data_quality_flags && existingStructure.data_quality_flags.length > 0
         ? [...existingStructure.data_quality_flags]
-        : [""];
+        : [];
     setDataQualityFlags(dataQualityFlagValues);
 
     const audiences =
       existingStructure.allowed_audiences && existingStructure.allowed_audiences.length > 0
         ? [...existingStructure.allowed_audiences]
-        : [""];
+        : [];
     setAllowedAudiences(audiences);
     setUsageRecommendation(existingStructure.usage_recommendation ?? "");
     setUsageRules(existingStructure.usage_rules ?? "");
@@ -2103,7 +2097,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedAddress = address.trim();
     const trimmedLocality = locality.trim();
     const trimmedMunicipality = municipality.trim();
-    const trimmedCountry = country.trim().toUpperCase();
     const trimmedProvince = province.trim();
     const trimmedPostal = postalCode.trim();
     const normalizedProvince = trimmedProvince ? trimmedProvince.toUpperCase() : "";
@@ -3269,22 +3262,47 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
   const allowedAudiencesHintId = "structure-allowed-audiences-hint";
   const allowedAudiencesDescribedBy = allowedAudiencesHintId;
+  const firstAllowedAudienceInputId =
+    allowedAudiences.length > 0 ? "structure-allowed-audience-0" : undefined;
+  const allowedAudiencesAddButtonId = "structure-allowed-audience-add";
+  const allowedAudiencesLabelFor = firstAllowedAudienceInputId ?? allowedAudiencesAddButtonId;
   const documentsRequiredHintId = "structure-documents-required-hint";
   const documentsRequiredDescribedBy = documentsRequiredHintId;
   const mapResourcesHintId = "structure-map-resources-hint";
   const mapResourcesDescribedBy = mapResourcesHintId;
   const communicationsInfrastructureHintId = "structure-communications-infrastructure-hint";
   const communicationsInfrastructureDescribedBy = communicationsInfrastructureHintId;
+  const firstCommunicationsInfrastructureInputId =
+    communicationsInfrastructure.length > 0 ? "structure-communications-infrastructure-0" : undefined;
+  const communicationsInfrastructureAddButtonId = "structure-communications-infrastructure-add";
+  const communicationsInfrastructureLabelFor =
+    firstCommunicationsInfrastructureInputId ?? communicationsInfrastructureAddButtonId;
   const activitySpacesHintId = "structure-activity-spaces-hint";
   const activitySpacesDescribedBy = activitySpacesHintId;
+  const firstActivitySpaceInputId =
+    activitySpaces.length > 0 ? "structure-activity-space-0" : undefined;
+  const activitySpacesAddButtonId = "structure-activity-spaces-add";
+  const activitySpacesLabelFor = firstActivitySpaceInputId ?? activitySpacesAddButtonId;
   const activityEquipmentHintId = "structure-activity-equipment-hint";
   const activityEquipmentDescribedBy = activityEquipmentHintId;
+  const firstActivityEquipmentInputId =
+    activityEquipment.length > 0 ? "structure-activity-equipment-0" : undefined;
+  const activityEquipmentAddButtonId = "structure-activity-equipment-add";
+  const activityEquipmentLabelFor = firstActivityEquipmentInputId ?? activityEquipmentAddButtonId;
   const inclusionServicesHintId = "structure-inclusion-services-hint";
   const inclusionServicesDescribedBy = inclusionServicesHintId;
+  const firstInclusionServiceInputId =
+    inclusionServices.length > 0 ? "structure-inclusion-service-0" : undefined;
+  const inclusionServicesAddButtonId = "structure-inclusion-services-add";
+  const inclusionServicesLabelFor = firstInclusionServiceInputId ?? inclusionServicesAddButtonId;
   const paymentMethodsHintId = "structure-payment-methods-hint";
   const paymentMethodsDescribedBy = paymentMethodsHintId;
   const dataQualityFlagsHintId = "structure-data-quality-flags-hint";
   const dataQualityFlagsDescribedBy = dataQualityFlagsHintId;
+  const firstDataQualityFlagInputId =
+    dataQualityFlags.length > 0 ? "structure-data-quality-flag-0" : undefined;
+  const dataQualityFlagsAddButtonId = "structure-data-quality-flags-add";
+  const dataQualityFlagsLabelFor = firstDataQualityFlagInputId ?? dataQualityFlagsAddButtonId;
   const usageRecommendationHintId = "structure-usage-recommendation-hint";
   const usageRecommendationDescribedBy = [
     usageRecommendationHintId,
@@ -4564,28 +4582,43 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-allowed-audience-0" id="structure-allowed-audience-label">
-                    {t("structures.create.form.allowedAudiences.label")}
-                  </label>
-                  <div className="structure-website-list">
-                    {allowedAudiences.map((value, index) => {
-                      const inputId = `structure-allowed-audience-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? t("structures.create.form.allowedAudiences.entryLabel", { index: index + 1 })
-                          : t("structures.create.form.allowedAudiences.entryLabel", { index: index + 1 });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <div className="structure-website-list__input">
-                            <input
-                              id={inputId}
-                              value={value}
-                              onChange={(event) => handleAllowedAudienceChange(index, event.target.value)}
-                              aria-describedby={allowedAudiencesDescribedBy}
-                              aria-label={ariaLabel}
-                            />
-                          </div>
-                          {allowedAudiences.length > 1 && (
+                  {allowedAudiences.length > 0 ? (
+                    <label
+                      htmlFor={allowedAudiencesLabelFor}
+                      id="structure-allowed-audience-label"
+                    >
+                      {t("structures.create.form.allowedAudiences.label")}
+                    </label>
+                  ) : (
+                    <div className="field-label" id="structure-allowed-audience-label">
+                      {t("structures.create.form.allowedAudiences.label")}
+                    </div>
+                  )}
+                  <div
+                    className="structure-website-list"
+                    aria-labelledby="structure-allowed-audience-label"
+                  >
+                    {allowedAudiences.length === 0 ? (
+                      <p className="structure-website-list__empty">
+                        {t("structures.create.form.allowedAudiences.empty")}
+                      </p>
+                    ) : (
+                      allowedAudiences.map((value, index) => {
+                        const inputId = `structure-allowed-audience-${index}`;
+                        const ariaLabel = t("structures.create.form.allowedAudiences.entryLabel", {
+                          index: index + 1
+                        });
+                        return (
+                          <div className="structure-website-list__row" key={inputId}>
+                            <div className="structure-website-list__input">
+                              <input
+                                id={inputId}
+                                value={value}
+                                onChange={(event) => handleAllowedAudienceChange(index, event.target.value)}
+                                aria-describedby={allowedAudiencesDescribedBy}
+                                aria-label={ariaLabel}
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveAllowedAudience(index)}
@@ -4593,16 +4626,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             >
                               {t("structures.create.form.allowedAudiences.remove")}
                             </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                   <div className="structure-website-actions">
                     <Button
                       type="button"
                       variant="secondary"
                       size="sm"
+                      id={allowedAudiencesAddButtonId}
                       onClick={handleAddAllowedAudience}
                     >
                       {t("structures.create.form.allowedAudiences.add")}
@@ -4614,35 +4648,51 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
-                  <label
-                    htmlFor="structure-communications-infrastructure-0"
-                    id="structure-communications-infrastructure-label"
+                  {communicationsInfrastructure.length > 0 ? (
+                    <label
+                      htmlFor={communicationsInfrastructureLabelFor}
+                      id="structure-communications-infrastructure-label"
+                    >
+                      {t("structures.create.form.communicationsInfrastructure.label")}
+                    </label>
+                  ) : (
+                    <div
+                      className="field-label"
+                      id="structure-communications-infrastructure-label"
+                    >
+                      {t("structures.create.form.communicationsInfrastructure.label")}
+                    </div>
+                  )}
+                  <div
+                    className="structure-website-list"
+                    aria-labelledby="structure-communications-infrastructure-label"
                   >
-                    {t("structures.create.form.communicationsInfrastructure.label")}
-                  </label>
-                  <div className="structure-website-list">
-                    {communicationsInfrastructure.map((value, index) => {
-                      const inputId = `structure-communications-infrastructure-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? undefined
-                          : t("structures.create.form.communicationsInfrastructure.entryLabel", {
-                              index: index + 1
-                            });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <div className="structure-website-list__input">
-                            <input
-                              id={inputId}
-                              value={value}
-                              onChange={(event) =>
-                                handleCommunicationsInfrastructureChange(index, event.target.value)
-                              }
-                              aria-describedby={communicationsInfrastructureDescribedBy}
-                              aria-label={ariaLabel}
-                            />
-                          </div>
-                          {communicationsInfrastructure.length > 1 && (
+                    {communicationsInfrastructure.length === 0 ? (
+                      <p className="structure-website-list__empty">
+                        {t("structures.create.form.communicationsInfrastructure.empty")}
+                      </p>
+                    ) : (
+                      communicationsInfrastructure.map((value, index) => {
+                        const inputId = `structure-communications-infrastructure-${index}`;
+                        const ariaLabel =
+                          index === 0
+                            ? undefined
+                            : t("structures.create.form.communicationsInfrastructure.entryLabel", {
+                                index: index + 1
+                              });
+                        return (
+                          <div className="structure-website-list__row" key={inputId}>
+                            <div className="structure-website-list__input">
+                              <input
+                                id={inputId}
+                                value={value}
+                                onChange={(event) =>
+                                  handleCommunicationsInfrastructureChange(index, event.target.value)
+                                }
+                                aria-describedby={communicationsInfrastructureDescribedBy}
+                                aria-label={ariaLabel}
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveCommunicationsInfrastructure(index)}
@@ -4650,16 +4700,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             >
                               {t("structures.create.form.communicationsInfrastructure.remove")}
                             </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                   <div className="structure-website-actions">
                     <Button
                       type="button"
                       variant="secondary"
                       size="sm"
+                      id={communicationsInfrastructureAddButtonId}
                       onClick={handleAddCommunicationsInfrastructure}
                     >
                       {t("structures.create.form.communicationsInfrastructure.add")}
@@ -4671,28 +4722,44 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-activity-space-0" id="structure-activity-spaces-label">
-                    {t("structures.create.form.activitySpaces.label")}
-                  </label>
-                  <div className="structure-website-list">
-                    {activitySpaces.map((value, index) => {
-                      const inputId = `structure-activity-space-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? undefined
-                          : t("structures.create.form.activitySpaces.entryLabel", { index: index + 1 });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <div className="structure-website-list__input">
-                            <input
-                              id={inputId}
-                              value={value}
-                              onChange={(event) => handleActivitySpaceChange(index, event.target.value)}
-                              aria-describedby={activitySpacesDescribedBy}
-                              aria-label={ariaLabel}
-                            />
-                          </div>
-                          {activitySpaces.length > 1 && (
+                  {activitySpaces.length > 0 ? (
+                    <label
+                      htmlFor={activitySpacesLabelFor}
+                      id="structure-activity-spaces-label"
+                    >
+                      {t("structures.create.form.activitySpaces.label")}
+                    </label>
+                  ) : (
+                    <div className="field-label" id="structure-activity-spaces-label">
+                      {t("structures.create.form.activitySpaces.label")}
+                    </div>
+                  )}
+                  <div
+                    className="structure-website-list"
+                    aria-labelledby="structure-activity-spaces-label"
+                  >
+                    {activitySpaces.length === 0 ? (
+                      <p className="structure-website-list__empty">
+                        {t("structures.create.form.activitySpaces.empty")}
+                      </p>
+                    ) : (
+                      activitySpaces.map((value, index) => {
+                        const inputId = `structure-activity-space-${index}`;
+                        const ariaLabel =
+                          index === 0
+                            ? undefined
+                            : t("structures.create.form.activitySpaces.entryLabel", { index: index + 1 });
+                        return (
+                          <div className="structure-website-list__row" key={inputId}>
+                            <div className="structure-website-list__input">
+                              <input
+                                id={inputId}
+                                value={value}
+                                onChange={(event) => handleActivitySpaceChange(index, event.target.value)}
+                                aria-describedby={activitySpacesDescribedBy}
+                                aria-label={ariaLabel}
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveActivitySpace(index)}
@@ -4700,16 +4767,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             >
                               {t("structures.create.form.activitySpaces.remove")}
                             </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                   <div className="structure-website-actions">
                     <Button
                       type="button"
                       variant="secondary"
                       size="sm"
+                      id={activitySpacesAddButtonId}
                       onClick={handleAddActivitySpace}
                     >
                       {t("structures.create.form.activitySpaces.add")}
@@ -4721,28 +4789,44 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-activity-equipment-0" id="structure-activity-equipment-label">
-                    {t("structures.create.form.activityEquipment.label")}
-                  </label>
-                  <div className="structure-website-list">
-                    {activityEquipment.map((value, index) => {
-                      const inputId = `structure-activity-equipment-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? undefined
-                          : t("structures.create.form.activityEquipment.entryLabel", { index: index + 1 });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <div className="structure-website-list__input">
-                            <input
-                              id={inputId}
-                              value={value}
-                              onChange={(event) => handleActivityEquipmentChange(index, event.target.value)}
-                              aria-describedby={activityEquipmentDescribedBy}
-                              aria-label={ariaLabel}
-                            />
-                          </div>
-                          {activityEquipment.length > 1 && (
+                  {activityEquipment.length > 0 ? (
+                    <label
+                      htmlFor={activityEquipmentLabelFor}
+                      id="structure-activity-equipment-label"
+                    >
+                      {t("structures.create.form.activityEquipment.label")}
+                    </label>
+                  ) : (
+                    <div className="field-label" id="structure-activity-equipment-label">
+                      {t("structures.create.form.activityEquipment.label")}
+                    </div>
+                  )}
+                  <div
+                    className="structure-website-list"
+                    aria-labelledby="structure-activity-equipment-label"
+                  >
+                    {activityEquipment.length === 0 ? (
+                      <p className="structure-website-list__empty">
+                        {t("structures.create.form.activityEquipment.empty")}
+                      </p>
+                    ) : (
+                      activityEquipment.map((value, index) => {
+                        const inputId = `structure-activity-equipment-${index}`;
+                        const ariaLabel =
+                          index === 0
+                            ? undefined
+                            : t("structures.create.form.activityEquipment.entryLabel", { index: index + 1 });
+                        return (
+                          <div className="structure-website-list__row" key={inputId}>
+                            <div className="structure-website-list__input">
+                              <input
+                                id={inputId}
+                                value={value}
+                                onChange={(event) => handleActivityEquipmentChange(index, event.target.value)}
+                                aria-describedby={activityEquipmentDescribedBy}
+                                aria-label={ariaLabel}
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveActivityEquipment(index)}
@@ -4750,16 +4834,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             >
                               {t("structures.create.form.activityEquipment.remove")}
                             </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                   <div className="structure-website-actions">
                     <Button
                       type="button"
                       variant="secondary"
                       size="sm"
+                      id={activityEquipmentAddButtonId}
                       onClick={handleAddActivityEquipment}
                     >
                       {t("structures.create.form.activityEquipment.add")}
@@ -4771,28 +4856,44 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-inclusion-service-0" id="structure-inclusion-services-label">
-                    {t("structures.create.form.inclusionServices.label")}
-                  </label>
-                  <div className="structure-website-list">
-                    {inclusionServices.map((value, index) => {
-                      const inputId = `structure-inclusion-service-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? undefined
-                          : t("structures.create.form.inclusionServices.entryLabel", { index: index + 1 });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <div className="structure-website-list__input">
-                            <input
-                              id={inputId}
-                              value={value}
-                              onChange={(event) => handleInclusionServiceChange(index, event.target.value)}
-                              aria-describedby={inclusionServicesDescribedBy}
-                              aria-label={ariaLabel}
-                            />
-                          </div>
-                          {inclusionServices.length > 1 && (
+                  {inclusionServices.length > 0 ? (
+                    <label
+                      htmlFor={inclusionServicesLabelFor}
+                      id="structure-inclusion-services-label"
+                    >
+                      {t("structures.create.form.inclusionServices.label")}
+                    </label>
+                  ) : (
+                    <div className="field-label" id="structure-inclusion-services-label">
+                      {t("structures.create.form.inclusionServices.label")}
+                    </div>
+                  )}
+                  <div
+                    className="structure-website-list"
+                    aria-labelledby="structure-inclusion-services-label"
+                  >
+                    {inclusionServices.length === 0 ? (
+                      <p className="structure-website-list__empty">
+                        {t("structures.create.form.inclusionServices.empty")}
+                      </p>
+                    ) : (
+                      inclusionServices.map((value, index) => {
+                        const inputId = `structure-inclusion-service-${index}`;
+                        const ariaLabel =
+                          index === 0
+                            ? undefined
+                            : t("structures.create.form.inclusionServices.entryLabel", { index: index + 1 });
+                        return (
+                          <div className="structure-website-list__row" key={inputId}>
+                            <div className="structure-website-list__input">
+                              <input
+                                id={inputId}
+                                value={value}
+                                onChange={(event) => handleInclusionServiceChange(index, event.target.value)}
+                                aria-describedby={inclusionServicesDescribedBy}
+                                aria-label={ariaLabel}
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveInclusionService(index)}
@@ -4800,16 +4901,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             >
                               {t("structures.create.form.inclusionServices.remove")}
                             </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                   <div className="structure-website-actions">
                     <Button
                       type="button"
                       variant="secondary"
                       size="sm"
+                      id={inclusionServicesAddButtonId}
                       onClick={handleAddInclusionService}
                     >
                       {t("structures.create.form.inclusionServices.add")}
@@ -4821,28 +4923,44 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-data-quality-flag-0" id="structure-data-quality-flags-label">
-                    {t("structures.create.form.dataQualityFlags.label")}
-                  </label>
-                  <div className="structure-website-list">
-                    {dataQualityFlags.map((value, index) => {
-                      const inputId = `structure-data-quality-flag-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? undefined
-                          : t("structures.create.form.dataQualityFlags.entryLabel", { index: index + 1 });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <div className="structure-website-list__input">
-                            <input
-                              id={inputId}
-                              value={value}
-                              onChange={(event) => handleDataQualityFlagChange(index, event.target.value)}
-                              aria-describedby={dataQualityFlagsDescribedBy}
-                              aria-label={ariaLabel}
-                            />
-                          </div>
-                          {dataQualityFlags.length > 1 && (
+                  {dataQualityFlags.length > 0 ? (
+                    <label
+                      htmlFor={dataQualityFlagsLabelFor}
+                      id="structure-data-quality-flags-label"
+                    >
+                      {t("structures.create.form.dataQualityFlags.label")}
+                    </label>
+                  ) : (
+                    <div className="field-label" id="structure-data-quality-flags-label">
+                      {t("structures.create.form.dataQualityFlags.label")}
+                    </div>
+                  )}
+                  <div
+                    className="structure-website-list"
+                    aria-labelledby="structure-data-quality-flags-label"
+                  >
+                    {dataQualityFlags.length === 0 ? (
+                      <p className="structure-website-list__empty">
+                        {t("structures.create.form.dataQualityFlags.empty")}
+                      </p>
+                    ) : (
+                      dataQualityFlags.map((value, index) => {
+                        const inputId = `structure-data-quality-flag-${index}`;
+                        const ariaLabel =
+                          index === 0
+                            ? undefined
+                            : t("structures.create.form.dataQualityFlags.entryLabel", { index: index + 1 });
+                        return (
+                          <div className="structure-website-list__row" key={inputId}>
+                            <div className="structure-website-list__input">
+                              <input
+                                id={inputId}
+                                value={value}
+                                onChange={(event) => handleDataQualityFlagChange(index, event.target.value)}
+                                aria-describedby={dataQualityFlagsDescribedBy}
+                                aria-label={ariaLabel}
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveDataQualityFlag(index)}
@@ -4850,16 +4968,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             >
                               {t("structures.create.form.dataQualityFlags.remove")}
                             </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                   <div className="structure-website-actions">
                     <Button
                       type="button"
                       variant="secondary"
                       size="sm"
+                      id={dataQualityFlagsAddButtonId}
                       onClick={handleAddDataQualityFlag}
                     >
                       {t("structures.create.form.dataQualityFlags.add")}
