@@ -180,6 +180,11 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
     locationParts.push(item.address);
   }
 
+  const hasStats = item.distance_km !== null || item.estimated_cost !== null;
+  const hasQuickIcons = quickIcons.length > 0;
+  const hasBadges = hasSeasons || hasUnits || item.pit_latrine_allowed;
+  const hasBodyContent = hasStats || hasQuickIcons || hasBadges;
+
   return (
     <li className="structure-card">
       <header className="structure-card__header">
@@ -189,7 +194,7 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
           </span>
           <div className="structure-card__headline">
             <span className="structure-card__type">{typeLabel}</span>
-            <h3>
+            <h3 className="structure-card__title">
               <Link to={`/structures/${item.slug}`}>{item.name}</Link>
             </h3>
             <p className="structure-card__location">{locationParts.join(" · ")}</p>
@@ -205,62 +210,72 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
         )}
       </header>
 
-      {(item.distance_km !== null || item.estimated_cost !== null) && (
-        <div className="structure-card__stats">
-          {item.distance_km !== null && (
-            <span className="structure-card__stat">
-              {t("structures.cards.distance", { value: item.distance_km.toFixed(1) })}
-            </span>
+      {hasBodyContent && (
+        <div className="structure-card__body">
+          {hasStats && (
+            <div className="structure-card__stats">
+              {item.distance_km !== null && (
+                <span className="structure-card__stat">
+                  {t("structures.cards.distance", { value: item.distance_km.toFixed(1) })}
+                </span>
+              )}
+              {item.estimated_cost !== null && (
+                <span className="structure-card__stat structure-card__stat--accent">
+                  {t("structures.cards.estimatedCost", { value: formatCurrency(item.estimated_cost) })}
+                </span>
+              )}
+            </div>
           )}
-          {item.estimated_cost !== null && (
-            <span className="structure-card__stat structure-card__stat--accent">
-              {t("structures.cards.estimatedCost", { value: formatCurrency(item.estimated_cost) })}
-            </span>
-          )}
-        </div>
-      )}
 
-      {quickIcons.length > 0 && (
-        <div className="structure-card__icons" aria-label={t("structures.cards.icons.label")}>
-          {quickIcons.map(({ icon, label }) => (
-            <span key={`${item.id}-${label}`} className="structure-card__icon" role="img" aria-label={label} title={label}>
-              {icon}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {(hasSeasons || hasUnits || item.pit_latrine_allowed) && (
-        <div className="structure-card__badges">
-          {hasSeasons && (
-            <div className="badge-group" aria-label={t("structures.cards.seasonsLabel")}>
-              {item.seasons.map((season) => (
-                <span key={`${item.id}-season-${season}`} className="badge badge-season">
-                  {season}
+          {hasQuickIcons && (
+            <div className="structure-card__icons" aria-label={t("structures.cards.icons.label")}>
+              {quickIcons.map(({ icon, label }) => (
+                <span
+                  key={`${item.id}-${label}`}
+                  className="structure-card__icon"
+                  role="img"
+                  aria-label={label}
+                  title={label}
+                >
+                  {icon}
                 </span>
               ))}
             </div>
           )}
-          {hasUnits && (
-            <div className="badge-group" aria-label={t("structures.cards.unitsLabel")}>
-              {item.units.map((unit) => (
-                <span key={`${item.id}-unit-${unit}`} className="badge badge-unit">
-                  {unit}
-                </span>
-              ))}
-            </div>
-          )}
-          {item.pit_latrine_allowed && (
-            <div className="badge-group" aria-label={t("structures.cards.badges.pitLatrineLabel")}>
-              <span className="badge badge-feature">
-                {t("structures.cards.badges.pitLatrineAllowed")}
-              </span>
+
+          {hasBadges && (
+            <div className="structure-card__badges">
+              {hasSeasons && (
+                <div className="badge-group" aria-label={t("structures.cards.seasonsLabel")}>
+                  {item.seasons.map((season) => (
+                    <span key={`${item.id}-season-${season}`} className="badge badge-season">
+                      {season}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {hasUnits && (
+                <div className="badge-group" aria-label={t("structures.cards.unitsLabel")}>
+                  {item.units.map((unit) => (
+                    <span key={`${item.id}-unit-${unit}`} className="badge badge-unit">
+                      {unit}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {item.pit_latrine_allowed && (
+                <div className="badge-group" aria-label={t("structures.cards.badges.pitLatrineLabel")}>
+                  <span className="badge badge-feature">
+                    {t("structures.cards.badges.pitLatrineAllowed")}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
 
-      <div className="structure-card__actions">
+      <footer className="structure-card__footer structure-card__actions">
         <LinkButton to={`/structures/${item.slug}`} variant="ghost" size="sm">
           {t("structures.cards.viewDetails")}
         </LinkButton>
@@ -273,7 +288,7 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
             {t("structures.cards.openMap")}
           </a>
         )}
-      </div>
+      </footer>
     </li>
   );
 };
