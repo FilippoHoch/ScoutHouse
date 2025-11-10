@@ -1796,7 +1796,7 @@ table tbody tr:hover {
 .modal-content {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  width: min(720px, 100%);
+  width: min(960px, 100%);
   max-height: 90vh;
   overflow-y: auto;
   padding: var(--space-xl);
@@ -2030,6 +2030,9 @@ table tbody tr:hover {
   border-radius: var(--radius-md);
   background: var(--color-surface-muted);
   padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .branch-segments__summary h4 {
@@ -2043,6 +2046,31 @@ table tbody tr:hover {
   flex-direction: column;
   gap: 0.35rem;
   margin: 0;
+}
+
+.logistics-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.logistics-summary__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.logistics-summary__badge--highlight {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
 }
 
 .branch-segments__list {
