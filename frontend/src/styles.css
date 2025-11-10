@@ -216,7 +216,8 @@ header {
   border-bottom: 1px solid rgba(229, 231, 235, 0.8);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 900;
+  isolation: isolate;
 }
 
 header nav {
