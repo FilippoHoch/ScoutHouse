@@ -175,23 +175,65 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
     quickIcons.push({ icon: <HotWaterIcon aria-hidden="true" />, label: t("structures.cards.icons.hotWater") });
   }
 
+  const locationParts = [item.province ?? t("structures.cards.notAvailable")];
+  if (item.address) {
+    locationParts.push(item.address);
+  }
+
   return (
     <li className="structure-card">
-      <header>
-        <h3>
-          <Link to={`/structures/${item.slug}`}>{item.name}</Link>
-        </h3>
-        <div className="structure-card__meta">
-          <span>{typeLabel}</span>
-          <span>· {item.province ?? t("structures.cards.notAvailable")}</span>
-          {item.address && <span>· {item.address}</span>}
+      <header className="structure-card__header">
+        <div className="structure-card__header-primary">
+          <span className="structure-card__avatar" aria-hidden="true">
+            {item.name.charAt(0).toUpperCase()}
+          </span>
+          <div className="structure-card__headline">
+            <span className="structure-card__type">{typeLabel}</span>
+            <h3>
+              <Link to={`/structures/${item.slug}`}>{item.name}</Link>
+            </h3>
+            <p className="structure-card__location">{locationParts.join(" · ")}</p>
+          </div>
         </div>
+        {costBandLabel && (
+          <span
+            className="structure-card__chip"
+            title={t("structures.cards.costBand", { value: costBandLabel })}
+          >
+            {costBandLabel}
+          </span>
+        )}
       </header>
 
-      {(hasSeasons || hasUnits) && (
+      {(item.distance_km !== null || item.estimated_cost !== null) && (
+        <div className="structure-card__stats">
+          {item.distance_km !== null && (
+            <span className="structure-card__stat">
+              {t("structures.cards.distance", { value: item.distance_km.toFixed(1) })}
+            </span>
+          )}
+          {item.estimated_cost !== null && (
+            <span className="structure-card__stat structure-card__stat--accent">
+              {t("structures.cards.estimatedCost", { value: formatCurrency(item.estimated_cost) })}
+            </span>
+          )}
+        </div>
+      )}
+
+      {quickIcons.length > 0 && (
+        <div className="structure-card__icons" aria-label={t("structures.cards.icons.label")}>
+          {quickIcons.map(({ icon, label }) => (
+            <span key={`${item.id}-${label}`} className="structure-card__icon" role="img" aria-label={label} title={label}>
+              {icon}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {(hasSeasons || hasUnits || item.pit_latrine_allowed) && (
         <div className="structure-card__badges">
           {hasSeasons && (
-            <div className="badge-group" aria-label={t("structures.cards.seasonsLabel")}> 
+            <div className="badge-group" aria-label={t("structures.cards.seasonsLabel")}>
               {item.seasons.map((season) => (
                 <span key={`${item.id}-season-${season}`} className="badge badge-season">
                   {season}
@@ -215,28 +257,6 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
               </span>
             </div>
           )}
-        </div>
-      )}
-
-      <div className="structure-card__meta">
-        {item.distance_km !== null && (
-          <span>{t("structures.cards.distance", { value: item.distance_km.toFixed(1) })}</span>
-        )}
-        {item.estimated_cost !== null && (
-          <span>
-            {t("structures.cards.estimatedCost", { value: formatCurrency(item.estimated_cost) })}
-            {costBandLabel && ` ${t("structures.cards.costBand", { value: costBandLabel })}`}
-          </span>
-        )}
-      </div>
-
-      {quickIcons.length > 0 && (
-        <div className="structure-card__icons" aria-label={t("structures.cards.icons.label")}>
-          {quickIcons.map(({ icon, label }) => (
-            <span key={`${item.id}-${label}`} className="structure-card__icon" role="img" aria-label={label} title={label}>
-              {icon}
-            </span>
-          ))}
         </div>
       )}
 
