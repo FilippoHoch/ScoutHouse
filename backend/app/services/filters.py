@@ -20,10 +20,10 @@ def _availability_matches(
     if season is not None and availability.season != season:
         return False
     if unit is not None:
-        units = {item if isinstance(item, str) else item.value for item in availability.units}
+        units = {str(item) for item in availability.units}
         if StructureUnit.ALL.value in units:
             return True
-        if unit.value not in units:
+        if str(unit) not in units:
             return False
     return True
 

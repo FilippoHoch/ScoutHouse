@@ -161,6 +161,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
         credentials: "include",
       });
     } catch (error) {
+      console.error(error);
       const message = `Unable to reach the API at ${API_URL}. Please make sure the backend server is running.`;
       throw new ApiError(0, null, message, error);
     }
@@ -177,13 +178,13 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     }
   }
 
-  if (!response.ok) {
-    let body: unknown;
-    try {
-      body = await response.json();
-    } catch (error) {
-      body = await response.text();
-    }
+    if (!response.ok) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        body = await response.text();
+      }
     throw new ApiError(response.status, body);
   }
 
@@ -318,6 +319,7 @@ async function authenticatedDownload(path: string, accept: string): Promise<Resp
         credentials: "include"
       });
     } catch (error) {
+      console.error(error);
       const message = `Unable to reach the API at ${API_URL}. Please make sure the backend server is running.`;
       throw new ApiError(0, null, message, error);
     }
@@ -334,13 +336,13 @@ async function authenticatedDownload(path: string, accept: string): Promise<Resp
     }
   }
 
-  if (!response.ok) {
-    let body: unknown;
-    try {
-      body = await response.json();
-    } catch (error) {
-      body = await response.text();
-    }
+    if (!response.ok) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        body = await response.text();
+      }
     throw new ApiError(response.status, body);
   }
 
@@ -763,13 +765,13 @@ export async function exportQuote(
     }
   }
 
-  if (!response.ok) {
-    let body: unknown;
-    try {
-      body = await response.json();
-    } catch (error) {
-      body = await response.text();
-    }
+    if (!response.ok) {
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        body = await response.text();
+      }
     throw new ApiError(response.status, body);
   }
 

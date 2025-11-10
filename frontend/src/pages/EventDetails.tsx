@@ -599,6 +599,7 @@ export const EventDetailsPage = () => {
       const result = await getSuggestions(numericId);
       setSuggestions(result);
     } catch (error) {
+      console.error(error);
       setCandidateError(t("events.candidates.suggestions.error"));
     }
   };
@@ -840,6 +841,7 @@ export const EventDetailsPage = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
+      console.error(error);
       setIcalError(t("events.details.icalError"));
     } finally {
       setIcalDownloading(false);
@@ -862,6 +864,7 @@ export const EventDetailsPage = () => {
         URL.revokeObjectURL(url);
       }, 60_000);
     } catch (error) {
+      console.error(error);
       setMailPreviewError(t("events.details.mailPreviewError"));
     }
   };
@@ -1190,7 +1193,7 @@ export const EventDetailsPage = () => {
         )}
       </Surface>
       <Surface>
-        <nav
+        <div
           className="tabs"
           role="tablist"
           aria-label={t("events.details.tabs.ariaLabel")}
@@ -1213,7 +1216,7 @@ export const EventDetailsPage = () => {
               </button>
             );
           })}
-        </nav>
+        </div>
         {activeTab === "candidature" && (
           <div
             role="tabpanel"

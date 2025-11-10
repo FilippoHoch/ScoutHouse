@@ -111,6 +111,7 @@ export const AdminPage = () => {
         URL.revokeObjectURL(url);
       }, 60_000);
     } catch (error) {
+      console.error(error);
       setErrorMessage(t("admin.notifications.previewError"));
     }
   };
@@ -129,6 +130,7 @@ export const AdminPage = () => {
         t("admin.notifications.testSuccess", { provider: response.provider })
       );
     } catch (error) {
+      console.error(error);
       setErrorMessage(t("admin.notifications.testError"));
     } finally {
       setSending(false);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -36,7 +36,7 @@ interface EventQuotesTabProps {
 
 const scenarioOrder: QuoteScenario[] = ["best", "realistic", "worst"];
 
-export function computeNights(startDate: string, endDate: string): number {
+function computeNights(startDate: string, endDate: string): number {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
@@ -60,15 +60,13 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const structures = useMemo(() => getCandidateStructures(event.candidates), [event.candidates]);
-  const [selectedStructureId, setSelectedStructureId] = useState<number | null>(
-    structures.length ? structures[0].id : null
-  );
+  const [explicitStructureId, setExplicitStructureId] = useState<number | null>(null);
   const [participantOverrides, setParticipantOverrides] = useState<Partial<EventParticipants>>({});
   const [daysOverride, setDaysOverride] = useState<string>("");
   const [nightsOverride, setNightsOverride] = useState<string>("");
   const [calcResult, setCalcResult] = useState<QuoteCalcResponse | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<QuoteScenario>("realistic");
-  const [selectedQuoteId, setSelectedQuoteId] = useState<number | null>(null);
+  const [explicitQuoteId, setExplicitQuoteId] = useState<number | null>(null);
   const [comparisonIds, setComparisonIds] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,17 +81,24 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
     queryFn: () => getQuotes(event.id)
   });
 
-  useEffect(() => {
-    if (structures.length > 0 && selectedStructureId === null) {
-      setSelectedStructureId(structures[0].id);
-    }
-  }, [structures, selectedStructureId]);
+  const quotes = useMemo(() => quotesQuery.data ?? [], [quotesQuery.data]);
 
-  useEffect(() => {
-    if (quotesQuery.data && quotesQuery.data.length > 0) {
-      setSelectedQuoteId((current) => current ?? quotesQuery.data![0].id);
+  const selectedStructureId = useMemo(() => {
+    if (
+      explicitStructureId !== null &&
+      structures.some((structure) => structure.id === explicitStructureId)
+    ) {
+      return explicitStructureId;
     }
-  }, [quotesQuery.data]);
+    return structures[0]?.id ?? null;
+  }, [explicitStructureId, structures]);
+
+  const selectedQuoteId = useMemo(() => {
+    if (explicitQuoteId !== null && quotes.some((quote) => quote.id === explicitQuoteId)) {
+      return explicitQuoteId;
+    }
+    return quotes[0]?.id ?? null;
+  }, [explicitQuoteId, quotes]);
 
   const calcMutation = useMutation({
     mutationFn: calcQuote,
@@ -209,11 +214,10 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
       }
       setError(null);
     } catch (apiError) {
+      console.error(apiError);
       setError("Impossibile esportare il preventivo.");
     }
   };
-
-  const quotes = quotesQuery.data ?? [];
 
   const comparisonQuotes: QuoteListItem[] = comparisonIds
     .map((id) => quotes.find((item) => item.id === id))
@@ -236,7 +240,7 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
               <span className="helper-text">{t("events.quotes.structureSelect")}</span>
               <select
                 value={selectedStructureId ?? ""}
-                onChange={(event) => setSelectedStructureId(Number(event.target.value))}
+                onChange={(event) => setExplicitStructureId(Number(event.target.value))}
               >
                 {structures.map((structure) => (
                   <option key={structure.id} value={structure.id}>
@@ -411,7 +415,7 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
                         type="radio"
                         name="selectedQuote"
                         checked={selectedQuoteId === quote.id}
-                        onChange={() => setSelectedQuoteId(quote.id)}
+                        onChange={() => setExplicitQuoteId(quote.id)}
                       />
                     </td>
                     <td>{new Date(quote.created_at).toLocaleString()}</td>

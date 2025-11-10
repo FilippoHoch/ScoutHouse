@@ -18,7 +18,7 @@ def _normalize_payload(payload: Any) -> Any:
         return payload.model_dump(mode="json")
     if isinstance(payload, dict):
         return {key: _normalize_payload(value) for key, value in payload.items()}
-    if isinstance(payload, (list, tuple)):
+    if isinstance(payload, list | tuple):
         return [_normalize_payload(item) for item in payload]
     return payload
 

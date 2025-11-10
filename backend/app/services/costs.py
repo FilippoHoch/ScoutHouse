@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 from app.core.config import get_settings
 from app.models import (
@@ -274,15 +274,17 @@ def calc_quote(
     overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if overrides is None:
-        overrides = {}
+        overrides_dict: dict[str, Any] = {}
     elif hasattr(overrides, "model_dump"):
-        overrides = overrides.model_dump(exclude_none=True)
-    elif not isinstance(overrides, dict):
+        overrides_dict = cast(dict[str, Any], overrides.model_dump(exclude_none=True))
+    elif isinstance(overrides, dict):
+        overrides_dict = dict(overrides)
+    else:
         raise ValueError("overrides must be a mapping")
-    participants = _extract_participants(event, overrides)
+    participants = _extract_participants(event, overrides_dict)
     people_total = sum(participants.values())
 
-    days, nights = _resolve_duration(event, overrides)
+    days, nights = _resolve_duration(event, overrides_dict)
 
     cost_options = list(getattr(structure, "cost_options", []) or [])
 
@@ -291,7 +293,7 @@ def calc_quote(
         rules = option.age_rules or {}
         if isinstance(rules, dict):
             raw_units = rules.get("city_tax_exempt_units")
-            if isinstance(raw_units, (list, tuple, set)):
+            if isinstance(raw_units, list | tuple | set):
                 for unit in raw_units:
                     if isinstance(unit, str):
                         exempt_units.add(unit)
@@ -457,7 +459,7 @@ def calc_quote(
     cost_band_value = band_for_cost(mean_daily_cost).value if mean_daily_cost is not None else None
 
     sanitized_overrides: dict[str, Any] = {}
-    participants_override = overrides.get("participants")
+    participants_override = overrides_dict.get("participants")
     if participants_override:
         if hasattr(participants_override, "model_dump"):
             sanitized_overrides["participants"] = participants_override.model_dump(
@@ -467,10 +469,10 @@ def calc_quote(
             sanitized_overrides["participants"] = {
                 key: int(value) for key, value in participants_override.items() if value is not None
             }
-    if "days" in overrides:
-        sanitized_overrides["days"] = int(overrides["days"])
-    if "nights" in overrides:
-        sanitized_overrides["nights"] = int(overrides["nights"])
+    if "days" in overrides_dict:
+        sanitized_overrides["days"] = int(overrides_dict["days"])
+    if "nights" in overrides_dict:
+        sanitized_overrides["nights"] = int(overrides_dict["nights"])
 
     inputs_snapshot = {
         "event_id": getattr(event, "id", None),

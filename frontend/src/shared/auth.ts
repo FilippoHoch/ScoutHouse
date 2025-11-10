@@ -73,28 +73,29 @@ export function useAuth(): AuthState {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-async function parseBody(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch (error) {
-    return await response.text();
+  async function parseBody(response: Response): Promise<unknown> {
+    try {
+      return await response.json();
+    } catch {
+      return await response.text();
+    }
   }
-}
 
 async function request(path: string, init: RequestInit): Promise<Response> {
-  try {
-    return await fetch(`${API_URL}${path}`, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init.headers ?? {})
-      },
-      credentials: "include"
-    });
-  } catch (error) {
-    const message = `Unable to reach the API at ${API_URL}. Please make sure the backend server is running.`;
-    throw new ApiError(0, null, message, error);
-  }
+    try {
+      return await fetch(`${API_URL}${path}`, {
+        ...init,
+        headers: {
+          "Content-Type": "application/json",
+          ...(init.headers ?? {})
+        },
+        credentials: "include"
+      });
+    } catch (error) {
+      console.error(error);
+      const message = `Unable to reach the API at ${API_URL}. Please make sure the backend server is running.`;
+      throw new ApiError(0, null, message, error);
+    }
 }
 
 async function fetchProfile(token: string): Promise<User | null> {

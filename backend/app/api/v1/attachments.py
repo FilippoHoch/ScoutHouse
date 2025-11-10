@@ -4,11 +4,10 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Annotated
 from urllib.parse import quote
 
+from botocore.client import BaseClient
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
-from botocore.client import BaseClient
 
 from app.core.config import get_settings
 from app.core.db import get_db
