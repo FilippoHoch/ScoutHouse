@@ -224,7 +224,8 @@ const createMetadataEntry = (key = "", value = ""): MetadataEntry => ({
 });
 
 type GeocodingSelectionCriteria = {
-  address?: string;
+  fullAddress?: string;
+  streetAddress?: string;
   locality?: string;
   municipality?: string;
   province?: string;
@@ -237,6 +238,32 @@ const normalizeGeocodingText = (value: string | null | undefined) =>
 const normalizePostalCode = (value: string | null | undefined) =>
   value ? value.toString().replace(/\s+/g, "").toLowerCase() : "";
 
+const parseStreetAddress = (value: string | null | undefined) => {
+  const normalized = normalizeGeocodingText(value);
+
+  if (!normalized) {
+    return { streetName: "", houseNumber: "" };
+  }
+
+  const sanitized = normalized.replace(/[.,;#]/g, " ");
+  const houseMatch = sanitized.match(/(\d+[a-z0-9\/\-]*)$/);
+
+  if (!houseMatch) {
+    return {
+      streetName: sanitized.trim().replace(/\s+/g, " "),
+      houseNumber: ""
+    };
+  }
+
+  const houseNumber = houseMatch[1];
+  const streetName = sanitized
+    .slice(0, sanitized.length - houseNumber.length)
+    .trim()
+    .replace(/\s+/g, " ");
+
+  return { streetName, houseNumber };
+};
+
 const pickBestGeocodingResult = (
   results: GeocodingResult[],
   criteria: GeocodingSelectionCriteria
@@ -245,16 +272,29 @@ const pickBestGeocodingResult = (
     return null;
   }
 
-  const expectedAddress = normalizeGeocodingText(criteria.address);
+  const expectedFullAddress = normalizeGeocodingText(criteria.fullAddress);
+  const expectedStreetAddress = normalizeGeocodingText(criteria.streetAddress);
   const expectedLocality = normalizeGeocodingText(criteria.locality);
   const expectedMunicipality = normalizeGeocodingText(criteria.municipality);
   const expectedProvince = normalizeGeocodingText(criteria.province);
   const expectedPostalCode = normalizePostalCode(criteria.postalCode);
+  const { streetName: expectedStreetName, houseNumber: expectedHouseNumber } =
+    parseStreetAddress(criteria.streetAddress);
+  const expectedStreetWithNumber = [
+    expectedStreetName,
+    expectedHouseNumber
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const scored = results.map((result, index) => {
     let score = 0;
     const label = normalizeGeocodingText(result.label);
-    if (expectedAddress && label.includes(expectedAddress)) {
+    if (expectedFullAddress && label.includes(expectedFullAddress)) {
+      score += 4;
+    }
+
+    if (expectedStreetAddress && label.includes(expectedStreetAddress)) {
       score += 4;
     }
 
@@ -274,16 +314,45 @@ const pickBestGeocodingResult = (
         .filter(Boolean)
         .join(" ");
 
-      if (expectedAddress && normalizedStreet && expectedAddress.includes(normalizedStreet)) {
-        score += 5;
+      if (
+        expectedStreetName &&
+        normalizedStreet &&
+        normalizedStreet.includes(expectedStreetName)
+      ) {
+        score += 6;
+        if (normalizedStreet === expectedStreetName) {
+          score += 2;
+        }
       }
 
-      if (expectedAddress && streetWithNumber && expectedAddress.includes(streetWithNumber)) {
+      if (expectedStreetName && label.includes(expectedStreetName)) {
+        score += 3;
+      }
+
+      if (
+        expectedStreetWithNumber &&
+        streetWithNumber === expectedStreetWithNumber
+      ) {
+        score += 4;
+      } else if (
+        expectedStreetWithNumber &&
+        label.includes(expectedStreetWithNumber)
+      ) {
+        score += 3;
+      }
+
+      if (
+        expectedHouseNumber &&
+        normalizedHouseNumber === expectedHouseNumber
+      ) {
         score += 2;
       }
 
       if (expectedLocality && normalizeGeocodingText(locality).includes(expectedLocality)) {
         score += 2;
+        if (normalizeGeocodingText(locality) === expectedLocality) {
+          score += 1;
+        }
       }
 
       if (
@@ -291,6 +360,9 @@ const pickBestGeocodingResult = (
         normalizeGeocodingText(municipality).includes(expectedMunicipality)
       ) {
         score += 3;
+        if (normalizeGeocodingText(municipality) === expectedMunicipality) {
+          score += 1;
+        }
       }
 
       if (expectedProvince && normalizeGeocodingText(province).includes(expectedProvince)) {
@@ -2384,7 +2456,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           }
           const bestMatch =
             pickBestGeocodingResult(results, {
-              address: combinedAddress,
+              fullAddress: combinedAddress,
+              streetAddress: trimmedAddress,
               locality: trimmedLocality,
               municipality: trimmedMunicipality,
               province: normalizedProvince,
@@ -2397,17 +2470,23 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
             return;
           }
 
-          const suggestedLatitude = bestMatch.latitude.toFixed(6);
-          const suggestedLongitude = bestMatch.longitude.toFixed(6);
+          if (!coordinatesEditedRef.current) {
+            const suggestedLatitude = bestMatch.latitude.toFixed(6);
+            const suggestedLongitude = bestMatch.longitude.toFixed(6);
 
-          if (
-            !coordinatesEditedRef.current &&
-            !latitudeRef.current &&
-            !longitudeRef.current
-          ) {
-            setLatitude(suggestedLatitude);
-            setLongitude(suggestedLongitude);
-            setGeocodingApplied(true);
+            const shouldUpdateLatitude = latitudeRef.current !== suggestedLatitude;
+            const shouldUpdateLongitude = longitudeRef.current !== suggestedLongitude;
+
+            if (shouldUpdateLatitude) {
+              setLatitude(suggestedLatitude);
+            }
+            if (shouldUpdateLongitude) {
+              setLongitude(suggestedLongitude);
+            }
+
+            setGeocodingApplied((current) =>
+              current || shouldUpdateLatitude || shouldUpdateLongitude
+            );
           } else {
             setGeocodingApplied(false);
           }
