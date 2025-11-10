@@ -1,7 +1,4 @@
 from __future__ import annotations
-
-from typing import Annotated
-
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -34,10 +31,6 @@ from app.services.password_reset import (
     verify_reset_token,
 )
 
-DbSession = Annotated[Session, Depends(get_db)]
-RefreshTokenDep = Annotated[RefreshToken, Depends(get_refresh_token_from_cookie)]
-CurrentUser = Annotated[User, Depends(get_current_user)]
-
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -56,7 +49,12 @@ def _serialize_user(user: User) -> UserRead:
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, response: Response, db: DbSession) -> AuthResponse:
+async def register(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> AuthResponse:
+    payload = RegisterRequest.model_validate(await request.json())
     settings = get_settings()
     if not settings.allow_registration:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration disabled")
@@ -89,7 +87,7 @@ def register(payload: RegisterRequest, response: Response, db: DbSession) -> Aut
 async def login(
     request: Request,
     response: Response,
-    db: DbSession,
+    db: Session = Depends(get_db),
 ) -> AuthResponse:
     payload = LoginRequest.model_validate(await request.json())
 
@@ -112,7 +110,7 @@ async def login(
 @limiter.limit("5/hour")
 async def forgot_password(
     request: Request,
-    db: DbSession,
+    db: Session = Depends(get_db),
 ) -> Response:
     payload = ForgotPasswordRequest.model_validate(await request.json())
 
@@ -134,7 +132,7 @@ async def forgot_password(
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 def reset_password(
     payload: ResetPasswordRequest,
-    db: DbSession,
+    db: Session = Depends(get_db),
 ) -> None:
     try:
         record = verify_reset_token(db, payload.token)
@@ -154,9 +152,10 @@ def reset_password(
 def refresh(
     request: Request,
     response: Response,
-    refresh_token: RefreshTokenDep,
-    db: DbSession,
+    refresh_token: RefreshToken = Depends(get_refresh_token_from_cookie),
+    db: Session = Depends(get_db),
 ) -> RefreshResponse:
+    del request
     if refresh_token.revoked:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked"
@@ -177,8 +176,8 @@ def refresh(
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
     response: Response,
-    refresh_token: RefreshTokenDep,
-    db: DbSession,
+    refresh_token: RefreshToken = Depends(get_refresh_token_from_cookie),
+    db: Session = Depends(get_db),
 ) -> None:
     refresh_token.revoked = True
     db.add(refresh_token)
@@ -188,5 +187,5 @@ def logout(
 
 
 @router.get("/me", response_model=UserRead)
-def get_me(user: CurrentUser) -> UserRead:
+def get_me(user: User = Depends(get_current_user)) -> UserRead:
     return _serialize_user(user)
