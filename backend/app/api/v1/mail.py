@@ -47,8 +47,8 @@ class MailTestResponse(BaseModel):
 @router.get("/preview", response_model=MailPreviewResponse)
 def preview_mail_template(
     template: MailTemplateName,
-    sample: Annotated[bool, Query(True)],
     _admin: AdminUser,
+    sample: Annotated[bool, Query()] = True,
 ) -> MailPreviewResponse:
     if not sample:
         raise HTTPException(

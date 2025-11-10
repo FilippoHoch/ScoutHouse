@@ -533,11 +533,11 @@ def create_event(
 @router.get("/", response_model=EventListResponse)
 def list_events(
     db: DbSession,
-    page: Annotated[int, Query(default=1, ge=1)],
-    page_size: Annotated[int, Query(default=20, ge=1, le=100)],
-    q: Annotated[str | None, Query(default=None, min_length=1)],
-    status_filter: Annotated[EventStatus | None, Query(default=None, alias="status")],
     current_user: CurrentUser,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    q: Annotated[str | None, Query(min_length=1)] = None,
+    status_filter: Annotated[EventStatus | None, Query(alias="status")] = None,
 ) -> EventListResponse:
     filters = []
     if q:
@@ -579,8 +579,8 @@ def list_events(
 def get_event(
     event_id: int,
     db: DbSession,
-    include: Annotated[str | None, Query(default=None)],
     _: EventViewer,
+    include: Annotated[str | None, Query()] = None,
 ) -> EventWithRelations | EventRead:
     include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
     with_candidates = "candidates" in include_parts
@@ -1221,8 +1221,8 @@ def delete_member(
 def get_suggestions(
     event_id: int,
     db: DbSession,
-    limit: Annotated[int, Query(default=20, ge=1, le=50)],
     _: EventViewer,
+    limit: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> list[EventSuggestion]:
     event = _load_event(db, event_id)
     raw_suggestions = suggest_structures(db, event, limit=limit)

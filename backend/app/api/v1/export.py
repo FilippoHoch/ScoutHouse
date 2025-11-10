@@ -467,7 +467,7 @@ def _render_structures_export(
 @router.get("/structures")
 def export_structures(
     format: Annotated[str, Query(alias="format")],
-    filters: Annotated[str | None, Query(default=None)],
+    filters: Annotated[str | None, Query()] = None,
     *,
     db: DbSession,
     request: Request,
