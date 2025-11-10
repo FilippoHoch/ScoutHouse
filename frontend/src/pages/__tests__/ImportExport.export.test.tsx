@@ -71,7 +71,7 @@ describe("ImportExportPage exports", () => {
     const user = userEvent.setup();
     render(<ImportExportPage />);
 
-    await user.type(screen.getByLabelText(/Ricerca/i), "alpina");
+    await user.type(screen.getByLabelText(/^Ricerca$/i), "alpina");
     await user.type(screen.getByLabelText(/^Provincia/i), "MI");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
 
@@ -89,11 +89,15 @@ describe("ImportExportPage exports", () => {
     ).toBeInTheDocument();
   });
 
-  it("exports events with date range", async () => {
+  it("exports events with additional filters", async () => {
     const user = userEvent.setup();
     render(<ImportExportPage />);
 
     const [, eventsCsvButton] = screen.getAllByRole("button", { name: /Esporta CSV/i });
+    await user.type(screen.getByLabelText(/Ricerca eventi/i), "campo");
+    await user.selectOptions(screen.getByLabelText(/^Branca/i), "LC");
+    await user.selectOptions(screen.getByLabelText(/^Stato/i), "planning");
+    await user.selectOptions(screen.getByLabelText(/^Budget/i), "with");
     await user.type(screen.getByLabelText(/^Dal/i), "2025-01-01");
     await user.type(screen.getByLabelText(/^Al/i), "2025-01-31");
     await user.click(eventsCsvButton);
@@ -101,7 +105,14 @@ describe("ImportExportPage exports", () => {
     await waitFor(() =>
       expect(exportEvents).toHaveBeenCalledWith(
         "csv",
-        expect.objectContaining({ from: "2025-01-01", to: "2025-01-31" })
+        expect.objectContaining({
+          q: "campo",
+          branch: "LC",
+          status: "planning",
+          budget: "with",
+          from: "2025-01-01",
+          to: "2025-01-31",
+        })
       )
     );
   });

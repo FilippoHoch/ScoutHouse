@@ -19,7 +19,9 @@ import {
   Unit,
   CostBand,
   StructureOpenPeriodsImportDryRunResponse,
-  StructureOpenPeriodsImportResult
+  StructureOpenPeriodsImportResult,
+  EventBranch,
+  EventStatus
 } from "../shared/types";
 import { useAuth } from "../shared/auth";
 
@@ -114,6 +116,9 @@ const structureTypeOptions: StructureType[] = ["house", "land", "mixed"];
 const seasonOptions: Season[] = ["winter", "spring", "summer", "autumn"];
 const unitOptions: Unit[] = ["LC", "EG", "RS", "ALL"];
 const costBandOptions: CostBand[] = ["cheap", "medium", "expensive"];
+const eventBranchOptions: EventBranch[] = ["LC", "EG", "RS", "ALL"];
+const eventStatusOptions: EventStatus[] = ["draft", "planning", "booked", "archived"];
+const eventBudgetOptions = ["", "with", "without"] as const;
 
 export const ImportExportPage = () => {
   const { t } = useTranslation();
@@ -128,7 +133,14 @@ export const ImportExportPage = () => {
     unit: "" as "" | Unit,
     cost_band: "" as "" | CostBand,
   });
-  const [eventFilters, setEventFilters] = useState({ from: "", to: "" });
+  const [eventFilters, setEventFilters] = useState({
+    q: "",
+    branch: "" as "" | EventBranch,
+    status: "" as "" | EventStatus,
+    from: "",
+    to: "",
+    budget: "" as (typeof eventBudgetOptions)[number],
+  });
   const [structureExportStatus, setStructureExportStatus] = useState<string | null>(null);
   const [structureExportError, setStructureExportError] = useState<string | null>(null);
   const [structureExportLoading, setStructureExportLoading] = useState(false);
@@ -218,7 +230,9 @@ export const ImportExportPage = () => {
     }));
   };
 
-  const handleEventFilterChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleEventFilterChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = event.target;
     clearEventsExportMessages();
     setEventFilters((previous) => ({ ...previous, [name]: value }));
@@ -591,6 +605,46 @@ export const ImportExportPage = () => {
               </header>
               <div className="import-export__filters">
                 <label>
+                  <span>{t("importExport.export.events.filters.q")}</span>
+                  <input
+                    type="text"
+                    name="q"
+                    value={eventFilters.q}
+                    onChange={handleEventFilterChange}
+                    placeholder={t("importExport.export.events.filters.searchPlaceholder") ?? undefined}
+                  />
+                </label>
+                <label>
+                  <span>{t("importExport.export.events.filters.branch")}</span>
+                  <select
+                    name="branch"
+                    value={eventFilters.branch}
+                    onChange={handleEventFilterChange}
+                  >
+                    <option value="">{t("importExport.export.events.filters.any")}</option>
+                    {eventBranchOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>{t("importExport.export.events.filters.status")}</span>
+                  <select
+                    name="status"
+                    value={eventFilters.status}
+                    onChange={handleEventFilterChange}
+                  >
+                    <option value="">{t("importExport.export.events.filters.any")}</option>
+                    {eventStatusOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {t(`importExport.export.events.filters.statusOptions.${option}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
                   <span>{t("importExport.export.events.filters.from")}</span>
                   <input
                     type="date"
@@ -607,6 +661,24 @@ export const ImportExportPage = () => {
                     value={eventFilters.to}
                     onChange={handleEventFilterChange}
                   />
+                </label>
+                <label>
+                  <span>{t("importExport.export.events.filters.budget.label")}</span>
+                  <select
+                    name="budget"
+                    value={eventFilters.budget}
+                    onChange={handleEventFilterChange}
+                  >
+                    {eventBudgetOptions.map((option) => (
+                      <option key={option || "any"} value={option}>
+                        {t(
+                          option
+                            ? `importExport.export.events.filters.budget.${option}`
+                            : "importExport.export.events.filters.budget.any"
+                        )}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
               {(eventsExportError || eventsExportStatus) && (
