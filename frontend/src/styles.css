@@ -660,11 +660,49 @@ body.layout-wide main {
 }
 
 .file-input input[type="file"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-md);
+  padding: var(--space-sm);
   background-color: var(--color-surface);
   cursor: pointer;
+  font: inherit;
+  color: var(--color-muted);
+}
+
+.file-input input[type="file"]::file-selector-button,
+.file-input input[type="file"]::-webkit-file-upload-button,
+.file-input input[type="file"]::-moz-file-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.file-input input[type="file"]::file-selector-button:hover,
+.file-input input[type="file"]::file-selector-button:focus-visible,
+.file-input input[type="file"]::-webkit-file-upload-button:hover,
+.file-input input[type="file"]::-webkit-file-upload-button:focus-visible,
+.file-input input[type="file"]::-moz-file-upload-button:hover,
+.file-input input[type="file"]::-moz-file-upload-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(29, 78, 216, 0.25);
+}
+
+.file-input input[type="file"]:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
 }
 
 .file-input__selected {
