@@ -1565,15 +1565,6 @@ table tbody tr:hover {
   margin-top: calc(var(--space-xl) * 0.75);
 }
 
-@media (min-width: 960px) {
-  .structure-location-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(420px, 1.35fr);
-    gap: calc(var(--space-xl) * 1.1);
-    align-items: stretch;
-  }
-}
-
 .structure-location-panel {
   display: flex;
   flex-direction: column;
@@ -1586,16 +1577,6 @@ table tbody tr:hover {
 
 .structure-location-panel--map {
   gap: var(--space-lg);
-}
-
-@media (min-width: 960px) {
-  .structure-location-panel--combined {
-    grid-column: 1 / 2;
-  }
-
-  .structure-location-panel--map {
-    grid-column: 2 / 3;
-  }
 }
 
 .structure-location-panel__header {
@@ -2133,6 +2114,7 @@ table tbody tr:hover {
   flex-direction: column;
   gap: var(--space-sm);
   height: 100%;
+  width: 100%;
 }
 
 .structure-map-field-title {
@@ -2144,6 +2126,7 @@ table tbody tr:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  width: 100%;
 }
 
 .structure-map-field .google-map-embed {
