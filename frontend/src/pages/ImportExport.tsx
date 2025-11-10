@@ -677,6 +677,15 @@ export const ImportExportPage = () => {
                 <label className="file-input">
                   <span>{t("importExport.structures.fileLabel")}</span>
                   <input type="file" accept=".xlsx,.csv" onChange={handleFileChange} />
+                  {file && (
+                    <span
+                      className="file-input__selected"
+                      aria-live="polite"
+                      title={file.name}
+                    >
+                      {file.name}
+                    </span>
+                  )}
                 </label>
                 {loading && <p>{t("importExport.structures.loading")}</p>}
                 {errorMessage && <p className="error">{errorMessage}</p>}
@@ -787,6 +796,15 @@ export const ImportExportPage = () => {
                 <label className="file-input">
                   <span>{t("importExport.openPeriods.fileLabel")}</span>
                   <input type="file" accept=".xlsx,.csv" onChange={handleOpenPeriodsFileChange} />
+                  {openPeriodsFile && (
+                    <span
+                      className="file-input__selected"
+                      aria-live="polite"
+                      title={openPeriodsFile.name}
+                    >
+                      {openPeriodsFile.name}
+                    </span>
+                  )}
                 </label>
                 {openPeriodsLoading && <p>{t("importExport.openPeriods.loading")}</p>}
                 {openPeriodsErrorMessage && <p className="error">{openPeriodsErrorMessage}</p>}
