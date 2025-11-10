@@ -272,22 +272,19 @@
         "typeHint": "Scegli il tipo di struttura più rappresentativo.",
         "province": "Provincia",
         "provincePlaceholder": "Es. MI",
-        "provinceHint": "Usa il codice a due lettere (es. MI).",
+        "provinceHint": "Scrivi il codice a due lettere della provincia (es. MI).",
         "postalCode": "CAP",
         "postalCodePlaceholder": "Es. 20121",
-        "postalCodeHint": "Inserisci il codice di avviamento postale, se conosciuto.",
+        "postalCodeHint": "Aggiungi il CAP se lo conosci: aiuta a restringere la ricerca.",
         "municipality": "Comune",
         "municipalityPlaceholder": "Es. Milano",
-        "municipalityHint": "Indica il comune o la città di riferimento (opzionale).",
+        "municipalityHint": "Indica il comune o la città di riferimento.",
         "locality": "Località / Frazione",
         "localityPlaceholder": "Es. Frazione, località o quartiere",
-        "localityHint": "Aggiungi località, frazione o quartiere utili a chi deve raggiungere la struttura.",
-        "municipalityCode": "Codice ISTAT del comune",
-        "municipalityCodePlaceholder": "Es. F205",
-        "municipalityCodeHint": "Inserisci il codice ISTAT o catastale, se disponibile (facoltativo).",
+        "localityHint": "Se utile, specifica località, frazione o quartiere.",
         "address": "Indirizzo",
         "addressPlaceholder": "Via e numero civico, comune, eventuali indicazioni…",
-        "addressHint": "Indica via, numero civico e località se disponibili.",
+        "addressHint": "Inserisci via e numero civico, oppure un'indicazione utile per raggiungere la struttura.",
         "operationalStatus": "Stato operativo",
         "operationalStatusPlaceholder": "Seleziona lo stato",
         "operationalStatusHint": "Segnala se la struttura è operativa o presenta limitazioni temporanee.",
@@ -301,13 +298,13 @@
         "longitude": "Longitudine",
         "altitude": "Altitudine",
         "altitudeHint": "Inserisci l'altitudine in metri sul livello del mare (opzionale).",
-        "coordinatesHint": "Inserisci coordinate decimali, se note (es. 45.1234).",
+        "coordinatesHint": "Usa coordinate decimali (es. 45.1234). Le suggeriremo automaticamente quando possibile.",
         "map": {
           "title": "Anteprima su Google Maps",
-          "hint": "Fai clic sulla mappa per posizionare il segnaposto oppure inserisci manualmente le coordinate nei campi dedicati.",
-          "empty": "Fai clic sulla mappa per scegliere un punto e impostare automaticamente le coordinate.",
+          "hint": "Clicca sulla mappa per spostare il segnaposto o modifica le coordinate nei campi dedicati.",
+          "empty": "Clicca sulla mappa o completa l'indirizzo per ottenere un suggerimento automatico.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
-          "ariaLabel": "Mappa incorporata di Google per anteprima delle coordinate"
+          "ariaLabel": "Mappa interattiva di Google per scegliere le coordinate"
         },
         "geocoding": {
           "searching": "Ricerca coordinate basata sull'indirizzo…",
@@ -381,12 +378,14 @@
           }
         },
         "location": {
-          "detailsTitle": "Riepilogo posizione",
-          "detailsDescription": "Completa l'indirizzo con il maggior numero di dettagli possibile: useremo queste informazioni per suggerire automaticamente le coordinate.",
-          "addressGroupTitle": "Indirizzo e riferimenti",
-          "addressGroupDescription": "Via/piazza, numero civico, località, comune, provincia e CAP sono facoltativi ma utili per ottenere un posizionamento preciso.",
-          "coordinatesGroupTitle": "Coordinate e mappa",
-          "coordinatesGroupDescription": "Verifica le coordinate proposte, correggi manualmente se necessario oppure clicca sulla mappa per spostare il segnaposto."
+          "detailsTitle": "Dove si trova la struttura",
+          "detailsDescription": "Inserisci più dettagli possibili: useremo questi dati per proporre automaticamente le coordinate e aiutare chi deve raggiungerla.",
+          "addressGroupTitle": "Indirizzo completo",
+          "addressGroupDescription": "Via/piazza, numero civico, località, comune, provincia e CAP: anche se facoltativi, più elementi inserisci più precisa sarà la posizione.",
+          "coordinatesGroupTitle": "Coordinate manuali",
+          "coordinatesGroupDescription": "Verifica o correggi latitudine, longitudine e altitudine se le conosci già.",
+          "mapPanelTitle": "Anteprima e scelta sulla mappa",
+          "mapPanelDescription": "Controlla il punto suggerito, trascina il segnaposto oppure clicca sulla mappa per fissare la posizione esatta."
         },
         "sections": {
           "general": {
@@ -395,7 +394,7 @@
           },
           "location": {
             "title": "Posizione, indirizzo e coordinate",
-            "description": "Inserisci le informazioni utili per raggiungere la struttura e aiutaci a posizionarla automaticamente sulla mappa."
+            "description": "Compila indirizzo e coordinate per posizionare con precisione la struttura sulla mappa."
           },
           "coordinates": {
             "title": "Coordinate geografiche",

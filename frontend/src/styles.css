@@ -1473,9 +1473,9 @@ table tbody tr:hover {
 @media (min-width: 960px) {
   .structure-location-layout {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(420px, 1.35fr);
     gap: calc(var(--space-xl) * 1.1);
-    align-items: start;
+    align-items: stretch;
   }
 }
 
@@ -1487,6 +1487,20 @@ table tbody tr:hover {
 
 .structure-location-panel--combined {
   gap: var(--space-xl);
+}
+
+.structure-location-panel--map {
+  gap: var(--space-lg);
+}
+
+@media (min-width: 960px) {
+  .structure-location-panel--combined {
+    grid-column: 1 / 2;
+  }
+
+  .structure-location-panel--map {
+    grid-column: 2 / 3;
+  }
 }
 
 .structure-location-panel__header {
@@ -1957,14 +1971,14 @@ table tbody tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  min-height: 320px;
+  min-height: clamp(360px, 55vh, 540px);
   overflow: hidden;
 }
 
 .google-map-embed__map {
   width: 100%;
   height: 100%;
-  min-height: 320px;
+  min-height: clamp(360px, 55vh, 540px);
   border: 0;
   outline: none;
 }
@@ -2023,11 +2037,22 @@ table tbody tr:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+  height: 100%;
 }
 
 .structure-map-field-title {
   font-weight: 600;
   color: var(--color-muted-strong);
+}
+
+.structure-map-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.structure-map-field .google-map-embed {
+  flex: 1 1 auto;
 }
 
 .structure-geocode-status {

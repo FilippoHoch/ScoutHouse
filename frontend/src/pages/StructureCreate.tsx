@@ -187,6 +187,101 @@ const createMetadataEntry = (key = "", value = ""): MetadataEntry => ({
   value
 });
 
+type GeocodingSelectionCriteria = {
+  address?: string;
+  locality?: string;
+  municipality?: string;
+  province?: string;
+  postalCode?: string;
+};
+
+const normalizeGeocodingText = (value: string | null | undefined) =>
+  value ? value.toString().trim().toLowerCase() : "";
+
+const normalizePostalCode = (value: string | null | undefined) =>
+  value ? value.toString().replace(/\s+/g, "").toLowerCase() : "";
+
+const pickBestGeocodingResult = (
+  results: GeocodingResult[],
+  criteria: GeocodingSelectionCriteria
+): GeocodingResult | null => {
+  if (results.length === 0) {
+    return null;
+  }
+
+  const expectedAddress = normalizeGeocodingText(criteria.address);
+  const expectedLocality = normalizeGeocodingText(criteria.locality);
+  const expectedMunicipality = normalizeGeocodingText(criteria.municipality);
+  const expectedProvince = normalizeGeocodingText(criteria.province);
+  const expectedPostalCode = normalizePostalCode(criteria.postalCode);
+
+  const scored = results.map((result, index) => {
+    let score = 0;
+    const label = normalizeGeocodingText(result.label);
+    if (expectedAddress && label.includes(expectedAddress)) {
+      score += 4;
+    }
+
+    if (result.address) {
+      const {
+        street,
+        house_number: houseNumber,
+        locality,
+        municipality,
+        province,
+        postal_code: postalCode
+      } = result.address;
+
+      const normalizedStreet = normalizeGeocodingText(street);
+      const normalizedHouseNumber = normalizeGeocodingText(houseNumber);
+      const streetWithNumber = [normalizedStreet, normalizedHouseNumber]
+        .filter(Boolean)
+        .join(" ");
+
+      if (expectedAddress && normalizedStreet && expectedAddress.includes(normalizedStreet)) {
+        score += 5;
+      }
+
+      if (expectedAddress && streetWithNumber && expectedAddress.includes(streetWithNumber)) {
+        score += 2;
+      }
+
+      if (expectedLocality && normalizeGeocodingText(locality).includes(expectedLocality)) {
+        score += 2;
+      }
+
+      if (
+        expectedMunicipality &&
+        normalizeGeocodingText(municipality).includes(expectedMunicipality)
+      ) {
+        score += 3;
+      }
+
+      if (expectedProvince && normalizeGeocodingText(province).includes(expectedProvince)) {
+        score += 1;
+      }
+
+      if (
+        expectedPostalCode &&
+        normalizePostalCode(postalCode) === expectedPostalCode
+      ) {
+        score += 4;
+      }
+    }
+
+    return { result, score, index };
+  });
+
+  scored.sort((a, b) => {
+    if (b.score === a.score) {
+      return a.index - b.index;
+    }
+    return b.score - a.score;
+  });
+
+  return scored[0]?.result ?? null;
+};
+
 const serializeMetadataValue = (value: unknown): string => {
   if (value === null || value === undefined) {
     return "";
@@ -378,7 +473,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [slug, setSlug] = useState("");
   const [province, setProvince] = useState("");
   const [municipality, setMunicipality] = useState("");
-  const [municipalityCode, setMunicipalityCode] = useState("");
   const [locality, setLocality] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
@@ -987,11 +1081,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setGeocodingApplied(false);
   };
 
-  const handleMunicipalityCodeChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setMunicipalityCode(event.target.value.toUpperCase());
-    setApiError(null);
-  };
-
   const handleLocalityChange = (event: ChangeEvent<HTMLInputElement>) => {
     setLocality(event.target.value);
     setApiError(null);
@@ -1571,7 +1660,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setSlug(existingStructure.slug ?? "");
     setProvince(existingStructure.province ?? "");
     setMunicipality(existingStructure.municipality ?? "");
-    setMunicipalityCode(existingStructure.municipality_code ?? "");
     setLocality(existingStructure.locality ?? "");
     setPostalCode(existingStructure.postal_code ?? "");
     setAddress(existingStructure.address ?? "");
@@ -1790,6 +1878,18 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedMunicipality = municipality.trim();
     const trimmedProvince = province.trim();
     const trimmedPostal = postalCode.trim();
+    const normalizedProvince = trimmedProvince ? trimmedProvince.toUpperCase() : "";
+    const normalizedPostal = trimmedPostal.replace(/\s+/g, "");
+
+    const combinedAddressParts = [
+      trimmedAddress,
+      trimmedLocality,
+      trimmedMunicipality,
+      normalizedProvince,
+      normalizedPostal ? `CAP ${normalizedPostal}` : "",
+      "Italia",
+    ];
+    const combinedAddress = combinedAddressParts.filter(Boolean).join(", ");
 
     if (!trimmedAddress && !trimmedLocality && !trimmedMunicipality && !trimmedPostal) {
       if (geocodingDebounceRef.current !== null) {
@@ -1827,29 +1927,37 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     geocodingDebounceRef.current = window.setTimeout(() => {
       const params = {
-        address: trimmedAddress || undefined,
+        address: combinedAddress || undefined,
         locality: trimmedLocality || undefined,
         municipality: trimmedMunicipality || undefined,
-        province: trimmedProvince || undefined,
-        postal_code: trimmedPostal || undefined,
-        country: "IT"
-      };
+        province: normalizedProvince || undefined,
+        postal_code: normalizedPostal || undefined,
+        country: "IT",
+        limit: 5
+      } as const;
 
       searchGeocoding(params, { signal: controller.signal })
         .then((results) => {
           if (controller.signal.aborted || requestId !== geocodingRequestId.current) {
             return;
           }
-          const [first] = results;
+          const bestMatch =
+            pickBestGeocodingResult(results, {
+              address: combinedAddress,
+              locality: trimmedLocality,
+              municipality: trimmedMunicipality,
+              province: normalizedProvince,
+              postalCode: normalizedPostal
+            }) ?? results[0] ?? null;
           setGeocodingStatus("success");
-          setGeocodingSuggestion(first ?? null);
-          if (!first) {
+          setGeocodingSuggestion(bestMatch);
+          if (!bestMatch) {
             setGeocodingApplied(false);
             return;
           }
 
-          const suggestedLatitude = first.latitude.toFixed(6);
-          const suggestedLongitude = first.longitude.toFixed(6);
+          const suggestedLatitude = bestMatch.latitude.toFixed(6);
+          const suggestedLongitude = bestMatch.longitude.toFixed(6);
 
           if (
             !coordinatesEditedRef.current &&
@@ -2307,7 +2415,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     const trimmedProvince = province.trim();
     const trimmedMunicipality = municipality.trim();
-    const trimmedMunicipalityCode = municipalityCode.trim();
     const trimmedLocality = locality.trim();
     const trimmedPostalCode = postalCode.trim();
     const trimmedAddress = address.trim();
@@ -2396,9 +2503,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.municipality = trimmedMunicipality;
     }
 
-    if (trimmedMunicipalityCode) {
-      payload.municipality_code = trimmedMunicipalityCode.toUpperCase();
-    }
 
     if (trimmedLocality) {
       payload.locality = trimmedLocality;
@@ -2821,7 +2925,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const provinceHintId = "structure-province-hint";
   const provinceDescribedBy = [provinceHintId, provinceErrorId].filter(Boolean).join(" ") || undefined;
   const municipalityHintId = "structure-municipality-hint";
-  const municipalityCodeHintId = "structure-municipality-code-hint";
   const localityHintId = "structure-locality-hint";
   const addressHintId = "structure-address-hint";
   const postalCodeHintId = "structure-postal-code-hint";
@@ -3170,23 +3273,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                           </span>
                         </div>
 
-                        <div className="structure-form-field">
-                          <label htmlFor="structure-municipality-code">
-                            {t("structures.create.form.municipalityCode")}
-                            <input
-                              id="structure-municipality-code"
-                              value={municipalityCode}
-                              onChange={handleMunicipalityCodeChange}
-                              maxLength={16}
-                              placeholder={t("structures.create.form.municipalityCodePlaceholder")}
-                              aria-describedby={municipalityCodeHintId}
-                            />
-                          </label>
-                          <span className="helper-text" id={municipalityCodeHintId}>
-                            {t("structures.create.form.municipalityCodeHint")}
-                          </span>
-                        </div>
-
                         <div className="structure-form-field" data-span="full">
                           <label htmlFor="structure-address">
                             {t("structures.create.form.address")}
@@ -3261,93 +3347,102 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             </p>
                           )}
                         </div>
-
-                    <div className="structure-form-field">
-                      <label htmlFor="structure-altitude">
-                        {t("structures.create.form.altitude")}
-                        <input
-                          id="structure-altitude"
-                          value={altitude}
-                          onChange={handleAltitudeChange}
-                          inputMode="decimal"
-                          step="any"
-                          aria-invalid={fieldErrors.altitude ? "true" : undefined}
-                          aria-describedby={altitudeDescribedBy}
-                        />
-                      </label>
-                      <span className="helper-text" id={altitudeHintId}>
-                        {t("structures.create.form.altitudeHint")}
-                      </span>
-                      {fieldErrors.altitude && (
-                        <p className="error-text" id={altitudeErrorId}>
-                          {fieldErrors.altitude}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="structure-form-field" data-span="full">
-                      <div className="structure-map-field">
-                        <span className="structure-map-field-title">
-                          {t("structures.create.form.map.title")}
-                        </span>
-                        <GoogleMapEmbed
-                          coordinates={selectedCoordinates}
-                          title={t("structures.create.form.map.title")}
-                          ariaLabel={t("structures.create.form.map.ariaLabel")}
-                          emptyLabel={t("structures.create.form.map.empty")}
-                          onCoordinatesChange={handleMapCoordinatesChange}
-                        />
-                        <span className="helper-text">
-                          {t("structures.create.form.map.hint")}
-                        </span>
-                        {geocodingStatus === "loading" && (
-                          <span className="structure-geocode-status">
-                            {t("structures.create.form.geocoding.searching")}
+                        <div className="structure-form-field">
+                          <label htmlFor="structure-altitude">
+                            {t("structures.create.form.altitude")}
+                            <input
+                              id="structure-altitude"
+                              value={altitude}
+                              onChange={handleAltitudeChange}
+                              inputMode="decimal"
+                              step="any"
+                              aria-invalid={fieldErrors.altitude ? "true" : undefined}
+                              aria-describedby={altitudeDescribedBy}
+                            />
+                          </label>
+                          <span className="helper-text" id={altitudeHintId}>
+                            {t("structures.create.form.altitudeHint")}
                           </span>
-                        )}
-                        {geocodingStatus === "error" && (
-                          <p className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--error">
-                            {geocodingError ?? t("structures.create.form.geocoding.error")}
-                          </p>
-                        )}
-                        {geocodingSuggestion && (
-                          <div className="structure-geocode-status structure-geocode-status__suggestion">
-                            <span>
-                              {t("structures.create.form.geocoding.suggestion", {
-                                label: geocodingSuggestion.label
-                              })}
-                            </span>
-                            <span className="structure-geocode-status__coords">
-                              {geocodingSuggestion.latitude.toFixed(6)}, {" "}
-                              {geocodingSuggestion.longitude.toFixed(6)}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleApplyGeocodingSuggestion}
-                            >
-                              {t("structures.create.form.geocoding.apply")}
-                            </Button>
-                          </div>
-                        )}
-                        {geocodingApplied && (
-                          <span className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--success">
-                            {t("structures.create.form.geocoding.applied")}
-                          </span>
-                        )}
-                        {selectedCoordinatesLabel && (
-                          <span className="structure-map-field-selected helper-text">
-                            {selectedCoordinatesLabel}
-                          </span>
-                        )}
+                          {fieldErrors.altitude && (
+                            <p className="error-text" id={altitudeErrorId}>
+                              {fieldErrors.altitude}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  </div>
+                </section>
+
+                <section className="structure-location-panel structure-location-panel--map">
+                  <header className="structure-location-panel__header">
+                    <h3 className="structure-location-panel__title">
+                      {t("structures.create.form.location.mapPanelTitle")}
+                    </h3>
+                    <p className="helper-text structure-location-panel__description">
+                      {t("structures.create.form.location.mapPanelDescription")}
+                    </p>
+                  </header>
+                  <div className="structure-map-panel">
+                    <div className="structure-map-field">
+                      <span className="structure-map-field-title">
+                        {t("structures.create.form.map.title")}
+                      </span>
+                      <GoogleMapEmbed
+                        coordinates={selectedCoordinates}
+                        title={t("structures.create.form.map.title")}
+                        ariaLabel={t("structures.create.form.map.ariaLabel")}
+                        emptyLabel={t("structures.create.form.map.empty")}
+                        onCoordinatesChange={handleMapCoordinatesChange}
+                      />
+                      <span className="helper-text">
+                        {t("structures.create.form.map.hint")}
+                      </span>
+                      {geocodingStatus === "loading" && (
+                        <span className="structure-geocode-status">
+                          {t("structures.create.form.geocoding.searching")}
+                        </span>
+                      )}
+                      {geocodingStatus === "error" && (
+                        <p className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--error">
+                          {geocodingError ?? t("structures.create.form.geocoding.error")}
+                        </p>
+                      )}
+                      {geocodingSuggestion && (
+                        <div className="structure-geocode-status structure-geocode-status__suggestion">
+                          <span>
+                            {t("structures.create.form.geocoding.suggestion", {
+                              label: geocodingSuggestion.label
+                            })}
+                          </span>
+                          <span className="structure-geocode-status__coords">
+                            {geocodingSuggestion.latitude.toFixed(6)}, {" "}
+                            {geocodingSuggestion.longitude.toFixed(6)}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleApplyGeocodingSuggestion}
+                          >
+                            {t("structures.create.form.geocoding.apply")}
+                          </Button>
+                        </div>
+                      )}
+                      {geocodingApplied && (
+                        <span className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--success">
+                          {t("structures.create.form.geocoding.applied")}
+                        </span>
+                      )}
+                      {selectedCoordinatesLabel && (
+                        <span className="structure-map-field-selected helper-text">
+                          {selectedCoordinatesLabel}
+                        </span>
+                      )}
                     </div>
                   </div>
-                </div>
-              </section>
-            </div>
+                </section>
+              </div>
           </fieldset>
 
           {showIndoorSection && (
