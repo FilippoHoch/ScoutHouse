@@ -24,6 +24,7 @@ import {
   updateAttachment,
 } from "../api";
 import { downloadEntriesAsZip } from "../utils/download";
+import { Button } from "./designSystem";
 
 interface AttachmentsSectionProps {
   ownerType: AttachmentOwnerType;
@@ -380,45 +381,47 @@ export const AttachmentsSection = ({
           onDrop={handleDrop}
         >
           <p>{t("attachments.upload.prompt")}</p>
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadMutation.isPending || ownerId === null}
           >
             {uploadMutation.isPending
               ? t("attachments.upload.progress")
               : t("attachments.upload.button")}
-          </button>
+          </Button>
           <input
             ref={fileInputRef}
             type="file"
             onChange={handleSelectFile}
-          disabled={uploadMutation.isPending || ownerId === null}
-          style={{ display: "none" }}
-          accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip"
-        />
+            disabled={uploadMutation.isPending || ownerId === null}
+            style={{ display: "none" }}
+            accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip"
+          />
+        </div>
+      )}
+
+      {error && <p className="error">{error}</p>}
+
+      <div className="attachments-section__actions">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={handleDownloadAll}
+          disabled={
+            downloadAllPending ||
+            ownerId === null ||
+            downloadableAttachments.length === 0
+          }
+        >
+          {downloadAllPending
+            ? t("attachments.actions.downloadAllProgress")
+            : t("attachments.actions.downloadAll")}
+        </Button>
       </div>
-    )}
 
-    {error && <p className="error">{error}</p>}
-
-    <div className="attachments-section__actions">
-      <button
-        type="button"
-        onClick={handleDownloadAll}
-        disabled={
-          downloadAllPending ||
-          ownerId === null ||
-          downloadableAttachments.length === 0
-        }
-      >
-        {downloadAllPending
-          ? t("attachments.actions.downloadAllProgress")
-          : t("attachments.actions.downloadAll")}
-      </button>
+      <div className="attachments-list">{renderBody()}</div>
     </div>
-
-    <div className="attachments-list">{renderBody()}</div>
-  </div>
-);
+  );
 };

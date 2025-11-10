@@ -494,15 +494,16 @@ export const StructurePhotosSection = ({
 
       {showManagementControls && (
         <div className="structure-photos__actions">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={handleDownloadAll}
             disabled={downloadAllPending || photos.length === 0 || structureId === null}
           >
             {downloadAllPending
               ? t("structures.photos.actions.downloadAllProgress")
               : t("structures.photos.actions.downloadAll")}
-          </button>
+          </Button>
         </div>
       )}
       <div className="structure-photos__content">{renderBody()}</div>
