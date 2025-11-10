@@ -95,13 +95,13 @@ const sampleStructure: Structure = {
   whatsapp: null,
   booking_required: null,
   booking_notes: null,
-  documents_required: [],
-  map_resources_urls: [],
+  documents_required: ["Modulo sanitario"],
+  map_resources_urls: ["https://maps.example.org/base"],
   event_rules_url: null,
   event_rules_notes: null,
   cell_coverage: null,
   cell_coverage_notes: null,
-  communications_infrastructure: [],
+  communications_infrastructure: ["Rete cellulare potenziata"],
   aed_on_site: null,
   emergency_phone_available: null,
   emergency_response_time_minutes: null,
@@ -112,15 +112,15 @@ const sampleStructure: Structure = {
   river_swimming: "si",
   flood_risk: "medium",
   weather_risk_notes: null,
-  activity_spaces: [],
-  activity_equipment: [],
-  inclusion_services: [],
+  activity_spaces: ["Sala polivalente"],
+  activity_equipment: ["Proiettore"],
+  inclusion_services: ["Bagno accessibile"],
   inclusion_notes: null,
   pec_email: null,
   sdi_recipient_code: null,
   invoice_available: null,
   iban: null,
-  payment_methods: [],
+  payment_methods: ["Bonifico"],
   fiscal_notes: null,
   notes_logistics: "Contattare il custode",
   logistics_arrival_notes: null,
@@ -132,7 +132,7 @@ const sampleStructure: Structure = {
   governance_notes: null,
   data_quality_score: null,
   data_quality_notes: null,
-  data_quality_flags: [],
+  data_quality_flags: ["Verifica disponibilità energia"],
   created_at: new Date("2024-01-01T00:00:00Z").toISOString(),
   estimated_cost: 18.5,
   cost_band: "medium",
@@ -244,27 +244,32 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Note generiche/i)).toBeInTheDocument();
     expect(
       screen.getByText((content, element) =>
-        element?.tagName === "LI" && /Country: IT/i.test(element.textContent ?? "")
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText((content, element) =>
-        element?.tagName === "LI" && /Municipality: Brescia/i.test(element.textContent ?? "")
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText((content, element) =>
         element?.tagName === "LI" && /River Swimming: si/i.test(element.textContent ?? "")
       )
     ).toBeInTheDocument();
-    expect(screen.queryByText(/Documents Required/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Map Resources Urls/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Communications Infrastructure/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Activity Spaces/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Activity Equipment/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Inclusion Services/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Payment Methods/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Data Quality Flags/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "https://maps.example.org/base" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Documenti richiesti/i)).toBeInTheDocument();
+    expect(screen.getByText(/Modulo sanitario/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Metodi di pagamento accettati/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Bonifico/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Infrastrutture di comunicazione/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Rete cellulare potenziata/i)).toBeInTheDocument();
+    expect(screen.getByText(/Spazi per attività/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sala polivalente/i)).toBeInTheDocument();
+    expect(screen.getByText(/Attrezzatura attività/i)).toBeInTheDocument();
+    expect(screen.getByText(/Proiettore/i)).toBeInTheDocument();
+    expect(screen.getByText(/Servizi di inclusione/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bagno accessibile/i)).toBeInTheDocument();
+    expect(screen.getByText(/Segnalazioni qualità dati/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Verifica disponibilità energia/i)
+    ).toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 
