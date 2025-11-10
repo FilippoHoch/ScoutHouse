@@ -1381,6 +1381,46 @@ table tbody tr:hover {
   padding: var(--space-md);
 }
 
+.planning-mode__options {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.planning-mode__option {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.planning-mode__option input[type="radio"] {
+  margin-top: 0.35rem;
+}
+
+.planning-mode__option strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.planning-mode__option small {
+  display: block;
+  color: var(--color-muted-strong);
+}
+
+.planning-mode__helper {
+  margin: 0 0 var(--space-sm);
+  color: var(--color-muted-strong);
+}
+
+.simple-participants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
 .branch-segments {
   display: flex;
   flex-direction: column;

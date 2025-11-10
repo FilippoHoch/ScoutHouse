@@ -538,7 +538,7 @@ export const EventDetailsPage = () => {
     return Object.values(event.participants).reduce((acc, value) => acc + value, 0);
   }, [event]);
 
-  const branchSegments = event.branch_segments ?? [];
+  const branchSegments = event?.branch_segments ?? [];
   const normalizedSegments = useMemo<NormalizedBranchSegment[]>(
     () =>
       branchSegments.map((segment) => ({
@@ -561,13 +561,60 @@ export const EventDetailsPage = () => {
     () => computePeakParticipants(normalizedSegments),
     [normalizedSegments],
   );
-  const segmentsTotalParticipants = useMemo(
-    () => Object.values(segmentsTotals).reduce((acc, value) => acc + value, 0),
-    [segmentsTotals],
+  const fallbackParticipants = useMemo(
+    () => ({
+      lc: event?.participants?.lc ?? 0,
+      eg: event?.participants?.eg ?? 0,
+      rs: event?.participants?.rs ?? 0,
+      leaders: event?.participants?.leaders ?? 0,
+    }),
+    [event?.participants?.eg, event?.participants?.lc, event?.participants?.leaders, event?.participants?.rs],
+  );
+  const displayedParticipantsTotals = useMemo(
+    () => (branchSegments.length > 0 ? segmentsTotals : fallbackParticipants),
+    [branchSegments.length, fallbackParticipants, segmentsTotals],
+  );
+  const displayedTotalParticipants = useMemo(
+    () => Object.values(displayedParticipantsTotals).reduce((acc, value) => acc + value, 0),
+    [displayedParticipantsTotals],
   );
   const segmentsMailDescription = useMemo(() => {
     if (normalizedSegments.length === 0) {
-      return t("events.candidates.mail.segmentsEmpty");
+      const lines: string[] = [];
+      if (fallbackParticipants.lc > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleBranch", {
+            branch: t("events.branches.LC"),
+            count: fallbackParticipants.lc,
+          }),
+        );
+      }
+      if (fallbackParticipants.eg > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleBranch", {
+            branch: t("events.branches.EG"),
+            count: fallbackParticipants.eg,
+          }),
+        );
+      }
+      if (fallbackParticipants.rs > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleBranch", {
+            branch: t("events.branches.RS"),
+            count: fallbackParticipants.rs,
+          }),
+        );
+      }
+      if (fallbackParticipants.leaders > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleLeaders", { count: fallbackParticipants.leaders }),
+        );
+      }
+      if (lines.length === 0) {
+        return t("events.candidates.mail.segmentsEmpty");
+      }
+      lines.push(t("events.candidates.mail.simpleTotal", { count: displayedTotalParticipants }));
+      return [t("events.candidates.mail.segmentsHeading"), ...lines].join("\n");
     }
     const lines = normalizedSegments.map((segment) => {
       const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
@@ -585,7 +632,7 @@ export const EventDetailsPage = () => {
       lines.push(t("events.candidates.mail.segmentsPeak", { count: peakParticipants }));
     }
     return [t("events.candidates.mail.segmentsHeading"), ...lines].join("\n");
-  }, [normalizedSegments, peakParticipants, t]);
+  }, [displayedTotalParticipants, fallbackParticipants.eg, fallbackParticipants.lc, fallbackParticipants.leaders, fallbackParticipants.rs, normalizedSegments, peakParticipants, t]);
 
   if (!isValidEventId) {
     return (
@@ -700,67 +747,80 @@ export const EventDetailsPage = () => {
         {mailPreviewError && <p className="error">{mailPreviewError}</p>}
         <div className="event-branch-segments">
           <h3>{t("events.details.segments.title")}</h3>
+          <div className="branch-segments__summary">
+            <h4>{t("events.wizard.summary.requirementsTitle")}</h4>
+            <ul>
+              <li>
+                {t("events.wizard.segments.summaryResolvedBranch", {
+                  branch: t(`events.branches.${event.branch}`, event.branch),
+                })}
+              </li>
+              {displayedParticipantsTotals.lc > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryBranch", {
+                    branch: t("events.branches.LC"),
+                    count: displayedParticipantsTotals.lc,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.eg > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryBranch", {
+                    branch: t("events.branches.EG"),
+                    count: displayedParticipantsTotals.eg,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.rs > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryBranch", {
+                    branch: t("events.branches.RS"),
+                    count: displayedParticipantsTotals.rs,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.leaders > 0 && (
+                <li>{t("events.wizard.segments.summaryLeaders", { count: displayedParticipantsTotals.leaders })}</li>
+              )}
+              <li>{t("events.wizard.segments.summaryTotal", { count: displayedTotalParticipants })}</li>
+              {branchSegments.length > 0 && peakParticipants > 0 && (
+                <li>{t("events.wizard.segments.summaryPeak", { count: peakParticipants })}</li>
+              )}
+              {branchSegments.length > 0 && accommodationSummary.needsIndoor && (
+                <li>{t("events.wizard.segments.summaryIndoor", { count: accommodationSummary.indoorCapacity })}</li>
+              )}
+              {branchSegments.length > 0 && accommodationSummary.needsTents && (
+                <li>{t("events.wizard.segments.summaryTents", { count: accommodationSummary.tentsCapacity })}</li>
+              )}
+            </ul>
+          </div>
           {branchSegments.length === 0 ? (
             <p>{t("events.details.segments.empty")}</p>
           ) : (
-            <>
-              <div className="branch-segments__summary">
-                <h4>{t("events.wizard.summary.requirementsTitle")}</h4>
-                <ul>
-                  <li>
-                    {t("events.wizard.segments.summaryResolvedBranch", {
-                      branch: t(`events.branches.${event.branch}`, event.branch),
-                    })}
+            <ul className="branch-segments__list">
+              {branchSegments.map((segment) => {
+                const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
+                const periodLabel = t("events.list.period", { start: segment.start_date, end: segment.end_date });
+                const participantsLabel = t("events.wizard.summary.segmentParticipants", {
+                  youth: segment.youth_count,
+                  leaders: segment.leaders_count,
+                });
+                const accommodationLabel = t(
+                  `events.wizard.segments.accommodation.options.${segment.accommodation}`,
+                );
+                return (
+                  <li key={segment.id}>
+                    <div className="branch-segments__list-info">
+                      <strong>{branchLabel}</strong>
+                      <span>{periodLabel}</span>
+                      <span>{participantsLabel}</span>
+                      <span>{accommodationLabel}</span>
+                    </div>
+                    {segment.notes && <p className="branch-segments__list-notes">{segment.notes}</p>}
                   </li>
-                  {segmentsTotals.lc > 0 && (
-                    <li>{t("events.wizard.segments.summaryBranch", { branch: t("events.branches.LC"), count: segmentsTotals.lc })}</li>
-                  )}
-                  {segmentsTotals.eg > 0 && (
-                    <li>{t("events.wizard.segments.summaryBranch", { branch: t("events.branches.EG"), count: segmentsTotals.eg })}</li>
-                  )}
-                  {segmentsTotals.rs > 0 && (
-                    <li>{t("events.wizard.segments.summaryBranch", { branch: t("events.branches.RS"), count: segmentsTotals.rs })}</li>
-                  )}
-                  {segmentsTotals.leaders > 0 && (
-                    <li>{t("events.wizard.segments.summaryLeaders", { count: segmentsTotals.leaders })}</li>
-                  )}
-                  <li>{t("events.wizard.segments.summaryTotal", { count: segmentsTotalParticipants })}</li>
-                  {peakParticipants > 0 && (
-                    <li>{t("events.wizard.segments.summaryPeak", { count: peakParticipants })}</li>
-                  )}
-                  {accommodationSummary.needsIndoor && (
-                    <li>{t("events.wizard.segments.summaryIndoor", { count: accommodationSummary.indoorCapacity })}</li>
-                  )}
-                  {accommodationSummary.needsTents && (
-                    <li>{t("events.wizard.segments.summaryTents", { count: accommodationSummary.tentsCapacity })}</li>
-                  )}
-                </ul>
-              </div>
-              <ul className="branch-segments__list">
-                {branchSegments.map((segment) => {
-                  const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
-                  const periodLabel = t("events.list.period", { start: segment.start_date, end: segment.end_date });
-                  const participantsLabel = t("events.wizard.summary.segmentParticipants", {
-                    youth: segment.youth_count,
-                    leaders: segment.leaders_count,
-                  });
-                  const accommodationLabel = t(
-                    `events.wizard.segments.accommodation.options.${segment.accommodation}`,
-                  );
-                  return (
-                    <li key={segment.id}>
-                      <div className="branch-segments__list-info">
-                        <strong>{branchLabel}</strong>
-                        <span>{periodLabel}</span>
-                        <span>{participantsLabel}</span>
-                        <span>{accommodationLabel}</span>
-                      </div>
-                      {segment.notes && <p className="branch-segments__list-notes">{segment.notes}</p>}
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
+                );
+              })}
+            </ul>
           )}
         </div>
         <div className="team-section">
