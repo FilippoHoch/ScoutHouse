@@ -148,6 +148,7 @@ def _build_params(
     postal_code: str | None,
     country: str | None,
     limit: int,
+    structured: bool = True,
 ) -> dict[str, str]:
     params: dict[str, str] = {
         "format": "jsonv2",
@@ -181,24 +182,25 @@ def _build_params(
     if parts:
         params["q"] = ", ".join(parts)
 
-    street_name, house_number = _extract_street_components(normalized_address)
-    if street_name:
-        if house_number:
-            params["street"] = f"{house_number} {street_name}"
-            params["housenumber"] = house_number
-        else:
-            params["street"] = street_name
+    if structured:
+        street_name, house_number = _extract_street_components(normalized_address)
+        if street_name:
+            if house_number:
+                params["street"] = f"{house_number} {street_name}"
+                params["housenumber"] = house_number
+            else:
+                params["street"] = street_name
 
-    city = _normalize_query_part(municipality) or _normalize_query_part(locality)
-    if city:
-        params["city"] = city
+        city = _normalize_query_part(municipality) or _normalize_query_part(locality)
+        if city:
+            params["city"] = city
 
-    county = _normalize_query_part(province) or _normalize_query_part(municipality)
-    if county:
-        params["county"] = county
+        county = _normalize_query_part(province) or _normalize_query_part(municipality)
+        if county:
+            params["county"] = county
 
-    if postal_value:
-        params["postalcode"] = postal_value
+        if postal_value:
+            params["postalcode"] = postal_value
 
     country_code = _normalize_query_part(country)
     if country_code:
@@ -228,6 +230,9 @@ async def search(
         country=country,
         limit=limit,
     )
+    should_retry_without_structure = any(
+        key in params for key in ("street", "housenumber", "city", "county", "postalcode")
+    )
 
     headers = {
         "User-Agent": settings.geocoding_user_agent,
@@ -236,9 +241,13 @@ async def search(
     }
     url = f"{settings.geocoding_base_url.rstrip('/')}/search"
 
-    async def _perform(request_client: httpx.AsyncClient) -> list[dict[str, Any]]:
+    async def _perform(
+        request_client: httpx.AsyncClient, query_params: dict[str, str]
+    ) -> list[dict[str, Any]]:
         try:
-            response = await request_client.get(url, params=params, headers=headers, timeout=10.0)
+            response = await request_client.get(
+                url, params=query_params, headers=headers, timeout=10.0
+            )
         except httpx.RequestError as exc:  # pragma: no cover - network failure
             raise GeocodingError("Unable to contact geocoding provider") from exc
 
@@ -259,11 +268,27 @@ async def search(
 
         return payload
 
-    if client is not None:
-        raw_results = await _perform(client)
-    else:
+    async def _execute(query_params: dict[str, str]) -> list[dict[str, Any]]:
+        if client is not None:
+            return await _perform(client, query_params)
         async with httpx.AsyncClient() as owned_client:
-            raw_results = await _perform(owned_client)
+            return await _perform(owned_client, query_params)
+
+    raw_results = await _execute(params)
+
+    if not raw_results and should_retry_without_structure:
+        fallback_params = _build_params(
+            address=address,
+            locality=locality,
+            municipality=municipality,
+            province=province,
+            postal_code=postal_code,
+            country=country,
+            limit=limit,
+            structured=False,
+        )
+
+        raw_results = await _execute(fallback_params)
 
     results: list[GeocodingResult] = []
     for entry in raw_results:
