@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Awaitable, Callable, cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.responses import Response
 
 from app.api.v1 import api_router
 from app.core.config import get_settings
@@ -37,7 +39,13 @@ def create_app() -> FastAPI:
     app = FastAPI(title="ScoutHouse API", version="0.2.0")
 
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_exception_handler(
+        RateLimitExceeded,
+        cast(
+            Callable[[Request, Exception], Response | Awaitable[Response]],
+            _rate_limit_exceeded_handler,
+        ),
+    )
     app.add_middleware(SlowAPIMiddleware)
     app.add_middleware(GZipMiddleware, minimum_size=settings.gzip_min_length)
 

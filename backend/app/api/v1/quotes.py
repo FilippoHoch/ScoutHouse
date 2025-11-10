@@ -16,8 +16,10 @@ from app.schemas import (
     QuoteCalcResponse,
     QuoteCreate,
     QuoteListItem,
+    QuoteBreakdownEntry,
     QuoteRead,
     QuoteScenarios,
+    QuoteTotals,
 )
 from app.services.audit import record_audit
 from app.services.costs import apply_scenarios, calc_quote
@@ -94,13 +96,20 @@ def calculate_quote(
     event = _get_event(db, payload.event_id)
     structure = _get_structure(db, payload.structure_id)
 
-    calculation = calc_quote(event, structure, overrides=payload.overrides)
-    scenarios = QuoteScenarios.model_validate(apply_scenarios(calculation["totals"]["total"]))
+    overrides_payload = (
+        payload.overrides.model_dump(exclude_none=True) if payload.overrides else None
+    )
+    calculation = calc_quote(event, structure, overrides=overrides_payload)
+    totals = QuoteTotals.model_validate(calculation["totals"])
+    breakdown = [
+        QuoteBreakdownEntry.model_validate(item) for item in calculation["breakdown"]
+    ]
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(totals.total))
 
     return QuoteCalcResponse(
         currency=calculation["currency"],
-        totals=calculation["totals"],
-        breakdown=calculation["breakdown"],
+        totals=totals,
+        breakdown=breakdown,
         inputs=calculation["inputs"],
         scenarios=scenarios,
     )
@@ -121,16 +130,23 @@ def create_quote(
     event = _get_event(db, event_id)
     structure = _get_structure(db, payload.structure_id)
 
-    calculation = calc_quote(event, structure, overrides=payload.overrides)
-    scenarios = QuoteScenarios.model_validate(apply_scenarios(calculation["totals"]["total"]))
+    overrides_payload = (
+        payload.overrides.model_dump(exclude_none=True) if payload.overrides else None
+    )
+    calculation = calc_quote(event, structure, overrides=overrides_payload)
+    totals = QuoteTotals.model_validate(calculation["totals"])
+    breakdown = [
+        QuoteBreakdownEntry.model_validate(item) for item in calculation["breakdown"]
+    ]
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(totals.total))
 
     quote = Quote(
         event_id=event.id,
         structure_id=structure.id,
         scenario=payload.scenario,
         currency=calculation["currency"],
-        totals=calculation["totals"],
-        breakdown=calculation["breakdown"],
+        totals=totals.model_dump(),
+        breakdown=[entry.model_dump() for entry in breakdown],
         inputs=calculation["inputs"],
     )
     db.add(quote)
@@ -142,8 +158,8 @@ def create_quote(
         structure_id=quote.structure_id,
         scenario=quote.scenario,
         currency=quote.currency,
-        totals=quote.totals,
-        breakdown=quote.breakdown,
+        totals=totals,
+        breakdown=breakdown,
         inputs=quote.inputs,
         scenarios=scenarios,
         created_at=quote.created_at,
@@ -205,15 +221,19 @@ def get_quote(
 ) -> QuoteRead:
     quote = _get_quote(db, quote_id)
     _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)
-    scenarios = QuoteScenarios.model_validate(apply_scenarios(quote.totals.get("total", 0)))
+    totals = QuoteTotals.model_validate(quote.totals)
+    breakdown = [
+        QuoteBreakdownEntry.model_validate(item) for item in quote.breakdown or []
+    ]
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(totals.total))
     return QuoteRead(
         id=quote.id,
         event_id=quote.event_id,
         structure_id=quote.structure_id,
         scenario=quote.scenario,
         currency=quote.currency,
-        totals=quote.totals,
-        breakdown=quote.breakdown,
+        totals=totals,
+        breakdown=breakdown,
         inputs=quote.inputs,
         scenarios=scenarios,
         created_at=quote.created_at,
