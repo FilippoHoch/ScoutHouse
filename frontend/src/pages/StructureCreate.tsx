@@ -1558,6 +1558,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const handleInAreaProtettaChange = (value: boolean | null) => {
     setInAreaProtetta(value);
+    if (value !== true) {
+      setEnteAreaProtetta("");
+    }
     setApiError(null);
   };
 
@@ -2623,7 +2626,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     }
 
     payload.in_area_protetta = inAreaProtetta;
-    payload.ente_area_protetta = trimmedEnteAreaProtetta || null;
+    if (inAreaProtetta === true) {
+      payload.ente_area_protetta = trimmedEnteAreaProtetta || null;
+    } else {
+      payload.ente_area_protetta = null;
+    }
     payload.environmental_notes = trimmedEnvironmentalNotes || null;
     if (floodRisk) {
       payload.flood_risk = floodRisk as FloodRiskLevel;
@@ -4312,20 +4319,22 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </span>
                 </div>
 
-                <div className="structure-form-field">
-                  <label htmlFor="structure-ente-area-protetta">
-                    {t("structures.create.form.enteAreaProtetta")}
-                    <input
-                      id="structure-ente-area-protetta"
-                      value={enteAreaProtetta}
-                      onChange={handleEnteAreaProtettaChange}
-                      aria-describedby={enteAreaProtettaHintId}
-                    />
-                  </label>
-                  <span className="helper-text" id={enteAreaProtettaHintId}>
-                    {t("structures.create.form.enteAreaProtettaHint")}
-                  </span>
-                </div>
+                {inAreaProtetta === true && (
+                  <div className="structure-form-field">
+                    <label htmlFor="structure-ente-area-protetta">
+                      {t("structures.create.form.enteAreaProtetta")}
+                      <input
+                        id="structure-ente-area-protetta"
+                        value={enteAreaProtetta}
+                        onChange={handleEnteAreaProtettaChange}
+                        aria-describedby={enteAreaProtettaHintId}
+                      />
+                    </label>
+                    <span className="helper-text" id={enteAreaProtettaHintId}>
+                      {t("structures.create.form.enteAreaProtettaHint")}
+                    </span>
+                  </div>
+                )}
 
                 <div className="structure-form-field">
                   <label htmlFor="structure-flood-risk">
