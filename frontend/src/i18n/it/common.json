@@ -621,10 +621,11 @@
             "activityEquipment": "Attrezzatura attività",
             "inclusionServices": "Servizi di inclusione",
             "dataQualityFlags": "Segnalazioni qualità dati",
-            "inAreaProtetta": "In area protetta",
-            "floodRisk": "Rischio alluvionale",
-            "documentsRequired": "Documenti richiesti",
-            "mapResources": "Risorse cartografiche",
+          "inAreaProtetta": "In area protetta",
+          "floodRisk": "Rischio alluvionale",
+          "environmentalNotes": "Note ambientali",
+          "documentsRequired": "Documenti richiesti",
+          "mapResources": "Risorse cartografiche",
             "paymentMethods": "Metodi di pagamento accettati"
           }
         },
