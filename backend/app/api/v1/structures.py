@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Iterable, Sequence
 from datetime import date
 from enum import Enum
-import re
-import unicodedata
 from typing import Annotated, Any
 
 import httpx
@@ -14,19 +14,21 @@ from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
-from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
+from app.core.http_cache import apply_http_cache
 from app.deps import get_current_user, require_structure_editor
 from app.models import (
     Attachment,
     AttachmentOwnerType,
+    CellCoverageQuality,
     Contact,
     ContactPreferredChannel,
     FirePolicy,
+    FloodRiskLevel,
+    RiverSwimmingOption,
     Structure,
     StructureContact,
     StructureCostModifier,
-    StructureCostModifierKind,
     StructureCostOption,
     StructureOpenPeriod,
     StructureOpenPeriodKind,
@@ -37,10 +39,7 @@ from app.models import (
     StructureType,
     StructureUnit,
     User,
-    CellCoverageQuality,
-    RiverSwimmingOption,
     WastewaterType,
-    FloodRiskLevel,
 )
 from app.schemas import (
     ContactCreate,
@@ -66,10 +65,6 @@ from app.schemas import (
     StructureSearchResponse,
     StructureUpdate,
 )
-from app.services.audit import record_audit
-from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
-from app.services.filters import structure_matches_filters
-from app.services.geo import haversine_km
 from app.services.attachments import (
     StorageUnavailableError,
     delete_object,
@@ -78,6 +73,10 @@ from app.services.attachments import (
     get_s3_client,
     rewrite_presigned_url,
 )
+from app.services.audit import record_audit
+from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
+from app.services.filters import structure_matches_filters
+from app.services.geo import haversine_km
 
 router = APIRouter()
 
@@ -225,7 +224,9 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
 
 def _sync_cost_modifiers(
     option: StructureCostOption,
-    modifiers_payload: Sequence[StructureCostModifierUpdate | StructureCostModifierCreate],
+    modifiers_payload: Sequence[
+        StructureCostModifierUpdate | StructureCostModifierCreate
+    ],
 ) -> None:
     existing = {modifier.id: modifier for modifier in option.modifiers}
     seen: set[int] = set()
@@ -345,7 +346,9 @@ def _structure_payload(
     payload = structure_in.model_dump(exclude=exclude)
     payload["contact_emails"] = [str(email) for email in structure_in.contact_emails]
     payload["website_urls"] = [str(url) for url in structure_in.website_urls]
-    payload["map_resources_urls"] = [str(url) for url in structure_in.map_resources_urls]
+    payload["map_resources_urls"] = [
+        str(url) for url in structure_in.map_resources_urls
+    ]
     payload["water_sources"] = (
         [source.value for source in structure_in.water_sources]
         if structure_in.water_sources is not None
@@ -382,17 +385,15 @@ def _collect_structure_warnings(db: Session, structure: Structure) -> list[str]:
     name = (structure.name or "").strip()
     municipality = (structure.municipality or "").strip()
     if name and municipality:
-        duplicate_exists = (
-            db.execute(
-                select(func.count())
-                .select_from(Structure)
-                .where(
-                    func.lower(Structure.name) == name.lower(),
-                    func.lower(Structure.municipality) == municipality.lower(),
-                    Structure.id != structure.id,
-                )
-            ).scalar_one()
-        )
+        duplicate_exists = db.execute(
+            select(func.count())
+            .select_from(Structure)
+            .where(
+                func.lower(Structure.name) == name.lower(),
+                func.lower(Structure.municipality) == municipality.lower(),
+                Structure.id != structure.id,
+            )
+        ).scalar_one()
         if duplicate_exists:
             warnings.append(
                 "Esistono altre strutture con lo stesso nome nel medesimo comune"
@@ -402,9 +403,7 @@ def _collect_structure_warnings(db: Session, structure: Structure) -> list[str]:
         warnings.append("Specificare le regole per i fuochi (fire_rules)")
 
     if structure.in_area_protetta and not structure.ente_area_protetta:
-        warnings.append(
-            "Indicare l'ente responsabile dell'area protetta"
-        )
+        warnings.append("Indicare l'ente responsabile dell'area protetta")
 
     for option in getattr(structure, "cost_options", []) or []:
         if option.utilities_flat is not None and option.utilities_included:
@@ -579,7 +578,7 @@ def list_structures(db: DbSession) -> Sequence[Structure]:
 def get_structure_by_slug(
     slug: str,
     db: DbSession,
-    include: str | None = Query(default=None),
+    include: Annotated[str | None, Query(default=None)],
     *,
     request: Request,
     response: Response,
@@ -622,30 +621,30 @@ def get_structure_by_slug(
 @router.get("/search", response_model=StructureSearchResponse)
 def search_structures(
     db: DbSession,
-    q: str | None = Query(default=None, min_length=1),
-    province: str | None = Query(default=None, min_length=2, max_length=2),
-    structure_type: StructureType | None = Query(default=None, alias="type"),
-    season: StructureSeason | None = Query(default=None),
-    unit: StructureUnit | None = Query(default=None),
-    cost_band: CostBand | None = Query(default=None),
-    max_km: float | None = Query(default=None, gt=0),
-    access: str | None = Query(default=None),
-    fire_policy: FirePolicy | None = Query(default=None, alias="fire"),
-    min_land_area: float | None = Query(default=None, ge=0),
-    hot_water: bool | None = Query(default=None),
-    cell_coverage: CellCoverageQuality | None = Query(default=None),
-    aed_on_site: bool | None = Query(default=None),
-    river_swimming: RiverSwimmingOption | None = Query(default=None),
-    wastewater_type: WastewaterType | None = Query(default=None),
-    min_power_capacity_kw: float | None = Query(default=None, ge=0),
-    min_parking_car_slots: int | None = Query(default=None, ge=0),
-    flood_risk: FloodRiskLevel | None = Query(default=None),
-    open_in_season: StructureOpenPeriodSeason | None = Query(default=None),
-    open_on_date: date | None = Query(default=None),
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
-    sort: str = Query(default=DEFAULT_SORT_FIELD),
-    order: str = Query(default=DEFAULT_SORT_ORDER),
+    q: Annotated[str | None, Query(default=None, min_length=1)],
+    province: Annotated[str | None, Query(default=None, min_length=2, max_length=2)],
+    structure_type: Annotated[StructureType | None, Query(default=None, alias="type")],
+    season: Annotated[StructureSeason | None, Query(default=None)],
+    unit: Annotated[StructureUnit | None, Query(default=None)],
+    cost_band: Annotated[CostBand | None, Query(default=None)],
+    max_km: Annotated[float | None, Query(default=None, gt=0)],
+    access: Annotated[str | None, Query(default=None)],
+    fire_policy: Annotated[FirePolicy | None, Query(default=None, alias="fire")],
+    min_land_area: Annotated[float | None, Query(default=None, ge=0)],
+    hot_water: Annotated[bool | None, Query(default=None)],
+    cell_coverage: Annotated[CellCoverageQuality | None, Query(default=None)],
+    aed_on_site: Annotated[bool | None, Query(default=None)],
+    river_swimming: Annotated[RiverSwimmingOption | None, Query(default=None)],
+    wastewater_type: Annotated[WastewaterType | None, Query(default=None)],
+    min_power_capacity_kw: Annotated[float | None, Query(default=None, ge=0)],
+    min_parking_car_slots: Annotated[int | None, Query(default=None, ge=0)],
+    flood_risk: Annotated[FloodRiskLevel | None, Query(default=None)],
+    open_in_season: Annotated[StructureOpenPeriodSeason | None, Query(default=None)],
+    open_on_date: Annotated[date | None, Query(default=None)],
+    page: Annotated[int, Query(default=1, ge=1)],
+    page_size: Annotated[int, Query(default=20, ge=1, le=100)],
+    sort: Annotated[str, Query(default=DEFAULT_SORT_FIELD)],
+    order: Annotated[str, Query(default=DEFAULT_SORT_ORDER)],
     *,
     request: Request,
     response: Response,
@@ -1044,7 +1043,7 @@ def update_structure(
 def list_structure_contacts(
     structure_id: int,
     db: DbSession,
-    _: Annotated[User, Depends(get_current_user)],
+    _: CurrentUser,
 ) -> list[ContactRead]:
     _get_structure_or_404(db, structure_id)
     contacts = (
@@ -1068,12 +1067,12 @@ def list_structure_contacts(
 @router.get("/contacts/search", response_model=list[ContactRead])
 def search_contacts(
     db: DbSession,
-    _: Annotated[User, Depends(get_current_user)],
-    first_name: str | None = Query(default=None),
-    last_name: str | None = Query(default=None),
-    email: str | None = Query(default=None),
-    phone: str | None = Query(default=None),
-    limit: int = Query(default=10, ge=1, le=50),
+    _: CurrentUser,
+    first_name: Annotated[str | None, Query(default=None)],
+    last_name: Annotated[str | None, Query(default=None)],
+    email: Annotated[str | None, Query(default=None)],
+    phone: Annotated[str | None, Query(default=None)],
+    limit: Annotated[int, Query(default=10, ge=1, le=50)],
 ) -> list[ContactRead]:
     normalized_clauses: list[Any] = []
 

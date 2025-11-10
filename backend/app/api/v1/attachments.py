@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Annotated, Iterable
+from collections.abc import Iterable
+from typing import Annotated
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -43,7 +44,6 @@ from app.services.attachments import (
     validate_mime,
 )
 
-
 router = APIRouter(prefix="/attachments", tags=["attachments"])
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -64,7 +64,9 @@ def _event_or_404(db: Session, event_id: int) -> Event:
     return event
 
 
-def _ensure_structure_access(db: Session, structure_id: int, user: User, *, write: bool) -> None:
+def _ensure_structure_access(
+    db: Session, structure_id: int, user: User, *, write: bool
+) -> None:
     _structure_or_404(db, structure_id)
     if not write:
         return
@@ -78,7 +80,9 @@ def _ensure_structure_access(db: Session, structure_id: int, user: User, *, writ
     raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin required")
 
 
-def _ensure_event_access(db: Session, event_id: int, user: User, *, write: bool) -> None:
+def _ensure_event_access(
+    db: Session, event_id: int, user: User, *, write: bool
+) -> None:
     _event_or_404(db, event_id)
     if user.is_admin:
         return
@@ -111,10 +115,14 @@ def _ensure_owner_access(
     elif owner_type is AttachmentOwnerType.EVENT:
         _ensure_event_access(db, owner_id, user, write=write)
     else:  # pragma: no cover - defensive branch
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unsupported owner type")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Unsupported owner type"
+        )
 
 
-def _serialize_attachment_rows(rows: Iterable[tuple[Attachment, User | None]]) -> list[AttachmentRead]:
+def _serialize_attachment_rows(
+    rows: Iterable[tuple[Attachment, User | None]],
+) -> list[AttachmentRead]:
     items: list[AttachmentRead] = []
     for attachment, creator in rows:
         items.append(
@@ -138,37 +146,40 @@ def _ensure_storage_ready() -> tuple[str, object]:
     try:
         bucket = ensure_bucket()
     except StorageUnavailableError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="File storage not configured") from exc
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="File storage not configured"
+        ) from exc
     client = get_s3_client()
     try:
         ensure_bucket_exists(client, bucket)
     except StorageUnavailableError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="File storage not configured") from exc
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail="File storage not configured"
+        ) from exc
     return bucket, client
 
 
 @router.get("/", response_model=list[AttachmentRead])
 def list_attachments(
-    owner_type: AttachmentOwnerType = Query(..., description="Attachment owner type"),
-    owner_id: int = Query(..., gt=0, description="Attachment owner id"),
+    owner_type: Annotated[
+        AttachmentOwnerType, Query(description="Attachment owner type")
+    ],
+    owner_id: Annotated[int, Query(gt=0, description="Attachment owner id")],
     *,
     db: DbSession,
     user: CurrentUser,
 ) -> list[AttachmentRead]:
     _ensure_owner_access(db, owner_type, owner_id, user, write=False)
 
-    rows = (
-        db.execute(
-            select(Attachment, User)
-            .outerjoin(User, Attachment.created_by == User.id)
-            .where(
-                Attachment.owner_type == owner_type,
-                Attachment.owner_id == owner_id,
-            )
-            .order_by(Attachment.created_at.desc())
+    rows = db.execute(
+        select(Attachment, User)
+        .outerjoin(User, Attachment.created_by == User.id)
+        .where(
+            Attachment.owner_type == owner_type,
+            Attachment.owner_id == owner_id,
         )
-        .all()
-    )
+        .order_by(Attachment.created_at.desc())
+    ).all()
     return _serialize_attachment_rows(rows)
 
 
@@ -201,7 +212,9 @@ def sign_attachment_upload(
     return AttachmentUploadSignature(url=signature["url"], fields=signature["fields"])
 
 
-@router.post("/confirm", response_model=AttachmentRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/confirm", response_model=AttachmentRead, status_code=status.HTTP_201_CREATED
+)
 def confirm_attachment(
     payload: AttachmentConfirmRequest,
     *,
@@ -214,14 +227,14 @@ def confirm_attachment(
     ensure_size_within_limits(payload.size)
 
     existing = (
-        db.execute(
-            select(Attachment.id).where(Attachment.storage_key == payload.key)
-        )
+        db.execute(select(Attachment.id).where(Attachment.storage_key == payload.key))
         .scalars()
         .first()
     )
     if existing is not None:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail="Attachment already registered")
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="Attachment already registered"
+        )
 
     bucket, client = _ensure_storage_ready()
     metadata = head_object(client, bucket, payload.key)
@@ -268,7 +281,9 @@ def sign_attachment_download(
     if attachment is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
 
-    _ensure_owner_access(db, attachment.owner_type, attachment.owner_id, user, write=False)
+    _ensure_owner_access(
+        db, attachment.owner_type, attachment.owner_id, user, write=False
+    )
     bucket, client = _ensure_storage_ready()
     safe_filename = attachment.filename or "download"
     disposition = f"attachment; filename*=UTF-8''{quote(safe_filename)}"
@@ -297,7 +312,9 @@ def update_attachment(
     if attachment is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
 
-    _ensure_owner_access(db, attachment.owner_type, attachment.owner_id, user, write=True)
+    _ensure_owner_access(
+        db, attachment.owner_type, attachment.owner_id, user, write=True
+    )
 
     data = payload.model_dump(exclude_unset=True)
     if not data:
@@ -359,10 +376,11 @@ def delete_attachment(
     if attachment is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
 
-    _ensure_owner_access(db, attachment.owner_type, attachment.owner_id, user, write=True)
+    _ensure_owner_access(
+        db, attachment.owner_type, attachment.owner_id, user, write=True
+    )
     bucket, client = _ensure_storage_ready()
     delete_object(client, bucket, attachment.storage_key)
 
     db.delete(attachment)
     db.commit()
-
