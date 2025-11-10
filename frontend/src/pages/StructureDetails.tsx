@@ -22,6 +22,7 @@ import type {
   FieldSlope,
   FloodRiskLevel,
   Structure,
+  StructureUsageRecommendation,
   StructureOpenPeriod,
   WaterSource
 } from "../shared/types";
@@ -186,6 +187,15 @@ export const StructureDetailsPage = () => {
       return null;
     }
     return audiences.join(", ");
+  };
+
+  const formatUsageRecommendation = (
+    value: StructureUsageRecommendation | null | undefined
+  ) => {
+    if (!value) {
+      return null;
+    }
+    return t(`structures.details.overview.usageRecommendation.values.${value}`);
   };
 
   const formatSeasonalAmenities = (
@@ -734,6 +744,13 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.weekendOnly"),
       value: formatBoolean(structure.weekend_only),
       icon: "📅"
+    },
+    {
+      id: "usageRecommendation",
+      label: t("structures.details.overview.usageRecommendation.label"),
+      value: formatUsageRecommendation(structure.usage_recommendation),
+      icon: "⭐",
+      isFull: true
     },
     {
       id: "allowedAudiences",

@@ -32,6 +32,7 @@ from .structure import (
     WastewaterType,
     FloodRiskLevel,
     RiverSwimmingOption,
+    StructureUsageRecommendation,
 )
 from .structure_photo import StructurePhoto
 from .attachment import Attachment, AttachmentOwnerType
@@ -83,4 +84,5 @@ __all__ = [
     "WastewaterType",
     "FloodRiskLevel",
     "RiverSwimmingOption",
+    "StructureUsageRecommendation",
 ]

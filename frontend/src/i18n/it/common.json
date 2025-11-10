@@ -492,6 +492,17 @@
         "accessibilityNotesHint": "Inserisci informazioni utili per pianificare l'arrivo di persone con esigenze specifiche.",
         "weekendOnly": "Solo fine settimana",
         "weekendOnlyHint": "Usa le opzioni Sì/No/Non specificato per indicare se la struttura accetta gruppi solo durante il weekend.",
+        "usageRecommendation": {
+          "label": "Uso consigliato",
+          "placeholder": "Non specificato",
+          "hint": "Indica se la struttura è pensata soprattutto per uscite di un giorno o per campi con pernottamento.",
+          "options": {
+            "outings_only": "Solo uscite",
+            "camps_only": "Solo campi",
+            "prefer_outings": "Più adatta alle uscite",
+            "prefer_camps": "Più adatta ai campi"
+          }
+        },
         "allowedAudiences": {
           "label": "Gruppi ammessi",
           "hint": "Elenca categorie specifiche di gruppi autorizzati (es. solo reparti, massimo 2 clan, ecc.).",
@@ -808,6 +819,15 @@
         "parkingNotes": "Note parcheggio",
         "accessibilityNotes": "Note accessibilità",
         "weekendOnly": "Solo fine settimana",
+        "usageRecommendation": {
+          "label": "Uso consigliato",
+          "values": {
+            "outings_only": "Solo uscite",
+            "camps_only": "Solo campi",
+            "prefer_outings": "Più adatta alle uscite",
+            "prefer_camps": "Più adatta ai campi"
+          }
+        },
         "allowedAudiences": "Gruppi ammessi",
         "usageRules": "Regole di utilizzo",
         "usageRulesFallback": "Nessuna regola specificata",

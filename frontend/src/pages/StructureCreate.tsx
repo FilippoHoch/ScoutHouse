@@ -43,6 +43,7 @@ import {
   StructureOpenPeriodInput,
   StructureOpenPeriodSeason,
   StructureCostOptionInput,
+  StructureUsageRecommendation,
   Unit,
   WaterSource
 } from "../shared/types";
@@ -75,6 +76,12 @@ const waterSourceOptions: WaterSource[] = [
 const firePolicyOptions: FirePolicy[] = ["allowed", "with_permit", "forbidden"];
 const fieldSlopeOptions: FieldSlope[] = ["flat", "gentle", "moderate", "steep"];
 const floodRiskOptions: FloodRiskLevel[] = ["none", "low", "medium", "high"];
+const usageRecommendationOptions: StructureUsageRecommendation[] = [
+  "outings_only",
+  "camps_only",
+  "prefer_outings",
+  "prefer_camps"
+];
 const operationalStatusOptions: StructureOperationalStatus[] = [
   "operational",
   "seasonal",
@@ -96,6 +103,7 @@ type FieldErrorKey =
   | "contact_emails"
   | "website_urls"
   | "land_area_m2"
+  | "usage_recommendation"
   | "open_periods"
   | "cost_options";
 
@@ -419,6 +427,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [websiteUrls, setWebsiteUrls] = useState<string[]>([""]);
   const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
   const [allowedAudiences, setAllowedAudiences] = useState<string[]>([""]);
+  const [usageRecommendation, setUsageRecommendation] = useState<
+    StructureUsageRecommendation | ""
+  >("");
   const [usageRules, setUsageRules] = useState("");
 
   const [inAreaProtetta, setInAreaProtetta] = useState<boolean | null>(null);
@@ -1433,6 +1444,15 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     clearFieldError("contact_emails");
   };
 
+  const handleUsageRecommendationChange = (
+    event: ChangeEvent<HTMLSelectElement>
+  ) => {
+    const value = event.target.value as StructureUsageRecommendation | "";
+    setUsageRecommendation(value);
+    setApiError(null);
+    clearFieldError("usage_recommendation");
+  };
+
   const handleAllowedAudienceChange = (index: number, value: string) => {
     setAllowedAudiences((current) => {
       const next = [...current];
@@ -1652,6 +1672,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         ? [...existingStructure.allowed_audiences]
         : [""];
     setAllowedAudiences(audiences);
+    setUsageRecommendation(existingStructure.usage_recommendation ?? "");
     setUsageRules(existingStructure.usage_rules ?? "");
     setInAreaProtetta(toTriState(existingStructure.in_area_protetta));
     setEnteAreaProtetta(existingStructure.ente_area_protetta ?? "");
@@ -2358,6 +2379,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.operational_status = null;
     }
 
+    if (usageRecommendation) {
+      payload.usage_recommendation = usageRecommendation as StructureUsageRecommendation;
+    } else {
+      payload.usage_recommendation = null;
+    }
+
     const showIndoorSection = type !== "land";
     const showOutdoorSection = type !== "house";
 
@@ -2780,6 +2807,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     ? "structure-contact-emails-error"
     : undefined;
   const websiteErrorId = fieldErrors.website_urls ? "structure-website-url-error" : undefined;
+  const usageRecommendationErrorId = fieldErrors.usage_recommendation
+    ? "structure-usage-recommendation-error"
+    : undefined;
   const openPeriodsErrorId = fieldErrors.open_periods
     ? "structure-open-periods-error"
     : undefined;
@@ -2844,6 +2874,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
   const allowedAudiencesHintId = "structure-allowed-audiences-hint";
   const allowedAudiencesDescribedBy = allowedAudiencesHintId;
+  const usageRecommendationHintId = "structure-usage-recommendation-hint";
+  const usageRecommendationDescribedBy = [
+    usageRecommendationHintId,
+    usageRecommendationErrorId
+  ]
+    .filter(Boolean)
+    .join(" ") || undefined;
   const usageRulesHintId = "structure-usage-rules-hint";
   const inAreaProtettaHintId = "structure-in-area-protetta-hint";
   const enteAreaProtettaHintId = "structure-ente-area-protetta-hint";
@@ -4067,6 +4104,36 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   <span className="helper-text">
                     {t("structures.create.form.weekendOnlyHint")}
                   </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-usage-recommendation">
+                    {t("structures.create.form.usageRecommendation.label")}
+                    <select
+                      id="structure-usage-recommendation"
+                      value={usageRecommendation}
+                      onChange={handleUsageRecommendationChange}
+                      aria-describedby={usageRecommendationDescribedBy}
+                      aria-invalid={usageRecommendationErrorId ? "true" : undefined}
+                    >
+                      <option value="">
+                        {t("structures.create.form.usageRecommendation.placeholder")}
+                      </option>
+                      {usageRecommendationOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.usageRecommendation.options.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={usageRecommendationHintId}>
+                    {t("structures.create.form.usageRecommendation.hint")}
+                  </span>
+                  {usageRecommendationErrorId && (
+                    <p className="error-text" id={usageRecommendationErrorId}>
+                      {fieldErrors.usage_recommendation}
+                    </p>
+                  )}
                 </div>
 
                 <div className="structure-form-field" data-span="full">

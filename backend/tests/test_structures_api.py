@@ -60,6 +60,7 @@ def test_structures_flow() -> None:
         "access_by_public_transport": True,
         "contact_emails": ["info@example.org", "prenotazioni@example.org"],
         "website_urls": ["https://example.org/scout-center"],
+        "usage_recommendation": "prefer_camps",
         "notes_logistics": "Ingresso pullman",
         "notes": "Struttura con ampi spazi verdi.",
         "open_periods": [
@@ -97,6 +98,7 @@ def test_structures_flow() -> None:
     assert created["access_by_public_transport"] is True
     assert created["contact_emails"] == payload["contact_emails"]
     assert created["website_urls"] == payload["website_urls"]
+    assert created["usage_recommendation"] == payload["usage_recommendation"]
     assert created["notes_logistics"] == payload["notes_logistics"]
     assert created["notes"] == payload["notes"]
     assert len(created["open_periods"]) == 2
@@ -109,6 +111,7 @@ def test_structures_flow() -> None:
     assert len(data) == 1
     assert data[0]["slug"] == payload["slug"]
     assert data[0]["altitude"] == pytest.approx(payload["altitude"], rel=1e-3)
+    assert data[0]["usage_recommendation"] == payload["usage_recommendation"]
 
     slug_resp = client.get("/api/v1/structures/by-slug/scout-training-center")
     assert slug_resp.status_code == 200
