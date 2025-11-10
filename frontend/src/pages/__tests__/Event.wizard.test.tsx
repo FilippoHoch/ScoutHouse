@@ -55,7 +55,17 @@ const createdEvent: Event = {
   branch: "ALL",
   start_date: "2025-07-01",
   end_date: "2025-07-10",
-  participants: { lc: 24, eg: 28, rs: 0, leaders: 6 },
+  participants: {
+    lc: 24,
+    eg: 28,
+    rs: 0,
+    leaders: 6,
+    lc_kambusieri: 0,
+    eg_kambusieri: 0,
+    rs_kambusieri: 0,
+    detached_leaders: 0,
+    detached_guests: 0,
+  },
   budget_total: 3000,
   status: "draft",
   notes: null,
@@ -71,6 +81,7 @@ const createdEvent: Event = {
       end_date: "2025-07-10",
       youth_count: 28,
       leaders_count: 4,
+      kambusieri_count: 0,
       accommodation: "tents",
       notes: null
     },
@@ -81,6 +92,7 @@ const createdEvent: Event = {
       end_date: "2025-07-10",
       youth_count: 24,
       leaders_count: 2,
+      kambusieri_count: 0,
       accommodation: "indoor",
       notes: ""
     }
@@ -206,7 +218,17 @@ describe("Event wizard", () => {
 
     const payload = vi.mocked(createEvent).mock.calls[0][0] as EventCreateDto;
     expect(payload.branch).toBe("ALL");
-    expect(payload.participants).toEqual({ lc: 24, eg: 28, rs: 0, leaders: 6 });
+    expect(payload.participants).toEqual({
+      lc: 24,
+      eg: 28,
+      rs: 0,
+      leaders: 6,
+      lc_kambusieri: 0,
+      eg_kambusieri: 0,
+      rs_kambusieri: 0,
+      detached_leaders: 0,
+      detached_guests: 0,
+    });
     expect(payload.branch_segments).toEqual([
       {
         branch: "LC",
@@ -214,6 +236,7 @@ describe("Event wizard", () => {
         end_date: "2025-07-10",
         youth_count: 24,
         leaders_count: 2,
+        kambusieri_count: 0,
         accommodation: "indoor",
         notes: undefined
       },
@@ -223,6 +246,7 @@ describe("Event wizard", () => {
         end_date: "2025-07-10",
         youth_count: 28,
         leaders_count: 4,
+        kambusieri_count: 0,
         accommodation: "tents",
         notes: undefined
       }
@@ -256,7 +280,17 @@ describe("Event wizard", () => {
       ...createdEvent,
       title: "Uscita di branca",
       branch: "LC",
-      participants: { lc: 30, eg: 0, rs: 0, leaders: 5 },
+      participants: {
+        lc: 30,
+        eg: 0,
+        rs: 0,
+        leaders: 5,
+        lc_kambusieri: 0,
+        eg_kambusieri: 0,
+        rs_kambusieri: 0,
+        detached_leaders: 0,
+        detached_guests: 0,
+      },
       branch_segments: [],
     };
 
@@ -272,7 +306,7 @@ describe("Event wizard", () => {
     await user.click(screen.getByRole("button", { name: /Continua/i }));
 
     await user.type(screen.getByLabelText(/LC \(lupetti e coccinelle\)/i), "30");
-    await user.type(screen.getByLabelText(/Capi$/i), "5");
+    await user.type(screen.getByLabelText(/Capi di branca/i), "5");
 
     await user.click(screen.getByRole("button", { name: /Crea evento/i }));
 
@@ -280,7 +314,17 @@ describe("Event wizard", () => {
 
     const payload = vi.mocked(createEvent).mock.calls[0][0] as EventCreateDto;
     expect(payload.branch).toBe("LC");
-    expect(payload.participants).toEqual({ lc: 30, eg: 0, rs: 0, leaders: 5 });
+    expect(payload.participants).toEqual({
+      lc: 30,
+      eg: 0,
+      rs: 0,
+      leaders: 5,
+      lc_kambusieri: 0,
+      eg_kambusieri: 0,
+      rs_kambusieri: 0,
+      detached_leaders: 0,
+      detached_guests: 0,
+    });
     expect(payload.branch_segments).toBeUndefined();
 
     await waitFor(() => expect(getSuggestions).toHaveBeenCalledWith(simpleEvent.id));

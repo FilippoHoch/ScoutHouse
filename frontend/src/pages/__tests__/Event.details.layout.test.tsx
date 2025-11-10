@@ -42,7 +42,17 @@ const eventData: Event = {
   branch: "ALL",
   start_date: "2026-07-27",
   end_date: "2026-08-09",
-  participants: { lc: 30, eg: 30, rs: 15, leaders: 11 },
+  participants: {
+    lc: 30,
+    eg: 30,
+    rs: 15,
+    leaders: 11,
+    lc_kambusieri: 0,
+    eg_kambusieri: 0,
+    rs_kambusieri: 0,
+    detached_leaders: 0,
+    detached_guests: 0,
+  },
   budget_total: null,
   status: "planning",
   notes: null,
@@ -56,6 +66,7 @@ const eventData: Event = {
       end_date: "2026-08-09",
       youth_count: 30,
       leaders_count: 5,
+      kambusieri_count: 0,
       accommodation: "indoor",
       notes: "Casa / letti"
     },
@@ -66,6 +77,7 @@ const eventData: Event = {
       end_date: "2026-08-09",
       youth_count: 30,
       leaders_count: 3,
+      kambusieri_count: 0,
       accommodation: "tents",
       notes: null
     },
@@ -76,6 +88,7 @@ const eventData: Event = {
       end_date: "2026-08-09",
       youth_count: 15,
       leaders_count: 3,
+      kambusieri_count: 0,
       accommodation: "tents",
       notes: "Campo / tende"
     }

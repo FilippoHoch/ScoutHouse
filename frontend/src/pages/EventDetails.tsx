@@ -53,9 +53,12 @@ import {
 } from "../shared/ui/designSystem";
 import {
   NormalizedBranchSegment,
+  NormalizedParticipants,
   computeAccommodationRequirements,
   computeParticipantTotals,
-  computePeakParticipants
+  computePeakParticipants,
+  computeTotalParticipants,
+  normalizeParticipants,
 } from "../shared/eventUtils";
 
 const candidateStatuses: EventCandidateStatus[] = [
@@ -664,12 +667,16 @@ export const EventDetailsPage = () => {
         endDate: segment.end_date,
         youthCount: segment.youth_count,
         leadersCount: segment.leaders_count,
+        kambusieriCount: segment.kambusieri_count ?? 0,
         accommodation: segment.accommodation as EventAccommodation,
         notes: segment.notes ?? undefined,
       })),
     [branchSegments],
   );
-  const segmentsTotals = useMemo(() => computeParticipantTotals(normalizedSegments), [normalizedSegments]);
+  const segmentsTotals = useMemo(
+    () => computeParticipantTotals(normalizedSegments),
+    [normalizedSegments],
+  );
   const accommodationSummary = useMemo(
     () => computeAccommodationRequirements(normalizedSegments),
     [normalizedSegments],
@@ -679,20 +686,15 @@ export const EventDetailsPage = () => {
     [normalizedSegments],
   );
   const fallbackParticipants = useMemo(
-    () => ({
-      lc: event?.participants?.lc ?? 0,
-      eg: event?.participants?.eg ?? 0,
-      rs: event?.participants?.rs ?? 0,
-      leaders: event?.participants?.leaders ?? 0,
-    }),
-    [event?.participants?.eg, event?.participants?.lc, event?.participants?.leaders, event?.participants?.rs],
+    () => normalizeParticipants(event?.participants),
+    [event?.participants],
   );
-  const displayedParticipantsTotals = useMemo(
+  const displayedParticipantsTotals = useMemo<NormalizedParticipants>(
     () => (branchSegments.length > 0 ? segmentsTotals : fallbackParticipants),
     [branchSegments.length, fallbackParticipants, segmentsTotals],
   );
   const displayedTotalParticipants = useMemo(
-    () => Object.values(displayedParticipantsTotals).reduce((acc, value) => acc + value, 0),
+    () => computeTotalParticipants(displayedParticipantsTotals),
     [displayedParticipantsTotals],
   );
   const roleLabels = useMemo(
@@ -703,6 +705,19 @@ export const EventDetailsPage = () => {
     }),
     [t],
   );
+  const formatSegmentParticipantLabel = (youth: number, leaders: number, kambusieri: number): string => {
+    const parts: string[] = [];
+    if (youth > 0) {
+      parts.push(t("events.wizard.summary.segmentParticipantsYouth", { count: youth }));
+    }
+    if (leaders > 0) {
+      parts.push(t("events.wizard.summary.segmentParticipantsLeaders", { count: leaders }));
+    }
+    if (kambusieri > 0) {
+      parts.push(t("events.wizard.summary.segmentParticipantsKambusieri", { count: kambusieri }));
+    }
+    return parts.join(" · ");
+  };
   const segmentsMailDescription = useMemo(() => {
     if (normalizedSegments.length === 0) {
       const lines: string[] = [];
@@ -714,11 +729,27 @@ export const EventDetailsPage = () => {
           }),
         );
       }
+      if (fallbackParticipants.lc_kambusieri > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleKambusieriBranch", {
+            branch: t("events.branches.LC"),
+            count: fallbackParticipants.lc_kambusieri,
+          }),
+        );
+      }
       if (fallbackParticipants.eg > 0) {
         lines.push(
           t("events.candidates.mail.simpleBranch", {
             branch: t("events.branches.EG"),
             count: fallbackParticipants.eg,
+          }),
+        );
+      }
+      if (fallbackParticipants.eg_kambusieri > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleKambusieriBranch", {
+            branch: t("events.branches.EG"),
+            count: fallbackParticipants.eg_kambusieri,
           }),
         );
       }
@@ -730,9 +761,31 @@ export const EventDetailsPage = () => {
           }),
         );
       }
+      if (fallbackParticipants.rs_kambusieri > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleKambusieriBranch", {
+            branch: t("events.branches.RS"),
+            count: fallbackParticipants.rs_kambusieri,
+          }),
+        );
+      }
       if (fallbackParticipants.leaders > 0) {
         lines.push(
           t("events.candidates.mail.simpleLeaders", { count: fallbackParticipants.leaders }),
+        );
+      }
+      if (fallbackParticipants.detached_leaders > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleDetachedLeaders", {
+            count: fallbackParticipants.detached_leaders,
+          }),
+        );
+      }
+      if (fallbackParticipants.detached_guests > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleDetachedGuests", {
+            count: fallbackParticipants.detached_guests,
+          }),
         );
       }
       if (lines.length === 0) {
@@ -744,10 +797,11 @@ export const EventDetailsPage = () => {
     const lines = normalizedSegments.map((segment) => {
       const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
       const period = t("events.list.period", { start: segment.startDate, end: segment.endDate });
-      const participantsLabel = t("events.wizard.summary.segmentParticipants", {
-        youth: segment.youthCount,
-        leaders: segment.leadersCount,
-      });
+      const participantsLabel = formatSegmentParticipantLabel(
+        segment.youthCount,
+        segment.leadersCount,
+        segment.kambusieriCount ?? 0,
+      );
       const accommodationLabel = t(
         `events.wizard.segments.accommodation.options.${segment.accommodation}`,
       );
@@ -980,11 +1034,27 @@ export const EventDetailsPage = () => {
                   })}
                 </li>
               )}
+              {displayedParticipantsTotals.lc_kambusieri > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryKambusieri", {
+                    branch: t("events.branches.LC"),
+                    count: displayedParticipantsTotals.lc_kambusieri,
+                  })}
+                </li>
+              )}
               {displayedParticipantsTotals.eg > 0 && (
                 <li>
                   {t("events.wizard.segments.summaryBranch", {
                     branch: t("events.branches.EG"),
                     count: displayedParticipantsTotals.eg,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.eg_kambusieri > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryKambusieri", {
+                    branch: t("events.branches.EG"),
+                    count: displayedParticipantsTotals.eg_kambusieri,
                   })}
                 </li>
               )}
@@ -996,10 +1066,32 @@ export const EventDetailsPage = () => {
                   })}
                 </li>
               )}
+              {displayedParticipantsTotals.rs_kambusieri > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryKambusieri", {
+                    branch: t("events.branches.RS"),
+                    count: displayedParticipantsTotals.rs_kambusieri,
+                  })}
+                </li>
+              )}
               {displayedParticipantsTotals.leaders > 0 && (
                 <li>
                   {t("events.wizard.segments.summaryLeaders", {
                     count: displayedParticipantsTotals.leaders,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.detached_leaders > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryDetachedLeaders", {
+                    count: displayedParticipantsTotals.detached_leaders,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.detached_guests > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryDetachedGuests", {
+                    count: displayedParticipantsTotals.detached_guests,
                   })}
                 </li>
               )}
@@ -1047,10 +1139,11 @@ export const EventDetailsPage = () => {
                 start: segment.start_date,
                 end: segment.end_date,
               });
-              const participantsLabel = t("events.wizard.summary.segmentParticipants", {
-                youth: segment.youth_count,
-                leaders: segment.leaders_count,
-              });
+              const participantsLabel = formatSegmentParticipantLabel(
+                segment.youth_count,
+                segment.leaders_count,
+                segment.kambusieri_count ?? 0,
+              );
               const accommodationLabel = t(
                 `events.wizard.segments.accommodation.options.${segment.accommodation}`,
               );

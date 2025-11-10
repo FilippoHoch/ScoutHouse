@@ -74,7 +74,11 @@ def _max_concurrent_load(segments: list[EventBranchSegment]) -> int:
         return 0
     points: list[tuple[date, int]] = []
     for segment in segments:
-        total = (segment.youth_count or 0) + (segment.leaders_count or 0)
+        total = (
+            (segment.youth_count or 0)
+            + (segment.leaders_count or 0)
+            + (getattr(segment, "kambusieri_count", 0) or 0)
+        )
         if total <= 0:
             continue
         points.append((segment.start_date, total))

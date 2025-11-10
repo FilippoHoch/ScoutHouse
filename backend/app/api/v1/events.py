@@ -51,6 +51,7 @@ from app.schemas import (
     EventUpdate,
     EventWithRelations,
 )
+from app.schemas.event import EventParticipants
 from app.schemas.contact import ContactRead
 from app.services.audit import record_audit
 from app.services.events import is_structure_occupied, suggest_structures
@@ -118,14 +119,24 @@ def _build_event_ical(event: Event) -> str:
 
 def _participants_to_dict(participants: Any) -> dict[str, int]:
     if hasattr(participants, "model_dump"):
-        return participants.model_dump()  # type: ignore[no-any-return]
+        return EventParticipants.model_validate(participants).model_dump()
     if isinstance(participants, dict):
-        return participants
+        return EventParticipants.model_validate(participants).model_dump()
     raise TypeError("participants must be a mapping")
 
 
 def _participants_from_segments(segments: Sequence[dict[str, Any]]) -> dict[str, int]:
-    totals = {"lc": 0, "eg": 0, "rs": 0, "leaders": 0}
+    totals = {
+        "lc": 0,
+        "eg": 0,
+        "rs": 0,
+        "leaders": 0,
+        "lc_kambusieri": 0,
+        "eg_kambusieri": 0,
+        "rs_kambusieri": 0,
+        "detached_leaders": 0,
+        "detached_guests": 0,
+    }
     for segment in segments:
         branch_value = segment.get("branch")
         if branch_value is None:
@@ -135,12 +146,16 @@ def _participants_from_segments(segments: Sequence[dict[str, Any]]) -> dict[str,
         )
         youth_count = int(segment.get("youth_count", 0) or 0)
         leaders_count = int(segment.get("leaders_count", 0) or 0)
+        kambusieri_count = int(segment.get("kambusieri_count", 0) or 0)
         if branch == EventBranch.LC:
             totals["lc"] += youth_count
+            totals["lc_kambusieri"] += kambusieri_count
         elif branch == EventBranch.EG:
             totals["eg"] += youth_count
+            totals["eg_kambusieri"] += kambusieri_count
         elif branch == EventBranch.RS:
             totals["rs"] += youth_count
+            totals["rs_kambusieri"] += kambusieri_count
         totals["leaders"] += leaders_count
     return totals
 
@@ -200,6 +215,7 @@ def _build_segment(payload: dict[str, Any]) -> EventBranchSegment:
 
     youth_count = int(payload.get("youth_count", 0) or 0)
     leaders_count = int(payload.get("leaders_count", 0) or 0)
+    kambusieri_count = int(payload.get("kambusieri_count", 0) or 0)
     notes_raw = payload.get("notes")
     notes = notes_raw if isinstance(notes_raw, str) and notes_raw.strip() else None
 
@@ -209,6 +225,7 @@ def _build_segment(payload: dict[str, Any]) -> EventBranchSegment:
         end_date=end_date,
         youth_count=youth_count,
         leaders_count=leaders_count,
+        kambusieri_count=kambusieri_count,
         accommodation=accommodation,
         notes=notes,
     )

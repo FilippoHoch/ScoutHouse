@@ -1413,7 +1413,10 @@
         "segmentsEmpty": "Presenze previste: da definire",
         "segmentsPeak": "- Picco presenze simultanee: {{count}} persone",
         "simpleBranch": "- {{branch}}: {{count}} persone",
+        "simpleKambusieriBranch": "- {{branch}} kambusieri: {{count}}",
         "simpleLeaders": "- Capi: {{count}}",
+        "simpleDetachedLeaders": "- Capi distaccati: {{count}}",
+        "simpleDetachedGuests": "- Ospiti distaccati: {{count}}",
         "simpleTotal": "- Totale partecipanti: {{count}} persone"
       },
       "contact": {
@@ -1586,9 +1589,14 @@
         "description": "Indica quante persone parteciperanno per ciascuna branca.",
         "fields": {
           "lc": "LC (lupetti e coccinelle)",
+          "lcKambusieri": "LC kambusieri",
           "eg": "EG (esploratori e guide)",
+          "egKambusieri": "EG kambusieri",
           "rs": "RS (rover e scolte)",
-          "leaders": "Capi"
+          "rsKambusieri": "RS kambusieri",
+          "leaders": "Capi di branca",
+          "detachedLeaders": "Capi distaccati",
+          "detachedGuests": "Ospiti distaccati"
         }
       },
       "actions": {
@@ -1615,7 +1623,9 @@
       "summary": {
         "created": "Evento {{title}} creato con successo. Aggiungi una struttura candidata dalle proposte.",
         "requirementsTitle": "Esigenze logistiche",
-        "segmentParticipants": "{{youth}} partecipanti · {{leaders}} capi",
+        "segmentParticipantsYouth": "{{count}} partecipanti",
+        "segmentParticipantsLeaders": "{{count}} capi",
+        "segmentParticipantsKambusieri": "{{count}} kambusieri",
         "noSegments": "Nessuna suddivisione per branca registrata."
       },
       "segments": {
@@ -1627,6 +1637,7 @@
         "branch": "Branca",
         "youthCount": "Partecipanti",
         "leadersCount": "Capi",
+        "kambusieriCount": "Kambusieri",
         "notes": "Note",
         "accommodation": {
           "label": "Sistemazione",
@@ -1641,6 +1652,9 @@
         "summaryResolvedBranch": "Branca evento: {{branch}}",
         "summaryBranch": "{{branch}}: {{count}} persone",
         "summaryLeaders": "Capi: {{count}}",
+        "summaryKambusieri": "{{branch}} kambusieri: {{count}}",
+        "summaryDetachedLeaders": "Capi distaccati: {{count}}",
+        "summaryDetachedGuests": "Ospiti distaccati: {{count}}",
         "summaryTotal": "Totale persone: {{count}}",
         "summaryPeak": "Picco presenze simultanee: {{count}}",
         "summaryIndoor": "Letti contemporaneamente necessari: {{count}}",
@@ -1662,6 +1676,17 @@
       "structureSelect": "Seleziona una struttura",
       "daysOverride": "Giorni (default {{value}})",
       "nightsOverride": "Notti (default {{value}})",
+      "participants": {
+        "lc": "LC",
+        "lc_kambusieri": "LC kambusieri",
+        "eg": "EG",
+        "eg_kambusieri": "EG kambusieri",
+        "rs": "RS",
+        "rs_kambusieri": "RS kambusieri",
+        "leaders": "Capi di branca",
+        "detached_leaders": "Capi distaccati",
+        "detached_guests": "Ospiti distaccati"
+      },
       "actions": {
         "calculate": "Calcola",
         "calculating": "Calcolo…",

@@ -50,7 +50,19 @@ class Event(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     participants: Mapped[dict[str, int]] = mapped_column(
-        JSON, default=lambda: {"lc": 0, "eg": 0, "rs": 0, "leaders": 0}, nullable=False
+        JSON,
+        default=lambda: {
+            "lc": 0,
+            "eg": 0,
+            "rs": 0,
+            "leaders": 0,
+            "lc_kambusieri": 0,
+            "eg_kambusieri": 0,
+            "rs_kambusieri": 0,
+            "detached_leaders": 0,
+            "detached_guests": 0,
+        },
+        nullable=False,
     )
     budget_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     status: Mapped[EventStatus] = mapped_column(
@@ -114,6 +126,7 @@ class EventBranchSegment(Base):
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     youth_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     leaders_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    kambusieri_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     accommodation: Mapped[EventAccommodation] = mapped_column(
         sqla_enum(EventAccommodation, name="event_accommodation"),
         nullable=False,

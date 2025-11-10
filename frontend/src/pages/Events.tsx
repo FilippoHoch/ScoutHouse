@@ -38,9 +38,12 @@ import {
 } from "../shared/ui/designSystem";
 import {
   NormalizedBranchSegment,
+  NormalizedParticipants,
   computeAccommodationRequirements,
   computeParticipantTotals,
-  computePeakParticipants
+  computePeakParticipants,
+  computeTotalParticipants,
+  normalizeParticipants,
 } from "../shared/eventUtils";
 
 const branches: EventBranch[] = ["LC", "EG", "RS", "ALL"];
@@ -57,15 +60,21 @@ type BranchSegmentFormValue = {
   endDate: string;
   youthCount: string;
   leadersCount: string;
+  kambusieriCount: string;
   accommodation: EventAccommodation;
   notes: string;
 };
 
 type ParticipantsFormValue = {
   lc: string;
+  lcKambusieri: string;
   eg: string;
+  egKambusieri: string;
   rs: string;
+  rsKambusieri: string;
   leaders: string;
+  detachedLeaders: string;
+  detachedGuests: string;
 };
 
 interface WizardState {
@@ -94,9 +103,14 @@ const defaultWizardState: WizardState = {
   branchSegments: [],
   participants: {
     lc: "",
+    lcKambusieri: "",
     eg: "",
+    egKambusieri: "",
     rs: "",
+    rsKambusieri: "",
     leaders: "",
+    detachedLeaders: "",
+    detachedGuests: "",
   },
   branchSelection: ["LC"],
 };
@@ -170,6 +184,20 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     { id: 2, label: t("events.wizard.steps.branches") },
     { id: 3, label: t("events.wizard.steps.review") },
   ];
+
+  const formatSegmentParticipantLabel = (youth: number, leaders: number, kambusieri: number): string => {
+    const parts: string[] = [];
+    if (youth > 0) {
+      parts.push(t("events.wizard.summary.segmentParticipantsYouth", { count: youth }));
+    }
+    if (leaders > 0) {
+      parts.push(t("events.wizard.summary.segmentParticipantsLeaders", { count: leaders }));
+    }
+    if (kambusieri > 0) {
+      parts.push(t("events.wizard.summary.segmentParticipantsKambusieri", { count: kambusieri }));
+    }
+    return parts.join(" · ");
+  };
   const branchOptions = useMemo(
     () =>
       branches.map((branch) => ({
@@ -234,21 +262,44 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
         endDate: segment.endDate,
         youthCount: parseCount(segment.youthCount),
         leadersCount: parseCount(segment.leadersCount),
+        kambusieriCount: parseCount(segment.kambusieriCount),
         accommodation: segment.accommodation,
         notes: segment.notes.trim() ? segment.notes.trim() : undefined,
       })),
     [state.branchSegments],
   );
 
-  const simpleParticipants = useMemo<EventParticipants>(
+  const simpleParticipants = useMemo<NormalizedParticipants>(
     () => ({
       lc: parseCount(state.participants.lc),
+      lc_kambusieri: parseCount(state.participants.lcKambusieri),
       eg: parseCount(state.participants.eg),
+      eg_kambusieri: parseCount(state.participants.egKambusieri),
       rs: parseCount(state.participants.rs),
+      rs_kambusieri: parseCount(state.participants.rsKambusieri),
       leaders: parseCount(state.participants.leaders),
+      detached_leaders: 0,
+      detached_guests: 0,
     }),
-    [state.participants.eg, state.participants.lc, state.participants.leaders, state.participants.rs],
+    [
+      state.participants.eg,
+      state.participants.egKambusieri,
+      state.participants.lc,
+      state.participants.lcKambusieri,
+      state.participants.leaders,
+      state.participants.rs,
+      state.participants.rsKambusieri,
+    ],
   );
+
+  const detachedParticipants = useMemo(
+    () => ({
+      detached_leaders: parseCount(state.participants.detachedLeaders),
+      detached_guests: parseCount(state.participants.detachedGuests),
+    }),
+    [state.participants.detachedGuests, state.participants.detachedLeaders],
+  );
+  const { detached_leaders: detachedLeadersTotal, detached_guests: detachedGuestsTotal } = detachedParticipants;
 
   const peakParticipants = useMemo(
     () => (state.planningMode === "segments" ? computePeakParticipants(normalizedSegments) : 0),
@@ -313,8 +364,19 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     });
   }, [state.branchSelection, t]);
 
-  const segmentsTotals = useMemo(() => computeParticipantTotals(normalizedSegments), [normalizedSegments]);
-  const participantsTotals = state.planningMode === "segments" ? segmentsTotals : simpleParticipants;
+  const segmentsTotals = useMemo(
+    () => normalizeParticipants(computeParticipantTotals(normalizedSegments)),
+    [normalizedSegments],
+  );
+  const participantsTotals = useMemo(() => {
+    const base = state.planningMode === "segments" ? segmentsTotals : simpleParticipants;
+    return {
+      ...base,
+      leaders: (base.leaders ?? 0) + detachedLeadersTotal,
+      detached_leaders: detachedLeadersTotal,
+      detached_guests: detachedGuestsTotal,
+    };
+  }, [detachedGuestsTotal, detachedLeadersTotal, segmentsTotals, simpleParticipants, state.planningMode]);
   const accommodationSummary = useMemo(
     () =>
       state.planningMode === "segments"
@@ -328,7 +390,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     [normalizedSegments, state.planningMode],
   );
   const totalParticipants = useMemo(
-    () => Object.values(participantsTotals).reduce((acc, value) => acc + value, 0),
+    () => computeTotalParticipants(participantsTotals),
     [participantsTotals],
   );
 
@@ -342,12 +404,13 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
       endDate: segment.end_date,
       youthCount: segment.youth_count,
       leadersCount: segment.leaders_count,
+      kambusieriCount: segment.kambusieri_count ?? 0,
       accommodation: segment.accommodation as EventAccommodation,
       notes: segment.notes ?? undefined,
     }));
   }, [createdEvent]);
   const createdSegmentsTotals = useMemo(
-    () => computeParticipantTotals(createdNormalizedSegments),
+    () => normalizeParticipants(computeParticipantTotals(createdNormalizedSegments)),
     [createdNormalizedSegments],
   );
   const createdPeakParticipants = useMemo(
@@ -358,15 +421,20 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     () => computeAccommodationRequirements(createdNormalizedSegments),
     [createdNormalizedSegments],
   );
-  const createdParticipantsTotals = useMemo(
-    () =>
-      createdNormalizedSegments.length > 0
-        ? createdSegmentsTotals
-        : createdEvent?.participants ?? { lc: 0, eg: 0, rs: 0, leaders: 0 },
-    [createdEvent, createdNormalizedSegments.length, createdSegmentsTotals],
-  );
+  const createdParticipantsTotals = useMemo<NormalizedParticipants>(() => {
+    const fallback = normalizeParticipants(createdEvent?.participants);
+    if (createdNormalizedSegments.length > 0) {
+      return {
+        ...createdSegmentsTotals,
+        leaders: (createdSegmentsTotals.leaders ?? 0) + fallback.detached_leaders,
+        detached_leaders: fallback.detached_leaders,
+        detached_guests: fallback.detached_guests,
+      };
+    }
+    return fallback;
+  }, [createdEvent, createdNormalizedSegments.length, createdSegmentsTotals]);
   const createdTotalParticipants = useMemo(
-    () => Object.values(createdParticipantsTotals).reduce((acc, value) => acc + value, 0),
+    () => computeTotalParticipants(createdParticipantsTotals),
     [createdParticipantsTotals],
   );
 
@@ -467,6 +535,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
           endDate: prev.end_date,
           youthCount: "",
           leadersCount: "",
+          kambusieriCount: "",
           accommodation: defaultAccommodation,
           notes: "",
         },
@@ -506,6 +575,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
           endDate: prev.end_date,
           youthCount: "",
           leadersCount: "",
+          kambusieriCount: "",
           accommodation: defaultAccommodationForBranch(branch),
           notes: "",
         };
@@ -524,8 +594,13 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
   }, [step, state.branchSelection, state.planningMode, state.branchSegments, state.start_date, state.end_date]);
 
   const validateSimpleParticipants = (): string | null => {
-    const totals = simpleParticipants;
-    if (Object.values(totals).every((value) => value === 0)) {
+    const totals: NormalizedParticipants = {
+      ...simpleParticipants,
+      leaders: simpleParticipants.leaders + detachedLeadersTotal,
+      detached_leaders: detachedLeadersTotal,
+      detached_guests: detachedGuestsTotal,
+    };
+    if (computeTotalParticipants(totals) === 0) {
       return t("events.wizard.errors.simpleParticipants");
     }
     return null;
@@ -589,11 +664,12 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
           end_date: segment.endDate,
           youth_count: normalized.youthCount,
           leaders_count: normalized.leadersCount,
+          kambusieri_count: normalized.kambusieriCount,
           accommodation: normalized.accommodation,
           notes: normalized.notes,
         };
       });
-      participantsPayload = segmentsTotals;
+      participantsPayload = participantsTotals;
       branchSegmentsPayload = segmentPayload;
       targetBranch = resolvedBranch;
     } else {
@@ -602,7 +678,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
         setError(participantsError);
         return;
       }
-      participantsPayload = simpleParticipants;
+      participantsPayload = participantsTotals;
       branchSegmentsPayload = undefined;
       targetBranch = state.branch;
     }
@@ -921,29 +997,40 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                             </label>
                           </InlineFields>
                           <InlineFields>
-                            <label>
-                              {t("events.wizard.segments.youthCount")}
-                              <input
-                                type="number"
-                                min={0}
-                                value={segment.youthCount}
-                                onChange={(event) =>
-                                  updateSegment(segment.id, { youthCount: event.target.value })
-                                }
-                              />
-                            </label>
-                            <label>
-                              {t("events.wizard.segments.leadersCount")}
-                              <input
-                                type="number"
-                                min={0}
-                                value={segment.leadersCount}
-                                onChange={(event) =>
-                                  updateSegment(segment.id, { leadersCount: event.target.value })
-                                }
-                              />
-                            </label>
-                          </InlineFields>
+                          <label>
+                            {t("events.wizard.segments.youthCount")}
+                            <input
+                              type="number"
+                              min={0}
+                              value={segment.youthCount}
+                              onChange={(event) =>
+                                updateSegment(segment.id, { youthCount: event.target.value })
+                              }
+                            />
+                          </label>
+                          <label>
+                            {t("events.wizard.segments.leadersCount")}
+                            <input
+                              type="number"
+                              min={0}
+                              value={segment.leadersCount}
+                              onChange={(event) =>
+                                updateSegment(segment.id, { leadersCount: event.target.value })
+                              }
+                            />
+                          </label>
+                          <label>
+                            {t("events.wizard.segments.kambusieriCount")}
+                            <input
+                              type="number"
+                              min={0}
+                              value={segment.kambusieriCount}
+                              onChange={(event) =>
+                                updateSegment(segment.id, { kambusieriCount: event.target.value })
+                              }
+                            />
+                          </label>
+                        </InlineFields>
                           <label>
                             {t("events.wizard.segments.notes")}
                             <textarea
@@ -981,6 +1068,20 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                         />
                       </label>
                       <label>
+                        {t("events.wizard.simple.fields.lcKambusieri")}
+                        <input
+                          type="number"
+                          min={0}
+                          value={state.participants.lcKambusieri}
+                          onChange={(event) =>
+                            setState((prev) => ({
+                              ...prev,
+                              participants: { ...prev.participants, lcKambusieri: event.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
                         {t("events.wizard.simple.fields.eg")}
                         <input
                           type="number"
@@ -990,6 +1091,20 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                             setState((prev) => ({
                               ...prev,
                               participants: { ...prev.participants, eg: event.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        {t("events.wizard.simple.fields.egKambusieri")}
+                        <input
+                          type="number"
+                          min={0}
+                          value={state.participants.egKambusieri}
+                          onChange={(event) =>
+                            setState((prev) => ({
+                              ...prev,
+                              participants: { ...prev.participants, egKambusieri: event.target.value },
                             }))
                           }
                         />
@@ -1011,6 +1126,20 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                         />
                       </label>
                       <label>
+                        {t("events.wizard.simple.fields.rsKambusieri")}
+                        <input
+                          type="number"
+                          min={0}
+                          value={state.participants.rsKambusieri}
+                          onChange={(event) =>
+                            setState((prev) => ({
+                              ...prev,
+                              participants: { ...prev.participants, rsKambusieri: event.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
                         {t("events.wizard.simple.fields.leaders")}
                         <input
                           type="number"
@@ -1020,6 +1149,36 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                             setState((prev) => ({
                               ...prev,
                               participants: { ...prev.participants, leaders: event.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        {t("events.wizard.simple.fields.detachedLeaders")}
+                        <input
+                          type="number"
+                          min={0}
+                          value={state.participants.detachedLeaders}
+                          onChange={(event) =>
+                            setState((prev) => ({
+                              ...prev,
+                              participants: { ...prev.participants, detachedLeaders: event.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                    </InlineFields>
+                    <InlineFields>
+                      <label>
+                        {t("events.wizard.simple.fields.detachedGuests")}
+                        <input
+                          type="number"
+                          min={0}
+                          value={state.participants.detachedGuests}
+                          onChange={(event) =>
+                            setState((prev) => ({
+                              ...prev,
+                              participants: { ...prev.participants, detachedGuests: event.target.value },
                             }))
                           }
                         />
@@ -1050,11 +1209,27 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                           })}
                         </li>
                       )}
+                      {participantsTotals.lc_kambusieri > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryKambusieri", {
+                            branch: t("events.branches.LC"),
+                            count: participantsTotals.lc_kambusieri,
+                          })}
+                        </li>
+                      )}
                       {participantsTotals.eg > 0 && (
                         <li>
                           {t("events.wizard.segments.summaryBranch", {
                             branch: t("events.branches.EG"),
                             count: participantsTotals.eg,
+                          })}
+                        </li>
+                      )}
+                      {participantsTotals.eg_kambusieri > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryKambusieri", {
+                            branch: t("events.branches.EG"),
+                            count: participantsTotals.eg_kambusieri,
                           })}
                         </li>
                       )}
@@ -1066,8 +1241,22 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                           })}
                         </li>
                       )}
+                      {participantsTotals.rs_kambusieri > 0 && (
+                        <li>
+                          {t("events.wizard.segments.summaryKambusieri", {
+                            branch: t("events.branches.RS"),
+                            count: participantsTotals.rs_kambusieri,
+                          })}
+                        </li>
+                      )}
                       {participantsTotals.leaders > 0 && (
                         <li>{t("events.wizard.segments.summaryLeaders", { count: participantsTotals.leaders })}</li>
+                      )}
+                      {participantsTotals.detached_leaders > 0 && (
+                        <li>{t("events.wizard.segments.summaryDetachedLeaders", { count: participantsTotals.detached_leaders })}</li>
+                      )}
+                      {participantsTotals.detached_guests > 0 && (
+                        <li>{t("events.wizard.segments.summaryDetachedGuests", { count: participantsTotals.detached_guests })}</li>
                       )}
                       <li>{t("events.wizard.segments.summaryTotal", { count: totalParticipants })}</li>
                       {state.planningMode === "segments" && peakParticipants > 0 && (
@@ -1158,11 +1347,27 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                         })}
                       </li>
                     )}
+                    {createdParticipantsTotals.lc_kambusieri > 0 && (
+                      <li>
+                        {t("events.wizard.segments.summaryKambusieri", {
+                          branch: t("events.branches.LC"),
+                          count: createdParticipantsTotals.lc_kambusieri,
+                        })}
+                      </li>
+                    )}
                     {createdParticipantsTotals.eg > 0 && (
                       <li>
                         {t("events.wizard.segments.summaryBranch", {
                           branch: t("events.branches.EG"),
                           count: createdParticipantsTotals.eg,
+                        })}
+                      </li>
+                    )}
+                    {createdParticipantsTotals.eg_kambusieri > 0 && (
+                      <li>
+                        {t("events.wizard.segments.summaryKambusieri", {
+                          branch: t("events.branches.EG"),
+                          count: createdParticipantsTotals.eg_kambusieri,
                         })}
                       </li>
                     )}
@@ -1174,8 +1379,30 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                         })}
                       </li>
                     )}
+                    {createdParticipantsTotals.rs_kambusieri > 0 && (
+                      <li>
+                        {t("events.wizard.segments.summaryKambusieri", {
+                          branch: t("events.branches.RS"),
+                          count: createdParticipantsTotals.rs_kambusieri,
+                        })}
+                      </li>
+                    )}
                     {createdParticipantsTotals.leaders > 0 && (
                       <li>{t("events.wizard.segments.summaryLeaders", { count: createdParticipantsTotals.leaders })}</li>
+                    )}
+                    {createdParticipantsTotals.detached_leaders > 0 && (
+                      <li>
+                        {t("events.wizard.segments.summaryDetachedLeaders", {
+                          count: createdParticipantsTotals.detached_leaders,
+                        })}
+                      </li>
+                    )}
+                    {createdParticipantsTotals.detached_guests > 0 && (
+                      <li>
+                        {t("events.wizard.segments.summaryDetachedGuests", {
+                          count: createdParticipantsTotals.detached_guests,
+                        })}
+                      </li>
                     )}
                     <li>{t("events.wizard.segments.summaryTotal", { count: createdTotalParticipants })}</li>
                     {createdNormalizedSegments.length > 0 && createdPeakParticipants > 0 && (
@@ -1204,10 +1431,11 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                       const accommodationLabel = t(
                         `events.wizard.segments.accommodation.options.${segment.accommodation}`,
                       );
-                      const participantsLabel = t("events.wizard.summary.segmentParticipants", {
-                        youth: segment.youth_count,
-                        leaders: segment.leaders_count,
-                      });
+                      const participantsLabel = formatSegmentParticipantLabel(
+                        segment.youth_count,
+                        segment.leaders_count,
+                        segment.kambusieri_count ?? 0,
+                      );
                       return (
                         <li key={segment.id}>
                           <div className="branch-segments__list-info">
@@ -1466,10 +1694,9 @@ export const EventsPage = () => {
               </thead>
               <tbody>
                 {events.map((event) => {
-                  const participantValues = Object.values(event.participants) as Array<
-                    EventParticipants[keyof EventParticipants]
-                  >;
-                  const participantsTotal = participantValues.reduce((acc, value) => acc + value, 0);
+                  const participantsTotal = computeTotalParticipants(
+                    normalizeParticipants(event.participants),
+                  );
                   const statusLabel = t(`events.status.${event.status}`, event.status);
                   return (
                     <tr key={event.id}>

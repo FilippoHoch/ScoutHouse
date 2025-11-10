@@ -8,6 +8,7 @@ export interface NormalizedBranchSegment {
   endDate: string;
   youthCount: number;
   leadersCount: number;
+  kambusieriCount: number;
   accommodation: EventAccommodation;
   notes?: string;
 }
@@ -21,26 +22,66 @@ const parseDateValue = (value: string): number | null => {
   return Number.isNaN(time) ? null : time;
 };
 
+export interface NormalizedParticipants {
+  lc: number;
+  eg: number;
+  rs: number;
+  leaders: number;
+  lc_kambusieri: number;
+  eg_kambusieri: number;
+  rs_kambusieri: number;
+  detached_leaders: number;
+  detached_guests: number;
+}
+
+export const normalizeParticipants = (
+  participants?: Partial<EventParticipants>,
+): NormalizedParticipants => ({
+  lc: participants?.lc ?? 0,
+  eg: participants?.eg ?? 0,
+  rs: participants?.rs ?? 0,
+  leaders: participants?.leaders ?? 0,
+  lc_kambusieri: participants?.lc_kambusieri ?? 0,
+  eg_kambusieri: participants?.eg_kambusieri ?? 0,
+  rs_kambusieri: participants?.rs_kambusieri ?? 0,
+  detached_leaders: participants?.detached_leaders ?? 0,
+  detached_guests: participants?.detached_guests ?? 0,
+});
+
 export const computeParticipantTotals = (
   segments: NormalizedBranchSegment[],
-): EventParticipants => {
-  return segments.reduce<EventParticipants>(
+): NormalizedParticipants => {
+  return segments.reduce<NormalizedParticipants>(
     (acc, segment) => {
       const youth = segment.youthCount;
       const leaders = segment.leadersCount;
+      const kambusieri = segment.kambusieriCount;
       if (segment.branch === "LC") {
         acc.lc += youth;
+        acc.lc_kambusieri = (acc.lc_kambusieri ?? 0) + kambusieri;
       } else if (segment.branch === "EG") {
         acc.eg += youth;
+        acc.eg_kambusieri = (acc.eg_kambusieri ?? 0) + kambusieri;
       } else if (segment.branch === "RS") {
         acc.rs += youth;
+        acc.rs_kambusieri = (acc.rs_kambusieri ?? 0) + kambusieri;
       }
       acc.leaders += leaders;
       return acc;
     },
-    { lc: 0, eg: 0, rs: 0, leaders: 0 },
+    normalizeParticipants(),
   );
 };
+
+export const computeTotalParticipants = (participants: NormalizedParticipants): number =>
+  participants.lc +
+  participants.eg +
+  participants.rs +
+  participants.leaders +
+  participants.lc_kambusieri +
+  participants.eg_kambusieri +
+  participants.rs_kambusieri +
+  participants.detached_guests;
 
 const maxConcurrentLoad = (segments: NormalizedBranchSegment[]): number => {
   if (segments.length === 0) {
@@ -53,7 +94,7 @@ const maxConcurrentLoad = (segments: NormalizedBranchSegment[]): number => {
     if (startTime === null || endTime === null) {
       continue;
     }
-    const total = segment.youthCount + segment.leadersCount;
+    const total = segment.youthCount + segment.leadersCount + segment.kambusieriCount;
     if (total <= 0) {
       continue;
     }

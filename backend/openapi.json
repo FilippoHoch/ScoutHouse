@@ -4907,6 +4907,36 @@
             "minimum": 0.0,
             "title": "Leaders",
             "default": 0
+          },
+          "lc_kambusieri": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Lc Kambusieri",
+            "default": 0
+          },
+          "eg_kambusieri": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Eg Kambusieri",
+            "default": 0
+          },
+          "rs_kambusieri": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Rs Kambusieri",
+            "default": 0
+          },
+          "detached_leaders": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Detached Leaders",
+            "default": 0
+          },
+          "detached_guests": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Detached Guests",
+            "default": 0
           }
         },
         "type": "object",
