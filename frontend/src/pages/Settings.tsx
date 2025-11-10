@@ -460,11 +460,11 @@ export const SettingsPage = () => {
 
   return (
     <section className="settings-page">
-      <header className="page-header">
-        <h1>{t("settings.title")}</h1>
-        <p className="helper-text">{t("settings.description")}</p>
-      </header>
       <Surface>
+        <header className="page-header">
+          <h1>{t("settings.title")}</h1>
+          <p className="helper-text">{t("settings.description")}</p>
+        </header>
         <form className="settings-form" onSubmit={handleSubmit}>
           <div className="settings-section">
             <SectionHeader>
