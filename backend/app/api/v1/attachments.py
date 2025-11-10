@@ -30,6 +30,7 @@ from app.schemas import (
 from app.services.attachments import (
     MAX_ATTACHMENT_SIZE,
     StorageUnavailableError,
+    S3Client,
     build_storage_key,
     delete_object,
     ensure_bucket,
@@ -134,7 +135,7 @@ def _serialize_attachment_rows(rows: Iterable[tuple[Attachment, User | None]]) -
     return items
 
 
-def _ensure_storage_ready() -> tuple[str, object]:
+def _ensure_storage_ready() -> tuple[str, S3Client]:
     try:
         bucket = ensure_bucket()
     except StorageUnavailableError as exc:
@@ -157,7 +158,7 @@ def list_attachments(
 ) -> list[AttachmentRead]:
     _ensure_owner_access(db, owner_type, owner_id, user, write=False)
 
-    rows = (
+    results = (
         db.execute(
             select(Attachment, User)
             .outerjoin(User, Attachment.created_by == User.id)
@@ -169,6 +170,7 @@ def list_attachments(
         )
         .all()
     )
+    rows = [(attachment, creator) for attachment, creator in results]
     return _serialize_attachment_rows(rows)
 
 

@@ -9,6 +9,7 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from pydantic import AnyHttpUrl, TypeAdapter
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
@@ -71,6 +72,7 @@ from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
 from app.services.filters import structure_matches_filters
 from app.services.geo import haversine_km
 from app.services.attachments import (
+    S3Client,
     StorageUnavailableError,
     delete_object,
     ensure_bucket,
@@ -90,6 +92,8 @@ StructureEditor = Annotated[User, Depends(require_structure_editor)]
 SLUG_SANITIZE_RE = re.compile(r"[^a-z0-9]+")
 
 _WEBSITE_CHECK_TIMEOUT = 5.0
+
+ANY_HTTP_URL_ADAPTER = TypeAdapter(AnyHttpUrl)
 
 
 def _website_responds(client: httpx.Client, url: str) -> bool:
@@ -113,7 +117,7 @@ def _website_responds(client: httpx.Client, url: str) -> bool:
     return False
 
 
-def _check_website_urls(urls: Iterable[str]) -> list[str]:
+def _check_website_urls(urls: Iterable[str | AnyHttpUrl]) -> list[str]:
     candidates = [str(url) for url in urls if url]
     if not candidates:
         return []
@@ -135,7 +139,7 @@ def _check_website_urls(urls: Iterable[str]) -> list[str]:
     return warnings
 
 
-def _ensure_storage_ready() -> tuple[str, Any]:
+def _ensure_storage_ready() -> tuple[str, S3Client]:
     try:
         bucket = ensure_bucket()
     except StorageUnavailableError as exc:  # pragma: no cover - defensive guard
@@ -288,14 +292,16 @@ def _serialize_photo(
     attachment: Attachment,
     *,
     bucket: str,
-    client: Any,
+    client: S3Client,
 ) -> StructurePhotoRead:
     url = client.generate_presigned_url(
         "get_object",
         Params={"Bucket": bucket, "Key": attachment.storage_key},
         ExpiresIn=120,
     )
-    url = rewrite_presigned_url(url)
+    validated_url = ANY_HTTP_URL_ADAPTER.validate_python(
+        rewrite_presigned_url(url)
+    )
     return StructurePhotoRead(
         id=photo.id,
         structure_id=photo.structure_id,
@@ -304,7 +310,7 @@ def _serialize_photo(
         mime=attachment.mime,
         size=attachment.size,
         position=photo.position,
-        url=url,
+        url=validated_url,
         created_at=photo.created_at,
         description=attachment.description,
     )
@@ -774,12 +780,15 @@ def search_structures(
     for structure in results:
         distance = None
         if structure.has_coords:
-            distance = haversine_km(
-                float(structure.latitude),
-                float(structure.longitude),
-                base_lat,
-                base_lon,
-            )
+            latitude = structure.latitude
+            longitude = structure.longitude
+            if latitude is not None and longitude is not None:
+                distance = haversine_km(
+                    float(latitude),
+                    float(longitude),
+                    base_lat,
+                    base_lon,
+                )
         matches, computed_band, estimated_cost = structure_matches_filters(
             structure,
             season=season,
@@ -977,7 +986,7 @@ def update_structure(
     db: DbSession,
     request: Request,
     current_user: StructureEditor,
-) -> Structure:
+) -> StructureRead:
     structure = _get_structure_or_404(
         db,
         structure_id,

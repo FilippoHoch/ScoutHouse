@@ -63,7 +63,6 @@ class EventBase(BaseModel):
     budget_total: Decimal | None = Field(default=None, ge=0)
     status: EventStatus = EventStatus.DRAFT
     notes: str | None = None
-    branch_segments: list[EventBranchSegmentRead] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_dates(self) -> "EventBase":
@@ -106,6 +105,7 @@ class EventRead(EventBase):
     slug: str
     created_at: datetime
     updated_at: datetime
+    branch_segments: list[EventBranchSegmentRead] = Field(default_factory=list)
 
     model_config = {
         "from_attributes": True,

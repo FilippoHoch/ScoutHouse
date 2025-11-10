@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from collections.abc import AsyncIterator
 from contextlib import suppress
 from datetime import date, datetime, timedelta, timezone
 from typing import Annotated, Any, Sequence
@@ -564,8 +565,8 @@ def list_events(
 def get_event(
     event_id: int,
     db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))],
     include: str | None = Query(default=None),
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
 ) -> EventWithRelations | EventRead:
     include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
     with_candidates = "candidates" in include_parts
@@ -614,7 +615,7 @@ def update_event(
     event_in: EventUpdate,
     db: DbSession,
     request: Request,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))],
 ) -> EventRead:
     event = _load_event(db, event_id)
     before_snapshot = EventRead.model_validate(event).model_dump()
@@ -694,7 +695,7 @@ def add_candidate(
     candidate_in: EventCandidateCreate,
     db: DbSession,
     request: Request,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))],
 ) -> EventCandidateRead:
     event = _load_event(db, event_id)
     structure = _get_structure(
@@ -762,7 +763,7 @@ def update_candidate(
     candidate_in: EventCandidateUpdate,
     db: DbSession,
     request: Request,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))],
 ) -> EventCandidateRead:
     event = _load_event(db, event_id)
     candidate = (
@@ -797,8 +798,12 @@ def update_candidate(
                 structure_id=candidate.structure_id,
                 contact_id=contact_id_value,
             )
-            candidate.contact_id = contact.id
-            candidate.contact = contact
+            if contact is None:
+                candidate.contact_id = None
+                candidate.contact = None
+            else:
+                candidate.contact_id = contact.id
+                candidate.contact = contact
     if "assigned_user_id" in data:
         candidate.assigned_user_id = _ensure_member_user(db, event.id, data.pop("assigned_user_id"))
     status_value = data.get("status")
@@ -890,7 +895,7 @@ def update_candidate(
 def get_event_summary(
     event_id: int,
     db: DbSession,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))],
 ) -> EventSummary:
     event = _load_event(db, event_id, with_candidates=True)
 
@@ -918,7 +923,7 @@ def create_task(
     event_id: int,
     task_in: EventContactTaskCreate,
     db: DbSession,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))],
 ) -> EventContactTaskRead:
     event = _load_event(db, event_id)
     structure_id = task_in.structure_id
@@ -963,7 +968,7 @@ def update_task(
     task_id: int,
     task_in: EventContactTaskUpdate,
     db: DbSession,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))],
 ) -> EventContactTaskRead:
     event = _load_event(db, event_id)
     task = (
@@ -1014,7 +1019,7 @@ def update_task(
 def list_members(
     event_id: int,
     db: DbSession,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))],
 ) -> list[EventMemberRead]:
     _load_event(db, event_id)
     memberships = (
@@ -1186,8 +1191,8 @@ def delete_member(
 def get_suggestions(
     event_id: int,
     db: DbSession,
+    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))],
     limit: int = Query(default=20, ge=1, le=50),
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
 ) -> list[EventSuggestion]:
     event = _load_event(db, event_id)
     raw_suggestions = suggest_structures(db, event, limit=limit)

@@ -318,6 +318,7 @@ def calc_quote(
         modifier = _select_applicable_modifier(option, event)
         amount = _sanitize_decimal(option.amount)
         modifier_metadata: dict[str, Any] = {}
+        metadata: dict[str, Any] = {}
 
         if modifier is not None:
             amount = _sanitize_decimal(modifier.amount)
@@ -338,17 +339,18 @@ def calc_quote(
             quantity = people_total * days
             line_total = amount * Decimal(people_total) * Decimal(days)
             description = "Costo per persona/giorno"
-            metadata = {"people": people_total, "days": days}
+            metadata["people"] = people_total
+            metadata["days"] = days
         elif option.model == StructureCostModel.PER_PERSON_NIGHT:
             quantity = people_total * nights
             line_total = amount * Decimal(people_total) * Decimal(nights)
             description = "Costo per persona/notte"
-            metadata = {"people": people_total, "nights": nights}
+            metadata["people"] = people_total
+            metadata["nights"] = nights
         else:
             quantity = 1
             line_total = amount
             description = "Forfait"
-            metadata = {}
 
         if modifier_metadata:
             metadata.update({k: v for k, v in modifier_metadata.items() if v is not None})

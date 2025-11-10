@@ -12,6 +12,8 @@ from app.core.db import Base
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:
+    from .event import Event
+    from .structure import Structure
     from .user import User
 
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -15,6 +14,9 @@ from app.core.db import Base
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:
+    from .event_candidate import EventStructureCandidate
+    from .event_contact_task import EventContactTask
+    from .structure import Structure
     from .user import EventMember
 
 

@@ -9,6 +9,8 @@ from argon2.exceptions import VerifyMismatchError
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
+from fastapi import Response
+
 from app.core.config import get_settings
 from app.models import RefreshToken
 
@@ -62,9 +64,7 @@ def hash_token(token: str) -> str:
     return sha256(token.encode("utf-8")).hexdigest()
 
 
-def issue_refresh_cookie(response: "Response", token: str, expires: datetime) -> None:
-    from fastapi import Response
-
+def issue_refresh_cookie(response: Response, token: str, expires: datetime) -> None:
     settings = get_settings()
     max_age = settings.refresh_ttl_days * 24 * 60 * 60
     response.set_cookie(

@@ -33,10 +33,10 @@ from app.services.structures_import import (
 
 def _serialize_water_sources(
     sources: list[WaterSource] | None,
-) -> list[str] | None:
+) -> list[WaterSource] | None:
     if not sources:
         return None
-    return [item.value for item in sources]
+    return list(sources)
 
 router = APIRouter()
 
@@ -60,7 +60,9 @@ DbSession = Annotated[Session, Depends(get_db)]
 CurrentAdmin = Annotated[User, Depends(require_admin)]
 
 
-def _build_error_payload(parsed: ParsedWorkbook) -> list[dict[str, object]]:
+def _build_error_payload(
+    parsed: ParsedWorkbook | ParsedOpenPeriods,
+) -> list[dict[str, object]]:
     return [
         {
             "row": error.row,
@@ -349,11 +351,17 @@ async def import_structure_open_periods(
         )
 
     structure_ids = [structure.id for structure in structures.values()]
-    existing_periods = []
+    existing_periods: list[StructureOpenPeriod] = []
     if structure_ids:
-        existing_periods = db.execute(
-            select(StructureOpenPeriod).where(StructureOpenPeriod.structure_id.in_(structure_ids))
-        ).scalars()
+        existing_periods = list(
+            db.execute(
+                select(StructureOpenPeriod).where(
+                    StructureOpenPeriod.structure_id.in_(structure_ids)
+                )
+            )
+            .scalars()
+            .all()
+        )
 
     existing_keys: set[
         tuple[
