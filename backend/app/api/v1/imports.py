@@ -122,7 +122,7 @@ async def import_structures(
     db: DbSession,
     admin: CurrentAdmin,
     file: Annotated[UploadFile, File(...)],
-    dry_run: Annotated[bool, Query(True, alias="dry_run")],
+    dry_run: Annotated[bool, Query(alias="dry_run")] = True,
 ) -> dict[str, object]:
     source_format = _detect_source_format(file)
 
@@ -310,7 +310,7 @@ async def import_structure_open_periods(
     db: DbSession,
     admin: CurrentAdmin,
     file: Annotated[UploadFile, File(...)],
-    dry_run: Annotated[bool, Query(True, alias="dry_run")],
+    dry_run: Annotated[bool, Query(alias="dry_run")] = True,
 ) -> dict[str, object]:
     source_format = _detect_source_format(file)
     contents = await file.read()

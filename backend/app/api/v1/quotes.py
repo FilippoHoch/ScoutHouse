@@ -244,8 +244,8 @@ def get_quote(
 def export_quote(
     quote_id: int,
     db: DbSession,
-    format: Annotated[str, Query(default="xlsx", pattern="^(xlsx|html)$")],
     current_user: CurrentUser,
+    format: Annotated[str, Query(pattern="^(xlsx|html)$")] = "xlsx",
 ):
     quote = _get_quote(db, quote_id)
     _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)

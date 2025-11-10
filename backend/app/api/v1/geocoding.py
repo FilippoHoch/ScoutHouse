@@ -11,13 +11,13 @@ router = APIRouter(prefix="/geocoding", tags=["geocoding"])
 @router.get("/search", response_model=GeocodingSearchResponse)
 async def search_geocoding(
     *,
-    address: Annotated[str | None, Query(default=None, max_length=255)],
-    locality: Annotated[str | None, Query(default=None, max_length=255)],
-    municipality: Annotated[str | None, Query(default=None, max_length=255)],
-    province: Annotated[str | None, Query(default=None, max_length=100)],
-    postal_code: Annotated[str | None, Query(default=None, max_length=16)],
-    country: Annotated[str | None, Query(default="IT", min_length=2, max_length=2)],
-    limit: Annotated[int, Query(default=5, ge=1, le=10)],
+    address: Annotated[str | None, Query(max_length=255)] = None,
+    locality: Annotated[str | None, Query(max_length=255)] = None,
+    municipality: Annotated[str | None, Query(max_length=255)] = None,
+    province: Annotated[str | None, Query(max_length=100)] = None,
+    postal_code: Annotated[str | None, Query(max_length=16)] = None,
+    country: Annotated[str | None, Query(min_length=2, max_length=2)] = "IT",
+    limit: Annotated[int, Query(ge=1, le=10)] = 5,
 ) -> GeocodingSearchResponse:
     try:
         results = await geocoding.search(
