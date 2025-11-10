@@ -18,7 +18,9 @@ from app.core.db import get_db
 from app.deps import get_current_user, require_admin
 from app.models import (
     Event,
+    EventBranch,
     EventMember,
+    EventStatus,
     FirePolicy,
     Structure,
     StructureOpenPeriod,
@@ -617,8 +619,12 @@ def export_structures(
 @router.get("/events")
 def export_events(
     format: Annotated[str, Query(alias="format")],
-    from_date: Annotated[date | None, Query(default=None, alias="from")],
-    to_date: Annotated[date | None, Query(default=None, alias="to")],
+    from_date: Annotated[date | None, Query(alias="from")] = None,
+    to_date: Annotated[date | None, Query(alias="to")] = None,
+    search: Annotated[str | None, Query(alias="q")] = None,
+    branch: Annotated[EventBranch | None, Query()] = None,
+    status: Annotated[EventStatus | None, Query()] = None,
+    budget: Annotated[str | None, Query()] = None,
     *,
     db: DbSession,
     request: Request,
@@ -641,6 +647,19 @@ def export_events(
         filters.append(Event.start_date >= from_date)
     if to_date is not None:
         filters.append(Event.end_date <= to_date)
+    if search:
+        filters.append(Event.title.ilike(f"%{search.strip()}%"))
+    if branch is not None:
+        filters.append(Event.branch == branch)
+    if status is not None:
+        filters.append(Event.status == status)
+    if budget is not None:
+        if budget not in {"with", "without"}:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid budget filter")
+        if budget == "with":
+            filters.append(Event.budget_total.is_not(None))
+        else:
+            filters.append(Event.budget_total.is_(None))
     if filters:
         base_query = base_query.where(and_(*filters))
 
@@ -666,7 +685,14 @@ def export_events(
         diff={
             "format": export_format,
             "count": len(rows),
-            "filters": {"from": from_date, "to": to_date},
+            "filters": {
+                "from": from_date,
+                "to": to_date,
+                "q": search,
+                "branch": branch,
+                "status": status,
+                "budget": budget,
+            },
         },
         request=request,
     )

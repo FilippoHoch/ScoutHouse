@@ -181,8 +181,25 @@
         "title": "Eventi",
         "description": "Esporta gli eventi a cui partecipi.",
         "filters": {
+          "q": "Ricerca eventi",
+          "searchPlaceholder": "Titolo, luogo, note...",
+          "branch": "Branca",
+          "status": "Stato",
           "from": "Dal",
-          "to": "Al"
+          "to": "Al",
+          "any": "Tutte",
+          "statusOptions": {
+            "draft": "Bozza",
+            "planning": "In pianificazione",
+            "booked": "Confermata",
+            "archived": "Archiviata"
+          },
+          "budget": {
+            "label": "Budget",
+            "any": "Qualsiasi budget",
+            "with": "Con budget",
+            "without": "Senza budget"
+          }
         },
         "actions": {
           "csv": "Esporta CSV",
