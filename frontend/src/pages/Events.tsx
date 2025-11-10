@@ -38,7 +38,8 @@ import {
 import {
   NormalizedBranchSegment,
   computeAccommodationRequirements,
-  computeParticipantTotals
+  computeParticipantTotals,
+  computePeakParticipants
 } from "../shared/eventUtils";
 
 const branches: EventBranch[] = ["LC", "EG", "RS", "ALL"];
@@ -158,6 +159,43 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     [state.branchSegments],
   );
 
+  const peakParticipants = useMemo(
+    () => computePeakParticipants(normalizedSegments),
+    [normalizedSegments],
+  );
+
+  const resolvedBranch = useMemo<EventBranch>(() => {
+    const uniqueBranches = Array.from(
+      new Set(normalizedSegments.map((segment) => segment.branch)),
+    );
+    if (uniqueBranches.length === 0) {
+      return state.branch;
+    }
+    if (uniqueBranches.length === 1) {
+      const onlyBranch = uniqueBranches[0];
+      if (!onlyBranch) {
+        return state.branch;
+      }
+      return state.branch === "ALL" ? state.branch : onlyBranch;
+    }
+    return "ALL";
+  }, [normalizedSegments, state.branch]);
+
+  const branchResolutionMessage = useMemo(() => {
+    if (state.branchSegments.length === 0) {
+      return null;
+    }
+    if (resolvedBranch === state.branch) {
+      return null;
+    }
+    if (resolvedBranch === "ALL") {
+      return t("events.wizard.segments.branchAutoAll");
+    }
+    return t("events.wizard.segments.branchAutoSingle", {
+      branch: t(`events.branches.${resolvedBranch}`, resolvedBranch),
+    });
+  }, [resolvedBranch, state.branch, state.branchSegments.length, t]);
+
   const segmentsTotals = useMemo(() => computeParticipantTotals(normalizedSegments), [normalizedSegments]);
   const accommodationSummary = useMemo(
     () => computeAccommodationRequirements(normalizedSegments),
@@ -184,6 +222,10 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
   }, [createdEvent]);
   const createdSegmentsTotals = useMemo(
     () => computeParticipantTotals(createdNormalizedSegments),
+    [createdNormalizedSegments],
+  );
+  const createdPeakParticipants = useMemo(
+    () => computePeakParticipants(createdNormalizedSegments),
     [createdNormalizedSegments],
   );
   const createdAccommodationSummary = useMemo(
@@ -316,7 +358,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     });
     const dto: EventCreateDto = {
       title: state.title.trim(),
-      branch: state.branch,
+      branch: resolvedBranch,
       start_date: state.start_date,
       end_date: state.end_date,
       participants: segmentsTotals,
@@ -581,10 +623,18 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                     </Button>
                   </div>
                 </fieldset>
+                {branchResolutionMessage && (
+                  <InlineMessage tone="info">{branchResolutionMessage}</InlineMessage>
+                )}
                 {state.branchSegments.length > 0 && (
                   <div className="branch-segments__summary" aria-live="polite">
                     <h4>{t("events.wizard.segments.summaryTitle")}</h4>
                     <ul>
+                      <li>
+                        {t("events.wizard.segments.summaryResolvedBranch", {
+                          branch: t(`events.branches.${resolvedBranch}`, resolvedBranch),
+                        })}
+                      </li>
                       {segmentsTotals.lc > 0 && (
                         <li>
                           {t("events.wizard.segments.summaryBranch", {
@@ -613,6 +663,9 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                         <li>{t("events.wizard.segments.summaryLeaders", { count: segmentsTotals.leaders })}</li>
                       )}
                       <li>{t("events.wizard.segments.summaryTotal", { count: totalParticipants })}</li>
+                      {peakParticipants > 0 && (
+                        <li>{t("events.wizard.segments.summaryPeak", { count: peakParticipants })}</li>
+                      )}
                       {accommodationSummary.needsIndoor && (
                         <li>
                           {t("events.wizard.segments.summaryIndoor", {
@@ -682,6 +735,11 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                   <div className="branch-segments__summary">
                     <h4>{t("events.wizard.summary.requirementsTitle")}</h4>
                     <ul>
+                      <li>
+                        {t("events.wizard.segments.summaryResolvedBranch", {
+                          branch: t(`events.branches.${createdEvent.branch}`, createdEvent.branch),
+                        })}
+                      </li>
                       {createdSegmentsTotals.lc > 0 && (
                         <li>
                           {t("events.wizard.segments.summaryBranch", {
@@ -714,6 +772,9 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                           count: Object.values(createdSegmentsTotals).reduce((acc, value) => acc + value, 0),
                         })}
                       </li>
+                      {createdPeakParticipants > 0 && (
+                        <li>{t("events.wizard.segments.summaryPeak", { count: createdPeakParticipants })}</li>
+                      )}
                       {createdAccommodationSummary.needsIndoor && (
                         <li>
                           {t("events.wizard.segments.summaryIndoor", {

@@ -41,7 +41,8 @@ import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import {
   NormalizedBranchSegment,
   computeAccommodationRequirements,
-  computeParticipantTotals
+  computeParticipantTotals,
+  computePeakParticipants
 } from "../shared/eventUtils";
 
 const candidateStatuses: EventCandidateStatus[] = [
@@ -556,6 +557,10 @@ export const EventDetailsPage = () => {
     () => computeAccommodationRequirements(normalizedSegments),
     [normalizedSegments],
   );
+  const peakParticipants = useMemo(
+    () => computePeakParticipants(normalizedSegments),
+    [normalizedSegments],
+  );
   const segmentsTotalParticipants = useMemo(
     () => Object.values(segmentsTotals).reduce((acc, value) => acc + value, 0),
     [segmentsTotals],
@@ -576,8 +581,11 @@ export const EventDetailsPage = () => {
       );
       return `- ${branchLabel} (${period}) · ${participantsLabel} · ${accommodationLabel}`;
     });
+    if (peakParticipants > 0) {
+      lines.push(t("events.candidates.mail.segmentsPeak", { count: peakParticipants }));
+    }
     return [t("events.candidates.mail.segmentsHeading"), ...lines].join("\n");
-  }, [normalizedSegments, t]);
+  }, [normalizedSegments, peakParticipants, t]);
 
   if (!isValidEventId) {
     return (
@@ -699,6 +707,11 @@ export const EventDetailsPage = () => {
               <div className="branch-segments__summary">
                 <h4>{t("events.wizard.summary.requirementsTitle")}</h4>
                 <ul>
+                  <li>
+                    {t("events.wizard.segments.summaryResolvedBranch", {
+                      branch: t(`events.branches.${event.branch}`, event.branch),
+                    })}
+                  </li>
                   {segmentsTotals.lc > 0 && (
                     <li>{t("events.wizard.segments.summaryBranch", { branch: t("events.branches.LC"), count: segmentsTotals.lc })}</li>
                   )}
@@ -712,6 +725,9 @@ export const EventDetailsPage = () => {
                     <li>{t("events.wizard.segments.summaryLeaders", { count: segmentsTotals.leaders })}</li>
                   )}
                   <li>{t("events.wizard.segments.summaryTotal", { count: segmentsTotalParticipants })}</li>
+                  {peakParticipants > 0 && (
+                    <li>{t("events.wizard.segments.summaryPeak", { count: peakParticipants })}</li>
+                  )}
                   {accommodationSummary.needsIndoor && (
                     <li>{t("events.wizard.segments.summaryIndoor", { count: accommodationSummary.indoorCapacity })}</li>
                   )}

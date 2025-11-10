@@ -1214,7 +1214,8 @@
         "body": "Ciao,\n\nsiamo interessati alla struttura per l'evento {{title}} dal {{start}} al {{end}}.\n\n{{segments}}\n\nFateci sapere disponibilità e condizioni.\n\nGrazie,\nSquadra eventi",
         "subjectNoDates": "Richiesta disponibilità – {{title}}",
         "segmentsHeading": "Presenze previste:",
-        "segmentsEmpty": "Presenze previste: da definire"
+        "segmentsEmpty": "Presenze previste: da definire",
+        "segmentsPeak": "- Picco presenze simultanee: {{count}} persone"
       },
       "contact": {
         "loading": "Caricamento contatti…",
@@ -1342,9 +1343,13 @@
           }
         },
         "summaryTitle": "Riepilogo presenze",
+        "branchAutoAll": "L'evento verrà contrassegnato come \"Tutte le branche\" perché coinvolge branche diverse.",
+        "branchAutoSingle": "L'evento verrà contrassegnato come {{branch}} in base alle branche indicate.",
+        "summaryResolvedBranch": "Branca evento: {{branch}}",
         "summaryBranch": "{{branch}}: {{count}} persone",
         "summaryLeaders": "Capi: {{count}}",
         "summaryTotal": "Totale persone: {{count}}",
+        "summaryPeak": "Picco presenze simultanee: {{count}}",
         "summaryIndoor": "Letti contemporaneamente necessari: {{count}}",
         "summaryTents": "Posti tenda contemporaneamente necessari: {{count}}"
       },
