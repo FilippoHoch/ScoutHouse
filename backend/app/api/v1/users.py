@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,21 +11,26 @@ from app.deps import require_admin
 from app.models import User
 from app.schemas import UserAdminCreate, UserAdminUpdate, UserRead
 
+DbSession = Annotated[Session, Depends(get_db)]
 
-router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(require_admin)])
+router = APIRouter(
+    prefix="/users", tags=["users"], dependencies=[Depends(require_admin)]
+)
 
 
 @router.get("", response_model=list[UserRead])
-def list_users(db: Session = Depends(get_db)) -> list[UserRead]:
+def list_users(db: DbSession) -> list[UserRead]:
     users = db.query(User).order_by(User.created_at.desc()).all()
     return [UserRead.model_validate(user) for user in users]
 
 
 @router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def create_user(payload: UserAdminCreate, db: Session = Depends(get_db)) -> UserRead:
+def create_user(payload: UserAdminCreate, db: DbSession) -> UserRead:
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use"
+        )
 
     user = User(
         name=payload.name,
@@ -39,10 +46,12 @@ def create_user(payload: UserAdminCreate, db: Session = Depends(get_db)) -> User
 
 
 @router.patch("/{user_id}", response_model=UserRead)
-def update_user(user_id: str, payload: UserAdminUpdate, db: Session = Depends(get_db)) -> UserRead:
+def update_user(user_id: str, payload: UserAdminUpdate, db: DbSession) -> UserRead:
     user = db.get(User, user_id)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     if payload.email is not None and payload.email != user.email:
         conflict = db.query(User).filter(User.email == payload.email).first()

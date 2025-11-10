@@ -10,6 +10,7 @@ from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
+from openpyxl import Workbook
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -28,18 +29,14 @@ from app.models import (
     WaterSource,
 )
 from app.models.availability import StructureSeason, StructureUnit
-from app.models.user import EventMemberRole
 from app.services.audit import record_audit
 from app.services.costs import CostBand
-from openpyxl import Workbook
-
 from app.services.export import (
     rows_to_csv_stream,
     rows_to_json_stream,
     rows_to_xlsx_stream,
 )
 from app.services.filters import structure_matches_filters
-
 
 router = APIRouter()
 
@@ -126,9 +123,13 @@ def _parse_filters(filters: str | None) -> dict[str, Any]:
     try:
         payload = json.loads(filters)
     except json.JSONDecodeError as exc:  # pragma: no cover - defensive
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid filters payload") from exc
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Invalid filters payload"
+        ) from exc
     if not isinstance(payload, dict):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid filters payload")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Invalid filters payload"
+        )
     return payload
 
 
@@ -145,7 +146,9 @@ def _parse_bool(value: Any) -> bool | None:
     raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid boolean value")
 
 
-def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
+def _normalise_structure_filters(
+    payload: dict[str, Any],
+) -> tuple[
     str | None,
     str | None,
     StructureType | None,
@@ -177,44 +180,58 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
         try:
             structure_type = StructureType(type_value)
         except ValueError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid structure type") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid structure type"
+            ) from exc
 
     season = None
     if season_value is not None:
         try:
             season = StructureSeason(season_value)
         except ValueError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid season filter") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid season filter"
+            ) from exc
 
     unit = None
     if unit_value is not None:
         try:
             unit = StructureUnit(unit_value)
         except ValueError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid unit filter") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid unit filter"
+            ) from exc
 
     cost_band = None
     if cost_band_value is not None:
         try:
             cost_band = CostBand(cost_band_value)
         except ValueError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid cost band filter") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid cost band filter"
+            ) from exc
 
     fire_policy = None
     if fire_value is not None:
         try:
             fire_policy = FirePolicy(str(fire_value))
         except ValueError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid fire filter") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid fire filter"
+            ) from exc
 
     min_land_area = None
     if min_land_area_value is not None and min_land_area_value != "":
         try:
             min_land_area = float(min_land_area_value)
         except (ValueError, TypeError) as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_land_area filter") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid min_land_area filter"
+            ) from exc
         if min_land_area < 0:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid min_land_area filter")
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid min_land_area filter"
+            )
 
     hot_water = _parse_bool(hot_water_value)
     open_in_season = None
@@ -222,14 +239,18 @@ def _normalise_structure_filters(payload: dict[str, Any]) -> tuple[
         try:
             open_in_season = StructureOpenPeriodSeason(open_in_season_value)
         except ValueError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid open_in_season filter") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid open_in_season filter"
+            ) from exc
 
     open_on_date = None
     if open_on_date_value is not None and str(open_on_date_value).strip():
         try:
             open_on_date = date.fromisoformat(str(open_on_date_value).strip())
         except ValueError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid open_on_date filter") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid open_on_date filter"
+            ) from exc
 
     return (
         q,
@@ -264,7 +285,11 @@ def _build_structure_row(
         }
         for period in sorted(
             structure.open_periods,
-            key=lambda item: (item.kind.value, item.season.value if item.season else "", item.date_start or date.min),
+            key=lambda item: (
+                item.kind.value,
+                item.season.value if item.season else "",
+                item.date_start or date.min,
+            ),
         )
     ]
     return {
@@ -275,16 +300,24 @@ def _build_structure_row(
         "postal_code": structure.postal_code,
         "type": structure.type.value,
         "address": structure.address,
-        "latitude": float(structure.latitude) if structure.latitude is not None else None,
-        "longitude": float(structure.longitude) if structure.longitude is not None else None,
-        "altitude": float(structure.altitude) if structure.altitude is not None else None,
+        "latitude": float(structure.latitude)
+        if structure.latitude is not None
+        else None,
+        "longitude": float(structure.longitude)
+        if structure.longitude is not None
+        else None,
+        "altitude": float(structure.altitude)
+        if structure.altitude is not None
+        else None,
         "indoor_beds": structure.indoor_beds,
         "indoor_bathrooms": structure.indoor_bathrooms,
         "indoor_showers": structure.indoor_showers,
         "indoor_activity_rooms": structure.indoor_activity_rooms,
         "has_kitchen": structure.has_kitchen,
         "hot_water": structure.hot_water,
-        "land_area_m2": float(structure.land_area_m2) if structure.land_area_m2 is not None else None,
+        "land_area_m2": float(structure.land_area_m2)
+        if structure.land_area_m2 is not None
+        else None,
         "shelter_on_field": structure.shelter_on_field,
         "water_sources": (
             ",".join(
@@ -357,7 +390,9 @@ def _render_rows(
 ) -> StreamingResponse:
     media_type = MEDIA_TYPES[export_format]
     if export_format == "csv":
-        return StreamingResponse(rows_to_csv_stream(rows, headers), media_type=media_type)
+        return StreamingResponse(
+            rows_to_csv_stream(rows, headers), media_type=media_type
+        )
     if export_format == "json":
         return StreamingResponse(rows_to_json_stream(rows), media_type=media_type)
     return StreamingResponse(rows_to_xlsx_stream(rows, headers), media_type=media_type)
@@ -389,7 +424,9 @@ def _render_structures_csv(
 ) -> StreamingResponse:
     buffer = BytesIO()
     with ZipFile(buffer, "w") as archive:
-        archive.writestr("structures.csv", _rows_to_csv_bytes(rows, CSV_HEADERS_STRUCTURES))
+        archive.writestr(
+            "structures.csv", _rows_to_csv_bytes(rows, CSV_HEADERS_STRUCTURES)
+        )
         archive.writestr(
             "structure_open_periods.csv",
             _rows_to_csv_bytes(open_period_rows, CSV_HEADERS_OPEN_PERIODS),
@@ -407,16 +444,22 @@ def _render_structures_xlsx(
     main_sheet.title = "structures"
     main_sheet.append(list(CSV_HEADERS_STRUCTURES))
     for row in rows:
-        main_sheet.append([
-            _format_tabular_value(row.get(header)) for header in CSV_HEADERS_STRUCTURES
-        ])
+        main_sheet.append(
+            [
+                _format_tabular_value(row.get(header))
+                for header in CSV_HEADERS_STRUCTURES
+            ]
+        )
 
     period_sheet = workbook.create_sheet("structure_open_periods")
     period_sheet.append(list(CSV_HEADERS_OPEN_PERIODS))
     for row in open_period_rows:
-        period_sheet.append([
-            _format_tabular_value(row.get(header)) for header in CSV_HEADERS_OPEN_PERIODS
-        ])
+        period_sheet.append(
+            [
+                _format_tabular_value(row.get(header))
+                for header in CSV_HEADERS_OPEN_PERIODS
+            ]
+        )
 
     buffer = BytesIO()
     workbook.save(buffer)
@@ -431,24 +474,32 @@ def _render_structures_export(
     export_format: str,
 ) -> StreamingResponse:
     if export_format == "json":
-        response = _render_rows(rows, export_format=export_format, headers=CSV_HEADERS_STRUCTURES)
-        response.headers["Content-Disposition"] = 'attachment; filename="structures.json"'
+        response = _render_rows(
+            rows, export_format=export_format, headers=CSV_HEADERS_STRUCTURES
+        )
+        response.headers["Content-Disposition"] = (
+            'attachment; filename="structures.json"'
+        )
         return response
     if export_format == "csv":
         response = _render_structures_csv(rows, open_period_rows)
-        response.headers["Content-Disposition"] = 'attachment; filename="structures.zip"'
+        response.headers["Content-Disposition"] = (
+            'attachment; filename="structures.zip"'
+        )
         return response
     if export_format == "xlsx":
         response = _render_structures_xlsx(rows, open_period_rows)
-        response.headers["Content-Disposition"] = 'attachment; filename="structures.xlsx"'
+        response.headers["Content-Disposition"] = (
+            'attachment; filename="structures.xlsx"'
+        )
         return response
     raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unsupported export format")
 
 
 @router.get("/structures")
 def export_structures(
-    format: str = Query(alias="format"),
-    filters: str | None = Query(default=None),
+    format: Annotated[str, Query(alias="format")],
+    filters: Annotated[str | None, Query(default=None)],
     *,
     db: DbSession,
     request: Request,
@@ -456,7 +507,9 @@ def export_structures(
 ) -> StreamingResponse:
     export_format = format.lower()
     if export_format not in EXPORT_FORMATS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unsupported export format")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Unsupported export format"
+        )
 
     payload = _parse_filters(filters)
     (
@@ -475,13 +528,10 @@ def export_structures(
     ) = _normalise_structure_filters(payload)
 
     start_time = time.monotonic()
-    query = (
-        select(Structure)
-        .options(
-            selectinload(Structure.availabilities),
-            selectinload(Structure.cost_options),
-            selectinload(Structure.open_periods),
-        )
+    query = select(Structure).options(
+        selectinload(Structure.availabilities),
+        selectinload(Structure.cost_options),
+        selectinload(Structure.open_periods),
     )
 
     conditions = []
@@ -500,7 +550,11 @@ def export_structures(
 
     access_conditions: list[Any] = []
     if access_value:
-        requested_access = {item.strip().lower() for item in str(access_value).split("|") if item.strip()}
+        requested_access = {
+            item.strip().lower()
+            for item in str(access_value).split("|")
+            if item.strip()
+        }
         valid_access = {
             "car": Structure.access_by_car,
             "coach": Structure.access_by_coach,
@@ -508,7 +562,9 @@ def export_structures(
         }
         invalid = requested_access - set(valid_access.keys())
         if invalid:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid access filter")
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Invalid access filter"
+            )
         for key in requested_access:
             access_conditions.append(valid_access[key].is_(True))
 
@@ -574,9 +630,13 @@ def export_structures(
             open_period_rows.append(_build_open_period_export_row(structure, period))
 
         if len(rows) > MAX_EXPORT_ROWS:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Export limit exceeded")
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Export limit exceeded"
+            )
         if time.monotonic() - start_time > EXPORT_TIMEOUT_SECONDS:
-            raise HTTPException(status.HTTP_504_GATEWAY_TIMEOUT, detail="Export timed out")
+            raise HTTPException(
+                status.HTTP_504_GATEWAY_TIMEOUT, detail="Export timed out"
+            )
 
     response = _render_structures_export(
         rows,
@@ -600,9 +660,9 @@ def export_structures(
 
 @router.get("/events")
 def export_events(
-    format: str = Query(alias="format"),
-    from_date: date | None = Query(default=None, alias="from"),
-    to_date: date | None = Query(default=None, alias="to"),
+    format: Annotated[str, Query(alias="format")],
+    from_date: Annotated[date | None, Query(default=None, alias="from")],
+    to_date: Annotated[date | None, Query(default=None, alias="to")],
     *,
     db: DbSession,
     request: Request,
@@ -610,7 +670,9 @@ def export_events(
 ) -> StreamingResponse:
     export_format = format.lower()
     if export_format not in EXPORT_FORMATS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unsupported export format")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Unsupported export format"
+        )
 
     start_time = time.monotonic()
     base_query = (
@@ -634,12 +696,20 @@ def export_events(
     for event in events:
         rows.append(_build_event_row(event))
         if len(rows) > MAX_EXPORT_ROWS:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Export limit exceeded")
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Export limit exceeded"
+            )
         if time.monotonic() - start_time > EXPORT_TIMEOUT_SECONDS:
-            raise HTTPException(status.HTTP_504_GATEWAY_TIMEOUT, detail="Export timed out")
+            raise HTTPException(
+                status.HTTP_504_GATEWAY_TIMEOUT, detail="Export timed out"
+            )
 
-    response = _render_rows(rows, export_format=export_format, headers=CSV_HEADERS_EVENTS)
-    response.headers["Content-Disposition"] = f'attachment; filename="events.{export_format}"'
+    response = _render_rows(
+        rows, export_format=export_format, headers=CSV_HEADERS_EVENTS
+    )
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="events.{export_format}"'
+    )
 
     record_audit(
         db,
@@ -647,7 +717,11 @@ def export_events(
         action="export_events",
         entity_type="event",
         entity_id="*",
-        diff={"format": export_format, "count": len(rows), "filters": {"from": from_date, "to": to_date}},
+        diff={
+            "format": export_format,
+            "count": len(rows),
+            "filters": {"from": from_date, "to": to_date},
+        },
         request=request,
     )
     db.commit()

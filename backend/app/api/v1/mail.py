@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, Field
@@ -8,6 +8,7 @@ from pydantic import BaseModel, EmailStr, Field
 from app.core.config import get_settings
 from app.core.mail import get_mail_provider
 from app.deps import require_admin
+from app.models import User
 from app.services.mail import (
     MailTemplateName,
     get_sample_context,
@@ -17,6 +18,8 @@ from app.tasks.email_jobs import send_email_job
 from app.tasks.queue import queue
 
 router = APIRouter(prefix="/mail", tags=["mail"])
+
+AdminUser = Annotated[User, Depends(require_admin)]
 
 
 class MailPreviewResponse(BaseModel):
@@ -29,7 +32,9 @@ class MailPreviewResponse(BaseModel):
 class MailTestRequest(BaseModel):
     to: EmailStr
     template: MailTemplateName
-    sample_data: dict[str, Any] | None = Field(default=None, description="Override sample data")
+    sample_data: dict[str, Any] | None = Field(
+        default=None, description="Override sample data"
+    )
 
 
 class MailTestResponse(BaseModel):
@@ -44,8 +49,8 @@ class MailTestResponse(BaseModel):
 @router.get("/preview", response_model=MailPreviewResponse)
 def preview_mail_template(
     template: MailTemplateName,
-    sample: bool = Query(True),
-    _: None = Depends(require_admin),
+    sample: Annotated[bool, Query(True)],
+    _admin: AdminUser,
 ) -> MailPreviewResponse:
     if not sample:
         raise HTTPException(
@@ -62,10 +67,12 @@ def preview_mail_template(
     )
 
 
-@router.post("/test", response_model=MailTestResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/test", response_model=MailTestResponse, status_code=status.HTTP_202_ACCEPTED
+)
 def send_test_mail(
     payload: MailTestRequest,
-    _: None = Depends(require_admin),
+    _admin: AdminUser,
 ) -> MailTestResponse:
     context = get_sample_context(payload.template)
     if payload.sample_data:

@@ -26,6 +26,13 @@ from app.services.export import quote_to_xlsx
 router = APIRouter()
 
 DbSession = Annotated[Session, Depends(get_db)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+EventViewer = Annotated[
+    EventMember, Depends(require_event_member(EventMemberRole.VIEWER))
+]
+EventCollaborator = Annotated[
+    EventMember, Depends(require_event_member(EventMemberRole.COLLAB))
+]
 
 _ROLE_RANK = {
     EventMemberRole.VIEWER: 1,
@@ -34,7 +41,9 @@ _ROLE_RANK = {
 }
 
 
-def _ensure_membership(db: Session, event_id: int, user: User, min_role: EventMemberRole) -> None:
+def _ensure_membership(
+    db: Session, event_id: int, user: User, min_role: EventMemberRole
+) -> None:
     membership = (
         db.execute(
             select(EventMember).where(
@@ -45,37 +54,49 @@ def _ensure_membership(db: Session, event_id: int, user: User, min_role: EventMe
         .first()
     )
     if membership is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member"
+        )
     if _ROLE_RANK[membership.role] < _ROLE_RANK[min_role]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role"
+        )
 
 
 def _get_event(db: Session, event_id: int) -> Event:
     event = db.get(Event, event_id)
     if event is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        )
     return event
 
 
 def _get_structure(db: Session, structure_id: int) -> Structure:
-    structure = db.execute(
-        select(Structure)
-        .options(joinedload(Structure.cost_options))
-        .where(Structure.id == structure_id)
-    ).unique().scalar_one_or_none()
+    structure = (
+        db.execute(
+            select(Structure)
+            .options(joinedload(Structure.cost_options))
+            .where(Structure.id == structure_id)
+        )
+        .unique()
+        .scalar_one_or_none()
+    )
     if structure is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Structure not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Structure not found"
+        )
     return structure
 
 
 def _get_quote(db: Session, quote_id: int) -> Quote:
     quote = db.execute(
-        select(Quote)
-        .options(joinedload(Quote.structure))
-        .where(Quote.id == quote_id)
+        select(Quote).options(joinedload(Quote.structure)).where(Quote.id == quote_id)
     ).scalar_one_or_none()
     if quote is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quote not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Quote not found"
+        )
     return quote
 
 
@@ -83,7 +104,7 @@ def _get_quote(db: Session, quote_id: int) -> Quote:
 def calculate_quote(
     payload: QuoteCalcRequest,
     db: DbSession,
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser,
 ) -> QuoteCalcResponse:
     _ensure_membership(db, payload.event_id, current_user, EventMemberRole.VIEWER)
     event = _get_event(db, payload.event_id)
@@ -113,7 +134,7 @@ def create_quote(
     payload: QuoteCreate,
     db: DbSession,
     request: Request,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
+    membership: EventCollaborator,
 ) -> QuoteRead:
     event = _get_event(db, event_id)
     structure = _get_structure(db, payload.structure_id)
@@ -150,7 +171,7 @@ def create_quote(
 
     record_audit(
         db,
-        actor=_.user if _ is not None else None,
+        actor=getattr(membership, "user", None),
         action="quote.create",
         entity_type="quote",
         entity_id=quote.id,
@@ -168,7 +189,7 @@ def create_quote(
 def list_quotes(
     event_id: int,
     db: DbSession,
-    _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
+    _: EventViewer,
 ) -> list[QuoteListItem]:
     _get_event(db, event_id)
     results = db.execute(
@@ -200,7 +221,7 @@ def list_quotes(
 def get_quote(
     quote_id: int,
     db: DbSession,
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser,
 ) -> QuoteRead:
     quote = _get_quote(db, quote_id)
     _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)
@@ -225,8 +246,8 @@ def get_quote(
 def export_quote(
     quote_id: int,
     db: DbSession,
-    format: str = Query(default="xlsx", pattern="^(xlsx|html)$"),
-    current_user: User = Depends(get_current_user),
+    format: Annotated[str, Query(default="xlsx", pattern="^(xlsx|html)$")],
+    current_user: CurrentUser,
 ):
     quote = _get_quote(db, quote_id)
     _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)
@@ -286,11 +307,11 @@ def export_quote(
         </table>
         <h2>Riepilogo</h2>
         <ul>
-          <li>Subtotale: {totals.get('subtotal', 0)}</li>
-          <li>Utenze: {totals.get('utilities', 0)}</li>
-          <li>Tassa di soggiorno: {totals.get('city_tax', 0)}</li>
-          <li>Totale: {totals.get('total', 0)}</li>
-          <li>Caparre: {totals.get('deposit', 0)}</li>
+          <li>Subtotale: {totals.get("subtotal", 0)}</li>
+          <li>Utenze: {totals.get("utilities", 0)}</li>
+          <li>Tassa di soggiorno: {totals.get("city_tax", 0)}</li>
+          <li>Totale: {totals.get("total", 0)}</li>
+          <li>Caparre: {totals.get("deposit", 0)}</li>
         </ul>
       </body>
     </html>

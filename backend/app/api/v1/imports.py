@@ -6,7 +6,16 @@ from functools import partial
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    status,
+)
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -22,7 +31,6 @@ from app.models import (
 )
 from app.services.audit import record_audit
 from app.services.structures_import import (
-    ParsedOpenPeriods,
     ParsedWorkbook,
     RowError,
     TemplateFormat,
@@ -37,6 +45,7 @@ def _serialize_water_sources(
     if not sources:
         return None
     return [item.value for item in sources]
+
 
 router = APIRouter()
 
@@ -109,8 +118,8 @@ async def import_structures(
     request: Request,
     db: DbSession,
     admin: CurrentAdmin,
-    file: UploadFile = File(...),
-    dry_run: bool = Query(True, alias="dry_run"),
+    file: Annotated[UploadFile, File(...)],
+    dry_run: Annotated[bool, Query(True, alias="dry_run")],
 ) -> dict[str, object]:
     source_format = _detect_source_format(file)
 
@@ -132,13 +141,15 @@ async def import_structures(
             ),
             timeout=PARSE_TIMEOUT_SECONDS,
         )
-    except asyncio.TimeoutError as exc:
+    except TimeoutError as exc:
         raise HTTPException(
             status_code=status.HTTP_408_REQUEST_TIMEOUT,
             detail="Parsing timed out. Please try again with a smaller file.",
         ) from exc
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
     valid_rows = len(parsed.rows)
     invalid_rows = len({error.row for error in parsed.errors})
@@ -163,7 +174,10 @@ async def import_structures(
     if invalid_rows:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": "Import blocked due to validation errors.", "errors": errors_payload},
+            detail={
+                "message": "Import blocked due to validation errors.",
+                "errors": errors_payload,
+            },
         )
 
     created = 0
@@ -188,23 +202,41 @@ async def import_structures(
                 has_kitchen=row.has_kitchen if row.has_kitchen is not None else False,
                 hot_water=row.hot_water if row.hot_water is not None else False,
                 land_area_m2=row.land_area_m2,
-                shelter_on_field=row.shelter_on_field if row.shelter_on_field is not None else False,
+                shelter_on_field=row.shelter_on_field
+                if row.shelter_on_field is not None
+                else False,
                 water_sources=_serialize_water_sources(row.water_sources),
                 electricity_available=(
-                    row.electricity_available if row.electricity_available is not None else False
+                    row.electricity_available
+                    if row.electricity_available is not None
+                    else False
                 ),
                 fire_policy=row.fire_policy,
-                access_by_car=row.access_by_car if row.access_by_car is not None else False,
-                access_by_coach=row.access_by_coach if row.access_by_coach is not None else False,
+                access_by_car=row.access_by_car
+                if row.access_by_car is not None
+                else False,
+                access_by_coach=row.access_by_coach
+                if row.access_by_coach is not None
+                else False,
                 access_by_public_transport=(
-                    row.access_by_public_transport if row.access_by_public_transport is not None else False
+                    row.access_by_public_transport
+                    if row.access_by_public_transport is not None
+                    else False
                 ),
-                coach_turning_area=row.coach_turning_area if row.coach_turning_area is not None else False,
+                coach_turning_area=row.coach_turning_area
+                if row.coach_turning_area is not None
+                else False,
                 nearest_bus_stop=row.nearest_bus_stop,
-                weekend_only=row.weekend_only if row.weekend_only is not None else False,
-                has_field_poles=row.has_field_poles if row.has_field_poles is not None else False,
+                weekend_only=row.weekend_only
+                if row.weekend_only is not None
+                else False,
+                has_field_poles=row.has_field_poles
+                if row.has_field_poles is not None
+                else False,
                 pit_latrine_allowed=(
-                    row.pit_latrine_allowed if row.pit_latrine_allowed is not None else False
+                    row.pit_latrine_allowed
+                    if row.pit_latrine_allowed is not None
+                    else False
                 ),
                 contact_emails=row.contact_emails or None,
                 website_urls=row.website_urls or None,
@@ -288,8 +320,8 @@ async def import_structure_open_periods(
     request: Request,
     db: DbSession,
     admin: CurrentAdmin,
-    file: UploadFile = File(...),
-    dry_run: bool = Query(True, alias="dry_run"),
+    file: Annotated[UploadFile, File(...)],
+    dry_run: Annotated[bool, Query(True, alias="dry_run")],
 ) -> dict[str, object]:
     source_format = _detect_source_format(file)
     contents = await file.read()
@@ -314,13 +346,15 @@ async def import_structure_open_periods(
             ),
             timeout=PARSE_TIMEOUT_SECONDS,
         )
-    except asyncio.TimeoutError as exc:
+    except TimeoutError as exc:
         raise HTTPException(
             status_code=status.HTTP_408_REQUEST_TIMEOUT,
             detail="Parsing timed out. Please try again with a smaller file.",
         ) from exc
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
 
     errors_payload = _build_error_payload(parsed)
     slugs = [row.structure_slug for row in parsed.rows]
@@ -352,7 +386,9 @@ async def import_structure_open_periods(
     existing_periods = []
     if structure_ids:
         existing_periods = db.execute(
-            select(StructureOpenPeriod).where(StructureOpenPeriod.structure_id.in_(structure_ids))
+            select(StructureOpenPeriod).where(
+                StructureOpenPeriod.structure_id.in_(structure_ids)
+            )
         ).scalars()
 
     existing_keys: set[
@@ -411,7 +447,9 @@ async def import_structure_open_periods(
             if structure is None:
                 action = "missing_structure"
             else:
-                row_units = tuple(unit.value for unit in row.units) if row.units else tuple()
+                row_units = (
+                    tuple(unit.value for unit in row.units) if row.units else tuple()
+                )
                 key = (
                     structure.id,
                     row.kind,
@@ -433,7 +471,10 @@ async def import_structure_open_periods(
     if parsed.errors:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": "Import blocked due to validation errors.", "errors": errors_payload},
+            detail={
+                "message": "Import blocked due to validation errors.",
+                "errors": errors_payload,
+            },
         )
 
     created = 0
