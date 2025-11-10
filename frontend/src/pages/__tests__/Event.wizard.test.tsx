@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -100,6 +100,11 @@ const suggestions: EventSuggestion[] = [
 
 beforeEach(() => {
   mockNavigate.mockReset();
+  vi.mocked(getEvents).mockReset();
+  vi.mocked(createEvent).mockReset();
+  vi.mocked(getSuggestions).mockReset();
+  vi.mocked(addCandidate).mockReset();
+
   vi.mocked(getEvents).mockResolvedValue(emptyEvents);
   vi.mocked(createEvent).mockResolvedValue(createdEvent);
   vi.mocked(getSuggestions).mockResolvedValue(suggestions);
@@ -135,45 +140,61 @@ describe("Event wizard", () => {
     await user.type(screen.getByLabelText(/Fine/i), "2025-07-10");
     await user.click(screen.getByRole("button", { name: /Continua/i }));
 
-    await user.click(screen.getByRole("button", { name: /Aggiungi branca/i }));
-
-    const branchSelectsStepOne = screen.getAllByLabelText(/Branca/i);
-    await user.selectOptions(branchSelectsStepOne[0], "EG");
-
-    const startInputs = screen.getAllByLabelText(/Inizio/i);
-    const endInputs = screen.getAllByLabelText(/Fine/i);
-    await user.clear(startInputs[0]);
-    await user.type(startInputs[0], "2025-07-01");
-    await user.clear(endInputs[0]);
-    await user.type(endInputs[0], "2025-07-10");
-
-    const youthInputs = screen.getAllByLabelText(/Partecipanti/i);
-    const leaderInputs = screen.getAllByLabelText(/Capi/i);
-    await user.type(youthInputs[0], "28");
-    await user.type(leaderInputs[0], "4");
-
-    const accommodationSelects = screen.getAllByLabelText(/Sistemazione/i);
-    await user.selectOptions(accommodationSelects[0], "tents");
+    const detailedPlanningOption = await screen.findByRole("radio", {
+      name: /Pianificazione dettagliata/i,
+    });
+    await user.click(detailedPlanningOption);
+    expect(detailedPlanningOption).toBeChecked();
 
     await user.click(screen.getByRole("button", { name: /Aggiungi branca/i }));
 
-    const branchSelects = screen.getAllByLabelText(/Branca/i);
-    await user.selectOptions(branchSelects[1], "LC");
+    const firstSegmentHeading = await screen.findByRole("heading", { name: /Branca 1/i });
+    const firstSegment = firstSegmentHeading.closest(".branch-segment");
+    if (!firstSegment) {
+      throw new Error("Segment container not found");
+    }
+    const firstBranchSelect = within(firstSegment).getByLabelText(/^Branca$/i);
+    await user.selectOptions(firstBranchSelect, "EG");
 
-    const refreshedStartInputs = screen.getAllByLabelText(/Inizio/i);
-    const refreshedEndInputs = screen.getAllByLabelText(/Fine/i);
-    await user.clear(refreshedStartInputs[1]);
-    await user.type(refreshedStartInputs[1], "2025-07-05");
-    await user.clear(refreshedEndInputs[1]);
-    await user.type(refreshedEndInputs[1], "2025-07-10");
+    const firstStartInput = within(firstSegment).getByLabelText(/Inizio/i);
+    const firstEndInput = within(firstSegment).getByLabelText(/Fine/i);
+    await user.clear(firstStartInput);
+    await user.type(firstStartInput, "2025-07-01");
+    await user.clear(firstEndInput);
+    await user.type(firstEndInput, "2025-07-10");
 
-    const refreshedYouthInputs = screen.getAllByLabelText(/Partecipanti/i);
-    const refreshedLeaderInputs = screen.getAllByLabelText(/Capi/i);
-    await user.type(refreshedYouthInputs[1], "24");
-    await user.type(refreshedLeaderInputs[1], "2");
+    const firstYouthInput = within(firstSegment).getByLabelText(/Partecipanti/i);
+    const firstLeaderInput = within(firstSegment).getByLabelText(/Capi/i);
+    await user.type(firstYouthInput, "28");
+    await user.type(firstLeaderInput, "4");
 
-    const refreshedAccommodationSelects = screen.getAllByLabelText(/Sistemazione/i);
-    await user.selectOptions(refreshedAccommodationSelects[1], "indoor");
+    const firstAccommodationSelect = within(firstSegment).getByLabelText(/Sistemazione/i);
+    await user.selectOptions(firstAccommodationSelect, "tents");
+
+    await user.click(screen.getByRole("button", { name: /Aggiungi branca/i }));
+
+    const secondSegmentHeading = await screen.findByRole("heading", { name: /Branca 2/i });
+    const secondSegment = secondSegmentHeading.closest(".branch-segment");
+    if (!secondSegment) {
+      throw new Error("Second segment container not found");
+    }
+    const secondBranchSelect = within(secondSegment).getByLabelText(/^Branca$/i);
+    await user.selectOptions(secondBranchSelect, "LC");
+
+    const secondStartInput = within(secondSegment).getByLabelText(/Inizio/i);
+    const secondEndInput = within(secondSegment).getByLabelText(/Fine/i);
+    await user.clear(secondStartInput);
+    await user.type(secondStartInput, "2025-07-05");
+    await user.clear(secondEndInput);
+    await user.type(secondEndInput, "2025-07-10");
+
+    const secondYouthInput = within(secondSegment).getByLabelText(/Partecipanti/i);
+    const secondLeaderInput = within(secondSegment).getByLabelText(/Capi/i);
+    await user.type(secondYouthInput, "24");
+    await user.type(secondLeaderInput, "2");
+
+    const secondAccommodationSelect = within(secondSegment).getByLabelText(/Sistemazione/i);
+    await user.selectOptions(secondAccommodationSelect, "indoor");
 
     expect(
       screen.getByText(/L'evento verrà contrassegnato come "Tutte le branche"/i),
@@ -224,5 +245,49 @@ describe("Event wizard", () => {
 
     await user.click(screen.getByRole("button", { name: /Apri evento/i }));
     expect(mockNavigate).toHaveBeenCalledWith("/events/42");
+});
+
+  it("creates an event with aggregated participants", async () => {
+    const Wrapper = createWrapper();
+    const user = userEvent.setup();
+
+    const simpleEvent: Event = {
+      ...createdEvent,
+      title: "Uscita di branca",
+      branch: "LC",
+      participants: { lc: 30, eg: 0, rs: 0, leaders: 5 },
+      branch_segments: [],
+    };
+
+    vi.mocked(createEvent).mockResolvedValueOnce(simpleEvent);
+
+    render(<EventsPage />, { wrapper: Wrapper });
+
+    await user.click(screen.getByRole("button", { name: /Nuovo evento/i }));
+    await user.type(screen.getByLabelText(/Titolo/i), "Uscita di branca");
+    await user.selectOptions(screen.getByLabelText(/^Branca$/i), "LC");
+    await user.type(screen.getByLabelText(/Inizio/i), "2025-03-15");
+    await user.type(screen.getByLabelText(/Fine/i), "2025-03-17");
+    await user.click(screen.getByRole("button", { name: /Continua/i }));
+
+    await user.type(screen.getByLabelText(/LC \(lupetti e coccinelle\)/i), "30");
+    await user.type(screen.getByLabelText(/Capi$/i), "5");
+
+    await user.click(screen.getByRole("button", { name: /Crea evento/i }));
+
+    await waitFor(() => expect(createEvent).toHaveBeenCalled());
+
+    const payload = vi.mocked(createEvent).mock.calls[0][0] as EventCreateDto;
+    expect(payload.branch).toBe("LC");
+    expect(payload.participants).toEqual({ lc: 30, eg: 0, rs: 0, leaders: 5 });
+    expect(payload.branch_segments).toBeUndefined();
+
+    await waitFor(() => expect(getSuggestions).toHaveBeenCalledWith(simpleEvent.id));
+    await waitFor(() =>
+      expect(screen.getByText(/Evento Uscita di branca creato con successo/i)).toBeInTheDocument(),
+    );
+
+    expect(screen.getByText(/Totale persone: 35/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nessuna suddivisione per branca/i)).toBeInTheDocument();
   });
 });

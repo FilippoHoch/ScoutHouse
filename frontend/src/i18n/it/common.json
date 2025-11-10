@@ -1204,7 +1204,7 @@
       "mailPreviewError": "Impossibile mostrare l'anteprima email.",
       "segments": {
         "title": "Branche coinvolte",
-        "empty": "Nessuna branca registrata per questo evento."
+        "empty": "Nessuna suddivisione per branca: sono mostrati solo i totali complessivi."
       }
     },
     "candidates": {
@@ -1215,7 +1215,10 @@
         "subjectNoDates": "Richiesta disponibilità – {{title}}",
         "segmentsHeading": "Presenze previste:",
         "segmentsEmpty": "Presenze previste: da definire",
-        "segmentsPeak": "- Picco presenze simultanee: {{count}} persone"
+        "segmentsPeak": "- Picco presenze simultanee: {{count}} persone",
+        "simpleBranch": "- {{branch}}: {{count}} persone",
+        "simpleLeaders": "- Capi: {{count}}",
+        "simpleTotal": "- Totale partecipanti: {{count}} persone"
       },
       "contact": {
         "loading": "Caricamento contatti…",
@@ -1301,6 +1304,27 @@
         "branches": "Branche",
         "review": "Suggerimenti"
       },
+      "mode": {
+        "title": "Modalità di pianificazione",
+        "simple": {
+          "title": "Totali per branca",
+          "description": "Inserisci il numero di partecipanti e capi per ogni branca."
+        },
+        "segments": {
+          "title": "Pianificazione dettagliata",
+          "description": "Specifica periodi, presenze e sistemazioni per ogni branca."
+        }
+      },
+      "simple": {
+        "title": "Partecipanti previsti",
+        "description": "Indica quante persone parteciperanno per ciascuna branca.",
+        "fields": {
+          "lc": "LC (lupetti e coccinelle)",
+          "eg": "EG (esploratori e guide)",
+          "rs": "RS (rover e scolte)",
+          "leaders": "Capi"
+        }
+      },
       "actions": {
         "cancel": "Annulla",
         "next": "Continua",
@@ -1318,12 +1342,14 @@
         "segmentDates": "Indica date valide per ogni branca.",
         "segmentOrder": "La data di fine della branca non può essere precedente all'inizio.",
         "segmentRange": "Le date di ogni branca devono essere comprese nell'evento.",
-        "segmentBranch": "Seleziona una branca specifica (LC, EG o RS)."
+        "segmentBranch": "Seleziona una branca specifica (LC, EG o RS).",
+        "simpleParticipants": "Indica almeno un partecipante o un capo."
       },
       "summary": {
         "created": "Evento {{title}} creato con successo. Aggiungi una struttura candidata dalle proposte.",
         "requirementsTitle": "Esigenze logistiche",
-        "segmentParticipants": "{{youth}} partecipanti · {{leaders}} capi"
+        "segmentParticipants": "{{youth}} partecipanti · {{leaders}} capi",
+        "noSegments": "Nessuna suddivisione per branca registrata."
       },
       "segments": {
         "title": "Branche e presenza",
