@@ -1,5 +1,5 @@
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -159,6 +159,11 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
   const [suggestions, setSuggestions] = useState<EventSuggestion[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [addedStructures, setAddedStructures] = useState<Set<number>>(new Set());
+  const planningModeIdPrefix = useId();
+  const planningModeSimpleId = `${planningModeIdPrefix}-simple`;
+  const planningModeSegmentsId = `${planningModeIdPrefix}-segments`;
+  const planningModeSimpleLabelId = `${planningModeSimpleId}-label`;
+  const planningModeSegmentsLabelId = `${planningModeSegmentsId}-label`;
   const queryClient = useQueryClient();
   const wizardSteps: Array<{ id: WizardStep; label: string }> = [
     { id: 1, label: t("events.wizard.steps.details") },
@@ -287,7 +292,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     return t("events.wizard.segments.branchAutoSingle", {
       branch: t(`events.branches.${resolvedBranch}`, resolvedBranch),
     });
-  }, [resolvedBranch, state.branch, state.branchSegments.length, t]);
+  }, [resolvedBranch, state.branch, state.branchSegments.length, state.planningMode, t]);
 
   const branchSelectionSummary = useMemo(() => {
     if (state.branchSelection.includes("ALL")) {
@@ -795,28 +800,38 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                 <fieldset className="planning-mode">
                   <legend>{t("events.wizard.mode.title")}</legend>
                   <div className="planning-mode__options" role="radiogroup">
-                    <label className="planning-mode__option">
+                    <label
+                      className="planning-mode__option"
+                      htmlFor={planningModeSimpleId}
+                      aria-labelledby={planningModeSimpleLabelId}
+                    >
                       <input
                         type="radio"
                         name="planning-mode"
                         value="simple"
+                        id={planningModeSimpleId}
                         checked={state.planningMode === "simple"}
                         onChange={() => setState((prev) => ({ ...prev, planningMode: "simple" }))}
                       />
-                      <span>
+                      <span id={planningModeSimpleLabelId}>
                         <strong>{t("events.wizard.mode.simple.title")}</strong>
                         <small>{t("events.wizard.mode.simple.description")}</small>
                       </span>
                     </label>
-                    <label className="planning-mode__option">
+                    <label
+                      className="planning-mode__option"
+                      htmlFor={planningModeSegmentsId}
+                      aria-labelledby={planningModeSegmentsLabelId}
+                    >
                       <input
                         type="radio"
                         name="planning-mode"
                         value="segments"
+                        id={planningModeSegmentsId}
                         checked={state.planningMode === "segments"}
                         onChange={() => setState((prev) => ({ ...prev, planningMode: "segments" }))}
                       />
-                      <span>
+                      <span id={planningModeSegmentsLabelId}>
                         <strong>{t("events.wizard.mode.segments.title")}</strong>
                         <small>{t("events.wizard.mode.segments.description")}</small>
                       </span>

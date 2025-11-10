@@ -687,7 +687,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     }
   });
 
-  const clearFieldErrorsGroup = (keys: FieldErrorKey[]) => {
+  const clearFieldErrorsGroup = useCallback((keys: FieldErrorKey[]) => {
     if (keys.length === 0) {
       return;
     }
@@ -702,7 +702,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       }
       return changed ? next : prev;
     });
-  };
+  }, []);
 
   const handleMapCoordinatesChange = (next: GoogleMapEmbedCoordinates) => {
     setLatitude(next.lat.toFixed(6));
@@ -760,7 +760,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     ]);
   };
 
-  const resetContactSection = () => {
+  const resetContactSection = useCallback(() => {
     setContactFirstName("");
     setContactLastName("");
     setContactRole("");
@@ -774,7 +774,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setContactAllowDuplicate(false);
     setContactCheckingDuplicates(false);
     setContactStatusMessage(null);
-  };
+  }, []);
 
   const contactHasDetails = () =>
     Boolean(
@@ -1982,7 +1982,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     clearFieldError("contact_emails");
   };
 
-  const evaluateWebsiteUrlStatus = (value: string): WebsiteUrlStatus => {
+  const evaluateWebsiteUrlStatus = useCallback((value: string): WebsiteUrlStatus => {
     const trimmed = value.trim();
     if (!trimmed) {
       return "idle";
@@ -1994,7 +1994,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     } catch (error) {
       return "invalid";
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!isEditing || !existingStructure || isPrefilled) {

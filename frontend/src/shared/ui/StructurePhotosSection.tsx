@@ -217,7 +217,10 @@ export const StructurePhotosSection = ({
     }
   };
 
-  const photos = photosQuery.data ?? [];
+  const photos = useMemo(
+    () => photosQuery.data ?? [],
+    [photosQuery.data],
+  );
 
   useEffect(() => {
     setActiveIndex(0);
