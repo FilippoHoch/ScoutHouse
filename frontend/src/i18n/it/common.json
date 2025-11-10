@@ -454,6 +454,10 @@
             "title": "Operatività",
             "description": "Specifica disponibilità stagionale e note organizzative importanti."
           },
+          "optional": {
+            "title": "Informazioni facoltative",
+            "description": "Usa questa sezione per aggiungere i campi opzionali necessari alla scheda della struttura."
+          },
           "costs": {
             "title": "Costi e preventivi",
             "description": "Aggiungi le opzioni di costo per aiutare i capi a stimare il preventivo."
