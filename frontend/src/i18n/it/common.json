@@ -588,6 +588,25 @@
           "entryLabel": "Segnalazione {{index}}",
           "empty": "Nessuna segnalazione aggiunta."
         },
+        "optionalSections": {
+          "label": "Aggiungi informazioni facoltative",
+          "placeholder": "Seleziona un campo opzionale",
+          "hint": "Usa il menu per aggiungere solo le sezioni che ti servono.",
+          "remove": "Rimuovi sezione",
+          "options": {
+            "allowedAudiences": "Gruppi ammessi",
+            "communicationsInfrastructure": "Infrastrutture di comunicazione",
+            "activitySpaces": "Spazi per attività",
+            "activityEquipment": "Attrezzatura attività",
+            "inclusionServices": "Servizi di inclusione",
+            "dataQualityFlags": "Segnalazioni qualità dati",
+            "inAreaProtetta": "In area protetta",
+            "floodRisk": "Rischio alluvionale",
+            "documentsRequired": "Documenti richiesti",
+            "mapResources": "Risorse cartografiche",
+            "paymentMethods": "Metodi di pagamento accettati"
+          }
+        },
         "usageRules": "Regole di utilizzo",
         "usageRulesHint": "Descrivi vincoli particolari (silenzio, orari, accordi con il territorio).",
         "inAreaProtetta": "In area protetta",

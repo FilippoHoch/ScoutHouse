@@ -2331,9 +2331,29 @@ table tbody tr:hover {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
+
 .structure-form-field textarea {
   min-height: 120px;
   resize: vertical;
+}
+
+.structure-form-field--optional {
+  position: relative;
+  padding-top: var(--space-md);
+}
+
+.structure-optional-section-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-sm);
+}
+
+.structure-optional-section-remove {
+  font-size: 0.875rem;
+}
+
+.structure-form-field--optional-picker select {
+  margin-top: var(--space-xs);
 }
 
 .structure-website-list {
