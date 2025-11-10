@@ -9,7 +9,7 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-from tests.utils import auth_headers
+from tests.utils import auth_headers, participants_payload
 
 
 @pytest.fixture(autouse=True)
@@ -62,7 +62,7 @@ def create_event(client: TestClient) -> dict:
         "branch": "LC",
         "start_date": "2025-01-15",
         "end_date": "2025-01-20",
-        "participants": {"lc": 20, "leaders": 5},
+        "participants": participants_payload(lc=20, leaders=5),
     }
     response = client.post("/api/v1/events/", json=payload)
     assert response.status_code == 201, response.text

@@ -13,6 +13,22 @@ TEST_USER_EMAIL = "test@example.com"
 TEST_USER_PASSWORD = "password123"
 
 
+def participants_payload(**overrides: int) -> dict[str, int]:
+    base = {
+        "lc": 0,
+        "lc_kambusieri": 0,
+        "eg": 0,
+        "eg_kambusieri": 0,
+        "rs": 0,
+        "rs_kambusieri": 0,
+        "leaders": 0,
+        "detached_leaders": 0,
+        "detached_guests": 0,
+    }
+    base.update(overrides)
+    return base
+
+
 def create_user(
     *,
     email: str,

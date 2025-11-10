@@ -81,6 +81,7 @@ from tests.utils import (  # noqa: E402
     TEST_USER_PASSWORD,
     auth_headers,
     create_user,
+    participants_payload,
 )
 
 
@@ -222,7 +223,7 @@ def test_event_attachment_flow(monkeypatch: pytest.MonkeyPatch) -> None:
             "branch": "LC",
             "start_date": "2025-08-01",
             "end_date": "2025-08-05",
-            "participants": {"lc": 10, "leaders": 2, "eg": 0, "rs": 0},
+            "participants": participants_payload(lc=10, leaders=2),
         },
         headers=headers,
     )
@@ -311,7 +312,7 @@ def test_event_attachment_permissions(monkeypatch: pytest.MonkeyPatch) -> None:
             "branch": "EG",
             "start_date": "2025-06-10",
             "end_date": "2025-06-12",
-            "participants": {"eg": 12, "leaders": 3, "lc": 0, "rs": 0},
+            "participants": participants_payload(eg=12, leaders=3),
         },
         headers=owner_headers,
     )

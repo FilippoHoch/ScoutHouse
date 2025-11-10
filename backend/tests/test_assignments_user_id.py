@@ -16,6 +16,7 @@ from tests.utils import (  # noqa: E402
     TEST_USER_PASSWORD,
     auth_headers,
     create_user,
+    participants_payload,
 )
 
 
@@ -69,7 +70,7 @@ def test_assignment_responses_include_user_details() -> None:
             "branch": "LC",
             "start_date": "2025-04-01",
             "end_date": "2025-04-02",
-            "participants": {"lc": 5, "leaders": 1, "eg": 0, "rs": 0},
+            "participants": participants_payload(lc=5, leaders=1),
         },
     )
     assert event_resp.status_code == 201

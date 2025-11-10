@@ -15,7 +15,7 @@ from app.models import (  # noqa: E402
     StructureSeasonAvailability,
     StructureType,
 )
-from tests.utils import auth_headers
+from tests.utils import auth_headers, participants_payload
 
 
 @pytest.fixture(autouse=True)
@@ -90,7 +90,7 @@ def test_suggestions_match_branch_and_season() -> None:
             "branch": "LC",
             "start_date": "2025-01-15",
             "end_date": "2025-01-18",
-            "participants": {"lc": 20, "leaders": 4, "eg": 0, "rs": 0},
+            "participants": participants_payload(lc=20, leaders=4),
         },
     )
     assert event_resp.status_code == 201

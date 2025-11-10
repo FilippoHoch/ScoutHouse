@@ -17,6 +17,7 @@ from tests.utils import (  # noqa: E402
     TEST_USER_PASSWORD,
     auth_headers,
     create_user,
+    participants_payload,
 )
 
 
@@ -82,7 +83,7 @@ def test_event_visibility_requires_membership() -> None:
             "branch": "LC",
             "start_date": "2025-01-01",
             "end_date": "2025-01-03",
-            "participants": {"lc": 10, "leaders": 2, "eg": 0, "rs": 0},
+            "participants": participants_payload(lc=10, leaders=2),
         },
     )
     assert event.status_code == 201
@@ -106,7 +107,7 @@ def test_event_update_requires_collaborator_role() -> None:
             "branch": "LC",
             "start_date": "2025-02-01",
             "end_date": "2025-02-03",
-            "participants": {"lc": 5, "leaders": 1, "eg": 0, "rs": 0},
+            "participants": participants_payload(lc=5, leaders=1),
         },
     )
     assert event_resp.status_code == 201
@@ -156,7 +157,7 @@ def test_quote_creation_requires_membership() -> None:
             "branch": "LC",
             "start_date": "2025-03-01",
             "end_date": "2025-03-02",
-            "participants": {"lc": 8, "leaders": 2, "eg": 0, "rs": 0},
+            "participants": participants_payload(lc=8, leaders=2),
         },
     )
     assert event.status_code == 201

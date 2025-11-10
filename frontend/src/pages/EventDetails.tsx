@@ -664,6 +664,7 @@ export const EventDetailsPage = () => {
         endDate: segment.end_date,
         youthCount: segment.youth_count,
         leadersCount: segment.leaders_count,
+        kambusieriCount: segment.kambusieri_count,
         accommodation: segment.accommodation as EventAccommodation,
         notes: segment.notes ?? undefined,
       })),
@@ -681,11 +682,26 @@ export const EventDetailsPage = () => {
   const fallbackParticipants = useMemo(
     () => ({
       lc: event?.participants?.lc ?? 0,
+      lc_kambusieri: event?.participants?.lc_kambusieri ?? 0,
       eg: event?.participants?.eg ?? 0,
+      eg_kambusieri: event?.participants?.eg_kambusieri ?? 0,
       rs: event?.participants?.rs ?? 0,
+      rs_kambusieri: event?.participants?.rs_kambusieri ?? 0,
       leaders: event?.participants?.leaders ?? 0,
+      detached_leaders: event?.participants?.detached_leaders ?? 0,
+      detached_guests: event?.participants?.detached_guests ?? 0,
     }),
-    [event?.participants?.eg, event?.participants?.lc, event?.participants?.leaders, event?.participants?.rs],
+    [
+      event?.participants?.detached_guests,
+      event?.participants?.detached_leaders,
+      event?.participants?.eg,
+      event?.participants?.eg_kambusieri,
+      event?.participants?.lc,
+      event?.participants?.lc_kambusieri,
+      event?.participants?.leaders,
+      event?.participants?.rs,
+      event?.participants?.rs_kambusieri,
+    ],
   );
   const displayedParticipantsTotals = useMemo(
     () => (branchSegments.length > 0 ? segmentsTotals : fallbackParticipants),
@@ -714,11 +730,27 @@ export const EventDetailsPage = () => {
           }),
         );
       }
+      if (fallbackParticipants.lc_kambusieri > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleKambusieri", {
+            branch: t("events.branches.LC"),
+            count: fallbackParticipants.lc_kambusieri,
+          }),
+        );
+      }
       if (fallbackParticipants.eg > 0) {
         lines.push(
           t("events.candidates.mail.simpleBranch", {
             branch: t("events.branches.EG"),
             count: fallbackParticipants.eg,
+          }),
+        );
+      }
+      if (fallbackParticipants.eg_kambusieri > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleKambusieri", {
+            branch: t("events.branches.EG"),
+            count: fallbackParticipants.eg_kambusieri,
           }),
         );
       }
@@ -730,9 +762,31 @@ export const EventDetailsPage = () => {
           }),
         );
       }
+      if (fallbackParticipants.rs_kambusieri > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleKambusieri", {
+            branch: t("events.branches.RS"),
+            count: fallbackParticipants.rs_kambusieri,
+          }),
+        );
+      }
       if (fallbackParticipants.leaders > 0) {
         lines.push(
           t("events.candidates.mail.simpleLeaders", { count: fallbackParticipants.leaders }),
+        );
+      }
+      if (fallbackParticipants.detached_leaders > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleDetachedLeaders", {
+            count: fallbackParticipants.detached_leaders,
+          }),
+        );
+      }
+      if (fallbackParticipants.detached_guests > 0) {
+        lines.push(
+          t("events.candidates.mail.simpleDetachedGuests", {
+            count: fallbackParticipants.detached_guests,
+          }),
         );
       }
       if (lines.length === 0) {
@@ -744,10 +798,19 @@ export const EventDetailsPage = () => {
     const lines = normalizedSegments.map((segment) => {
       const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
       const period = t("events.list.period", { start: segment.startDate, end: segment.endDate });
-      const participantsLabel = t("events.wizard.summary.segmentParticipants", {
+      const baseParticipantsLabel = t("events.wizard.summary.segmentParticipants", {
         youth: segment.youthCount,
         leaders: segment.leadersCount,
       });
+      const extraKambusieri =
+        segment.kambusieriCount > 0
+          ? t("events.wizard.summary.segmentKambusieri", {
+              count: segment.kambusieriCount,
+            })
+          : null;
+      const participantsLabel = extraKambusieri
+        ? `${baseParticipantsLabel} · ${extraKambusieri}`
+        : baseParticipantsLabel;
       const accommodationLabel = t(
         `events.wizard.segments.accommodation.options.${segment.accommodation}`,
       );
@@ -770,9 +833,14 @@ export const EventDetailsPage = () => {
     accommodationSummary.tentsCapacity,
     displayedTotalParticipants,
     fallbackParticipants.eg,
+    fallbackParticipants.eg_kambusieri,
     fallbackParticipants.lc,
+    fallbackParticipants.lc_kambusieri,
     fallbackParticipants.leaders,
+    fallbackParticipants.detached_leaders,
+    fallbackParticipants.detached_guests,
     fallbackParticipants.rs,
+    fallbackParticipants.rs_kambusieri,
     normalizedSegments,
     peakParticipants,
     t,
@@ -980,11 +1048,27 @@ export const EventDetailsPage = () => {
                   })}
                 </li>
               )}
+              {displayedParticipantsTotals.lc_kambusieri > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryKambusieri", {
+                    branch: t("events.branches.LC"),
+                    count: displayedParticipantsTotals.lc_kambusieri,
+                  })}
+                </li>
+              )}
               {displayedParticipantsTotals.eg > 0 && (
                 <li>
                   {t("events.wizard.segments.summaryBranch", {
                     branch: t("events.branches.EG"),
                     count: displayedParticipantsTotals.eg,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.eg_kambusieri > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryKambusieri", {
+                    branch: t("events.branches.EG"),
+                    count: displayedParticipantsTotals.eg_kambusieri,
                   })}
                 </li>
               )}
@@ -996,10 +1080,32 @@ export const EventDetailsPage = () => {
                   })}
                 </li>
               )}
+              {displayedParticipantsTotals.rs_kambusieri > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryKambusieri", {
+                    branch: t("events.branches.RS"),
+                    count: displayedParticipantsTotals.rs_kambusieri,
+                  })}
+                </li>
+              )}
               {displayedParticipantsTotals.leaders > 0 && (
                 <li>
                   {t("events.wizard.segments.summaryLeaders", {
                     count: displayedParticipantsTotals.leaders,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.detached_leaders > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryDetachedLeaders", {
+                    count: displayedParticipantsTotals.detached_leaders,
+                  })}
+                </li>
+              )}
+              {displayedParticipantsTotals.detached_guests > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryDetachedGuests", {
+                    count: displayedParticipantsTotals.detached_guests,
                   })}
                 </li>
               )}
@@ -1047,10 +1153,19 @@ export const EventDetailsPage = () => {
                 start: segment.start_date,
                 end: segment.end_date,
               });
-              const participantsLabel = t("events.wizard.summary.segmentParticipants", {
+              const baseParticipantsLabel = t("events.wizard.summary.segmentParticipants", {
                 youth: segment.youth_count,
                 leaders: segment.leaders_count,
               });
+              const extraKambusieri =
+                segment.kambusieri_count > 0
+                  ? t("events.wizard.summary.segmentKambusieri", {
+                      count: segment.kambusieri_count,
+                    })
+                  : null;
+              const participantsLabel = extraKambusieri
+                ? `${baseParticipantsLabel} · ${extraKambusieri}`
+                : baseParticipantsLabel;
               const accommodationLabel = t(
                 `events.wizard.segments.accommodation.options.${segment.accommodation}`,
               );
@@ -1059,7 +1174,7 @@ export const EventDetailsPage = () => {
                   <div className="branch-segments__list-info">
                     <strong>{segmentBranchLabel}</strong>
                     <span>{periodLabel}</span>
-                    <span>{participantsLabel}</span>
+                            <span>{participantsLabel}</span>
                     <span>{accommodationLabel}</span>
                   </div>
                   {segment.notes && (

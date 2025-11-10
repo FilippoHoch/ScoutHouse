@@ -17,7 +17,7 @@ from app.api.v1.export import CSV_HEADERS_OPEN_PERIODS  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.core.limiter import TEST_RATE_LIMIT_HEADER  # noqa: E402
 from app.main import app  # noqa: E402
-from tests.utils import auth_headers, create_user  # noqa: E402
+from tests.utils import auth_headers, create_user, participants_payload  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -86,7 +86,7 @@ def create_event(
         "branch": branch,
         "start_date": start,
         "end_date": end,
-        "participants": {"lc": 10, "eg": 0, "rs": 0, "leaders": 2},
+        "participants": participants_payload(lc=10, leaders=2),
         "status": status,
     }
     if budget_total is not None:
