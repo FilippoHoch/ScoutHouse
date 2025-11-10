@@ -2321,6 +2321,7 @@ table tbody tr:hover {
   gap: var(--space-lg);
   margin-top: var(--space-lg);
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: start;
 }
 
 .structure-form-field {
@@ -3827,9 +3828,17 @@ table tbody tr:hover {
 
 .structure-form-footnote {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: baseline;
   margin-top: var(--space-xs);
+}
+
+@media (max-width: 599px) {
+  .structure-form-footnote {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
 }
 
 .slug-preview {
