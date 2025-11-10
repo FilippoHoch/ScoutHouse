@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
-from typing import Tuple
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from fastapi import Response
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -28,7 +28,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def _token_expiry(minutes: int | None = None, days: int | None = None) -> datetime:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     delta = timedelta(minutes=minutes or 0, days=days or 0)
     return now + delta
 
@@ -40,7 +40,7 @@ def create_access_token(user_id: str) -> str:
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
-def generate_refresh_token() -> Tuple[str, datetime, str]:
+def generate_refresh_token() -> tuple[str, datetime, str]:
     import secrets
 
     settings = get_settings()
@@ -62,9 +62,7 @@ def hash_token(token: str) -> str:
     return sha256(token.encode("utf-8")).hexdigest()
 
 
-def issue_refresh_cookie(response: "Response", token: str, expires: datetime) -> None:
-    from fastapi import Response
-
+def issue_refresh_cookie(response: Response, token: str, expires: datetime) -> None:
     settings = get_settings()
     max_age = settings.refresh_ttl_days * 24 * 60 * 60
     response.set_cookie(
@@ -79,7 +77,7 @@ def issue_refresh_cookie(response: "Response", token: str, expires: datetime) ->
     )
 
 
-def rotate_refresh_token(db: Session, refresh_token: RefreshToken) -> Tuple[str, RefreshToken]:
+def rotate_refresh_token(db: Session, refresh_token: RefreshToken) -> tuple[str, RefreshToken]:
     refresh_token.revoked = True
     token_value, expires_at, token_hash = generate_refresh_token()
     new_refresh = RefreshToken(

@@ -30,7 +30,10 @@ def init_sentry(settings: Settings) -> None:
         integrations=[FastApiIntegration(), sentry_logging],
         send_default_pii=False,
     )
-    logger.info("Sentry initialised", extra={"traces_sample_rate": settings.sentry_traces_sample_rate})
+    logger.info(
+        "Sentry initialised",
+        extra={"traces_sample_rate": settings.sentry_traces_sample_rate},
+    )
 
 
 __all__ = ["init_sentry"]

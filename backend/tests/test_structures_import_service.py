@@ -101,7 +101,9 @@ def test_website_urls_split_from_text_field() -> None:
                 "slug": "casa-digitale",
                 "province": "MI",
                 "type": "house",
-                "website_urls": "https://example.org/uno;https://example.org/due\nhttps://example.org/tre",
+                "website_urls": (
+                    "https://example.org/uno;https://example.org/due\nhttps://example.org/tre"
+                ),
             }
         ]
     )
@@ -125,7 +127,7 @@ def test_contact_emails_are_normalised_and_deduplicated() -> None:
                 "slug": "casa-email",
                 "province": "MI",
                 "type": "house",
-                "contact_emails": "INFO@example.org; contatti@example.org\ninfo@example.org",
+                "contact_emails": ("INFO@example.org; contatti@example.org\ninfo@example.org"),
             }
         ]
     )

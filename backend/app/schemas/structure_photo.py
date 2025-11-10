@@ -23,4 +23,3 @@ class StructurePhotoRead(BaseModel):
 
 
 __all__ = ["StructurePhotoCreate", "StructurePhotoRead"]
-

@@ -11,7 +11,6 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers
 
 
@@ -228,7 +227,7 @@ def test_search_filters_by_cost_band() -> None:
             "type": "house",
         },
     )
-    no_cost = create_structure(
+    create_structure(
         client,
         {
             "name": "Volunteer Field",

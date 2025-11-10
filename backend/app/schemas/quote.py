@@ -21,7 +21,7 @@ class QuoteOverrides(BaseModel):
     nights: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")
-    def validate_duration(self) -> "QuoteOverrides":
+    def validate_duration(self) -> QuoteOverrides:
         if self.days is not None and self.nights is not None:
             if self.days != self.nights + 1:
                 raise ValueError("days must equal nights + 1")

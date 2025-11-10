@@ -5,11 +5,10 @@ Revises: 20241105_0020
 Create Date: 2024-11-12 00:21:00.000000
 """
 
-from typing import Sequence
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 description = "Allow nullable utility flags for structures"
 revision: str = "20241112_0021"
@@ -48,9 +47,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     for column in FLAG_COLUMNS:
         op.execute(
-            sa.text(
-                "UPDATE structures SET " + column + " = false WHERE " + column + " IS NULL"
-            )
+            sa.text("UPDATE structures SET " + column + " = false WHERE " + column + " IS NULL")
         )
         op.alter_column(
             "structures",

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import logging
-
 import asyncio
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +16,11 @@ from app.api.v1 import api_router
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.limiter import limiter
-from app.core.logging import RequestIDMiddleware, RequestLoggingMiddleware, configure_logging
+from app.core.logging import (
+    RequestIDMiddleware,
+    RequestLoggingMiddleware,
+    configure_logging,
+)
 from app.core.metrics import setup_metrics
 from app.core.pubsub import event_bus
 from app.core.sentry import init_sentry

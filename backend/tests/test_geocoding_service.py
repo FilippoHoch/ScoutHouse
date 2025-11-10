@@ -1,7 +1,6 @@
 import asyncio
 import importlib.util
 from pathlib import Path
-from typing import Dict
 
 import httpx
 import pytest
@@ -96,7 +95,7 @@ def test_build_params_handles_inline_house_number() -> None:
 
 
 def test_search_retries_without_structured_params() -> None:
-    calls: list[Dict[str, str]] = []
+    calls: list[dict[str, str]] = []
 
     async def handler(request: httpx.Request) -> httpx.Response:
         params = dict(request.url.params)

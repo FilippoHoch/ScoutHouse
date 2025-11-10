@@ -1,7 +1,7 @@
 import os
+from collections.abc import Generator
 from email.utils import parsedate_to_datetime
 from uuid import uuid4
-from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,12 +27,12 @@ def _assert_rate_limit_headers(response) -> None:
     assert reset is not None
     float(reset)
 
+
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import (  # noqa: E402
     TEST_RATE_LIMIT_HEADER,
     TEST_USER_EMAIL,

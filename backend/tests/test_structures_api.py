@@ -9,7 +9,6 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers
 
 
@@ -535,9 +534,7 @@ def test_search_supports_extended_filters() -> None:
         "access_by_coach": True,
         "access_by_public_transport": True,
         "coach_turning_area": True,
-        "open_periods": [
-            {"kind": "season", "season": "summer", "units": ["ALL"]}
-        ],
+        "open_periods": [{"kind": "season", "season": "summer", "units": ["ALL"]}],
     }
 
     land_payload = {
@@ -581,45 +578,64 @@ def test_search_supports_extended_filters() -> None:
         "access_by_car": True,
         "access_by_coach": True,
         "access_by_public_transport": False,
-        "open_periods": [
-            {"kind": "season", "season": "autumn", "units": ["RS"]}
-        ],
+        "open_periods": [{"kind": "season", "season": "autumn", "units": ["RS"]}],
     }
 
     for payload in (house_payload, land_payload, mixed_payload):
         response = client.post("/api/v1/structures/", json=payload)
         assert response.status_code == 201, response.text
 
-    coach_response = client.get("/api/v1/structures/search", params={"access": "coach"})
+    coach_response = client.get(
+        "/api/v1/structures/search",
+        params={"access": "coach"},
+    )
     assert coach_response.status_code == 200
     coach_slugs = {item["slug"] for item in coach_response.json()["items"]}
     assert coach_slugs == {"casa-bosco", "base-mista"}
 
-    strict_access = client.get("/api/v1/structures/search", params={"access": "coach|pt"})
+    strict_access = client.get(
+        "/api/v1/structures/search",
+        params={"access": "coach|pt"},
+    )
     assert strict_access.status_code == 200
     strict_slugs = {item["slug"] for item in strict_access.json()["items"]}
     assert strict_slugs == {"casa-bosco"}
 
-    fire_allowed = client.get("/api/v1/structures/search", params={"fire": "allowed"})
+    fire_allowed = client.get(
+        "/api/v1/structures/search",
+        params={"fire": "allowed"},
+    )
     assert fire_allowed.status_code == 200
     assert [item["slug"] for item in fire_allowed.json()["items"]] == ["campo-pianura"]
 
-    land_area_response = client.get("/api/v1/structures/search", params={"min_land_area": 3000})
+    land_area_response = client.get(
+        "/api/v1/structures/search",
+        params={"min_land_area": 3000},
+    )
     assert land_area_response.status_code == 200
     land_area_slugs = {item["slug"] for item in land_area_response.json()["items"]}
     assert land_area_slugs == {"campo-pianura"}
 
-    hot_water_response = client.get("/api/v1/structures/search", params={"hot_water": "true"})
+    hot_water_response = client.get(
+        "/api/v1/structures/search",
+        params={"hot_water": "true"},
+    )
     assert hot_water_response.status_code == 200
     hot_water_slugs = {item["slug"] for item in hot_water_response.json()["items"]}
     assert hot_water_slugs == {"casa-bosco", "base-mista"}
 
-    season_response = client.get("/api/v1/structures/search", params={"open_in_season": "summer"})
+    season_response = client.get(
+        "/api/v1/structures/search",
+        params={"open_in_season": "summer"},
+    )
     assert season_response.status_code == 200
     season_slugs = {item["slug"] for item in season_response.json()["items"]}
     assert season_slugs == {"casa-bosco"}
 
-    date_response = client.get("/api/v1/structures/search", params={"open_on_date": "2025-07-15"})
+    date_response = client.get(
+        "/api/v1/structures/search",
+        params={"open_on_date": "2025-07-15"},
+    )
     assert date_response.status_code == 200
     date_slugs = {item["slug"] for item in date_response.json()["items"]}
     assert date_slugs == {"campo-pianura"}

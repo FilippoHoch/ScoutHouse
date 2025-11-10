@@ -1,7 +1,7 @@
 import os
+from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
-from typing import Generator
 from uuid import uuid4
 
 import pytest
@@ -14,7 +14,6 @@ from app.core.db import Base, SessionLocal, engine  # noqa: E402
 from app.core.security import hash_token  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import PasswordResetToken  # noqa: E402
-
 from tests.utils import (  # noqa: E402
     TEST_RATE_LIMIT_HEADER,
     TEST_USER_EMAIL,

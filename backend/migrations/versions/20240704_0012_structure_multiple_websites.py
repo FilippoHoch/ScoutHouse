@@ -7,9 +7,8 @@ Create Date: 2024-07-04
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "20240704_0012"
@@ -39,9 +38,7 @@ def upgrade() -> None:
         if not url:
             continue
         connection.execute(
-            sa.update(structures)
-            .where(structures.c.id == structure_id)
-            .values(website_urls=[url])
+            sa.update(structures).where(structures.c.id == structure_id).values(website_urls=[url])
         )
 
     op.drop_column("structures", "website_url")

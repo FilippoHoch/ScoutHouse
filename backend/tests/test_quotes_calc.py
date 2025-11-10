@@ -148,9 +148,7 @@ def test_calc_quote_breakdown(sample_event: Event, structure_with_costs: SimpleN
     assert totals["damage_deposit"] == pytest.approx(0.0)
     assert totals["total"] == pytest.approx(575.0)
 
-    deposit_entries = [
-        entry for entry in result["breakdown"] if entry["type"] == "booking_deposit"
-    ]
+    deposit_entries = [entry for entry in result["breakdown"] if entry["type"] == "booking_deposit"]
     assert len(deposit_entries) == 1
     assert deposit_entries[0]["total"] == pytest.approx(100.0)
 
@@ -161,7 +159,9 @@ def test_calc_quote_breakdown(sample_event: Event, structure_with_costs: SimpleN
     assert inputs["nights"] == 2
 
 
-def test_calc_quote_with_overrides(sample_event: Event, structure_with_costs: SimpleNamespace) -> None:
+def test_calc_quote_with_overrides(
+    sample_event: Event, structure_with_costs: SimpleNamespace
+) -> None:
     overrides = {"participants": {"lc": 8, "leaders": 1}, "nights": 3}
     result = calc_quote(sample_event, structure_with_costs, overrides=overrides)
 
@@ -189,7 +189,9 @@ def test_calc_quote_uses_season_modifier(
     assert totals["total"] == pytest.approx(612.0)
 
     breakdown = result["breakdown"]
-    primary = next(item for item in breakdown if item["type"] == StructureCostModel.PER_PERSON_DAY.value)
+    primary = next(
+        item for item in breakdown if item["type"] == StructureCostModel.PER_PERSON_DAY.value
+    )
     assert primary["unit_amount"] == pytest.approx(12.0)
     assert primary["metadata"]["modifier_kind"] == "season"
     assert primary["metadata"]["modifier_season"] == StructureSeason.SUMMER.value
@@ -210,7 +212,11 @@ def test_calc_quote_prefers_date_range_modifier(
     )
 
     result = calc_quote(event, structure_with_modifiers)
-    primary = next(item for item in result["breakdown"] if item["type"] == StructureCostModel.PER_PERSON_DAY.value)
+    primary = next(
+        item
+        for item in result["breakdown"]
+        if item["type"] == StructureCostModel.PER_PERSON_DAY.value
+    )
 
     assert primary["unit_amount"] == pytest.approx(20.0)
     assert primary["metadata"]["modifier_kind"] == "date_range"
@@ -234,7 +240,11 @@ def test_calc_quote_uses_weekend_modifier(
     )
 
     result = calc_quote(weekend_event, structure_with_modifiers)
-    primary = next(item for item in result["breakdown"] if item["type"] == StructureCostModel.PER_PERSON_DAY.value)
+    primary = next(
+        item
+        for item in result["breakdown"]
+        if item["type"] == StructureCostModel.PER_PERSON_DAY.value
+    )
 
     assert primary["unit_amount"] == pytest.approx(15.0)
     assert primary["metadata"]["modifier_kind"] == "weekend"
@@ -256,7 +266,11 @@ def test_calc_quote_uses_weekend_modifier_for_saturday_end(
     )
 
     result = calc_quote(saturday_event, structure_with_modifiers)
-    primary = next(item for item in result["breakdown"] if item["type"] == StructureCostModel.PER_PERSON_DAY.value)
+    primary = next(
+        item
+        for item in result["breakdown"]
+        if item["type"] == StructureCostModel.PER_PERSON_DAY.value
+    )
 
     assert primary["unit_amount"] == pytest.approx(15.0)
     assert primary["metadata"]["modifier_kind"] == "weekend"

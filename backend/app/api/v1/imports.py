@@ -147,9 +147,7 @@ async def import_structures(
             detail="Parsing timed out. Please try again with a smaller file.",
         ) from exc
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     valid_rows = len(parsed.rows)
     invalid_rows = len({error.row for error in parsed.errors})
@@ -207,17 +205,11 @@ async def import_structures(
                 else False,
                 water_sources=_serialize_water_sources(row.water_sources),
                 electricity_available=(
-                    row.electricity_available
-                    if row.electricity_available is not None
-                    else False
+                    row.electricity_available if row.electricity_available is not None else False
                 ),
                 fire_policy=row.fire_policy,
-                access_by_car=row.access_by_car
-                if row.access_by_car is not None
-                else False,
-                access_by_coach=row.access_by_coach
-                if row.access_by_coach is not None
-                else False,
+                access_by_car=row.access_by_car if row.access_by_car is not None else False,
+                access_by_coach=row.access_by_coach if row.access_by_coach is not None else False,
                 access_by_public_transport=(
                     row.access_by_public_transport
                     if row.access_by_public_transport is not None
@@ -227,16 +219,10 @@ async def import_structures(
                 if row.coach_turning_area is not None
                 else False,
                 nearest_bus_stop=row.nearest_bus_stop,
-                weekend_only=row.weekend_only
-                if row.weekend_only is not None
-                else False,
-                has_field_poles=row.has_field_poles
-                if row.has_field_poles is not None
-                else False,
+                weekend_only=row.weekend_only if row.weekend_only is not None else False,
+                has_field_poles=row.has_field_poles if row.has_field_poles is not None else False,
                 pit_latrine_allowed=(
-                    row.pit_latrine_allowed
-                    if row.pit_latrine_allowed is not None
-                    else False
+                    row.pit_latrine_allowed if row.pit_latrine_allowed is not None else False
                 ),
                 contact_emails=row.contact_emails or None,
                 website_urls=row.website_urls or None,
@@ -352,9 +338,7 @@ async def import_structure_open_periods(
             detail="Parsing timed out. Please try again with a smaller file.",
         ) from exc
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     errors_payload = _build_error_payload(parsed)
     slugs = [row.structure_slug for row in parsed.rows]
@@ -386,9 +370,7 @@ async def import_structure_open_periods(
     existing_periods = []
     if structure_ids:
         existing_periods = db.execute(
-            select(StructureOpenPeriod).where(
-                StructureOpenPeriod.structure_id.in_(structure_ids)
-            )
+            select(StructureOpenPeriod).where(StructureOpenPeriod.structure_id.in_(structure_ids))
         ).scalars()
 
     existing_keys: set[
@@ -447,9 +429,7 @@ async def import_structure_open_periods(
             if structure is None:
                 action = "missing_structure"
             else:
-                row_units = (
-                    tuple(unit.value for unit in row.units) if row.units else tuple()
-                )
+                row_units = tuple(unit.value for unit in row.units) if row.units else tuple()
                 key = (
                     structure.id,
                     row.kind,

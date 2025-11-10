@@ -1,12 +1,20 @@
+from .attachment import Attachment, AttachmentOwnerType
+from .audit_log import AuditLog
 from .availability import StructureSeason, StructureSeasonAvailability, StructureUnit
+from .contact import Contact, ContactPreferredChannel, StructureContact
 from .cost_option import (
     StructureCostModel,
     StructureCostModifier,
     StructureCostModifierKind,
     StructureCostOption,
 )
-from .contact import Contact, ContactPreferredChannel, StructureContact
-from .event import Event, EventAccommodation, EventBranch, EventBranchSegment, EventStatus
+from .event import (
+    Event,
+    EventAccommodation,
+    EventBranch,
+    EventBranchSegment,
+    EventStatus,
+)
 from .event_candidate import EventStructureCandidate, EventStructureCandidateStatus
 from .event_contact_task import (
     EventContactTask,
@@ -14,28 +22,26 @@ from .event_contact_task import (
     EventContactTaskStatus,
 )
 from .quote import Quote, QuoteScenario
-from .audit_log import AuditLog
-from .user import EventMember, EventMemberRole, PasswordResetToken, RefreshToken, User
 from .structure import (
-    Structure,
-    StructureType,
-    FirePolicy,
-    WaterSource,
     AnimalPolicy,
+    CellCoverageQuality,
     FieldSlope,
+    FirePolicy,
+    FloodRiskLevel,
+    RiverSwimmingOption,
+    Structure,
+    StructureContactStatus,
     StructureOpenPeriod,
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
     StructureOperationalStatus,
-    StructureContactStatus,
-    CellCoverageQuality,
-    WastewaterType,
-    FloodRiskLevel,
-    RiverSwimmingOption,
+    StructureType,
     StructureUsageRecommendation,
+    WastewaterType,
+    WaterSource,
 )
 from .structure_photo import StructurePhoto
-from .attachment import Attachment, AttachmentOwnerType
+from .user import EventMember, EventMemberRole, PasswordResetToken, RefreshToken, User
 
 __all__ = [
     "Structure",

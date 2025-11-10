@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import re
+from collections.abc import Iterable
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
-import re
-from collections.abc import Iterable
 
-from pydantic import AnyHttpUrl, BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from app.models.availability import StructureSeason, StructureUnit
 from app.models.cost_option import (
@@ -25,13 +32,13 @@ from app.models.structure import (
     StructureOpenPeriodSeason,
     StructureOperationalStatus,
     StructureType,
+    StructureUsageRecommendation,
     WastewaterType,
     WaterSource,
-    StructureUsageRecommendation,
 )
-from .contact import ContactRead
 from app.services.costs import CostBand
 
+from .contact import ContactRead
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 PLUS_CODE_PATTERN = re.compile(r"^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}$")
@@ -83,9 +90,11 @@ def _validate_emergency_coordinates(value: object) -> dict[str, float] | None:
         value = value.strip()
         if not value:
             return None
-        parts = {part.split(":", 1)[0].strip(): part.split(":", 1)[1].strip()
-                 for part in value.split(",")
-                 if ":" in part}
+        parts = {
+            part.split(":", 1)[0].strip(): part.split(":", 1)[1].strip()
+            for part in value.split(",")
+            if ":" in part
+        }
         value = parts
     if not isinstance(value, dict):
         raise ValueError("Coordinate di emergenza non valide")
@@ -122,19 +131,15 @@ class StructureOpenPeriodBase(BaseModel):
     blackout: bool = False
 
     @model_validator(mode="after")
-    def validate_period(self) -> "StructureOpenPeriodBase":
+    def validate_period(self) -> StructureOpenPeriodBase:
         if self.kind is StructureOpenPeriodKind.SEASON:
             if self.season is None:
                 raise ValueError("Per i periodi stagionali è richiesta la stagione")
             if self.date_start is not None or self.date_end is not None:
-                raise ValueError(
-                    "I periodi stagionali non devono includere date di inizio o fine"
-                )
+                raise ValueError("I periodi stagionali non devono includere date di inizio o fine")
         elif self.kind is StructureOpenPeriodKind.RANGE:
             if self.season is not None:
-                raise ValueError(
-                    "I periodi a data libera non possono avere una stagione"
-                )
+                raise ValueError("I periodi a data libera non possono avere una stagione")
             if self.date_start is None or self.date_end is None:
                 raise ValueError(
                     "I periodi a data libera richiedono sia data di inizio che di fine"
@@ -373,9 +378,7 @@ class StructureBase(BaseModel):
 
     @field_validator("emergency_coordinates", mode="before")
     @classmethod
-    def normalize_emergency_coordinates(
-        cls, value: object
-    ) -> dict[str, float] | None:
+    def normalize_emergency_coordinates(cls, value: object) -> dict[str, float] | None:
         return _validate_emergency_coordinates(value)
 
     @field_validator("power_outlet_types", mode="before")
@@ -487,7 +490,7 @@ class StructureBase(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def validate_by_type(self) -> "StructureBase":
+    def validate_by_type(self) -> StructureBase:
         structure_type = self.type
         indoor_fields = {
             "indoor_beds": self.indoor_beds,
@@ -518,13 +521,15 @@ class StructureBase(BaseModel):
             "allowed_audiences": self.allowed_audiences,
         }
 
-        has_indoor_data = any(
-            value not in (None, 0) for value in indoor_fields.values()
-        ) or any(flag is True for flag in indoor_flags.values()) or bool(indoor_payload)
-        has_outdoor_data = any(
-            value not in (None, 0) for value in outdoor_values.values()
-        ) or any(flag not in (None, False) for flag in outdoor_flags.values()) or any(
-            sequence for sequence in outdoor_lists.values() if sequence
+        has_indoor_data = (
+            any(value not in (None, 0) for value in indoor_fields.values())
+            or any(flag is True for flag in indoor_flags.values())
+            or bool(indoor_payload)
+        )
+        has_outdoor_data = (
+            any(value not in (None, 0) for value in outdoor_values.values())
+            or any(flag not in (None, False) for flag in outdoor_flags.values())
+            or any(sequence for sequence in outdoor_lists.values() if sequence)
         )
 
         if structure_type == StructureType.HOUSE and has_outdoor_data:
@@ -539,9 +544,7 @@ class StructureBase(BaseModel):
                 if sequence:
                     offending.append(name)
             detail = ", ".join(sorted(offending)) if offending else "campi outdoor"
-            raise ValueError(
-                f"Campi outdoor non ammessi per type=house: {detail}"
-            )
+            raise ValueError(f"Campi outdoor non ammessi per type=house: {detail}")
         if structure_type == StructureType.LAND and has_indoor_data:
             offending = [
                 name
@@ -549,19 +552,16 @@ class StructureBase(BaseModel):
                 if value not in (None, False) and value != 0
             ]
             detail = ", ".join(sorted(offending)) if offending else "campi indoor"
-            raise ValueError(
-                f"Campi indoor non ammessi per type=land: {detail}"
-            )
+            raise ValueError(f"Campi indoor non ammessi per type=land: {detail}")
         if self.generator_available:
             if self.power_capacity_kw is None:
                 raise ValueError(
-                    "Specificare la potenza disponibile (power_capacity_kw) quando generator_available è attivo"
+                    "Specificare la potenza disponibile (power_capacity_kw) quando "
+                    "generator_available è attivo"
                 )
         if self.dry_toilet:
             if self.pit_latrine_allowed is not True:
-                raise ValueError(
-                    "Quando dry_toilet è attivo, pit_latrine_allowed deve essere true"
-                )
+                raise ValueError("Quando dry_toilet è attivo, pit_latrine_allowed deve essere true")
         if self.river_swimming is RiverSwimmingOption.SI:
             if not (self.wildlife_notes or self.risk_assessment_template_url):
                 raise ValueError(
@@ -569,9 +569,7 @@ class StructureBase(BaseModel):
                 )
         if self.invoice_available and self.country == "IT":
             if not (self.sdi_recipient_code or self.pec_email):
-                raise ValueError(
-                    "Per le fatture in Italia indicare sdi_recipient_code o pec_email"
-                )
+                raise ValueError("Per le fatture in Italia indicare sdi_recipient_code o pec_email")
         return self
 
 
@@ -590,7 +588,7 @@ class StructureAvailabilityBase(BaseModel):
     capacity_max: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
-    def validate_units_and_capacity(self) -> "StructureAvailabilityBase":
+    def validate_units_and_capacity(self) -> StructureAvailabilityBase:
         if not self.units:
             raise ValueError("At least one unit must be provided")
         if self.capacity_min is not None and self.capacity_max is not None:
@@ -624,7 +622,7 @@ class StructureCostModifierBase(BaseModel):
     price_per_resource: dict[str, Decimal] | None = None
 
     @model_validator(mode="after")
-    def validate_modifier(self) -> "StructureCostModifierBase":
+    def validate_modifier(self) -> StructureCostModifierBase:
         if self.kind is StructureCostModifierKind.SEASON:
             if self.season is None:
                 raise ValueError("Per i prezzi stagionali è richiesta la stagione")
@@ -634,9 +632,7 @@ class StructureCostModifierBase(BaseModel):
             if self.season is not None:
                 raise ValueError("I prezzi per periodo specifico non possono avere una stagione")
             if self.date_start is None or self.date_end is None:
-                raise ValueError(
-                    "I prezzi per periodo specifico richiedono date di inizio e fine"
-                )
+                raise ValueError("I prezzi per periodo specifico richiedono date di inizio e fine")
             if self.date_start > self.date_end:
                 raise ValueError("date_start non può essere successiva a date_end")
         elif self.kind is StructureCostModifierKind.WEEKEND:
@@ -687,7 +683,7 @@ class StructureCostOptionBase(BaseModel):
         return value.upper()
 
     @model_validator(mode="after")
-    def validate_totals(self) -> "StructureCostOptionBase":
+    def validate_totals(self) -> StructureCostOptionBase:
         if self.min_total is not None and self.max_total is not None:
             if self.min_total > self.max_total:
                 raise ValueError("min_total non può essere maggiore di max_total")

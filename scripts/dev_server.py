@@ -22,12 +22,8 @@ def main() -> int:
     processes: list[subprocess.Popen[bytes]] = []
 
     try:
-        processes.append(
-            subprocess.Popen(COMMANDS[0], cwd=BACKEND)
-        )
-        processes.append(
-            subprocess.Popen(COMMANDS[1], cwd=FRONTEND)
-        )
+        processes.append(subprocess.Popen(COMMANDS[0], cwd=BACKEND))
+        processes.append(subprocess.Popen(COMMANDS[1], cwd=FRONTEND))
 
         def handle_sigint(signum: int, frame: object) -> None:  # noqa: ARG001
             for proc in processes:

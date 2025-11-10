@@ -21,9 +21,7 @@ def get_current_user(
     db: Annotated[Session, Depends(get_db)],
 ) -> User:
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
     token = credentials.credentials
     try:
@@ -34,30 +32,22 @@ def get_current_user(
         ) from exc
 
     if payload.get("type") != "access":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user_id = payload.get("sub")
     if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user = db.get(User, user_id)
     if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
 
     return user
 
 
 def require_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
     if not user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Admin required"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin required")
     return user
 
 
@@ -66,9 +56,7 @@ def require_structure_editor(user: Annotated[User, Depends(get_current_user)]) -
     if settings.allow_non_admin_structure_edit:
         return user
     if not user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Admin required"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin required")
     return user
 
 
@@ -90,13 +78,9 @@ def require_event_member(min_role: EventMemberRole) -> Callable:
             .first()
         )
         if membership is None:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Not a member"
-            )
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member")
         if role_rank[membership.role] < role_rank[min_role]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role"
-            )
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
         return membership
 
     return dependency
@@ -113,9 +97,7 @@ def get_refresh_token_from_cookie(
 
     token_hash = hash_token(token)
 
-    token_record = (
-        db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
-    )
+    token_record = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
     if token_record is None or token_record.revoked:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"

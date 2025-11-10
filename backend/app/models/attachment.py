@@ -2,20 +2,24 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     func,
-    Index,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
 from app.models.enum_utils import sqla_enum
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class AttachmentOwnerType(str, Enum):
@@ -43,7 +47,7 @@ class Attachment(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    creator: Mapped["User | None"] = relationship("User")
+    creator: Mapped[User | None] = relationship("User")
 
 
 Index("ix_attachments_owner", Attachment.owner_type, Attachment.owner_id)

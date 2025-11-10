@@ -1,6 +1,6 @@
 import os
+from collections.abc import Generator
 from types import SimpleNamespace
-from typing import Generator
 from uuid import uuid4
 
 import pytest
@@ -12,7 +12,6 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.config import get_settings  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers, ensure_user  # noqa: E402
 
 
@@ -79,7 +78,9 @@ def test_ops_queue_metrics(monkeypatch: pytest.MonkeyPatch, admin_client: TestCl
     assert body == {"queue": "dummy", "queued": 3, "started": 2, "failed": 1}
 
 
-def test_mail_test_returns_job_id(monkeypatch: pytest.MonkeyPatch, admin_client: TestClient) -> None:
+def test_mail_test_returns_job_id(
+    monkeypatch: pytest.MonkeyPatch, admin_client: TestClient
+) -> None:
     job_id = str(uuid4())
 
     def _enqueue(func, *args, **kwargs):

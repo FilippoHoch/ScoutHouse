@@ -8,11 +8,11 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Text,
     UniqueConstraint,
     func,
-    Index,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,8 +20,8 @@ from app.core.db import Base
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .structure import Structure
     from .event_candidate import EventStructureCandidate
+    from .structure import Structure
 
 
 class ContactPreferredChannel(str, Enum):
@@ -51,12 +51,12 @@ class Contact(Base):
         nullable=False,
     )
 
-    structures: Mapped[list["StructureContact"]] = relationship(
+    structures: Mapped[list[StructureContact]] = relationship(
         "StructureContact",
         back_populates="contact",
         cascade="all, delete-orphan",
     )
-    candidates: Mapped[list["EventStructureCandidate"]] = relationship(
+    candidates: Mapped[list[EventStructureCandidate]] = relationship(
         "EventStructureCandidate",
         back_populates="contact",
     )
@@ -96,9 +96,7 @@ class StructureContact(Base):
         default=ContactPreferredChannel.EMAIL,
     )
     is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    gdpr_consent_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    gdpr_consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -111,10 +109,8 @@ class StructureContact(Base):
         nullable=False,
     )
 
-    structure: Mapped["Structure"] = relationship(
-        "Structure", back_populates="contacts"
-    )
-    contact: Mapped["Contact"] = relationship("Contact", back_populates="structures")
+    structure: Mapped[Structure] = relationship("Structure", back_populates="contacts")
+    contact: Mapped[Contact] = relationship("Contact", back_populates="structures")
 
     @property
     def name(self) -> str:

@@ -91,4 +91,3 @@ class AttachmentRead(BaseModel):
 
 class AttachmentDownloadSignature(BaseModel):
     url: str
-

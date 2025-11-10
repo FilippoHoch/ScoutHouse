@@ -3,7 +3,11 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from app.models import Structure
-from app.models.availability import StructureSeason, StructureSeasonAvailability, StructureUnit
+from app.models.availability import (
+    StructureSeason,
+    StructureSeasonAvailability,
+    StructureUnit,
+)
 from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
 
 
@@ -40,14 +44,22 @@ def structure_matches_filters(
 
     if cost_band is not None:
         if computed_band is None or computed_band != cost_band:
-            return False, computed_band, float(estimated_cost_decimal) if estimated_cost_decimal is not None else None
+            return (
+                False,
+                computed_band,
+                float(estimated_cost_decimal) if estimated_cost_decimal is not None else None,
+            )
 
     if season is not None or unit is not None:
         availabilities = getattr(structure, "availabilities", None) or []
         if availabilities and not any(
             _availability_matches(avail, season=season, unit=unit) for avail in availabilities
         ):
-            return False, computed_band, float(estimated_cost_decimal) if estimated_cost_decimal is not None else None
+            return (
+                False,
+                computed_band,
+                float(estimated_cost_decimal) if estimated_cost_decimal is not None else None,
+            )
 
     estimated_cost = float(estimated_cost_decimal) if estimated_cost_decimal is not None else None
     return True, computed_band, estimated_cost

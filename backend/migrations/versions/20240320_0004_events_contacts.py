@@ -7,8 +7,8 @@ Create Date: 2024-03-20 00:04:00
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 from migrations.utils.postgres import (
@@ -47,16 +47,10 @@ def upgrade() -> None:
     create_enum_if_not_exists("event_status", STATUS_VALUES)
     create_enum_if_not_exists("event_candidate_status", CANDIDATE_STATUS_VALUES)
     create_enum_if_not_exists("event_contact_task_status", CONTACT_STATUS_VALUES)
-    create_enum_if_not_exists(
-        "event_contact_task_outcome", CONTACT_OUTCOME_VALUES
-    )
+    create_enum_if_not_exists("event_contact_task_outcome", CONTACT_OUTCOME_VALUES)
 
-    branch_enum = postgresql.ENUM(
-        *BRANCH_VALUES, name="event_branch", create_type=False
-    )
-    status_enum = postgresql.ENUM(
-        *STATUS_VALUES, name="event_status", create_type=False
-    )
+    branch_enum = postgresql.ENUM(*BRANCH_VALUES, name="event_branch", create_type=False)
+    status_enum = postgresql.ENUM(*STATUS_VALUES, name="event_status", create_type=False)
     candidate_status_enum = postgresql.ENUM(
         *CANDIDATE_STATUS_VALUES, name="event_candidate_status", create_type=False
     )
@@ -120,9 +114,7 @@ def upgrade() -> None:
                 sa.ForeignKey("structures.id", ondelete="CASCADE"),
                 nullable=False,
             ),
-            sa.Column(
-                "status", candidate_status_enum, nullable=False, server_default="to_contact"
-            ),
+            sa.Column("status", candidate_status_enum, nullable=False, server_default="to_contact"),
             sa.Column("assigned_user", sa.Text(), nullable=True),
             sa.Column(
                 "last_update",
@@ -135,7 +127,7 @@ def upgrade() -> None:
         )
 
     create_index_if_not_exists(
-        'CREATE INDEX IF NOT EXISTS ix_event_structure_candidate_event_status '
+        "CREATE INDEX IF NOT EXISTS ix_event_structure_candidate_event_status "
         'ON "event_structure_candidate" (event_id, status)'
     )
 
@@ -156,9 +148,7 @@ def upgrade() -> None:
                 nullable=True,
             ),
             sa.Column("assigned_user", sa.Text(), nullable=True),
-            sa.Column(
-                "status", contact_status_enum, nullable=False, server_default="todo"
-            ),
+            sa.Column("status", contact_status_enum, nullable=False, server_default="todo"),
             sa.Column(
                 "outcome",
                 contact_outcome_enum,
@@ -182,7 +172,7 @@ def downgrade() -> None:
 
     if inspector.has_table("event_contact_task"):
         op.drop_table("event_contact_task")
-    op.execute('DROP INDEX IF EXISTS ix_event_structure_candidate_event_status')
+    op.execute("DROP INDEX IF EXISTS ix_event_structure_candidate_event_status")
     if inspector.has_table("event_structure_candidate"):
         op.drop_table("event_structure_candidate")
     if inspector.has_table("events"):

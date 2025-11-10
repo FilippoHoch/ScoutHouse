@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -103,14 +102,10 @@ def suggest_structures(
 
     branch_segments = list(getattr(event, "branch_segments", []) or [])
     indoor_segments = [
-        segment
-        for segment in branch_segments
-        if segment.accommodation == EventAccommodation.INDOOR
+        segment for segment in branch_segments if segment.accommodation == EventAccommodation.INDOOR
     ]
     tent_segments = [
-        segment
-        for segment in branch_segments
-        if segment.accommodation == EventAccommodation.TENTS
+        segment for segment in branch_segments if segment.accommodation == EventAccommodation.TENTS
     ]
     needs_indoor = bool(indoor_segments)
     needs_tents = bool(tent_segments)

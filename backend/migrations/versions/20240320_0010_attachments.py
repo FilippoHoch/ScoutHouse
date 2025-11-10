@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
@@ -13,7 +13,6 @@ from migrations.utils.postgres import (
     create_index_if_not_exists,
     drop_enum_if_exists,
 )
-
 
 revision: str = "20240320_0010_attachments"
 down_revision: str | None = "20240320_0009_contacts"
@@ -61,8 +60,7 @@ def upgrade() -> None:
         )
 
     create_index_if_not_exists(
-        'CREATE INDEX IF NOT EXISTS ix_attachments_owner '
-        'ON "attachments" (owner_type, owner_id)'
+        'CREATE INDEX IF NOT EXISTS ix_attachments_owner ON "attachments" (owner_type, owner_id)'
     )
 
 
@@ -70,7 +68,7 @@ def downgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
 
-    op.execute('DROP INDEX IF EXISTS ix_attachments_owner')
+    op.execute("DROP INDEX IF EXISTS ix_attachments_owner")
     if inspector.has_table("attachments"):
         op.drop_table("attachments")
     drop_enum_if_exists("attachment_owner_type")

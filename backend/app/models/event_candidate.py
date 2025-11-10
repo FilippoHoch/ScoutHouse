@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,8 +12,11 @@ from app.core.db import Base
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:
-    from .user import User
+    from app.models.event import Event
+    from app.models.structure import Structure
+
     from .contact import Contact
+    from .user import User
 
 
 class EventStructureCandidateStatus(str, Enum):
@@ -55,14 +58,10 @@ class EventStructureCandidate(Base):
         nullable=False,
     )
 
-    event: Mapped["Event"] = relationship("Event", back_populates="candidates")
-    structure: Mapped["Structure"] = relationship("Structure")
-    assigned_user_ref: Mapped[Optional["User"]] = relationship(
-        "User", foreign_keys=[assigned_user_id]
-    )
-    contact: Mapped[Optional["Contact"]] = relationship(
-        "Contact", back_populates="candidates"
-    )
+    event: Mapped[Event] = relationship("Event", back_populates="candidates")
+    structure: Mapped[Structure] = relationship("Structure")
+    assigned_user_ref: Mapped[User | None] = relationship("User", foreign_keys=[assigned_user_id])
+    contact: Mapped[Contact | None] = relationship("Contact", back_populates="candidates")
 
     @property
     def assigned_user_name(self) -> str | None:

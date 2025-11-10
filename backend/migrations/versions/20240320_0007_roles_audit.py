@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
@@ -66,20 +66,18 @@ def upgrade() -> None:
         )
 
     create_index_if_not_exists(
-        'CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_user_id_used '
+        "CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_user_id_used "
         'ON "password_reset_tokens" (user_id, used)'
     )
 
-    add_column_if_not_exists(
-        "event_structure_candidate", 'assigned_user_id VARCHAR(36)'
-    )
+    add_column_if_not_exists("event_structure_candidate", "assigned_user_id VARCHAR(36)")
 
 
 def downgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
 
-    op.execute('DROP INDEX IF EXISTS ix_password_reset_tokens_user_id_used')
+    op.execute("DROP INDEX IF EXISTS ix_password_reset_tokens_user_id_used")
     if inspector.has_table("password_reset_tokens"):
         op.drop_table("password_reset_tokens")
     if inspector.has_table("audit_log"):

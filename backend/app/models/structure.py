@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
@@ -24,8 +23,8 @@ from sqlalchemy.sql.sqltypes import JSON
 
 from app.core.db import Base
 from app.models.availability import StructureSeasonAvailability
+from app.models.contact import StructureContact
 from app.models.cost_option import StructureCostOption
-from app.models.contact import Contact, StructureContact
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -40,7 +39,7 @@ class StructureType(str, Enum):
     @classmethod
     def _missing_(
         cls, value: object
-    ) -> "StructureType | None":  # pragma: no cover - exercised via Pydantic
+    ) -> StructureType | None:  # pragma: no cover - exercised via Pydantic
         """Allow case-insensitive matching for backwards compatibility with legacy payloads."""
 
         if isinstance(value, str):
@@ -312,7 +311,11 @@ class Structure(Base):
         nullable=True,
     )
     aed_on_site: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
-    emergency_phone_available: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    emergency_phone_available: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        default=None,
+    )
     emergency_response_time_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     emergency_plan_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     evacuation_plan_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -380,14 +383,14 @@ class Structure(Base):
             StructureContact.id,
         ),
     )
-    open_periods: Mapped[list["StructureOpenPeriod"]] = relationship(
+    open_periods: Mapped[list[StructureOpenPeriod]] = relationship(
         "StructureOpenPeriod",
         back_populates="structure",
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="StructureOpenPeriod.id",
     )
-    photos: Mapped[list["StructurePhoto"]] = relationship(
+    photos: Mapped[list[StructurePhoto]] = relationship(
         "StructurePhoto",
         back_populates="structure",
         cascade="all, delete-orphan",

@@ -1,20 +1,21 @@
 from __future__ import annotations
 
+import logging
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Literal, Mapping
-import logging
+from typing import Any, Literal
 from urllib.parse import urlsplit
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from redis.exceptions import RedisError
+from rq.job import Job
 
 from app.core.config import get_settings
 from app.core.mail import MailMessage
 from app.tasks.email_jobs import send_email_job
 from app.tasks.queue import queue
-from redis.exceptions import RedisError
-from rq.job import Job
 
 MailTemplateName = Literal[
     "reset_password",
@@ -106,9 +107,7 @@ def get_sample_context(template: MailTemplateName) -> dict[str, Any]:
     return dict(definition.sample_context)
 
 
-def render_mail_template(
-    template: MailTemplateName, context: Mapping[str, Any]
-) -> MailMessage:
+def render_mail_template(template: MailTemplateName, context: Mapping[str, Any]) -> MailMessage:
     definition = MAIL_TEMPLATES[template]
     env = _get_environment()
     subject_template = env.from_string(definition.subject)

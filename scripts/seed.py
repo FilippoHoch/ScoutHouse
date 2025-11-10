@@ -4,11 +4,10 @@ import argparse
 import csv
 import json
 import re
-from datetime import date
+import sys
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -16,8 +15,6 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 BACKEND_DIR = ROOT_DIR / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
-
-from sqlalchemy import select  # noqa: E402
 
 from app.core.db import SessionLocal  # noqa: E402
 from app.models import (  # noqa: E402
@@ -31,15 +28,16 @@ from app.models import (  # noqa: E402
     Structure,
     StructureCostModel,
     StructureCostOption,
-    StructureSeason,
-    StructureSeasonAvailability,
     StructureOpenPeriod,
     StructureOpenPeriodKind,
     StructureOpenPeriodSeason,
+    StructureSeason,
+    StructureSeasonAvailability,
     StructureType,
     StructureUnit,
 )
 from app.services.costs import calc_quote  # noqa: E402
+from sqlalchemy import select  # noqa: E402
 
 DEFAULT_STRUCTURES_DATASET = ROOT_DIR / "data" / "structures_seed.csv"
 DEFAULT_AVAILABILITY_DATASET = ROOT_DIR / "data" / "structures_availability_seed.csv"
@@ -135,6 +133,7 @@ def parse_participants(value: str | None) -> dict[str, int]:
         participants[key] = val
     return participants
 
+
 def load_rows(path: Path) -> list[dict[str, Any]]:
     with path.open("r", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
@@ -169,10 +168,18 @@ def seed_structures(dataset: Path) -> None:
                 "latitude": parse_float((row.get("latitude") or "").strip()),
                 "longitude": parse_float((row.get("longitude") or "").strip()),
                 "type": structure_type,
-                "indoor_beds": parse_int((row.get("indoor_beds") or row.get("beds") or "").strip()),
-                "indoor_bathrooms": parse_int((row.get("indoor_bathrooms") or row.get("bathrooms") or "").strip()),
-                "indoor_showers": parse_int((row.get("indoor_showers") or row.get("showers") or "").strip()),
-                "indoor_activity_rooms": parse_int((row.get("indoor_activity_rooms") or "").strip()),
+                "indoor_beds": parse_int(
+                    (row.get("indoor_beds") or row.get("beds") or "").strip()
+                ),
+                "indoor_bathrooms": parse_int(
+                    (row.get("indoor_bathrooms") or row.get("bathrooms") or "").strip()
+                ),
+                "indoor_showers": parse_int(
+                    (row.get("indoor_showers") or row.get("showers") or "").strip()
+                ),
+                "indoor_activity_rooms": parse_int(
+                    (row.get("indoor_activity_rooms") or "").strip()
+                ),
                 "has_kitchen": parse_bool(row.get("has_kitchen")),
                 "pit_latrine_allowed": parse_bool(row.get("pit_latrine_allowed")),
                 "website_urls": parse_urls(
@@ -229,11 +236,15 @@ def seed_events(dataset: Path) -> None:
                 continue
 
             title = (row.get("title") or "").strip()
-            branch_raw = (row.get("branch") or EventBranch.ALL.value).strip() or EventBranch.ALL.value
+            branch_raw = (
+                row.get("branch") or EventBranch.ALL.value
+            ).strip() or EventBranch.ALL.value
             try:
                 branch = EventBranch(branch_raw)
             except ValueError as exc:
-                raise ValueError(f"Invalid branch '{branch_raw}' for event '{slug}'") from exc
+                raise ValueError(
+                    f"Invalid branch '{branch_raw}' for event '{slug}'"
+                ) from exc
 
             try:
                 start_date = date.fromisoformat((row.get("start_date") or "").strip())
@@ -241,15 +252,21 @@ def seed_events(dataset: Path) -> None:
             except ValueError as exc:
                 raise ValueError(f"Invalid date range for event '{slug}'") from exc
             if end_date < start_date:
-                raise ValueError(f"end_date cannot be earlier than start_date for event '{slug}'")
+                raise ValueError(
+                    f"end_date cannot be earlier than start_date for event '{slug}'"
+                )
 
             participants = parse_participants(row.get("participants_json"))
             budget_total = parse_decimal(row.get("budget_total"))
-            status_raw = (row.get("status") or EventStatus.DRAFT.value).strip() or EventStatus.DRAFT.value
+            status_raw = (
+                row.get("status") or EventStatus.DRAFT.value
+            ).strip() or EventStatus.DRAFT.value
             try:
                 status_value = EventStatus(status_raw)
             except ValueError as exc:
-                raise ValueError(f"Invalid event status '{status_raw}' for slug '{slug}'") from exc
+                raise ValueError(
+                    f"Invalid event status '{status_raw}' for slug '{slug}'"
+                ) from exc
 
             data = {
                 "title": title,
@@ -261,7 +278,9 @@ def seed_events(dataset: Path) -> None:
                 "notes": (row.get("notes") or None),
             }
 
-            existing = session.execute(select(Event).where(Event.slug == slug)).scalar_one_or_none()
+            existing = session.execute(
+                select(Event).where(Event.slug == slug)
+            ).scalar_one_or_none()
             if existing is None:
                 event = Event(slug=slug, **data)
                 event.participants = participants
@@ -292,17 +311,23 @@ def seed_event_candidates(dataset: Path) -> None:
                 print("Skipping candidate row missing slugs")
                 continue
 
-            event = session.execute(select(Event).where(Event.slug == event_slug)).scalar_one_or_none()
+            event = session.execute(
+                select(Event).where(Event.slug == event_slug)
+            ).scalar_one_or_none()
             if event is None:
                 print(f"Skipping candidate for unknown event '{event_slug}'")
                 continue
 
-            structure = session.execute(select(Structure).where(Structure.slug == structure_slug)).scalar_one_or_none()
+            structure = session.execute(
+                select(Structure).where(Structure.slug == structure_slug)
+            ).scalar_one_or_none()
             if structure is None:
                 print(f"Skipping candidate for unknown structure '{structure_slug}'")
                 continue
 
-            status_raw = (row.get("status") or EventStructureCandidateStatus.TO_CONTACT.value).strip() or EventStructureCandidateStatus.TO_CONTACT.value
+            status_raw = (
+                row.get("status") or EventStructureCandidateStatus.TO_CONTACT.value
+            ).strip() or EventStructureCandidateStatus.TO_CONTACT.value
             try:
                 status_value = EventStructureCandidateStatus(status_raw)
             except ValueError as exc:
@@ -310,7 +335,7 @@ def seed_event_candidates(dataset: Path) -> None:
                     f"Invalid candidate status '{status_raw}' for event '{event_slug}'"
                 ) from exc
 
-            assigned_user = (row.get("assigned_user") or None)
+            assigned_user = row.get("assigned_user") or None
 
             candidate = session.execute(
                 select(EventStructureCandidate)
@@ -332,7 +357,9 @@ def seed_event_candidates(dataset: Path) -> None:
                 candidate.assigned_user = assigned_user
                 action = "updated"
 
-            print(f"{action.capitalize()} candidate for event '{event_slug}' and structure '{structure_slug}'")
+            print(
+                f"{action.capitalize()} candidate for event '{event_slug}' and structure '{structure_slug}'"
+            )
 
         session.commit()
 
@@ -351,12 +378,16 @@ def seed_quotes(dataset: Path) -> None:
                 print("Skipping quote row missing slugs")
                 continue
 
-            event = session.execute(select(Event).where(Event.slug == event_slug)).scalar_one_or_none()
+            event = session.execute(
+                select(Event).where(Event.slug == event_slug)
+            ).scalar_one_or_none()
             if event is None:
                 print(f"Skipping quote for unknown event '{event_slug}'")
                 continue
 
-            structure = session.execute(select(Structure).where(Structure.slug == structure_slug)).scalar_one_or_none()
+            structure = session.execute(
+                select(Structure).where(Structure.slug == structure_slug)
+            ).scalar_one_or_none()
             if structure is None:
                 print(f"Skipping quote for unknown structure '{structure_slug}'")
                 continue
@@ -364,7 +395,9 @@ def seed_quotes(dataset: Path) -> None:
             # Ensure cost options are loaded for calculation
             _ = structure.cost_options  # noqa: B018
 
-            scenario_raw = (row.get("scenario") or QuoteScenario.REALISTIC.value).strip().lower()
+            scenario_raw = (
+                (row.get("scenario") or QuoteScenario.REALISTIC.value).strip().lower()
+            )
             try:
                 scenario = QuoteScenario(scenario_raw)
             except ValueError:
@@ -410,7 +443,9 @@ def parse_units(value: str) -> list[str]:
         try:
             cleaned.append(StructureUnit(unit_value).value)
         except ValueError as exc:
-            raise ValueError(f"Invalid unit '{unit_value}' in availability seed") from exc
+            raise ValueError(
+                f"Invalid unit '{unit_value}' in availability seed"
+            ) from exc
     if not cleaned:
         raise ValueError("Availability entry must list at least one unit")
     return cleaned
@@ -449,7 +484,9 @@ def seed_availabilities(dataset: Path) -> None:
                 try:
                     season = StructureSeason(season_raw)
                 except ValueError as exc:
-                    raise ValueError(f"Invalid season '{season_raw}' for slug '{slug}'") from exc
+                    raise ValueError(
+                        f"Invalid season '{season_raw}' for slug '{slug}'"
+                    ) from exc
 
                 units = parse_units(entry.get("units", ""))
                 availability = StructureSeasonAvailability(
@@ -464,7 +501,6 @@ def seed_availabilities(dataset: Path) -> None:
             print(f"Seeded {len(entries)} availability rows for '{slug}'")
 
         session.commit()
-
 
 
 def seed_cost_options(dataset: Path) -> None:
@@ -500,7 +536,9 @@ def seed_cost_options(dataset: Path) -> None:
                 try:
                     model = StructureCostModel(model_raw)
                 except ValueError as exc:
-                    raise ValueError(f"Invalid cost model '{model_raw}' for slug '{slug}'") from exc
+                    raise ValueError(
+                        f"Invalid cost model '{model_raw}' for slug '{slug}'"
+                    ) from exc
 
                 amount = parse_decimal(entry.get("amount"))
                 if amount is None or amount <= Decimal("0"):
@@ -523,7 +561,6 @@ def seed_cost_options(dataset: Path) -> None:
             print(f"Seeded {len(entries)} cost option rows for '{slug}'")
 
         session.commit()
-
 
 
 def main() -> None:
@@ -589,7 +626,9 @@ def main() -> None:
     if args.event_candidates_file.exists():
         seed_event_candidates(args.event_candidates_file)
     else:
-        print(f"Event candidates seed file '{args.event_candidates_file}' not found; skipping.")
+        print(
+            f"Event candidates seed file '{args.event_candidates_file}' not found; skipping."
+        )
 
     if args.quotes_file.exists():
         seed_quotes(args.quotes_file)

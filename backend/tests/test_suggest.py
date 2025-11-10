@@ -15,7 +15,6 @@ from app.models import (  # noqa: E402
     StructureSeasonAvailability,
     StructureType,
 )
-
 from tests.utils import auth_headers
 
 
