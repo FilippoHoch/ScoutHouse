@@ -5225,35 +5225,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </div>
                 )}
 
-                {availableOptionalSectionOptions.length > 0 && (
-                  <div
-                    className="structure-form-field structure-form-field--optional-picker"
-                    data-span="full"
-                  >
-                    <label htmlFor="structure-optional-section-picker">
-                      {t("structures.create.form.optionalSections.label")}
-                    </label>
-                    <select
-                      id="structure-optional-section-picker"
-                      value={optionalSectionSelection}
-                      onChange={handleOptionalSectionSelectionChange}
-                      disabled={availableOptionalSectionOptions.length === 0}
-                    >
-                      <option value="">
-                        {t("structures.create.form.optionalSections.placeholder")}
-                      </option>
-                      {availableOptionalSectionOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="helper-text">
-                      {t("structures.create.form.optionalSections.hint")}
-                    </span>
-                  </div>
-                )}
-
                 <div className="structure-form-field" data-span="full">
                   <label htmlFor="structure-usage-rules">
                     {t("structures.create.form.usageRules")}
@@ -5448,6 +5419,43 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </div>
               </div>
             </fieldset>
+
+            {availableOptionalSectionOptions.length > 0 && (
+              <fieldset className="structure-form-section">
+                <legend>{t("structures.create.form.sections.optional.title")}</legend>
+                <p className="helper-text">
+                  {t("structures.create.form.sections.optional.description")}
+                </p>
+                <div className="structure-field-grid">
+                  <div
+                    className="structure-form-field structure-form-field--optional-picker"
+                    data-span="full"
+                  >
+                    <label htmlFor="structure-optional-section-picker">
+                      {t("structures.create.form.optionalSections.label")}
+                    </label>
+                    <select
+                      id="structure-optional-section-picker"
+                      value={optionalSectionSelection}
+                      onChange={handleOptionalSectionSelectionChange}
+                      disabled={availableOptionalSectionOptions.length === 0}
+                    >
+                      <option value="">
+                        {t("structures.create.form.optionalSections.placeholder")}
+                      </option>
+                      {availableOptionalSectionOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="helper-text">
+                      {t("structures.create.form.optionalSections.hint")}
+                    </span>
+                  </div>
+                </div>
+              </fieldset>
+            )}
 
             <fieldset className="structure-form-section">
               <legend>{t("structures.create.form.sections.costs.title")}</legend>
