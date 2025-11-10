@@ -39,7 +39,17 @@
       "homeLocation": {
         "label": "Luogo di base",
         "placeholder": "Es. Milano, Lombardia",
-        "helper": "Utilizzato per proporre strutture e attività vicine al tuo territorio."
+        "helper": "Utilizzato per proporre strutture e attività vicine al tuo territorio.",
+        "typeMore": "Inserisci almeno {{count}} caratteri per avviare la ricerca.",
+        "selectionWarning": "Seleziona un risultato dall'elenco per assicurarti di scegliere il luogo corretto.",
+        "actions": {
+          "clear": "Rimuovi luogo selezionato"
+        },
+        "status": {
+          "searching": "Ricerca in corso…",
+          "noResults": "Nessun risultato per \"{{query}}\".",
+          "error": "Impossibile completare la ricerca del luogo."
+        }
       },
       "defaultBranch": {
         "label": "Branca predefinita",
