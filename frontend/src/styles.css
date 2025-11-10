@@ -1804,6 +1804,11 @@ table tbody tr:hover {
   box-shadow: var(--shadow-lg);
 }
 
+.modal-content--full-width {
+  width: calc(100vw - 2 * var(--space-lg));
+  max-width: none;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;

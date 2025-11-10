@@ -658,7 +658,12 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
   return (
     <div className="modal" role="presentation">
       <FocusTrap>
-        <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="event-wizard-title">
+        <div
+          className="modal-content modal-content--full-width"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="event-wizard-title"
+        >
           <header className="modal-header">
             <h3 id="event-wizard-title">{t("events.wizard.title")}</h3>
           </header>
