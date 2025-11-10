@@ -651,7 +651,8 @@ body.layout-wide main {
 
 @media (min-width: 480px) {
   .import-export__panel .export-actions {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
+    justify-content: flex-start;
   }
 }
 
