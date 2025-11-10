@@ -571,6 +571,22 @@ body.layout-wide main {
   cursor: pointer;
 }
 
+.file-input__selected {
+  display: inline-block;
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-muted);
+  color: var(--color-muted-strong);
+  font-weight: 500;
+  font-size: 0.95rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .import-preview {
   display: grid;
   gap: var(--space-md);
