@@ -623,7 +623,7 @@ def export_events(
     to_date: Annotated[date | None, Query(alias="to")] = None,
     search: Annotated[str | None, Query(alias="q")] = None,
     branch: Annotated[EventBranch | None, Query()] = None,
-    status: Annotated[EventStatus | None, Query()] = None,
+    event_status: Annotated[EventStatus | None, Query(alias="status")] = None,
     budget: Annotated[str | None, Query()] = None,
     *,
     db: DbSession,
@@ -651,8 +651,8 @@ def export_events(
         filters.append(Event.title.ilike(f"%{search.strip()}%"))
     if branch is not None:
         filters.append(Event.branch == branch)
-    if status is not None:
-        filters.append(Event.status == status)
+    if event_status is not None:
+        filters.append(Event.status == event_status)
     if budget is not None:
         if budget not in {"with", "without"}:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid budget filter")
@@ -690,7 +690,7 @@ def export_events(
                 "to": to_date,
                 "q": search,
                 "branch": branch,
-                "status": status,
+                "status": event_status,
                 "budget": budget,
             },
         },

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -64,7 +65,7 @@ class EventBase(BaseModel):
     budget_total: Decimal | None = Field(default=None, ge=0)
     status: EventStatus = EventStatus.DRAFT
     notes: str | None = None
-    branch_segments: list[EventBranchSegmentRead] = Field(default_factory=list)
+    branch_segments: Sequence[EventBranchSegmentBase] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_dates(self) -> EventBase:
@@ -74,7 +75,7 @@ class EventBase(BaseModel):
 
 
 class EventCreate(EventBase):
-    branch_segments: list[EventBranchSegmentCreate] = Field(default_factory=list)
+    branch_segments: Sequence[EventBranchSegmentCreate] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_segments(self) -> EventCreate:
@@ -107,6 +108,7 @@ class EventRead(EventBase):
     slug: str
     created_at: datetime
     updated_at: datetime
+    branch_segments: Sequence[EventBranchSegmentRead] = Field(default_factory=list)
 
     model_config = {
         "from_attributes": True,

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+from botocore.client import BaseClient
 
 from app.core.config import get_settings
 from app.core.db import get_db
@@ -43,6 +45,11 @@ from app.services.attachments import (
     validate_key,
     validate_mime,
 )
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3.client import S3Client
+else:  # pragma: no cover - runtime fallback
+    S3Client = BaseClient
 
 router = APIRouter(prefix="/attachments", tags=["attachments"])
 
@@ -136,7 +143,7 @@ def _serialize_attachment_rows(
     return items
 
 
-def _ensure_storage_ready() -> tuple[str, object]:
+def _ensure_storage_ready() -> tuple[str, S3Client]:
     try:
         bucket = ensure_bucket()
     except StorageUnavailableError as exc:
@@ -163,15 +170,19 @@ def list_attachments(
 ) -> list[AttachmentRead]:
     _ensure_owner_access(db, owner_type, owner_id, user, write=False)
 
-    rows = db.execute(
-        select(Attachment, User)
-        .outerjoin(User, Attachment.created_by == User.id)
-        .where(
-            Attachment.owner_type == owner_type,
-            Attachment.owner_id == owner_id,
+    rows = (
+        db.execute(
+            select(Attachment, User)
+            .outerjoin(User, Attachment.created_by == User.id)
+            .where(
+                Attachment.owner_type == owner_type,
+                Attachment.owner_id == owner_id,
+            )
+            .order_by(Attachment.created_at.desc())
         )
-        .order_by(Attachment.created_at.desc())
-    ).all()
+        .tuples()
+        .all()
+    )
     return _serialize_attachment_rows(rows)
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncGenerator, Sequence
 from contextlib import suppress
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated, Any
@@ -14,7 +14,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
-from app.core.pubsub import event_bus
+from app.core.pubsub import EventMessage, event_bus
 from app.core.security import decode_token
 from app.deps import get_current_user, require_event_member
 from app.models import (
@@ -348,11 +348,11 @@ async def stream_event_updates(
     user = _authenticate_access_token(db, access_token)
     _require_event_membership(db, event_id, user.id)
 
-    subscriber = event_bus.subscribe()
+    subscriber: AsyncGenerator[EventMessage, None] = event_bus.subscribe()
     keepalive_payload = {"type": "keepalive", "event_id": event_id, "payload": {}}
     keepalive_line = f"data: {json.dumps(keepalive_payload, separators=(',', ':'))}\n\n"
 
-    async def event_stream() -> AsyncIterator[str]:
+    async def event_stream() -> AsyncGenerator[str, None]:
         try:
             while True:
                 if await request.is_disconnected():
@@ -810,6 +810,7 @@ def update_candidate(
                 structure_id=candidate.structure_id,
                 contact_id=contact_id_value,
             )
+            assert contact is not None  # Narrow for type checkers
             candidate.contact_id = contact.id
             candidate.contact = contact
     if "assigned_user_id" in data:
