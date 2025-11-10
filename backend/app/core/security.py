@@ -6,6 +6,7 @@ from typing import Tuple
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from fastapi import Response
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -62,9 +63,7 @@ def hash_token(token: str) -> str:
     return sha256(token.encode("utf-8")).hexdigest()
 
 
-def issue_refresh_cookie(response: "Response", token: str, expires: datetime) -> None:
-    from fastapi import Response
-
+def issue_refresh_cookie(response: Response, token: str, expires: datetime) -> None:
     settings = get_settings()
     max_age = settings.refresh_ttl_days * 24 * 60 * 60
     response.set_cookie(

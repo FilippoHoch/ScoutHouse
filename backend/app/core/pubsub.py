@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 import logging
 from asyncio import QueueEmpty, QueueFull
+from collections.abc import AsyncGenerator, AsyncIterator
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, AsyncGenerator, AsyncIterator
+from typing import Any
 from uuid import uuid4
 
 
@@ -84,7 +85,7 @@ class EventBus:
         except QueueFull:  # pragma: no cover - defensive guard
             self._logger.warning("Unable to enqueue event for subscriber; dropping message")
 
-    def subscribe(self) -> AsyncIterator[EventMessage]:
+    def subscribe(self) -> AsyncGenerator[EventMessage, None]:
         """Register a new subscriber and return an async iterator of messages."""
 
         queue: asyncio.Queue[EventMessage] = asyncio.Queue(self._queue_maxsize)

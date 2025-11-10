@@ -6,12 +6,13 @@ import logging
 
 import asyncio
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.responses import Response
 
 from app.api.v1 import api_router
 from app.core.config import get_settings
@@ -24,6 +25,15 @@ from app.core.sentry import init_sentry
 from app.services import ensure_default_admin
 
 
+async def _handle_rate_limit(request: Request, exc: Exception) -> Response:
+    if not isinstance(exc, RateLimitExceeded):
+        raise exc
+    result = _rate_limit_exceeded_handler(request, exc)
+    if asyncio.iscoroutine(result):
+        return await result
+    return result
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings)
@@ -34,7 +44,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="ScoutHouse API", version="0.2.0")
 
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_exception_handler(RateLimitExceeded, _handle_rate_limit)
     app.add_middleware(SlowAPIMiddleware)
     app.add_middleware(GZipMiddleware, minimum_size=settings.gzip_min_length)
 

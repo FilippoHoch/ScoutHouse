@@ -4,12 +4,11 @@ import logging
 import os
 import re
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 import boto3
-from botocore.client import BaseClient
 from botocore.config import Config
 from botocore.exceptions import ClientError
 from fastapi import HTTPException, status
@@ -21,6 +20,11 @@ from app.schemas.attachment import (
     ALLOWED_MIME_TYPES,
     MAX_ATTACHMENT_SIZE,
 )
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3.client import S3Client
+else:  # pragma: no cover - fallback when type stubs are unavailable at runtime
+    from botocore.client import BaseClient as S3Client
 
 
 logger = logging.getLogger("app.attachments")
@@ -37,7 +41,7 @@ def _filter_kwargs(**kwargs: Any) -> dict[str, Any]:
 
 
 @lru_cache
-def get_s3_client() -> BaseClient:
+def get_s3_client() -> S3Client:
     settings = get_settings()
     config_kwargs: dict[str, Any] = {}
     if settings.s3_use_path_style:
@@ -62,7 +66,7 @@ def ensure_bucket() -> str:
     return bucket
 
 
-def ensure_bucket_exists(client: BaseClient, bucket: str) -> None:
+def ensure_bucket_exists(client: S3Client, bucket: str) -> None:
     """Ensure the configured bucket exists, creating it if missing."""
 
     try:
@@ -121,7 +125,7 @@ def validate_key(owner_type: AttachmentOwnerType, owner_id: int, key: str) -> No
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Upload key mismatch")
 
 
-def head_object(client: BaseClient, bucket: str, key: str) -> dict[str, Any]:
+def head_object(client: S3Client, bucket: str, key: str) -> dict[str, Any]:
     try:
         return client.head_object(Bucket=bucket, Key=key)
     except ClientError as exc:  # pragma: no cover - defensive logging
@@ -132,7 +136,7 @@ def head_object(client: BaseClient, bucket: str, key: str) -> dict[str, Any]:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail="Storage backend error") from exc
 
 
-def delete_object(client: BaseClient, bucket: str, key: str) -> None:
+def delete_object(client: S3Client, bucket: str, key: str) -> None:
     try:
         client.delete_object(Bucket=bucket, Key=key)
     except ClientError as exc:  # pragma: no cover - defensive logging

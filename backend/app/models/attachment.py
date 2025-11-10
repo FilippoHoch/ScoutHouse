@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     DateTime,
@@ -16,6 +17,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
 from app.models.enum_utils import sqla_enum
+
+if TYPE_CHECKING:
+    from app.models import User
 
 
 class AttachmentOwnerType(str, Enum):

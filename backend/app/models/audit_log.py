@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
-from typing import Optional
-
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import JSON
 
 from app.core.db import Base
+
+if TYPE_CHECKING:
+    from app.models import User
 
 
 class AuditLog(Base):
@@ -32,7 +34,7 @@ class AuditLog(Base):
     ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    actor: Mapped[Optional["User"]] = relationship("User")
+    actor: Mapped["User | None"] = relationship("User")
 
 
 __all__ = ["AuditLog"]

@@ -4,14 +4,17 @@ import re
 import unicodedata
 from collections.abc import Iterable, Sequence
 from datetime import date
+from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
+
+from pydantic import AnyHttpUrl
 
 from app.core.config import get_settings
 from app.core.db import get_db
@@ -78,6 +81,11 @@ from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
 from app.services.filters import structure_matches_filters
 from app.services.geo import haversine_km
 
+if TYPE_CHECKING:
+    from mypy_boto3_s3.client import S3Client
+else:  # pragma: no cover - fallback when stub package is absent
+    from botocore.client import BaseClient as S3Client
+
 router = APIRouter()
 
 
@@ -112,7 +120,7 @@ def _website_responds(client: httpx.Client, url: str) -> bool:
     return False
 
 
-def _check_website_urls(urls: Iterable[str]) -> list[str]:
+def _check_website_urls(urls: Iterable[str | AnyHttpUrl]) -> list[str]:
     candidates = [str(url) for url in urls if url]
     if not candidates:
         return []
@@ -134,7 +142,7 @@ def _check_website_urls(urls: Iterable[str]) -> list[str]:
     return warnings
 
 
-def _ensure_storage_ready() -> tuple[str, Any]:
+def _ensure_storage_ready() -> tuple[str, S3Client]:
     try:
         bucket = ensure_bucket()
     except StorageUnavailableError as exc:  # pragma: no cover - defensive guard
@@ -271,6 +279,12 @@ def _coerce_units(units: Sequence[object] | None) -> list[str] | None:
     return result
 
 
+def _as_float(value: Decimal | float | None) -> float | None:
+    if value is None:
+        return None
+    return float(value)
+
+
 def _serialize_open_period(period: StructureOpenPeriod) -> StructureOpenPeriodRead:
     return StructureOpenPeriodRead(
         id=period.id,
@@ -289,7 +303,7 @@ def _serialize_photo(
     attachment: Attachment,
     *,
     bucket: str,
-    client: Any,
+    client: S3Client,
 ) -> StructurePhotoRead:
     url = client.generate_presigned_url(
         "get_object",
@@ -297,17 +311,19 @@ def _serialize_photo(
         ExpiresIn=120,
     )
     url = rewrite_presigned_url(url)
-    return StructurePhotoRead(
-        id=photo.id,
-        structure_id=photo.structure_id,
-        attachment_id=photo.attachment_id,
-        filename=attachment.filename,
-        mime=attachment.mime,
-        size=attachment.size,
-        position=photo.position,
-        url=url,
-        created_at=photo.created_at,
-        description=attachment.description,
+    return StructurePhotoRead.model_validate(
+        {
+            "id": photo.id,
+            "structure_id": photo.structure_id,
+            "attachment_id": photo.attachment_id,
+            "filename": attachment.filename,
+            "mime": attachment.mime,
+            "size": attachment.size,
+            "position": photo.position,
+            "url": url,
+            "created_at": photo.created_at,
+            "description": attachment.description,
+        }
     )
 
 
@@ -773,12 +789,15 @@ def search_structures(
     for structure in results:
         distance = None
         if structure.has_coords:
-            distance = haversine_km(
-                float(structure.latitude),
-                float(structure.longitude),
-                base_lat,
-                base_lon,
-            )
+            latitude = _as_float(structure.latitude)
+            longitude = _as_float(structure.longitude)
+            if latitude is not None and longitude is not None:
+                distance = haversine_km(
+                    latitude,
+                    longitude,
+                    base_lat,
+                    base_lon,
+                )
         matches, computed_band, estimated_cost = structure_matches_filters(
             structure,
             season=season,
@@ -856,15 +875,9 @@ def search_structures(
             postal_code=structure.postal_code,
             type=structure.type,
             address=structure.address,
-            latitude=float(structure.latitude)
-            if structure.latitude is not None
-            else None,
-            longitude=float(structure.longitude)
-            if structure.longitude is not None
-            else None,
-            altitude=float(structure.altitude)
-            if structure.altitude is not None
-            else None,
+            latitude=_as_float(structure.latitude),
+            longitude=_as_float(structure.longitude),
+            altitude=_as_float(structure.altitude),
             distance_km=distance,
             estimated_cost=estimated_cost,
             cost_band=band,
@@ -881,9 +894,7 @@ def search_structures(
             river_swimming=structure.river_swimming,
             wastewater_type=structure.wastewater_type,
             flood_risk=structure.flood_risk,
-            power_capacity_kw=float(structure.power_capacity_kw)
-            if structure.power_capacity_kw is not None
-            else None,
+            power_capacity_kw=_as_float(structure.power_capacity_kw),
             parking_car_slots=structure.parking_car_slots,
             usage_recommendation=structure.usage_recommendation,
         )
@@ -904,14 +915,14 @@ def search_structures(
 
 
 @router.get("/{structure_id}", response_model=StructureRead)
-def get_structure(structure_id: int, db: DbSession) -> Structure:
+def get_structure(structure_id: int, db: DbSession) -> StructureRead:
     structure = db.get(Structure, structure_id)
     if structure is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Structure not found",
         )
-    return structure
+    return StructureRead.model_validate(structure)
 
 
 @router.post("/", response_model=StructureRead, status_code=status.HTTP_201_CREATED)
@@ -976,7 +987,7 @@ def update_structure(
     db: DbSession,
     request: Request,
     current_user: StructureEditor,
-) -> Structure:
+) -> StructureRead:
     structure = _get_structure_or_404(
         db,
         structure_id,

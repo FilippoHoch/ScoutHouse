@@ -334,6 +334,7 @@ def calc_quote(
 
         minimum_total_applied = False
         maximum_total_applied = False
+        metadata: dict[str, Any]
         if option.model == StructureCostModel.PER_PERSON_DAY:
             quantity = people_total * days
             line_total = amount * Decimal(people_total) * Decimal(days)

@@ -873,6 +873,11 @@ def update_candidate(
                 structure_id=candidate.structure_id,
                 contact_id=contact_id_value,
             )
+            if contact is None:  # pragma: no cover - defensive safeguard
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Contact not found",
+                )
             candidate.contact_id = contact.id
             candidate.contact = contact
     if "assigned_user_id" in data:
