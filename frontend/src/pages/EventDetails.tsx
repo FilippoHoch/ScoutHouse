@@ -762,14 +762,6 @@ export const EventDetailsPage = () => {
           }),
         );
       }
-      if (fallbackParticipants.rs_kambusieri > 0) {
-        lines.push(
-          t("events.candidates.mail.simpleKambusieri", {
-            branch: t("events.branches.RS"),
-            count: fallbackParticipants.rs_kambusieri,
-          }),
-        );
-      }
       if (fallbackParticipants.leaders > 0) {
         lines.push(
           t("events.candidates.mail.simpleLeaders", { count: fallbackParticipants.leaders }),
@@ -840,7 +832,6 @@ export const EventDetailsPage = () => {
     fallbackParticipants.detached_leaders,
     fallbackParticipants.detached_guests,
     fallbackParticipants.rs,
-    fallbackParticipants.rs_kambusieri,
     normalizedSegments,
     peakParticipants,
     t,
@@ -1077,14 +1068,6 @@ export const EventDetailsPage = () => {
                   {t("events.wizard.segments.summaryBranch", {
                     branch: t("events.branches.RS"),
                     count: displayedParticipantsTotals.rs,
-                  })}
-                </li>
-              )}
-              {displayedParticipantsTotals.rs_kambusieri > 0 && (
-                <li>
-                  {t("events.wizard.segments.summaryKambusieri", {
-                    branch: t("events.branches.RS"),
-                    count: displayedParticipantsTotals.rs_kambusieri,
                   })}
                 </li>
               )}

@@ -1415,7 +1415,7 @@
         "simpleBranch": "- {{branch}}: {{count}} persone",
         "simpleLeaders": "- Capi: {{count}}",
         "simpleTotal": "- Totale partecipanti: {{count}} persone",
-        "simpleKambusieri": "{{branch}} kambusieri: {{count}}",
+        "simpleKambusieri": "{{branch}} cambusieri: {{count}}",
         "simpleDetachedLeaders": "Distaccati - capi: {{count}}",
         "simpleDetachedGuests": "Distaccati - ospiti: {{count}}"
       },
@@ -1596,9 +1596,9 @@
           "eg": "EG (esploratori e guide)",
           "rs": "RS (rover e scolte)",
           "leaders": "Capi",
-          "lcKambusieri": "Kambusieri LC",
-          "egKambusieri": "Kambusieri EG",
-          "rsKambusieri": "Kambusieri RS",
+          "lcKambusieri": "Cambusieri LC",
+          "egKambusieri": "Cambusieri EG",
+          "rsKambusieri": "Cambusieri RS",
           "detachedLeaders": "Distaccati - capi",
           "detachedGuests": "Distaccati - ospiti"
         }
@@ -1629,7 +1629,7 @@
         "requirementsTitle": "Esigenze logistiche",
         "segmentParticipants": "{{youth}} partecipanti · {{leaders}} capi",
         "noSegments": "Nessuna suddivisione per branca registrata.",
-        "segmentKambusieri": "{{count}} kambusieri"
+        "segmentKambusieri": "{{count}} cambusieri"
       },
       "segments": {
         "title": "Branche e presenza",
@@ -1658,8 +1658,8 @@
         "summaryPeak": "Picco presenze simultanee: {{count}}",
         "summaryIndoor": "Letti contemporaneamente necessari: {{count}}",
         "summaryTents": "Posti tenda contemporaneamente necessari: {{count}}",
-        "kambusieriCount": "Kambusieri",
-        "summaryKambusieri": "Kambusieri {{branch}}: {{count}}",
+        "kambusieriCount": "Cambusieri",
+        "summaryKambusieri": "Cambusieri {{branch}}: {{count}}",
         "summaryDetachedLeaders": "Distaccati - capi: {{count}}",
         "summaryDetachedGuests": "Distaccati - ospiti: {{count}}"
       },
