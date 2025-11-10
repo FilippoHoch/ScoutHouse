@@ -352,6 +352,8 @@ type MetadataConversionResult =
   | { ok: true; value: Record<string, unknown> }
   | { ok: false; type: MetadataConversionErrorType; focusId?: string };
 
+type MetadataConversionErrorResult = Extract<MetadataConversionResult, { ok: false }>;
+
 const parseMetadataValue = (raw: string): { ok: true; value: unknown } | { ok: false } => {
   const trimmed = raw.trim();
   if (trimmed === "true") {
@@ -2833,13 +2835,15 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       advancedMetadataIdPrefix
     );
     if (!advancedMetadataResult.ok) {
+      const errorResult = advancedMetadataResult as MetadataConversionErrorResult;
       const message = t(
-        `structures.create.form.advancedMetadata.errors.${advancedMetadataResult.type}`
+        `structures.create.form.advancedMetadata.errors.${errorResult.type}`
       );
       setAdvancedMetadataError(message);
-      if (advancedMetadataResult.focusId) {
+      const focusId = errorResult.focusId;
+      if (focusId) {
         requestAnimationFrame(() => {
-          const element = document.getElementById(advancedMetadataResult.focusId!);
+          const element = document.getElementById(focusId);
           if (element instanceof HTMLElement) {
             element.focus();
           }
@@ -2857,6 +2861,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       }
     }
 
+    const trimmedCountry = country.trim().toUpperCase();
     const trimmedProvince = province.trim();
     const trimmedMunicipality = municipality.trim();
     const trimmedLocality = locality.trim();
@@ -3267,11 +3272,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           `structure-cost-option-${option.key}-advanced`
         );
         if (!costMetadataResult.ok) {
+          const errorResult = costMetadataResult as MetadataConversionErrorResult;
           advancedCostErrors[option.key] = t(
-            `structures.create.form.costOptions.advancedMetadata.errors.${costMetadataResult.type}`
+            `structures.create.form.costOptions.advancedMetadata.errors.${errorResult.type}`
           );
-          if (!firstAdvancedCostFocusId && costMetadataResult.focusId) {
-            firstAdvancedCostFocusId = costMetadataResult.focusId;
+          const focusId = errorResult.focusId;
+          if (!firstAdvancedCostFocusId && focusId) {
+            firstAdvancedCostFocusId = focusId;
           }
           return null;
         }
@@ -3298,7 +3305,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       }));
       if (firstAdvancedCostFocusId) {
         requestAnimationFrame(() => {
-          const element = document.getElementById(firstAdvancedCostFocusId!);
+          const element = document.getElementById(firstAdvancedCostFocusId);
           if (element instanceof HTMLElement) {
             element.focus();
           }

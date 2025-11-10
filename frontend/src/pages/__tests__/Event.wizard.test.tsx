@@ -151,7 +151,7 @@ describe("Event wizard", () => {
 
     const firstSegmentHeading = segmentHeadings[0];
     const firstSegment = firstSegmentHeading.closest(".branch-segment");
-    if (!firstSegment) {
+    if (!(firstSegment instanceof HTMLElement)) {
       throw new Error("Segment container not found");
     }
     const firstStartInput = within(firstSegment).getByLabelText(/Inizio/i);
@@ -171,7 +171,7 @@ describe("Event wizard", () => {
 
     const secondSegmentHeading = segmentHeadings[1];
     const secondSegment = secondSegmentHeading.closest(".branch-segment");
-    if (!secondSegment) {
+    if (!(secondSegment instanceof HTMLElement)) {
       throw new Error("Second segment container not found");
     }
     const secondBranchSelect = within(secondSegment).getByLabelText(/^Branca$/i);
