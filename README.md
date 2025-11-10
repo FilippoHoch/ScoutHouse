@@ -267,6 +267,21 @@ process to complete before booting. The `RUN_DB_MIGRATIONS` flag is therefore
 disabled in the `api` service to avoid re-running the same Alembic upgrade on
 each restart.
 
+#### Lint warning report
+
+To collect lint warnings from the Python backend plus the React/TypeScript
+frontend (including static HTML checks), run:
+
+```bash
+docker compose --profile lint run --rm lint-report
+```
+
+The script installs the necessary developer toolchains, executes Ruff, MyPy, and
+Bandit on the backend, then runs ESLint, the TypeScript compiler, and HTMLHint
+on the frontend. All outputs—including warnings and exit codes—are aggregated
+into [`lint-warnings.txt`](lint-warnings.txt) at the project root so you can fix
+them progressively.
+
 ### Observability and backups
 
 - Structured JSON logging with per-request `X-Request-ID` correlation is enabled

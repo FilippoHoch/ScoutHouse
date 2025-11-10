@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "lint:html": "htmlhint \"public/**/*.html\"",
+    "typecheck": "tsc --noEmit --pretty false",
     "test": "vitest",
     "analyze": "node scripts/analyze-bundle.mjs"
   },
@@ -42,6 +44,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "gzip-size": "^7.0.0",
+    "htmlhint": "^1.7.1",
     "jest-axe": "^9.0.0",
     "jsdom": "^24.0.0",
     "prettier": "^3.2.5",
