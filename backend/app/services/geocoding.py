@@ -156,8 +156,8 @@ async def search(
             raise GeocodingError("Geocoding quota exceeded", status_code=503)
         if response.status_code >= 500:
             raise GeocodingError("Geocoding provider is temporarily unavailable", status_code=503)
-        if response.status_code >= 400:
-            raise GeocodingError("Unable to resolve the requested address", status_code=422)
+        if 400 <= response.status_code < 500:
+            return []
 
         try:
             payload = response.json()

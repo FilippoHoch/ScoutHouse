@@ -1,3 +1,6 @@
+import asyncio
+
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -48,3 +51,20 @@ def test_geocoding_search_handles_error(monkeypatch: pytest.MonkeyPatch) -> None
     response = client.get("/api/v1/geocoding/search", params={"address": "Unknown"})
     assert response.status_code == 503
     assert response.json()["detail"] == "Service down"
+
+
+def test_geocoding_search_returns_empty_on_client_error() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"error": "Invalid"})
+
+    transport = httpx.MockTransport(handler)
+
+    async def perform_search() -> list[geocoding_api.geocoding.GeocodingResult]:
+        async with httpx.AsyncClient(transport=transport) as mock_client:
+            return await geocoding_api.geocoding.search(
+                address="Via Roma", client=mock_client
+            )
+
+    results = asyncio.run(perform_search())
+
+    assert results == []
