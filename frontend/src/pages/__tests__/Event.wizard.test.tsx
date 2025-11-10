@@ -192,7 +192,11 @@ describe("Event wizard", () => {
     const secondAccommodationSelect = within(secondSegment).getByLabelText(/Sistemazione/i);
     await user.selectOptions(secondAccommodationSelect, "tents");
 
-    expect(screen.getByText(/Picco presenze simultanee: 58/i)).toBeInTheDocument();
+    const peakSummaries = screen.getAllByText(/Picco presenze simultanee: 58/i);
+    expect(peakSummaries).toHaveLength(2);
+    expect(
+      peakSummaries.some((element) => element.classList.contains("logistics-summary__badge--highlight"))
+    ).toBe(true);
 
     await user.type(screen.getByLabelText(/Budget totale/i), "3000");
 
@@ -231,7 +235,11 @@ describe("Event wizard", () => {
       ).toBeInTheDocument()
     );
 
-    expect(screen.getByText(/Picco presenze simultanee: 58/i)).toBeInTheDocument();
+    const reviewPeakSummaries = screen.getAllByText(/Picco presenze simultanee: 58/i);
+    expect(reviewPeakSummaries).toHaveLength(2);
+    expect(
+      reviewPeakSummaries.some((element) => element.classList.contains("logistics-summary__badge--highlight"))
+    ).toBe(true);
 
     await user.click(screen.getByRole("button", { name: /Aggiungi candidato/i }));
     expect(addCandidate).toHaveBeenCalledWith(createdEvent.id, { structure_id: 1 });

@@ -38,6 +38,7 @@ import { useAuth } from "../shared/auth";
 import { useEventLive } from "../shared/live";
 import { EventQuotesTab } from "./EventQuotesTab";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
+import { LogisticsSummary } from "../shared/ui/LogisticsSummary";
 import {
   NormalizedBranchSegment,
   computeAccommodationRequirements,
@@ -631,8 +632,27 @@ export const EventDetailsPage = () => {
     if (peakParticipants > 0) {
       lines.push(t("events.candidates.mail.segmentsPeak", { count: peakParticipants }));
     }
+    if (accommodationSummary.needsIndoor) {
+      lines.push(t("events.wizard.segments.summaryIndoor", { count: accommodationSummary.indoorCapacity }));
+    }
+    if (accommodationSummary.needsTents) {
+      lines.push(t("events.wizard.segments.summaryTents", { count: accommodationSummary.tentsCapacity }));
+    }
     return [t("events.candidates.mail.segmentsHeading"), ...lines].join("\n");
-  }, [displayedTotalParticipants, fallbackParticipants.eg, fallbackParticipants.lc, fallbackParticipants.leaders, fallbackParticipants.rs, normalizedSegments, peakParticipants, t]);
+  }, [
+    accommodationSummary.indoorCapacity,
+    accommodationSummary.needsIndoor,
+    accommodationSummary.needsTents,
+    accommodationSummary.tentsCapacity,
+    displayedTotalParticipants,
+    fallbackParticipants.eg,
+    fallbackParticipants.lc,
+    fallbackParticipants.leaders,
+    fallbackParticipants.rs,
+    normalizedSegments,
+    peakParticipants,
+    t,
+  ]);
 
   if (!isValidEventId) {
     return (
@@ -793,6 +813,10 @@ export const EventDetailsPage = () => {
                 <li>{t("events.wizard.segments.summaryTents", { count: accommodationSummary.tentsCapacity })}</li>
               )}
             </ul>
+            <LogisticsSummary
+              accommodation={accommodationSummary}
+              peakParticipants={peakParticipants}
+            />
           </div>
           {branchSegments.length === 0 ? (
             <p>{t("events.details.segments.empty")}</p>

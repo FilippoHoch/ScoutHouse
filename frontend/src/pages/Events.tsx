@@ -23,6 +23,7 @@ import {
   EventParticipants
 } from "../shared/types";
 import { FocusTrap } from "../shared/ui/FocusTrap";
+import { LogisticsSummary } from "../shared/ui/LogisticsSummary";
 import {
   Button,
   EmptyState,
@@ -1068,6 +1069,10 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                         </li>
                       )}
                     </ul>
+                    <LogisticsSummary
+                      accommodation={accommodationSummary}
+                      peakParticipants={peakParticipants}
+                    />
                   </div>
                 )}
                 <label>
@@ -1205,6 +1210,10 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                 ) : (
                   <p className="branch-segments__empty">{t("events.wizard.summary.noSegments")}</p>
                 )}
+                <LogisticsSummary
+                  accommodation={createdAccommodationSummary}
+                  peakParticipants={createdPeakParticipants}
+                />
                 {isLoadingSuggestions && <InlineMessage>{t("events.wizard.suggestions.loading")}</InlineMessage>}
                 {!isLoadingSuggestions && suggestions.length === 0 && (
                   <InlineMessage>{t("events.wizard.suggestions.empty")}</InlineMessage>
