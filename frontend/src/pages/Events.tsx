@@ -68,7 +68,6 @@ type ParticipantsFormValue = {
   eg: string;
   egKambusieri: string;
   rs: string;
-  rsKambusieri: string;
   leaders: string;
   detachedLeaders: string;
   detachedGuests: string;
@@ -104,7 +103,6 @@ const defaultWizardState: WizardState = {
     eg: "",
     egKambusieri: "",
     rs: "",
-    rsKambusieri: "",
     leaders: "",
     detachedLeaders: "",
     detachedGuests: "",
@@ -245,7 +243,8 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
         endDate: segment.endDate,
         youthCount: parseCount(segment.youthCount),
         leadersCount: parseCount(segment.leadersCount),
-        kambusieriCount: parseCount(segment.kambusieriCount),
+        kambusieriCount:
+          segment.branch === "RS" ? 0 : parseCount(segment.kambusieriCount),
         accommodation: segment.accommodation,
         notes: segment.notes.trim() ? segment.notes.trim() : undefined,
       })),
@@ -259,7 +258,7 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
       eg: parseCount(state.participants.eg),
       eg_kambusieri: parseCount(state.participants.egKambusieri),
       rs: parseCount(state.participants.rs),
-      rs_kambusieri: parseCount(state.participants.rsKambusieri),
+      rs_kambusieri: 0,
       leaders: parseCount(state.participants.leaders),
       detached_leaders: parseCount(state.participants.detachedLeaders),
       detached_guests: parseCount(state.participants.detachedGuests),
@@ -273,7 +272,6 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
       state.participants.lcKambusieri,
       state.participants.leaders,
       state.participants.rs,
-      state.participants.rsKambusieri,
     ],
   );
 
@@ -918,11 +916,13 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                                   {t("events.wizard.segments.branch")}
                                   <select
                                     value={segment.branch}
-                                    onChange={(event) =>
+                                    onChange={(event) => {
+                                      const nextBranch = event.target.value as EventBranch;
                                       updateSegment(segment.id, {
-                                        branch: event.target.value as EventBranch,
-                                      })
-                                    }
+                                        branch: nextBranch,
+                                        ...(nextBranch === "RS" ? { kambusieriCount: "" } : {}),
+                                      });
+                                    }}
                                   >
                                     {segmentBranchOptions.map((branch) => (
                                       <option key={branch.value} value={branch.value}>
@@ -1000,17 +1000,21 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                                     }
                                   />
                                 </label>
-                                <label>
-                                  {t("events.wizard.segments.kambusieriCount")}
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={segment.kambusieriCount}
-                                    onChange={(event) =>
-                                      updateSegment(segment.id, { kambusieriCount: event.target.value })
-                                    }
-                                  />
-                                </label>
+                                {segment.branch !== "RS" && (
+                                  <label>
+                                    {t("events.wizard.segments.kambusieriCount")}
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      value={segment.kambusieriCount}
+                                      onChange={(event) =>
+                                        updateSegment(segment.id, {
+                                          kambusieriCount: event.target.value,
+                                        })
+                                      }
+                                    />
+                                  </label>
+                                )}
                               </InlineFields>
                               <label>
                                 {t("events.wizard.segments.notes")}
@@ -1119,23 +1123,6 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                                     setState((prev) => ({
                                       ...prev,
                                       participants: { ...prev.participants, rs: event.target.value },
-                                    }))
-                                  }
-                                />
-                              </label>
-                              <label>
-                                {t("events.wizard.simple.fields.rsKambusieri")}
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={state.participants.rsKambusieri}
-                                  onChange={(event) =>
-                                    setState((prev) => ({
-                                      ...prev,
-                                      participants: {
-                                        ...prev.participants,
-                                        rsKambusieri: event.target.value,
-                                      },
                                     }))
                                   }
                                 />
@@ -1300,14 +1287,6 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                               })}
                             </li>
                           )}
-                          {participantsTotals.rs_kambusieri > 0 && (
-                            <li>
-                              {t("events.wizard.segments.summaryKambusieri", {
-                                branch: t("events.branches.RS"),
-                                count: participantsTotals.rs_kambusieri,
-                              })}
-                            </li>
-                          )}
                           {participantsTotals.leaders > 0 && (
                             <li>{t("events.wizard.segments.summaryLeaders", { count: participantsTotals.leaders })}</li>
                           )}
@@ -1412,14 +1391,6 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                         {t("events.wizard.segments.summaryBranch", {
                           branch: t("events.branches.RS"),
                           count: createdParticipantsTotals.rs,
-                        })}
-                      </li>
-                    )}
-                    {createdParticipantsTotals.rs_kambusieri > 0 && (
-                      <li>
-                        {t("events.wizard.segments.summaryKambusieri", {
-                          branch: t("events.branches.RS"),
-                          count: createdParticipantsTotals.rs_kambusieri,
                         })}
                       </li>
                     )}
