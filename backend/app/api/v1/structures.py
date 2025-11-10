@@ -369,6 +369,10 @@ def _structure_payload(
         payload["flood_risk"] = structure_in.flood_risk.value
     payload["bus_type_access"] = list(structure_in.bus_type_access or [])
     payload["allowed_audiences"] = list(structure_in.allowed_audiences or [])
+    if structure_in.usage_recommendation is not None:
+        payload["usage_recommendation"] = structure_in.usage_recommendation.value
+    else:
+        payload["usage_recommendation"] = None
     return payload
 
 
@@ -882,6 +886,7 @@ def search_structures(
             if structure.power_capacity_kw is not None
             else None,
             parking_car_slots=structure.parking_car_slots,
+            usage_recommendation=structure.usage_recommendation,
         )
         for structure, distance, band, estimated_cost, seasons, units in paginated
     ]

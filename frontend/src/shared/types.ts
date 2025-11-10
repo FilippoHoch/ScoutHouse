@@ -24,6 +24,11 @@ export type StructureOperationalStatus =
   | "seasonal"
   | "temporarily_closed"
   | "permanently_closed";
+export type StructureUsageRecommendation =
+  | "outings_only"
+  | "camps_only"
+  | "prefer_outings"
+  | "prefer_camps";
 export type Season = "winter" | "spring" | "summer" | "autumn";
 export type Unit = "LC" | "EG" | "RS" | "ALL";
 export type CostModel = "per_person_day" | "per_person_night" | "forfait";
@@ -270,6 +275,7 @@ export interface Structure {
   event_rules_url: string | null;
   event_rules_notes: string | null;
   allowed_audiences: string[];
+  usage_recommendation: StructureUsageRecommendation | null;
   usage_rules: string | null;
   animal_policy: AnimalPolicy | null;
   animal_policy_notes: string | null;
@@ -398,6 +404,7 @@ export interface StructureCreateDto {
   event_rules_url?: string | null;
   event_rules_notes?: string | null;
   allowed_audiences?: string[];
+  usage_recommendation?: StructureUsageRecommendation | null;
   usage_rules?: string | null;
   animal_policy?: AnimalPolicy | null;
   animal_policy_notes?: string | null;
@@ -474,6 +481,7 @@ export interface StructureSearchItem {
   flood_risk: FloodRiskLevel | null;
   power_capacity_kw: number | null;
   parking_car_slots: number | null;
+  usage_recommendation: StructureUsageRecommendation | null;
 }
 
 export interface StructureSearchResponse {

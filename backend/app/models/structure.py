@@ -134,6 +134,13 @@ class RiverSwimmingOption(str, Enum):
     UNKNOWN = "unknown"
 
 
+class StructureUsageRecommendation(str, Enum):
+    OUTINGS_ONLY = "outings_only"
+    CAMPS_ONLY = "camps_only"
+    PREFER_OUTINGS = "prefer_outings"
+    PREFER_CAMPS = "prefer_camps"
+
+
 class Structure(Base):
     __tablename__ = "structures"
 
@@ -261,6 +268,13 @@ class Structure(Base):
     parking_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     accessibility_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     allowed_audiences: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    usage_recommendation: Mapped[StructureUsageRecommendation | None] = mapped_column(
+        sqla_enum(
+            StructureUsageRecommendation,
+            name="structure_usage_recommendation",
+        ),
+        nullable=True,
+    )
     usage_rules: Mapped[str | None] = mapped_column(Text, nullable=True)
     animal_policy: Mapped[AnimalPolicy | None] = mapped_column(
         sqla_enum(AnimalPolicy, name="structure_animal_policy"),

@@ -27,6 +27,7 @@ from app.models.structure import (
     StructureType,
     WastewaterType,
     WaterSource,
+    StructureUsageRecommendation,
 )
 from .contact import ContactRead
 from app.services.costs import CostBand
@@ -224,6 +225,7 @@ class StructureBase(BaseModel):
     parking_notes: str | None = None
     accessibility_notes: str | None = None
     allowed_audiences: list[str] | None = None
+    usage_recommendation: StructureUsageRecommendation | None = None
     usage_rules: str | None = None
     animal_policy: AnimalPolicy | None = None
     animal_policy_notes: str | None = None
@@ -757,6 +759,7 @@ class StructureSearchItem(BaseModel):
     flood_risk: FloodRiskLevel | None = None
     power_capacity_kw: float | None = None
     parking_car_slots: int | None = None
+    usage_recommendation: StructureUsageRecommendation | None = None
 
     model_config = {
         "from_attributes": True,
