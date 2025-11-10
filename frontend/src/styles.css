@@ -1212,9 +1212,9 @@ table tbody tr:hover {
 
 .export-actions .button {
   justify-content: center;
-  min-width: 130px;
-  padding: 0.6rem 1.2rem;
-  font-size: 0.95rem;
+  min-width: 110px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
 }
 
 .export-actions .button:disabled {
