@@ -268,10 +268,13 @@ async def search(
 
         return payload
 
+    timeout = httpx.Timeout(10.0, connect=5.0)
+    limits = httpx.Limits(max_connections=10, max_keepalive_connections=5)
+
     async def _execute(query_params: dict[str, str]) -> list[dict[str, Any]]:
         if client is not None:
             return await _perform(client, query_params)
-        async with httpx.AsyncClient() as owned_client:
+        async with httpx.AsyncClient(timeout=timeout, limits=limits) as owned_client:
             return await _perform(owned_client, query_params)
 
     raw_results = await _execute(params)
