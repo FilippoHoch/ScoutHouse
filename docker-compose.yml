@@ -189,6 +189,15 @@ services:
     depends_on:
       - api
 
+  lint-report:
+    build:
+      context: .
+      dockerfile: infra/lint/Dockerfile
+    profiles: ["lint"]
+    volumes:
+      - ./:/workspace
+    working_dir: /workspace
+
 volumes:
   scouthouse_db_data:
   backup_data:
