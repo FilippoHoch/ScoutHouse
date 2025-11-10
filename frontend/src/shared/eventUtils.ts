@@ -75,6 +75,10 @@ const maxConcurrentLoad = (segments: NormalizedBranchSegment[]): number => {
   return peak;
 };
 
+export const computePeakParticipants = (
+  segments: NormalizedBranchSegment[],
+): number => maxConcurrentLoad(segments);
+
 export interface AccommodationSummary {
   needsIndoor: boolean;
   needsTents: boolean;

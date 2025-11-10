@@ -87,6 +87,7 @@ def test_create_event_with_branch_segments() -> None:
     assert response.status_code == 201, response.text
     payload = response.json()
 
+    assert payload["branch"] == "ALL"
     assert payload["participants"]["eg"] == 28
     assert payload["participants"]["lc"] == 24
     assert payload["participants"]["leaders"] == 6
@@ -95,6 +96,72 @@ def test_create_event_with_branch_segments() -> None:
         "tents",
         "indoor",
     }
+
+
+def test_create_event_auto_sets_branch_all_for_multiple_segments() -> None:
+    client = get_client()
+    response = client.post(
+        "/api/v1/events/",
+        json={
+            "title": "Campo di gruppo",
+            "branch": "LC",
+            "start_date": "2025-07-01",
+            "end_date": "2025-07-10",
+            "participants": {},
+            "branch_segments": [
+                {
+                    "branch": "LC",
+                    "start_date": "2025-07-01",
+                    "end_date": "2025-07-05",
+                    "youth_count": 20,
+                    "leaders_count": 3,
+                    "accommodation": "indoor",
+                },
+                {
+                    "branch": "EG",
+                    "start_date": "2025-07-03",
+                    "end_date": "2025-07-10",
+                    "youth_count": 30,
+                    "leaders_count": 4,
+                    "accommodation": "tents",
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    payload = response.json()
+    assert payload["branch"] == "ALL"
+    assert payload["participants"] == {"lc": 20, "eg": 30, "rs": 0, "leaders": 7}
+
+
+def test_create_event_normalises_single_branch_segment() -> None:
+    client = get_client()
+    response = client.post(
+        "/api/v1/events/",
+        json={
+            "title": "Hike di branca",
+            "branch": "EG",
+            "start_date": "2025-04-15",
+            "end_date": "2025-04-18",
+            "participants": {},
+            "branch_segments": [
+                {
+                    "branch": "LC",
+                    "start_date": "2025-04-15",
+                    "end_date": "2025-04-18",
+                    "youth_count": 16,
+                    "leaders_count": 2,
+                    "accommodation": "indoor",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    payload = response.json()
+    assert payload["branch"] == "LC"
+    assert payload["participants"] == {"lc": 16, "eg": 0, "rs": 0, "leaders": 2}
 
 
 def test_suggestions_reflect_branch_requirements() -> None:

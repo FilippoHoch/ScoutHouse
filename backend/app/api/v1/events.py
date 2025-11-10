@@ -143,6 +143,28 @@ def _participants_from_segments(segments: Sequence[dict[str, Any]]) -> dict[str,
     return totals
 
 
+def _branch_from_segments(
+    segments: Sequence[dict[str, Any]],
+    *,
+    current_branch: EventBranch | None = None,
+) -> EventBranch | None:
+    unique_branches: set[EventBranch] = set()
+    for segment in segments:
+        branch_value = segment.get("branch")
+        if branch_value is None:
+            continue
+        branch = branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
+        unique_branches.add(branch)
+    if not unique_branches:
+        return None
+    if len(unique_branches) == 1:
+        only_branch = next(iter(unique_branches))
+        if current_branch == EventBranch.ALL:
+            return EventBranch.ALL
+        return only_branch
+    return EventBranch.ALL
+
+
 def _coerce_date(value: date | str) -> date:
     if isinstance(value, date):
         return value
@@ -449,10 +471,19 @@ def create_event(
     branch_segments = data.pop("branch_segments", [])
     participants = _participants_to_dict(data.pop("participants"))
     status_value = data.pop("status", EventStatus.DRAFT)
+    branch_value = data.get("branch", EventBranch.LC)
+    current_branch = (
+        branch_value
+        if isinstance(branch_value, EventBranch)
+        else EventBranch(branch_value)
+    )
 
     event = Event(slug=slug, **data)
     if branch_segments:
         event.participants = _participants_from_segments(branch_segments)
+        branch_override = _branch_from_segments(branch_segments, current_branch=current_branch)
+        if branch_override is not None:
+            event.branch = branch_override
     else:
         event.participants = participants
     event.status = status_value
@@ -611,6 +642,13 @@ def update_event(
     if "participants" in data and data["participants"] is not None:
         data["participants"] = _participants_to_dict(data["participants"])
 
+    branch_target_value = data.get("branch", event.branch)
+    current_branch = (
+        branch_target_value
+        if isinstance(branch_target_value, EventBranch)
+        else EventBranch(branch_target_value)
+    )
+
     new_start = _coerce_date(data.get("start_date", event.start_date))
     new_end = _coerce_date(data.get("end_date", event.end_date))
     if new_end < new_start:
@@ -624,6 +662,9 @@ def update_event(
 
     if normalized_segments is not None:
         _set_branch_segments(event, normalized_segments)
+        branch_override = _branch_from_segments(normalized_segments, current_branch=current_branch)
+        if branch_override is not None:
+            event.branch = branch_override
 
     db.add(event)
     db.flush()
