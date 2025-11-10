@@ -280,6 +280,9 @@
         "type": "Tipologia",
         "typePlaceholder": "Seleziona tipologia",
         "typeHint": "Scegli il tipo di struttura più rappresentativo.",
+        "country": "Paese",
+        "countryPlaceholder": "Es. IT",
+        "countryHint": "Inserisci il codice ISO a due lettere del paese.",
         "province": "Provincia",
         "provincePlaceholder": "Es. MI",
         "provinceHint": "Scrivi il codice a due lettere della provincia (es. MI).",
@@ -342,6 +345,27 @@
         "websiteEntryLabel": "Link {{index}}",
         "websiteValidStatus": "Link valido.",
         "websiteInvalidStatus": "Questo link non sembra valido. Puoi comunque procedere, ma controlla che sia corretto.",
+        "mapResources": {
+          "label": "Risorse cartografiche",
+          "hint": "Aggiungi URL utili a mappe o risorse di orientamento.",
+          "add": "Aggiungi una risorsa",
+          "remove": "Rimuovi questa risorsa",
+          "entryLabel": "Risorsa {{index}}"
+        },
+        "documentsRequired": {
+          "label": "Documenti richiesti",
+          "hint": "Elenca i documenti necessari per prenotare o utilizzare la struttura.",
+          "add": "Aggiungi documento",
+          "remove": "Rimuovi questo documento",
+          "entryLabel": "Documento {{index}}"
+        },
+        "paymentMethods": {
+          "label": "Metodi di pagamento accettati",
+          "hint": "Specifica i metodi di pagamento accettati in generale dalla struttura.",
+          "add": "Aggiungi metodo",
+          "remove": "Rimuovi questo metodo",
+          "entryLabel": "Metodo {{index}}"
+        },
         "notes": "Note aggiuntive",
         "notesHint": "Condividi informazioni pratiche e includi indicazioni sulle prenotazioni: tempi di risposta, modalità o costi.",
         "contact": {
@@ -519,6 +543,41 @@
           "remove": "Rimuovi",
           "entryLabel": "Gruppo ammesso {{index}}"
         },
+        "communicationsInfrastructure": {
+          "label": "Infrastrutture di comunicazione",
+          "hint": "Indica reti o servizi di comunicazione disponibili (es. fibra, radio, rete mobile potenziata).",
+          "add": "Aggiungi infrastruttura",
+          "remove": "Rimuovi questa voce",
+          "entryLabel": "Infrastruttura {{index}}"
+        },
+        "activitySpaces": {
+          "label": "Spazi per attività",
+          "hint": "Elenca gli spazi dedicati alle attività (es. salone, anfiteatro, prato giochi).",
+          "add": "Aggiungi spazio",
+          "remove": "Rimuovi questo spazio",
+          "entryLabel": "Spazio {{index}}"
+        },
+        "activityEquipment": {
+          "label": "Attrezzatura attività",
+          "hint": "Specifica le attrezzature disponibili (es. corde, tende, materiale pionieristica).",
+          "add": "Aggiungi attrezzatura",
+          "remove": "Rimuovi questa attrezzatura",
+          "entryLabel": "Attrezzatura {{index}}"
+        },
+        "inclusionServices": {
+          "label": "Servizi di inclusione",
+          "hint": "Elenca servizi e attenzioni offerte per l'accessibilità e l'inclusione.",
+          "add": "Aggiungi servizio",
+          "remove": "Rimuovi questo servizio",
+          "entryLabel": "Servizio {{index}}"
+        },
+        "dataQualityFlags": {
+          "label": "Segnalazioni qualità dati",
+          "hint": "Annota eventuali avvisi o note sulla qualità delle informazioni inserite.",
+          "add": "Aggiungi segnalazione",
+          "remove": "Rimuovi questa segnalazione",
+          "entryLabel": "Segnalazione {{index}}"
+        },
         "usageRules": "Regole di utilizzo",
         "usageRulesHint": "Descrivi vincoli particolari (silenzio, orari, accordi con il territorio).",
         "inAreaProtetta": "In area protetta",
@@ -672,6 +731,7 @@
       "errors": {
         "nameRequired": "Inserisci un nome per la struttura.",
         "typeRequired": "Seleziona una tipologia.",
+        "countryInvalid": "Inserisci un codice paese valido di due lettere.",
         "provinceInvalid": "La provincia deve contenere esattamente due lettere.",
         "latitudeInvalid": "La latitudine deve essere compresa tra -90 e 90.",
         "longitudeInvalid": "La longitudine deve essere compresa tra -180 e 180.",
@@ -838,6 +898,22 @@
           }
         },
         "allowedAudiences": "Gruppi ammessi",
+        "documentsRequired": "Documenti richiesti",
+        "documentsRequiredFallback": "Non specificati",
+        "mapResources": "Risorse cartografiche",
+        "mapResourcesFallback": "Nessuna risorsa indicata",
+        "communicationsInfrastructure": "Infrastrutture di comunicazione",
+        "communicationsInfrastructureFallback": "Nessuna infrastruttura specificata",
+        "activitySpaces": "Spazi per attività",
+        "activitySpacesFallback": "Nessuno spazio aggiuntivo indicato",
+        "activityEquipment": "Attrezzatura attività",
+        "activityEquipmentFallback": "Nessuna attrezzatura specificata",
+        "inclusionServices": "Servizi di inclusione",
+        "inclusionServicesFallback": "Nessun servizio indicato",
+        "paymentMethods": "Metodi di pagamento accettati",
+        "paymentMethodsFallback": "Non specificati",
+        "dataQualityFlags": "Segnalazioni qualità dati",
+        "dataQualityFlagsFallback": "Nessuna segnalazione",
         "usageRules": "Regole di utilizzo",
         "usageRulesFallback": "Nessuna regola specificata",
         "inAreaProtetta": "In area protetta",

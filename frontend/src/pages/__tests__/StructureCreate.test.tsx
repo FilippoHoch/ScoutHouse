@@ -241,6 +241,7 @@ describe("StructureCreatePage", () => {
       name: "Base Bosco",
       slug: "base-bosco",
       type: "house",
+      country: "IT",
       province: "BS",
       has_kitchen: null,
       hot_water: null,
@@ -326,6 +327,79 @@ describe("StructureCreatePage", () => {
       river_swimming: "si"
     });
     expect(payload).not.toHaveProperty("id");
+  });
+
+  it("includes extended metadata fields in the payload", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Appennino");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "mixed");
+
+    const countryInput = screen.getByLabelText(/Paese/i);
+    await user.clear(countryInput);
+    await user.type(countryInput, "fr");
+
+    await user.type(
+      screen.getByLabelText(/Risorse cartografiche/i),
+      "https://maps.example.com"
+    );
+
+    await user.type(
+      screen.getByLabelText(/Documenti richiesti/i),
+      "Modulo autorizzazione"
+    );
+
+    await user.type(
+      screen.getByLabelText(/Metodi di pagamento accettati/i),
+      "Bonifico"
+    );
+
+    await user.type(
+      screen.getByLabelText(/Infrastrutture di comunicazione/i),
+      "Fibra ottica"
+    );
+
+    await user.type(screen.getByLabelText(/Spazi per attività/i), "Sala polifunzionale");
+
+    await user.type(
+      screen.getByLabelText(/Attrezzatura attività/i),
+      "Kit pionieristica"
+    );
+
+    await user.type(
+      screen.getByLabelText(/Servizi di inclusione/i),
+      "Bagno accessibile"
+    );
+
+    await user.type(
+      screen.getByLabelText(/Segnalazioni qualità dati/i),
+      "Verifica disponibilità"
+    );
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+    const payload = vi.mocked(createStructure).mock.calls[0][0];
+
+    expect(payload.country).toBe("FR");
+    expect(payload.map_resources_urls).toEqual(["https://maps.example.com"]);
+    expect(payload.documents_required).toEqual(["Modulo autorizzazione"]);
+    expect(payload.payment_methods).toEqual(["Bonifico"]);
+    expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
+    expect(payload.activity_spaces).toEqual(["Sala polifunzionale"]);
+    expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
+    expect(payload.inclusion_services).toEqual(["Bagno accessibile"]);
+    expect(payload.data_quality_flags).toEqual(["Verifica disponibilità"]);
   });
 
   it("validates required fields for advanced metadata entries", async () => {

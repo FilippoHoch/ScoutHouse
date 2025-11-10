@@ -90,6 +90,7 @@ const operationalStatusOptions: StructureOperationalStatus[] = [
 ];
 type FieldErrorKey =
   | "name"
+  | "country"
   | "province"
   | "postal_code"
   | "latitude"
@@ -471,6 +472,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [country, setCountry] = useState("IT");
   const [province, setProvince] = useState("");
   const [municipality, setMunicipality] = useState("");
   const [locality, setLocality] = useState("");
@@ -521,6 +523,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [websiteUrls, setWebsiteUrls] = useState<string[]>([""]);
   const [websiteUrlStatuses, setWebsiteUrlStatuses] = useState<WebsiteUrlStatus[]>(["idle"]);
   const [allowedAudiences, setAllowedAudiences] = useState<string[]>([""]);
+  const [documentsRequired, setDocumentsRequired] = useState<string[]>([""]);
+  const [mapResourcesUrls, setMapResourcesUrls] = useState<string[]>([""]);
+  const [communicationsInfrastructure, setCommunicationsInfrastructure] = useState<string[]>([""]);
+  const [activitySpaces, setActivitySpaces] = useState<string[]>([""]);
+  const [activityEquipment, setActivityEquipment] = useState<string[]>([""]);
+  const [inclusionServices, setInclusionServices] = useState<string[]>([""]);
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([""]);
+  const [dataQualityFlags, setDataQualityFlags] = useState<string[]>([""]);
   const [usageRecommendation, setUsageRecommendation] = useState<
     StructureUsageRecommendation | ""
   >("");
@@ -1068,6 +1078,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setSlug(toSlug(value));
   };
 
+  const handleCountryChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value.toUpperCase();
+    setCountry(value);
+    setApiError(null);
+    clearFieldError("country");
+  };
+
   const handleProvinceChange = (event: ChangeEvent<HTMLInputElement>) => {
     setProvince(event.target.value.toUpperCase());
     setApiError(null);
@@ -1551,6 +1568,163 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
+  const handleDocumentsRequiredChange = (index: number, value: string) => {
+    setDocumentsRequired((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddDocumentsRequired = () => {
+    setDocumentsRequired((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemoveDocumentsRequired = (index: number) => {
+    setDocumentsRequired((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setApiError(null);
+  };
+
+  const handleMapResourcesUrlChange = (index: number, value: string) => {
+    setMapResourcesUrls((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddMapResourcesUrl = () => {
+    setMapResourcesUrls((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemoveMapResourcesUrl = (index: number) => {
+    setMapResourcesUrls((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setApiError(null);
+  };
+
+  const handleCommunicationsInfrastructureChange = (
+    index: number,
+    value: string
+  ) => {
+    setCommunicationsInfrastructure((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddCommunicationsInfrastructure = () => {
+    setCommunicationsInfrastructure((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemoveCommunicationsInfrastructure = (index: number) => {
+    setCommunicationsInfrastructure((current) =>
+      current.filter((_, itemIndex) => itemIndex !== index)
+    );
+    setApiError(null);
+  };
+
+  const handleActivitySpaceChange = (index: number, value: string) => {
+    setActivitySpaces((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddActivitySpace = () => {
+    setActivitySpaces((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemoveActivitySpace = (index: number) => {
+    setActivitySpaces((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setApiError(null);
+  };
+
+  const handleActivityEquipmentChange = (index: number, value: string) => {
+    setActivityEquipment((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddActivityEquipment = () => {
+    setActivityEquipment((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemoveActivityEquipment = (index: number) => {
+    setActivityEquipment((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setApiError(null);
+  };
+
+  const handleInclusionServiceChange = (index: number, value: string) => {
+    setInclusionServices((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddInclusionService = () => {
+    setInclusionServices((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemoveInclusionService = (index: number) => {
+    setInclusionServices((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setApiError(null);
+  };
+
+  const handlePaymentMethodChange = (index: number, value: string) => {
+    setPaymentMethods((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddPaymentMethod = () => {
+    setPaymentMethods((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemovePaymentMethod = (index: number) => {
+    setPaymentMethods((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setApiError(null);
+  };
+
+  const handleDataQualityFlagChange = (index: number, value: string) => {
+    setDataQualityFlags((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+    setApiError(null);
+  };
+
+  const handleAddDataQualityFlag = () => {
+    setDataQualityFlags((current) => [...current, ""]);
+    setApiError(null);
+  };
+
+  const handleRemoveDataQualityFlag = (index: number) => {
+    setDataQualityFlags((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setApiError(null);
+  };
+
   const handleUsageRulesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setUsageRules(event.target.value);
     setApiError(null);
@@ -1661,6 +1835,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setStructureId(existingStructure.id);
     setName(existingStructure.name ?? "");
     setSlug(existingStructure.slug ?? "");
+    setCountry(existingStructure.country ?? "IT");
     setProvince(existingStructure.province ?? "");
     setMunicipality(existingStructure.municipality ?? "");
     setLocality(existingStructure.locality ?? "");
@@ -1757,6 +1932,55 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         : [""];
     setWebsiteUrls(websiteValues);
     setWebsiteUrlStatuses(websiteValues.map(evaluateWebsiteUrlStatus));
+
+    const mapResourceValues =
+      existingStructure.map_resources_urls && existingStructure.map_resources_urls.length > 0
+        ? [...existingStructure.map_resources_urls]
+        : [""];
+    setMapResourcesUrls(mapResourceValues);
+
+    const documentValues =
+      existingStructure.documents_required && existingStructure.documents_required.length > 0
+        ? [...existingStructure.documents_required]
+        : [""];
+    setDocumentsRequired(documentValues);
+
+    const communicationsValues =
+      existingStructure.communications_infrastructure &&
+      existingStructure.communications_infrastructure.length > 0
+        ? [...existingStructure.communications_infrastructure]
+        : [""];
+    setCommunicationsInfrastructure(communicationsValues);
+
+    const activitySpaceValues =
+      existingStructure.activity_spaces && existingStructure.activity_spaces.length > 0
+        ? [...existingStructure.activity_spaces]
+        : [""];
+    setActivitySpaces(activitySpaceValues);
+
+    const activityEquipmentValues =
+      existingStructure.activity_equipment && existingStructure.activity_equipment.length > 0
+        ? [...existingStructure.activity_equipment]
+        : [""];
+    setActivityEquipment(activityEquipmentValues);
+
+    const inclusionServiceValues =
+      existingStructure.inclusion_services && existingStructure.inclusion_services.length > 0
+        ? [...existingStructure.inclusion_services]
+        : [""];
+    setInclusionServices(inclusionServiceValues);
+
+    const paymentMethodValues =
+      existingStructure.payment_methods && existingStructure.payment_methods.length > 0
+        ? [...existingStructure.payment_methods]
+        : [""];
+    setPaymentMethods(paymentMethodValues);
+
+    const dataQualityFlagValues =
+      existingStructure.data_quality_flags && existingStructure.data_quality_flags.length > 0
+        ? [...existingStructure.data_quality_flags]
+        : [""];
+    setDataQualityFlags(dataQualityFlagValues);
 
     const audiences =
       existingStructure.allowed_audiences && existingStructure.allowed_audiences.length > 0
@@ -1879,6 +2103,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedAddress = address.trim();
     const trimmedLocality = locality.trim();
     const trimmedMunicipality = municipality.trim();
+    const trimmedCountry = country.trim().toUpperCase();
     const trimmedProvince = province.trim();
     const trimmedPostal = postalCode.trim();
     const normalizedProvince = trimmedProvince ? trimmedProvince.toUpperCase() : "";
@@ -2121,6 +2346,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const validate = (): boolean => {
     const trimmedName = name.trim();
+    const trimmedCountry = country.trim().toUpperCase();
     const trimmedProvince = province.trim();
     const trimmedPostalCode = postalCode.trim();
     const trimmedLatitude = latitude.trim();
@@ -2164,6 +2390,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (!type) {
       errors.type = t("structures.create.errors.typeRequired");
+    }
+
+    if (!/^[A-Z]{2}$/.test(trimmedCountry)) {
+      errors.country = t("structures.create.errors.countryInvalid");
     }
 
     if (trimmedProvince && !/^[A-Z]{2}$/.test(trimmedProvince)) {
@@ -2443,6 +2673,16 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedUsageRules = usageRules.trim();
     const trimmedEnteAreaProtetta = enteAreaProtetta.trim();
     const trimmedEnvironmentalNotes = environmentalNotes.trim();
+    const trimmedDocumentsRequired = documentsRequired.map((value) => value.trim());
+    const trimmedMapResourcesUrls = mapResourcesUrls.map((value) => value.trim());
+    const trimmedCommunicationsInfrastructure = communicationsInfrastructure.map((value) =>
+      value.trim()
+    );
+    const trimmedActivitySpaces = activitySpaces.map((value) => value.trim());
+    const trimmedActivityEquipment = activityEquipment.map((value) => value.trim());
+    const trimmedInclusionServices = inclusionServices.map((value) => value.trim());
+    const trimmedPaymentMethods = paymentMethods.map((value) => value.trim());
+    const trimmedDataQualityFlags = dataQualityFlags.map((value) => value.trim());
     const trimmedCostOptions = costOptions.map((option) => ({
       key: option.key,
       id: option.id,
@@ -2482,6 +2722,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       has_field_poles: hasFieldPoles,
       pit_latrine_allowed: pitLatrineAllowed,
     };
+
+    payload.country = trimmedCountry;
 
     if (operationalStatus) {
       payload.operational_status = operationalStatus as StructureOperationalStatus;
@@ -2584,6 +2826,46 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const nonEmptyContactEmails = trimmedContactEmails.filter((value) => value);
     if (nonEmptyContactEmails.length > 0) {
       payload.contact_emails = nonEmptyContactEmails;
+    }
+
+    const nonEmptyDocumentsRequired = trimmedDocumentsRequired.filter((value) => value);
+    if (nonEmptyDocumentsRequired.length > 0) {
+      payload.documents_required = nonEmptyDocumentsRequired;
+    }
+
+    const nonEmptyMapResources = trimmedMapResourcesUrls.filter((value) => value);
+    if (nonEmptyMapResources.length > 0) {
+      payload.map_resources_urls = nonEmptyMapResources;
+    }
+
+    const nonEmptyCommunications = trimmedCommunicationsInfrastructure.filter((value) => value);
+    if (nonEmptyCommunications.length > 0) {
+      payload.communications_infrastructure = nonEmptyCommunications;
+    }
+
+    const nonEmptyActivitySpaces = trimmedActivitySpaces.filter((value) => value);
+    if (nonEmptyActivitySpaces.length > 0) {
+      payload.activity_spaces = nonEmptyActivitySpaces;
+    }
+
+    const nonEmptyActivityEquipment = trimmedActivityEquipment.filter((value) => value);
+    if (nonEmptyActivityEquipment.length > 0) {
+      payload.activity_equipment = nonEmptyActivityEquipment;
+    }
+
+    const nonEmptyInclusionServices = trimmedInclusionServices.filter((value) => value);
+    if (nonEmptyInclusionServices.length > 0) {
+      payload.inclusion_services = nonEmptyInclusionServices;
+    }
+
+    const nonEmptyPaymentMethods = trimmedPaymentMethods.filter((value) => value);
+    if (nonEmptyPaymentMethods.length > 0) {
+      payload.payment_methods = nonEmptyPaymentMethods;
+    }
+
+    const nonEmptyDataQualityFlags = trimmedDataQualityFlags.filter((value) => value);
+    if (nonEmptyDataQualityFlags.length > 0) {
+      payload.data_quality_flags = nonEmptyDataQualityFlags;
     }
 
     if (trimmedNotesLogistics) {
@@ -2893,6 +3175,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const slugHintId = "structure-slug-hint";
   const slugPreviewId = "structure-slug-preview";
 
+  const countryErrorId = fieldErrors.country ? "structure-country-error" : undefined;
   const provinceErrorId = fieldErrors.province ? "structure-province-error" : undefined;
   const postalCodeErrorId = fieldErrors.postal_code ? "structure-postal-code-error" : undefined;
   const latitudeErrorId = fieldErrors.latitude ? "structure-latitude-error" : undefined;
@@ -2929,6 +3212,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const typeDescribedBy = [typeHintId, typeErrorId].filter(Boolean).join(" ") || undefined;
   const operationalStatusHintId = "structure-operational-status-hint";
   const operationalStatusDescribedBy = operationalStatusHintId;
+  const countryHintId = "structure-country-hint";
+  const countryDescribedBy = [countryHintId, countryErrorId].filter(Boolean).join(" ") || undefined;
   const provinceHintId = "structure-province-hint";
   const provinceDescribedBy = [provinceHintId, provinceErrorId].filter(Boolean).join(" ") || undefined;
   const municipalityHintId = "structure-municipality-hint";
@@ -2984,6 +3269,22 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const websiteDescribedBy = [websiteHintId, websiteErrorId].filter(Boolean).join(" ") || undefined;
   const allowedAudiencesHintId = "structure-allowed-audiences-hint";
   const allowedAudiencesDescribedBy = allowedAudiencesHintId;
+  const documentsRequiredHintId = "structure-documents-required-hint";
+  const documentsRequiredDescribedBy = documentsRequiredHintId;
+  const mapResourcesHintId = "structure-map-resources-hint";
+  const mapResourcesDescribedBy = mapResourcesHintId;
+  const communicationsInfrastructureHintId = "structure-communications-infrastructure-hint";
+  const communicationsInfrastructureDescribedBy = communicationsInfrastructureHintId;
+  const activitySpacesHintId = "structure-activity-spaces-hint";
+  const activitySpacesDescribedBy = activitySpacesHintId;
+  const activityEquipmentHintId = "structure-activity-equipment-hint";
+  const activityEquipmentDescribedBy = activityEquipmentHintId;
+  const inclusionServicesHintId = "structure-inclusion-services-hint";
+  const inclusionServicesDescribedBy = inclusionServicesHintId;
+  const paymentMethodsHintId = "structure-payment-methods-hint";
+  const paymentMethodsDescribedBy = paymentMethodsHintId;
+  const dataQualityFlagsHintId = "structure-data-quality-flags-hint";
+  const dataQualityFlagsDescribedBy = dataQualityFlagsHintId;
   const usageRecommendationHintId = "structure-usage-recommendation-hint";
   const usageRecommendationDescribedBy = [
     usageRecommendationHintId,
@@ -3231,6 +3532,30 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                         </p>
                       </div>
                       <div className="structure-location-panel__fields structure-field-grid">
+                        <div className="structure-form-field">
+                          <label htmlFor="structure-country">
+                            {t("structures.create.form.country")}
+                            <input
+                              id="structure-country"
+                              value={country}
+                              onChange={handleCountryChange}
+                              autoComplete="off"
+                              maxLength={2}
+                              placeholder={t("structures.create.form.countryPlaceholder")}
+                              aria-invalid={fieldErrors.country ? "true" : undefined}
+                              aria-describedby={countryDescribedBy}
+                            />
+                          </label>
+                          <span className="helper-text" id={countryHintId}>
+                            {t("structures.create.form.countryHint")}
+                          </span>
+                          {fieldErrors.country && (
+                            <p className="error-text" id={countryErrorId!}>
+                              {fieldErrors.country}
+                            </p>
+                          )}
+                        </div>
+
                         <div className="structure-form-field">
                           <label htmlFor="structure-province">
                             {t("structures.create.form.province")}
@@ -4289,6 +4614,263 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </div>
 
                 <div className="structure-form-field" data-span="full">
+                  <label
+                    htmlFor="structure-communications-infrastructure-0"
+                    id="structure-communications-infrastructure-label"
+                  >
+                    {t("structures.create.form.communicationsInfrastructure.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {communicationsInfrastructure.map((value, index) => {
+                      const inputId = `structure-communications-infrastructure-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.communicationsInfrastructure.entryLabel", {
+                              index: index + 1
+                            });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) =>
+                                handleCommunicationsInfrastructureChange(index, event.target.value)
+                              }
+                              aria-describedby={communicationsInfrastructureDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {communicationsInfrastructure.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCommunicationsInfrastructure(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.communicationsInfrastructure.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddCommunicationsInfrastructure}
+                    >
+                      {t("structures.create.form.communicationsInfrastructure.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={communicationsInfrastructureHintId}>
+                    {t("structures.create.form.communicationsInfrastructure.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-activity-space-0" id="structure-activity-spaces-label">
+                    {t("structures.create.form.activitySpaces.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {activitySpaces.map((value, index) => {
+                      const inputId = `structure-activity-space-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.activitySpaces.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) => handleActivitySpaceChange(index, event.target.value)}
+                              aria-describedby={activitySpacesDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {activitySpaces.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveActivitySpace(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.activitySpaces.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddActivitySpace}
+                    >
+                      {t("structures.create.form.activitySpaces.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={activitySpacesHintId}>
+                    {t("structures.create.form.activitySpaces.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-activity-equipment-0" id="structure-activity-equipment-label">
+                    {t("structures.create.form.activityEquipment.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {activityEquipment.map((value, index) => {
+                      const inputId = `structure-activity-equipment-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.activityEquipment.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) => handleActivityEquipmentChange(index, event.target.value)}
+                              aria-describedby={activityEquipmentDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {activityEquipment.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveActivityEquipment(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.activityEquipment.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddActivityEquipment}
+                    >
+                      {t("structures.create.form.activityEquipment.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={activityEquipmentHintId}>
+                    {t("structures.create.form.activityEquipment.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-inclusion-service-0" id="structure-inclusion-services-label">
+                    {t("structures.create.form.inclusionServices.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {inclusionServices.map((value, index) => {
+                      const inputId = `structure-inclusion-service-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.inclusionServices.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) => handleInclusionServiceChange(index, event.target.value)}
+                              aria-describedby={inclusionServicesDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {inclusionServices.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveInclusionService(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.inclusionServices.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddInclusionService}
+                    >
+                      {t("structures.create.form.inclusionServices.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={inclusionServicesHintId}>
+                    {t("structures.create.form.inclusionServices.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-data-quality-flag-0" id="structure-data-quality-flags-label">
+                    {t("structures.create.form.dataQualityFlags.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {dataQualityFlags.map((value, index) => {
+                      const inputId = `structure-data-quality-flag-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.dataQualityFlags.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) => handleDataQualityFlagChange(index, event.target.value)}
+                              aria-describedby={dataQualityFlagsDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {dataQualityFlags.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDataQualityFlag(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.dataQualityFlags.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddDataQualityFlag}
+                    >
+                      {t("structures.create.form.dataQualityFlags.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={dataQualityFlagsHintId}>
+                    {t("structures.create.form.dataQualityFlags.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
                   <label htmlFor="structure-usage-rules">
                     {t("structures.create.form.usageRules")}
                     <textarea
@@ -5196,6 +5778,159 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                       {fieldErrors.website_urls}
                     </p>
                   )}
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-map-resource-0" id="structure-map-resources-label">
+                    {t("structures.create.form.mapResources.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {mapResourcesUrls.map((value, index) => {
+                      const inputId = `structure-map-resource-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.mapResources.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              type="url"
+                              value={value}
+                              onChange={(event) => handleMapResourcesUrlChange(index, event.target.value)}
+                              placeholder="https://"
+                              aria-describedby={mapResourcesDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {mapResourcesUrls.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveMapResourcesUrl(index)}
+                            >
+                              {t("structures.create.form.mapResources.remove")}
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddMapResourcesUrl}
+                    >
+                      {t("structures.create.form.mapResources.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={mapResourcesHintId}>
+                    {t("structures.create.form.mapResources.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-documents-required-0" id="structure-documents-required-label">
+                    {t("structures.create.form.documentsRequired.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {documentsRequired.map((value, index) => {
+                      const inputId = `structure-documents-required-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.documentsRequired.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) => handleDocumentsRequiredChange(index, event.target.value)}
+                              aria-describedby={documentsRequiredDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {documentsRequired.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDocumentsRequired(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.documentsRequired.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddDocumentsRequired}
+                    >
+                      {t("structures.create.form.documentsRequired.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={documentsRequiredHintId}>
+                    {t("structures.create.form.documentsRequired.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-payment-method-0" id="structure-payment-methods-label">
+                    {t("structures.create.form.paymentMethods.label")}
+                  </label>
+                  <div className="structure-website-list">
+                    {paymentMethods.map((value, index) => {
+                      const inputId = `structure-payment-method-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.paymentMethods.entryLabel", { index: index + 1 });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) => handlePaymentMethodChange(index, event.target.value)}
+                              aria-describedby={paymentMethodsDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          {paymentMethods.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePaymentMethod(index)}
+                              className="link-button"
+                            >
+                              {t("structures.create.form.paymentMethods.remove")}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddPaymentMethod}
+                    >
+                      {t("structures.create.form.paymentMethods.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={paymentMethodsHintId}>
+                    {t("structures.create.form.paymentMethods.hint")}
+                  </span>
                 </div>
 
                 <div className="structure-form-field" data-span="full">

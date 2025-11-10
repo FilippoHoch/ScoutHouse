@@ -189,6 +189,13 @@ export const StructureDetailsPage = () => {
     return audiences.join(", ");
   };
 
+  const formatStringList = (items: string[] | null | undefined) => {
+    if (!items || items.length === 0) {
+      return null;
+    }
+    return items.join(", ");
+  };
+
   const formatUsageRecommendation = (
     value: StructureUsageRecommendation | null | undefined
   ) => {
@@ -731,12 +738,55 @@ export const StructureDetailsPage = () => {
       )
     : null;
 
+  const mapResourcesValue = structure.map_resources_urls.length > 0
+    ? (
+        <ul className="structure-website-links">
+          {structure.map_resources_urls.map((url) => (
+            <li key={url}>
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                {url}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    : null;
+
+  const documentsRequiredValue = formatStringList(structure.documents_required);
+  const communicationsInfrastructureValue = formatStringList(structure.communications_infrastructure);
+  const activitySpacesValue = formatStringList(structure.activity_spaces);
+  const activityEquipmentValue = formatStringList(structure.activity_equipment);
+  const inclusionServicesValue = formatStringList(structure.inclusion_services);
+  const paymentMethodsValue = formatStringList(structure.payment_methods);
+  const dataQualityFlagsValue = formatStringList(structure.data_quality_flags);
+
   const operationsDetails: LogisticsDetail[] = filterVisibleDetails([
     {
       id: "website",
       label: t("structures.details.overview.website"),
       value: websiteValue,
       icon: "🌐",
+      isFull: true
+    },
+    {
+      id: "mapResources",
+      label: t("structures.details.overview.mapResources"),
+      value: mapResourcesValue,
+      icon: "🗺️",
+      isFull: true
+    },
+    {
+      id: "documentsRequired",
+      label: t("structures.details.overview.documentsRequired"),
+      value: documentsRequiredValue,
+      icon: "📄",
+      isFull: true
+    },
+    {
+      id: "paymentMethods",
+      label: t("structures.details.overview.paymentMethods"),
+      value: paymentMethodsValue,
+      icon: "💳",
       isFull: true
     },
     {
@@ -757,6 +807,34 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.allowedAudiences"),
       value: formatAllowedAudiences(structure.allowed_audiences),
       icon: "🎯",
+      isFull: true
+    },
+    {
+      id: "communicationsInfrastructure",
+      label: t("structures.details.overview.communicationsInfrastructure"),
+      value: communicationsInfrastructureValue,
+      icon: "📡",
+      isFull: true
+    },
+    {
+      id: "activitySpaces",
+      label: t("structures.details.overview.activitySpaces"),
+      value: activitySpacesValue,
+      icon: "🏕️",
+      isFull: true
+    },
+    {
+      id: "activityEquipment",
+      label: t("structures.details.overview.activityEquipment"),
+      value: activityEquipmentValue,
+      icon: "🎒",
+      isFull: true
+    },
+    {
+      id: "inclusionServices",
+      label: t("structures.details.overview.inclusionServices"),
+      value: inclusionServicesValue,
+      icon: "♿",
       isFull: true
     },
     {
@@ -802,6 +880,13 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.seasonalAmenities"),
       value: formatSeasonalAmenities(structure.seasonal_amenities ?? null),
       icon: "📅",
+      isFull: true
+    },
+    {
+      id: "dataQualityFlags",
+      label: t("structures.details.overview.dataQualityFlags"),
+      value: dataQualityFlagsValue,
+      icon: "🚩",
       isFull: true
     },
     {
