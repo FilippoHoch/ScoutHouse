@@ -53,16 +53,6 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 - Lista dinamica di `StructureCostOptionInput` (`model`, `amount`, `currency`, `booking_deposit`, `damage_deposit`, `city_tax_per_night`, `utilities_flat`, `utilities_included`, `utilities_notes`, `payment_methods`, `payment_terms`, `min_total`, `max_total`).
 - Textarea "Metadati avanzati (JSON)" per ogni opzione di costo: consente di impostare campi aggiuntivi come `modifiers`, `age_rules`, `price_per_resource` senza sovrascrivere i valori gestiti dal modulo.
 
-### Metadati avanzati
-- Textarea dedicata ai metadati avanzati: accetta un oggetto JSON arbitrario che viene fuso nel payload di creazione/aggiornamento. I campi di sola lettura (`id`, `created_at`, `updated_at`, `estimated_cost`, `cost_band`, `availabilities`, `contacts`, `open_periods`, `cost_options`, `warnings`, `photos`) vengono ignorati automaticamente e non vengono sovrascritti i valori già compilati tramite il modulo principale.
-- Tramite questo canale è possibile impostare tutti gli altri attributi previsti da `StructureCreateDto`. Di seguito l'elenco dei campi oggi non coperti dal wizard ma gestibili tramite JSON:
-  - `activity_equipment`, `activity_spaces`, `aed_on_site`, `booking_notes`, `booking_required`, `booking_url`, `bridge_weight_limit_tonnes`, `bus_type_access`, `cell_coverage`, `cell_coverage_notes`, `communications_infrastructure`, `country`.
-  - `data_last_verified`, `data_quality_flags`, `data_quality_notes`, `data_quality_score`, `data_source`, `data_source_url`, `documents_required`, `dry_toilet`, `emergency_coordinates`, `emergency_phone_available`, `emergency_plan_notes`, `emergency_response_time_minutes`, `evacuation_plan_url`.
-  - `event_rules_notes`, `event_rules_url`, `fire_rules`, `fiscal_notes`, `generator_available`, `generator_notes`, `governance_notes`, `iban`, `inclusion_notes`, `inclusion_services`, `indoor_rooms`.
-  - `invoice_available`, `locality`, `logistics_arrival_notes`, `logistics_departure_notes`, `map_resources_urls`, `max_vehicle_height_m`, `municipality`, `municipality_code`, `outdoor_bathrooms`, `outdoor_showers`, `payment_methods`, `pec_email`, `plus_code`.
-  - `power_capacity_kw`, `power_outlet_types`, `power_outlets_count`, `risk_assessment_template_url`, `river_swimming`, `road_access_notes`, `road_weight_limit_tonnes`, `sdi_recipient_code`, `wastewater_notes`, `wastewater_type`, `water_tank_capacity_liters`, `weather_risk_notes`, `what3words`, `whatsapp`, `wildlife_notes`, `winter_access_notes`.
-- I valori impostati nei metadati avanzati vengono mostrati anche nella pagina di dettaglio all'interno del riquadro "Metadati avanzati".
-
 ### Contatti, link e note
 - Array `contact_emails`.
 - Array `website_urls` con validazione client.
