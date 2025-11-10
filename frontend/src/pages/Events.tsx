@@ -173,16 +173,15 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
       })),
     [t],
   );
-  const branchSelectionOptions = useMemo(
-    () =>
-      [...orderedBranches, "ALL"].map((branch) => ({
-        value: branch,
-        label: t(`events.branches.${branch}`, branch),
-        description: t(`events.wizard.details.branches.options.${branch}.description`, ""),
-        hint: t(`events.wizard.details.branches.options.${branch}.hint`, ""),
-      })),
-    [t],
-  );
+  const branchSelectionOptions = useMemo(() => {
+    const branchesWithAll: EventBranch[] = [...orderedBranches, "ALL"];
+    return branchesWithAll.map((branch) => ({
+      value: branch,
+      label: t(`events.branches.${branch}`, branch),
+      description: t(`events.wizard.details.branches.options.${branch}.description`, ""),
+      hint: t(`events.wizard.details.branches.options.${branch}.hint`, ""),
+    }));
+  }, [t]);
   const statusOptions = useMemo(
     () =>
       statuses.map((status) => ({

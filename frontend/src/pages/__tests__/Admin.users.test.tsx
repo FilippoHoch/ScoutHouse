@@ -91,8 +91,20 @@ describe("AdminPage user selection", () => {
     mockListUsers.mockResolvedValue(sampleUsers);
     vi.mocked(createUser).mockResolvedValue(sampleUsers[0]);
     vi.mocked(updateUser).mockResolvedValue(sampleUsers[0]);
-    vi.mocked(previewMailTemplate).mockResolvedValue({ body: "" });
-    vi.mocked(sendTestMail).mockResolvedValue({ provider: "smtp" });
+    vi.mocked(previewMailTemplate).mockResolvedValue({
+      template: "reset_password",
+      subject: "Subject",
+      html: "<p>Preview</p>",
+      text: "Preview"
+    });
+    vi.mocked(sendTestMail).mockResolvedValue({
+      provider: "smtp",
+      blocked: false,
+      subject: "Subject",
+      html: "<p>Mail</p>",
+      text: "Mail",
+      job_id: "job-1"
+    });
   });
 
   afterEach(() => {

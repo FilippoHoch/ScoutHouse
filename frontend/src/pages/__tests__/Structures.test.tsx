@@ -39,6 +39,7 @@ const sampleResponse: StructureSearchResponse = {
       slug: "casa-alpina",
       name: "Casa Alpina",
       province: "BS",
+      postal_code: "25100",
       address: "Via Roma 1",
       latitude: 45.6,
       longitude: 10.16,
@@ -62,13 +63,15 @@ const sampleResponse: StructureSearchResponse = {
       wastewater_type: "mains",
       flood_risk: "low",
       power_capacity_kw: 12,
-      parking_car_slots: 20
+      parking_car_slots: 20,
+      usage_recommendation: "prefer_camps"
     },
     {
       id: 2,
       slug: "campo-verde",
       name: "Campo Verde",
       province: "VR",
+      postal_code: null,
       address: null,
       latitude: null,
       longitude: null,
@@ -92,7 +95,8 @@ const sampleResponse: StructureSearchResponse = {
       wastewater_type: "none",
       flood_risk: "medium",
       power_capacity_kw: null,
-      parking_car_slots: null
+      parking_car_slots: null,
+      usage_recommendation: null
     }
   ],
   page: 1,
