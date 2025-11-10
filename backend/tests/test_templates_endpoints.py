@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import csv
 import os
-import csv
+from collections.abc import Generator
 from io import BytesIO, StringIO
-from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient

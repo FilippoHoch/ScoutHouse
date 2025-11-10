@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from sqlalchemy import inspect
@@ -40,11 +40,7 @@ def test_structure_indexes_exist() -> None:
 
 def test_structure_child_indexes_exist() -> None:
     availability_indexes = _index_names("structure_season_availability")
-    assert (
-        "ix_structure_season_availability_structure_id_season"
-        in availability_indexes
-    )
+    assert "ix_structure_season_availability_structure_id_season" in availability_indexes
 
     cost_indexes = _index_names("structure_cost_option")
     assert "ix_structure_cost_option_structure_id_model" in cost_indexes
-

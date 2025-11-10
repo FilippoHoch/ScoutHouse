@@ -6,9 +6,7 @@ from app.core.security import hash_password
 from app.models import User
 
 
-def ensure_default_admin(
-    db: Session, *, email: str, password: str, name: str = "Admin"
-) -> User:
+def ensure_default_admin(db: Session, *, email: str, password: str, name: str = "Admin") -> User:
     """Ensure the default admin user exists and is active."""
 
     user = db.query(User).filter(User.email == email).first()

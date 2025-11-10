@@ -11,7 +11,6 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers
 
 
@@ -124,6 +123,9 @@ def test_structure_details_include_tabs() -> None:
     assert detail["estimated_cost"] is not None
     assert detail["cost_band"] in {"cheap", "medium", "expensive"}
     assert len(detail["availabilities"]) == 2
-    assert {availability["season"] for availability in detail["availabilities"]} == {"spring", "summer"}
+    assert {availability["season"] for availability in detail["availabilities"]} == {
+        "spring",
+        "summer",
+    }
     assert len(detail["cost_options"]) == 2
     assert any(option["model"] == "forfait" for option in detail["cost_options"])

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -15,7 +14,9 @@ from app.core.db import Base
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:
-    from .user import EventMember
+    from app.models.event_candidate import EventStructureCandidate
+    from app.models.event_contact_task import EventContactTask
+    from app.models.user import EventMember
 
 
 class EventBranch(str, Enum):
@@ -68,26 +69,26 @@ class Event(Base):
         nullable=False,
     )
 
-    candidates: Mapped[list["EventStructureCandidate"]] = relationship(
+    candidates: Mapped[list[EventStructureCandidate]] = relationship(
         "EventStructureCandidate",
         back_populates="event",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    tasks: Mapped[list["EventContactTask"]] = relationship(
+    tasks: Mapped[list[EventContactTask]] = relationship(
         "EventContactTask",
         back_populates="event",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    members: Mapped[list["EventMember"]] = relationship(
+    members: Mapped[list[EventMember]] = relationship(
         "EventMember",
         back_populates="event",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
 
-    branch_segments: Mapped[list["EventBranchSegment"]] = relationship(
+    branch_segments: Mapped[list[EventBranchSegment]] = relationship(
         "EventBranchSegment",
         back_populates="event",
         cascade="all, delete-orphan",
@@ -105,7 +106,10 @@ class EventBranchSegment(Base):
         nullable=False,
         index=True,
     )
-    branch: Mapped[EventBranch] = mapped_column(sqla_enum(EventBranch, name="event_branch"), nullable=False)
+    branch: Mapped[EventBranch] = mapped_column(
+        sqla_enum(EventBranch, name="event_branch"),
+        nullable=False,
+    )
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     youth_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -116,7 +120,7 @@ class EventBranchSegment(Base):
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    event: Mapped["Event"] = relationship("Event", back_populates="branch_segments")
+    event: Mapped[Event] = relationship("Event", back_populates="branch_segments")
 
 
 __all__ = [

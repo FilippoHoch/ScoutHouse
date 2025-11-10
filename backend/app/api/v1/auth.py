@@ -43,9 +43,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 def _mint_refresh_token(db: Session, user: User) -> tuple[str, RefreshToken]:
     token_value, expires_at, token_hash = generate_refresh_token()
-    refresh = RefreshToken(
-        user_id=user.id, token_hash=token_hash, expires_at=expires_at
-    )
+    refresh = RefreshToken(user_id=user.id, token_hash=token_hash, expires_at=expires_at)
     db.add(refresh)
     return token_value, refresh
 
@@ -57,17 +55,11 @@ def _serialize_user(user: User) -> UserRead:
     return data.model_copy(update={"can_edit_structures": can_edit_structures})
 
 
-@router.post(
-    "/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED
-)
-def register(
-    payload: RegisterRequest, response: Response, db: DbSession
-) -> AuthResponse:
+@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterRequest, response: Response, db: DbSession) -> AuthResponse:
     settings = get_settings()
     if not settings.allow_registration:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Registration disabled"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration disabled")
 
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing is not None:
@@ -103,13 +95,9 @@ async def login(
 
     user = db.query(User).filter(User.email == payload.email).first()
     if user is None or not verify_password(payload.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User disabled"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User disabled")
 
     token_value, refresh = _mint_refresh_token(db, user)
     db.commit()
@@ -176,9 +164,7 @@ def refresh(
 
     user = db.get(User, refresh_token.user_id)
     if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
 
     token_value, new_refresh = rotate_refresh_token(db, refresh_token)
     db.commit()

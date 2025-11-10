@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 
@@ -27,13 +27,20 @@ def clear_settings() -> Generator[None, None, None]:
     reset_mail_provider()
 
 
-def test_console_provider_masks_email(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_console_provider_masks_email(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("MAIL_FROM_ADDRESS", "no-reply@example.com")
     monkeypatch.setenv("MAIL_FROM_NAME", "ScoutHouse")
     provider = ConsoleMailProvider()
 
     with caplog.at_level("INFO", logger="app.mail"):
-        provider.send(to="alice.doe@example.com", subject="Subject", html="<p>reset?token=abc</p>", text="token=abc")
+        provider.send(
+            to="alice.doe@example.com",
+            subject="Subject",
+            html="<p>reset?token=abc</p>",
+            text="token=abc",
+        )
 
     assert caplog.records
     record = caplog.records[0]

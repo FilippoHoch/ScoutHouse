@@ -3,12 +3,13 @@ from __future__ import annotations
 import os
 import sys
 import types
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient
 from botocore.exceptions import ClientError
+from fastapi.testclient import TestClient
 
 
 def _install_boto_stubs() -> None:
@@ -33,7 +34,7 @@ def _install_boto_stubs() -> None:
 
         client_stub.BaseClient = BaseClient  # type: ignore[attr-defined]
         sys.modules["botocore.client"] = client_stub
-        setattr(botocore_stub, "client", client_stub)
+        botocore_stub.client = client_stub
 
     if "botocore.config" not in sys.modules:
         config_stub = types.ModuleType("botocore.config")
@@ -47,7 +48,7 @@ def _install_boto_stubs() -> None:
 
         config_stub.Config = Config  # type: ignore[attr-defined]
         sys.modules["botocore.config"] = config_stub
-        setattr(botocore_stub, "config", config_stub)
+        botocore_stub.config = config_stub
 
     if "botocore.exceptions" not in sys.modules:
         exceptions_stub = types.ModuleType("botocore.exceptions")
@@ -60,7 +61,7 @@ def _install_boto_stubs() -> None:
 
         exceptions_stub.ClientError = ClientError  # type: ignore[attr-defined]
         sys.modules["botocore.exceptions"] = exceptions_stub
-        setattr(botocore_stub, "exceptions", exceptions_stub)
+        botocore_stub.exceptions = exceptions_stub
 
 
 _install_boto_stubs()
@@ -76,7 +77,6 @@ from app.core.limiter import TEST_RATE_LIMIT_HEADER  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import EventMemberRole  # noqa: E402
 from app.services import attachments as attachment_service  # noqa: E402
-
 from tests.utils import (  # noqa: E402
     TEST_USER_PASSWORD,
     auth_headers,

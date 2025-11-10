@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate structure UI documentation against the data model."""
+
 from __future__ import annotations
 
 import re
@@ -51,7 +52,10 @@ def main() -> int:
 
     doc_fields = extract_doc_fields()
 
-    structure_fields = set(StructureBase.model_fields.keys()) | {"open_periods", "cost_options"}
+    structure_fields = set(StructureBase.model_fields.keys()) | {
+        "open_periods",
+        "cost_options",
+    }
     missing_structure = sorted(structure_fields - doc_fields)
     if missing_structure:
         errors.append(
@@ -75,9 +79,7 @@ def main() -> int:
 
     cost_managed_keys = extract_ts_string_set("costOptionManagedKeys")
     allowed_cost_extras = {"id"}
-    unknown_cost_managed = sorted(
-        cost_managed_keys - cost_fields - allowed_cost_extras
-    )
+    unknown_cost_managed = sorted(cost_managed_keys - cost_fields - allowed_cost_extras)
     if unknown_cost_managed:
         errors.append(
             "Unexpected cost option form keys: " + ", ".join(unknown_cost_managed)
@@ -93,7 +95,8 @@ def main() -> int:
         f"({len(structure_fields)} structure fields, {len(cost_fields)} cost fields)."
     )
     print(
-        "Structure form manages %d structure fields and %d cost fields." % (
+        "Structure form manages %d structure fields and %d cost fields."
+        % (
             len(managed_keys),
             len(cost_managed_keys),
         )

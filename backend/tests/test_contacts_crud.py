@@ -1,5 +1,5 @@
-from collections.abc import Generator
 import os
+from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,7 +9,6 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers
 
 

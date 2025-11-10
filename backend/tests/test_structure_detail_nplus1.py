@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Generator, Iterable
 from contextlib import contextmanager
 from decimal import Decimal
-from typing import Generator, Iterable, List
 
 import pytest
 from fastapi.testclient import TestClient
@@ -35,7 +35,7 @@ def get_client() -> TestClient:
 
 
 @contextmanager
-def capture_statements() -> Generator[List[str], None, None]:
+def capture_statements() -> Generator[list[str], None, None]:
     statements: list[str] = []
 
     def before_cursor_execute(  # type: ignore[no-redef]
@@ -58,9 +58,7 @@ def _count_relevant_selects(statements: Iterable[str]) -> int:
     )
     count = 0
     for statement in statements:
-        normalized = (
-            statement.lower().lstrip().replace('"', "").replace("\n", " ")
-        )
+        normalized = statement.lower().lstrip().replace('"', "").replace("\n", " ")
         if not normalized.startswith("select"):
             continue
         if any(target in normalized for target in targets):
@@ -163,4 +161,3 @@ def test_structure_detail_query_count_stable() -> None:
     loaded_selects = _count_relevant_selects(loaded)
 
     assert loaded_selects == baseline_selects
-

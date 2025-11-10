@@ -1,6 +1,6 @@
 import os
+from collections.abc import Generator
 from uuid import uuid4
-from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,7 +12,6 @@ from app.core.config import get_settings  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import EventMemberRole  # noqa: E402
-
 from tests.utils import (  # noqa: E402
     TEST_RATE_LIMIT_HEADER,
     TEST_USER_PASSWORD,

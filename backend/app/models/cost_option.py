@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text, Index
+from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
@@ -46,15 +46,9 @@ class StructureCostOption(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="EUR")
     booking_deposit: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     damage_deposit: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
-    city_tax_per_night: Mapped[Decimal | None] = mapped_column(
-        Numeric(10, 2), nullable=True
-    )
-    utilities_flat: Mapped[Decimal | None] = mapped_column(
-        Numeric(10, 2), nullable=True
-    )
-    utilities_included: Mapped[bool | None] = mapped_column(
-        Boolean, nullable=True, default=None
-    )
+    city_tax_per_night: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    utilities_flat: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    utilities_included: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
     utilities_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     min_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     max_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
@@ -63,11 +57,11 @@ class StructureCostOption(Base):
     payment_terms: Mapped[str | None] = mapped_column(Text, nullable=True)
     price_per_resource: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
-    structure: Mapped["Structure"] = relationship(
+    structure: Mapped[Structure] = relationship(
         "Structure",
         back_populates="cost_options",
     )
-    modifiers: Mapped[list["StructureCostModifier"]] = relationship(
+    modifiers: Mapped[list[StructureCostModifier]] = relationship(
         "StructureCostModifier",
         back_populates="cost_option",
         cascade="all, delete-orphan",
@@ -108,6 +102,7 @@ class StructureCostModifier(Base):
         StructureCostOption,
         back_populates="modifiers",
     )
+
 
 __all__ = [
     "StructureCostModel",

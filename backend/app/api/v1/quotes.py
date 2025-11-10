@@ -27,12 +27,8 @@ router = APIRouter()
 
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
-EventViewer = Annotated[
-    EventMember, Depends(require_event_member(EventMemberRole.VIEWER))
-]
-EventCollaborator = Annotated[
-    EventMember, Depends(require_event_member(EventMemberRole.COLLAB))
-]
+EventViewer = Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))]
+EventCollaborator = Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))]
 
 _ROLE_RANK = {
     EventMemberRole.VIEWER: 1,
@@ -41,9 +37,7 @@ _ROLE_RANK = {
 }
 
 
-def _ensure_membership(
-    db: Session, event_id: int, user: User, min_role: EventMemberRole
-) -> None:
+def _ensure_membership(db: Session, event_id: int, user: User, min_role: EventMemberRole) -> None:
     membership = (
         db.execute(
             select(EventMember).where(
@@ -54,21 +48,15 @@ def _ensure_membership(
         .first()
     )
     if membership is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member")
     if _ROLE_RANK[membership.role] < _ROLE_RANK[min_role]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
 
 
 def _get_event(db: Session, event_id: int) -> Event:
     event = db.get(Event, event_id)
     if event is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return event
 
 
@@ -83,9 +71,7 @@ def _get_structure(db: Session, structure_id: int) -> Structure:
         .scalar_one_or_none()
     )
     if structure is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Structure not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Structure not found")
     return structure
 
 
@@ -94,9 +80,7 @@ def _get_quote(db: Session, quote_id: int) -> Quote:
         select(Quote).options(joinedload(Quote.structure)).where(Quote.id == quote_id)
     ).scalar_one_or_none()
     if quote is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Quote not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quote not found")
     return quote
 
 
@@ -111,9 +95,7 @@ def calculate_quote(
     structure = _get_structure(db, payload.structure_id)
 
     calculation = calc_quote(event, structure, overrides=payload.overrides)
-    scenarios = QuoteScenarios.model_validate(
-        apply_scenarios(calculation["totals"]["total"])
-    )
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(calculation["totals"]["total"]))
 
     return QuoteCalcResponse(
         currency=calculation["currency"],
@@ -140,9 +122,7 @@ def create_quote(
     structure = _get_structure(db, payload.structure_id)
 
     calculation = calc_quote(event, structure, overrides=payload.overrides)
-    scenarios = QuoteScenarios.model_validate(
-        apply_scenarios(calculation["totals"]["total"])
-    )
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(calculation["totals"]["total"]))
 
     quote = Quote(
         event_id=event.id,
@@ -225,9 +205,7 @@ def get_quote(
 ) -> QuoteRead:
     quote = _get_quote(db, quote_id)
     _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)
-    scenarios = QuoteScenarios.model_validate(
-        apply_scenarios(quote.totals.get("total", 0))
-    )
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(quote.totals.get("total", 0)))
     return QuoteRead(
         id=quote.id,
         event_id=quote.event_id,

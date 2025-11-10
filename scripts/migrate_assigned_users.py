@@ -89,11 +89,15 @@ def main() -> int:
         )
 
         for candidate in candidates:
-            user = ensure_placeholder_user(db, candidate.assigned_user, args.email_domain, placeholders)
+            user = ensure_placeholder_user(
+                db, candidate.assigned_user, args.email_domain, placeholders
+            )
             candidate.assigned_user_id = user.id
 
         for task in tasks:
-            user = ensure_placeholder_user(db, task.assigned_user, args.email_domain, placeholders)
+            user = ensure_placeholder_user(
+                db, task.assigned_user, args.email_domain, placeholders
+            )
             task.assigned_user_id = user.id
 
         if candidates or tasks:

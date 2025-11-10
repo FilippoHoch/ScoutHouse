@@ -63,26 +63,15 @@ router = APIRouter()
 
 DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
-EventViewer = Annotated[
-    EventMember, Depends(require_event_member(EventMemberRole.VIEWER))
-]
-EventCollaborator = Annotated[
-    EventMember, Depends(require_event_member(EventMemberRole.COLLAB))
-]
-EventOwner = Annotated[
-    EventMember, Depends(require_event_member(EventMemberRole.OWNER))
-]
+EventViewer = Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))]
+EventCollaborator = Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))]
+EventOwner = Annotated[EventMember, Depends(require_event_member(EventMemberRole.OWNER))]
 
 SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
 def _escape_ical_text(value: str) -> str:
-    return (
-        value.replace("\\", "\\\\")
-        .replace("\n", "\\n")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-    )
+    return value.replace("\\", "\\\\").replace("\n", "\\n").replace(";", "\\;").replace(",", "\\,")
 
 
 def _format_utc_timestamp(moment: datetime | None = None) -> str:
@@ -142,9 +131,7 @@ def _participants_from_segments(segments: Sequence[dict[str, Any]]) -> dict[str,
         if branch_value is None:
             continue
         branch = (
-            branch_value
-            if isinstance(branch_value, EventBranch)
-            else EventBranch(branch_value)
+            branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
         )
         youth_count = int(segment.get("youth_count", 0) or 0)
         leaders_count = int(segment.get("leaders_count", 0) or 0)
@@ -169,9 +156,7 @@ def _branch_from_segments(
         if branch_value is None:
             continue
         branch = (
-            branch_value
-            if isinstance(branch_value, EventBranch)
-            else EventBranch(branch_value)
+            branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
         )
         unique_branches.add(branch)
     if not unique_branches:
@@ -194,11 +179,7 @@ def _build_segment(payload: dict[str, Any]) -> EventBranchSegment:
     branch_value = payload.get("branch")
     if branch_value is None:
         raise ValueError("Segment branch is required")
-    branch = (
-        branch_value
-        if isinstance(branch_value, EventBranch)
-        else EventBranch(branch_value)
-    )
+    branch = branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
 
     accommodation_value = payload.get("accommodation")
     if accommodation_value is None:
@@ -267,21 +248,15 @@ def _authenticate_access_token(db: Session, token: str) -> User:
         ) from exc
 
     if payload.get("type") != "access":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user_id = payload.get("sub")
     if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user = db.get(User, user_id)
     if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     return user
 
@@ -318,21 +293,15 @@ def _require_event_membership(db: Session, event_id: int, user_id: str) -> Event
         .first()
     )
     if membership is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member")
     return membership
 
 
-def _owner_count(
-    db: Session, event_id: int, *, exclude_member_id: int | None = None
-) -> int:
+def _owner_count(db: Session, event_id: int, *, exclude_member_id: int | None = None) -> int:
     query = (
         select(func.count())
         .select_from(EventMember)
-        .where(
-            EventMember.event_id == event_id, EventMember.role == EventMemberRole.OWNER
-        )
+        .where(EventMember.event_id == event_id, EventMember.role == EventMemberRole.OWNER)
     )
     if exclude_member_id is not None:
         query = query.where(EventMember.id != exclude_member_id)
@@ -349,13 +318,9 @@ def _load_event(
     options = [selectinload(Event.branch_segments)]
     if with_candidates:
         options.append(
-            selectinload(Event.candidates).selectinload(
-                EventStructureCandidate.structure
-            )
+            selectinload(Event.candidates).selectinload(EventStructureCandidate.structure)
         )
-        options.append(
-            selectinload(Event.candidates).selectinload(EventStructureCandidate.contact)
-        )
+        options.append(selectinload(Event.candidates).selectinload(EventStructureCandidate.contact))
     if with_tasks:
         options.append(selectinload(Event.tasks))
     query = select(Event).where(Event.id == event_id)
@@ -363,9 +328,7 @@ def _load_event(
         query = query.options(*options)
     event = db.execute(query).unique().scalar_one_or_none()
     if event is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return event
 
 
@@ -380,9 +343,7 @@ async def stream_event_updates(
 
     event = db.get(Event, event_id)
     if event is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     user = _authenticate_access_token(db, access_token)
     _require_event_membership(db, event_id, user.id)
@@ -426,9 +387,7 @@ async def stream_event_updates(
         "Cache-Control": "no-cache",
         "X-Accel-Buffering": "no",
     }
-    return StreamingResponse(
-        event_stream(), media_type="text/event-stream", headers=headers
-    )
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers=headers)
 
 
 def _get_structure(
@@ -445,9 +404,7 @@ def _get_structure(
             else None
         )
     if structure is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Structure not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Structure not found")
     return structure
 
 
@@ -529,17 +486,13 @@ def create_event(
     status_value = data.pop("status", EventStatus.DRAFT)
     branch_value = data.get("branch", EventBranch.LC)
     current_branch = (
-        branch_value
-        if isinstance(branch_value, EventBranch)
-        else EventBranch(branch_value)
+        branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
     )
 
     event = Event(slug=slug, **data)
     if branch_segments:
         event.participants = _participants_from_segments(branch_segments)
-        branch_override = _branch_from_segments(
-            branch_segments, current_branch=current_branch
-        )
+        branch_override = _branch_from_segments(branch_segments, current_branch=current_branch)
         if branch_override is not None:
             event.branch = branch_override
     else:
@@ -553,9 +506,7 @@ def create_event(
         _set_branch_segments(event, branch_segments)
         db.flush()
 
-    membership = EventMember(
-        event_id=event.id, user_id=current_user.id, role=EventMemberRole.OWNER
-    )
+    membership = EventMember(event_id=event.id, user_id=current_user.id, role=EventMemberRole.OWNER)
     db.add(membership)
 
     record_audit(
@@ -585,9 +536,7 @@ def list_events(
     filters = []
     if q:
         like = f"%{q.lower()}%"
-        filters.append(
-            or_(func.lower(Event.title).like(like), func.lower(Event.slug).like(like))
-        )
+        filters.append(or_(func.lower(Event.title).like(like), func.lower(Event.slug).like(like)))
     if status_filter:
         filters.append(Event.status == status_filter)
 
@@ -600,9 +549,7 @@ def list_events(
     if filters:
         base_query = base_query.where(and_(*filters))
 
-    total = db.execute(
-        select(func.count()).select_from(base_query.subquery())
-    ).scalar_one()
+    total = db.execute(select(func.count()).select_from(base_query.subquery())).scalar_one()
 
     items = (
         db.execute(
@@ -629,15 +576,11 @@ def get_event(
     include: Annotated[str | None, Query(default=None)],
     _: EventViewer,
 ) -> EventWithRelations | EventRead:
-    include_parts = {
-        part.strip().lower() for part in (include.split(",") if include else [])
-    }
+    include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
     with_candidates = "candidates" in include_parts
     with_tasks = "tasks" in include_parts
 
-    event = _load_event(
-        db, event_id, with_candidates=with_candidates, with_tasks=with_tasks
-    )
+    event = _load_event(db, event_id, with_candidates=with_candidates, with_tasks=with_tasks)
 
     if with_candidates or with_tasks:
         return EventWithRelations.model_validate(event)
@@ -728,9 +671,7 @@ def update_event(
 
     if normalized_segments is not None:
         _set_branch_segments(event, normalized_segments)
-        branch_override = _branch_from_segments(
-            normalized_segments, current_branch=current_branch
-        )
+        branch_override = _branch_from_segments(normalized_segments, current_branch=current_branch)
         if branch_override is not None:
             event.branch = branch_override
 
@@ -827,9 +768,7 @@ def add_candidate(
     return serialized
 
 
-@router.patch(
-    "/{event_id}/candidates/{candidate_id}", response_model=EventCandidateRead
-)
+@router.patch("/{event_id}/candidates/{candidate_id}", response_model=EventCandidateRead)
 def update_candidate(
     event_id: int,
     candidate_id: int,
@@ -855,9 +794,7 @@ def update_candidate(
         .scalar_one_or_none()
     )
     if candidate is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
 
     data = candidate_in.model_dump(exclude_unset=True)
     previous_status = candidate.status
@@ -939,21 +876,13 @@ def update_candidate(
             recipients[user.email] = user.name
 
         assigned_user = (
-            db.get(User, candidate.assigned_user_id)
-            if candidate.assigned_user_id
-            else None
+            db.get(User, candidate.assigned_user_id) if candidate.assigned_user_id else None
         )
-        if (
-            assigned_user is not None
-            and assigned_user.email
-            and assigned_user.is_active
-        ):
+        if assigned_user is not None and assigned_user.email and assigned_user.is_active:
             recipients.setdefault(assigned_user.email, assigned_user.name)
 
         if recipients:
-            structure_name = (
-                candidate.structure.name if candidate.structure is not None else ""
-            )
+            structure_name = candidate.structure.name if candidate.structure is not None else ""
             assigned_name = assigned_user.name if assigned_user is not None else None
             notes = candidate.assigned_user or None
             for email, name in recipients.items():
@@ -980,9 +909,7 @@ def get_event_summary(
 ) -> EventSummary:
     event = _load_event(db, event_id, with_candidates=True)
 
-    counts: dict[str, int] = {
-        status.value: 0 for status in EventStructureCandidateStatus
-    }
+    counts: dict[str, int] = {status.value: 0 for status in EventStructureCandidateStatus}
     for candidate in event.candidates:
         counts[candidate.status.value] = counts.get(candidate.status.value, 0) + 1
 
@@ -1045,9 +972,7 @@ def create_task(
             event_title=event.title,
             event_start=str(event.start_date),
             event_end=str(event.end_date),
-            structure_name=(
-                task.structure.name if task.structure is not None else None
-            ),
+            structure_name=(task.structure.name if task.structure is not None else None),
             notes=task.notes,
         )
     event_bus.publish("task_updated", {"event_id": event_id})
@@ -1104,9 +1029,7 @@ def update_task(
                 event_title=event.title,
                 event_start=str(event.start_date),
                 event_end=str(event.end_date),
-                structure_name=(
-                    task.structure.name if task.structure is not None else None
-                ),
+                structure_name=(task.structure.name if task.structure is not None else None),
                 notes=task.notes,
             )
     event_bus.publish("task_updated", {"event_id": event_id})
@@ -1149,9 +1072,7 @@ def add_member(
     event = _load_event(db, event_id)
     user = db.query(User).filter(User.email == payload.email).first()
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     existing = (
         db.query(EventMember)
@@ -1159,9 +1080,7 @@ def add_member(
         .first()
     )
     if existing is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="User already a member"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already a member")
 
     membership = EventMember(event_id=event.id, user_id=user.id, role=payload.role)
     membership.user = user
@@ -1202,9 +1121,7 @@ def update_member(
         .first()
     )
     if membership is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Member not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
 
     if membership.role == payload.role:
         return EventMemberRead.model_validate(membership)
@@ -1242,9 +1159,7 @@ def update_member(
     return EventMemberRead.model_validate(membership)
 
 
-@router.delete(
-    "/{event_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{event_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_member(
     event_id: int,
     member_id: int,
@@ -1262,9 +1177,7 @@ def delete_member(
         .first()
     )
     if membership is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Member not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
 
     if (
         membership.role == EventMemberRole.OWNER

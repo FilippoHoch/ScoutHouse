@@ -15,7 +15,9 @@ def clear_settings_cache() -> None:
     get_settings.cache_clear()
 
 
-def test_rewrite_presigned_url_preserves_original_when_no_public_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_rewrite_presigned_url_preserves_original_when_no_public_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("S3_PUBLIC_ENDPOINT", "")
 
     original = "https://s3.example.com/bucket/path/to/file.jpg?signature=abc"

@@ -1,13 +1,11 @@
-from functools import lru_cache
-
 import json
+from collections.abc import Sequence
 from decimal import Decimal
-
-from typing import List, Literal, Sequence
+from functools import lru_cache
+from typing import Literal
 
 from pydantic import EmailStr, Field, field_validator
 from pydantic_settings import BaseSettings
-
 
 DEFAULT_DATABASE_URL = "postgresql+psycopg://scout:changeme@db:5432/scouthouse"
 
@@ -26,9 +24,7 @@ class Settings(BaseSettings):
     access_ttl_min: int = Field(10, alias="ACCESS_TTL_MIN")
     refresh_ttl_days: int = Field(14, alias="REFRESH_TTL_DAYS")
     allow_registration: bool = Field(False, alias="ALLOW_REGISTRATION")
-    cors_allowed_origins: List[str] = Field(
-        default_factory=list, alias="CORS_ALLOWED_ORIGINS"
-    )
+    cors_allowed_origins: list[str] = Field(default_factory=list, alias="CORS_ALLOWED_ORIGINS")
     secure_cookies: bool = Field(False, alias="SECURE_COOKIES")
     frontend_base_url: str = Field("http://localhost:5173", alias="FRONTEND_BASE_URL")
     password_reset_ttl_minutes: int = Field(60, alias="PASSWORD_RESET_TTL_MINUTES")
@@ -63,16 +59,10 @@ class Settings(BaseSettings):
         alias="S3_PUBLIC_ENDPOINT",
         description="Public base URL exposed to browsers for presigned uploads and downloads.",
     )
-    mail_driver: Literal["console", "smtp", "sendgrid"] = Field(
-        "console", alias="MAIL_DRIVER"
-    )
+    mail_driver: Literal["console", "smtp", "sendgrid"] = Field("console", alias="MAIL_DRIVER")
     mail_from_name: str = Field("ScoutHouse", alias="MAIL_FROM_NAME")
-    mail_from_address: str = Field(
-        "no-reply@scouthouse.local", alias="MAIL_FROM_ADDRESS"
-    )
-    allow_non_admin_structure_edit: bool = Field(
-        False, alias="ALLOW_NON_ADMIN_STRUCTURE_EDIT"
-    )
+    mail_from_address: str = Field("no-reply@scouthouse.local", alias="MAIL_FROM_ADDRESS")
+    allow_non_admin_structure_edit: bool = Field(False, alias="ALLOW_NON_ADMIN_STRUCTURE_EDIT")
     smtp_host: str | None = Field(default=None, alias="SMTP_HOST")
     smtp_port: int = Field(587, alias="SMTP_PORT")
     smtp_username: str | None = Field(default=None, alias="SMTP_USERNAME")
@@ -80,9 +70,7 @@ class Settings(BaseSettings):
     smtp_tls: bool = Field(True, alias="SMTP_TLS")
     sendgrid_api_key: str | None = Field(default=None, alias="SENDGRID_API_KEY")
     dev_mail_block_external: bool = Field(True, alias="DEV_MAIL_BLOCK_EXTERNAL")
-    default_admin_email: EmailStr = Field(
-        "hoch.filippo@gmail.com", alias="DEFAULT_ADMIN_EMAIL"
-    )
+    default_admin_email: EmailStr = Field("hoch.filippo@gmail.com", alias="DEFAULT_ADMIN_EMAIL")
     default_admin_password: str = Field("prova", alias="DEFAULT_ADMIN_PASSWORD")
     default_admin_name: str = Field("Admin", alias="DEFAULT_ADMIN_NAME")
 
@@ -153,9 +141,7 @@ class Settings(BaseSettings):
         normalized = value.strip().lower()
         allowed = {"console", "smtp", "sendgrid"}
         if normalized not in allowed:
-            raise ValueError(
-                "MAIL_DRIVER must be one of 'console', 'smtp' or 'sendgrid'"
-            )
+            raise ValueError("MAIL_DRIVER must be one of 'console', 'smtp' or 'sendgrid'")
         return normalized
 
     @field_validator("mail_from_name", "mail_from_address", mode="before")

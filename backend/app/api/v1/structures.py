@@ -99,9 +99,7 @@ def _website_responds(client: httpx.Client, url: str) -> bool:
 
     if response is None or response.status_code >= 400:
         try:
-            response = client.get(
-                url, headers={"User-Agent": "ScoutHouse/website-check"}
-            )
+            response = client.get(url, headers={"User-Agent": "ScoutHouse/website-check"})
         except httpx.HTTPError:
             return False
 
@@ -119,9 +117,7 @@ def _check_website_urls(urls: Iterable[str]) -> list[str]:
 
     warnings: list[str] = []
     try:
-        with httpx.Client(
-            timeout=_WEBSITE_CHECK_TIMEOUT, follow_redirects=True
-        ) as client:
+        with httpx.Client(timeout=_WEBSITE_CHECK_TIMEOUT, follow_redirects=True) as client:
             for url in candidates:
                 try:
                     if not _website_responds(client, url):
@@ -224,9 +220,7 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
 
 def _sync_cost_modifiers(
     option: StructureCostOption,
-    modifiers_payload: Sequence[
-        StructureCostModifierUpdate | StructureCostModifierCreate
-    ],
+    modifiers_payload: Sequence[StructureCostModifierUpdate | StructureCostModifierCreate],
 ) -> None:
     existing = {modifier.id: modifier for modifier in option.modifiers}
     seen: set[int] = set()
@@ -313,9 +307,7 @@ def _serialize_photo(
 
 def _slugify(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
-    without_marks = "".join(
-        char for char in normalized if not unicodedata.combining(char)
-    )
+    without_marks = "".join(char for char in normalized if not unicodedata.combining(char))
     slug = SLUG_SANITIZE_RE.sub("-", without_marks.lower()).strip("-")
     return slug or "structure"
 
@@ -346,9 +338,7 @@ def _structure_payload(
     payload = structure_in.model_dump(exclude=exclude)
     payload["contact_emails"] = [str(email) for email in structure_in.contact_emails]
     payload["website_urls"] = [str(url) for url in structure_in.website_urls]
-    payload["map_resources_urls"] = [
-        str(url) for url in structure_in.map_resources_urls
-    ]
+    payload["map_resources_urls"] = [str(url) for url in structure_in.map_resources_urls]
     payload["water_sources"] = (
         [source.value for source in structure_in.water_sources]
         if structure_in.water_sources is not None
@@ -395,9 +385,7 @@ def _collect_structure_warnings(db: Session, structure: Structure) -> list[str]:
             )
         ).scalar_one()
         if duplicate_exists:
-            warnings.append(
-                "Esistono altre strutture con lo stesso nome nel medesimo comune"
-            )
+            warnings.append("Esistono altre strutture con lo stesso nome nel medesimo comune")
 
     if structure.fire_policy is FirePolicy.WITH_PERMIT and not structure.fire_rules:
         warnings.append("Specificare le regole per i fuochi (fire_rules)")
@@ -408,7 +396,8 @@ def _collect_structure_warnings(db: Session, structure: Structure) -> list[str]:
     for option in getattr(structure, "cost_options", []) or []:
         if option.utilities_flat is not None and option.utilities_included:
             warnings.append(
-                "Verificare le utenze: utilities_flat e utilities_included sono entrambi valorizzati"
+                "Verificare le utenze: utilities_flat e utilities_included "
+                "sono entrambi valorizzati"
             )
             break
 
@@ -475,25 +464,20 @@ def _build_structure_read(
 
     if include_details:
         update["availabilities"] = [
-            _serialize_availability(availability)
-            for availability in structure.availabilities
+            _serialize_availability(availability) for availability in structure.availabilities
         ]
         update["cost_options"] = [
             _serialize_cost_option(option) for option in structure.cost_options
         ]
 
-    update["open_periods"] = [
-        _serialize_open_period(period) for period in structure.open_periods
-    ]
+    update["open_periods"] = [_serialize_open_period(period) for period in structure.open_periods]
 
     if include_contacts:
         contacts = sorted(
             structure.contacts,
             key=lambda item: (not item.is_primary, item.name.lower()),
         )
-        update["contacts"] = [
-            ContactRead.model_validate(contact) for contact in contacts
-        ]
+        update["contacts"] = [ContactRead.model_validate(contact) for contact in contacts]
     else:
         update["contacts"] = None
 
@@ -512,20 +496,14 @@ def _get_structure_or_404(
         options.extend(
             [
                 selectinload(Structure.availabilities),
-                selectinload(Structure.cost_options).selectinload(
-                    StructureCostOption.modifiers
-                ),
+                selectinload(Structure.cost_options).selectinload(StructureCostOption.modifiers),
             ]
         )
     if with_contacts:
-        options.append(
-            selectinload(Structure.contacts).selectinload(StructureContact.contact)
-        )
+        options.append(selectinload(Structure.contacts).selectinload(StructureContact.contact))
 
     structure = (
-        db.execute(
-            select(Structure).options(*options).where(Structure.id == structure_id)
-        )
+        db.execute(select(Structure).options(*options).where(Structure.id == structure_id))
         .unique()
         .scalar_one_or_none()
     )
@@ -541,9 +519,7 @@ def _serialize_contact(link: StructureContact) -> ContactRead:
     return ContactRead.model_validate(link)
 
 
-def _get_contact_or_404(
-    db: Session, structure_id: int, contact_id: int
-) -> StructureContact:
+def _get_contact_or_404(db: Session, structure_id: int, contact_id: int) -> StructureContact:
     link = (
         db.execute(
             select(StructureContact)
@@ -583,9 +559,7 @@ def get_structure_by_slug(
     request: Request,
     response: Response,
 ) -> StructureRead | Response:
-    include_parts = {
-        part.strip().lower() for part in (include.split(",") if include else [])
-    }
+    include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
     include_details = "details" in include_parts
     include_contacts = include_details or "contacts" in include_parts
 
@@ -598,9 +572,7 @@ def get_structure_by_slug(
     if include_contacts:
         query = query.options(selectinload(Structure.contacts))
 
-    structure = (
-        db.execute(query.where(Structure.slug == slug)).unique().scalar_one_or_none()
-    )
+    structure = db.execute(query.where(Structure.slug == slug)).unique().scalar_one_or_none()
     if structure is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -789,8 +761,7 @@ def search_structures(
             continue
 
         availability_reads = [
-            _serialize_availability(availability)
-            for availability in structure.availabilities
+            _serialize_availability(availability) for availability in structure.availabilities
         ]
         seasons = sorted(
             {availability.season for availability in availability_reads},
@@ -811,9 +782,7 @@ def search_structures(
 
     if max_km is not None:
         items_with_distance = [
-            item
-            for item in items_with_distance
-            if item[1] is not None and item[1] <= max_km
+            item for item in items_with_distance if item[1] is not None and item[1] <= max_km
         ]
 
     reverse = order == "desc"
@@ -856,15 +825,9 @@ def search_structures(
             postal_code=structure.postal_code,
             type=structure.type,
             address=structure.address,
-            latitude=float(structure.latitude)
-            if structure.latitude is not None
-            else None,
-            longitude=float(structure.longitude)
-            if structure.longitude is not None
-            else None,
-            altitude=float(structure.altitude)
-            if structure.altitude is not None
-            else None,
+            latitude=float(structure.latitude) if structure.latitude is not None else None,
+            longitude=float(structure.longitude) if structure.longitude is not None else None,
+            altitude=float(structure.altitude) if structure.altitude is not None else None,
             distance_km=distance,
             estimated_cost=estimated_cost,
             cost_band=band,
@@ -1134,9 +1097,7 @@ def create_structure_contact(
     if contact_id is not None:
         contact = db.get(Contact, contact_id)
         if contact is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
         already_linked = (
             db.execute(
                 select(StructureContact).where(
@@ -1177,9 +1138,7 @@ def create_structure_contact(
         structure_id=structure.id,
         contact_id=contact.id,
         role=payload.get("role"),
-        preferred_channel=payload.get(
-            "preferred_channel", ContactPreferredChannel.EMAIL
-        ),
+        preferred_channel=payload.get("preferred_channel", ContactPreferredChannel.EMAIL),
         is_primary=payload.get("is_primary", False),
         gdpr_consent_at=payload.get("gdpr_consent_at"),
     )
@@ -1277,9 +1236,7 @@ def update_structure_contact(
     return _serialize_contact(link)
 
 
-@router.delete(
-    "/{structure_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{structure_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_structure_contact(
     structure_id: int,
     contact_id: int,
@@ -1297,9 +1254,7 @@ def delete_structure_contact(
     db.flush()
 
     remaining = (
-        db.execute(
-            select(StructureContact).where(StructureContact.contact_id == contact.id)
-        )
+        db.execute(select(StructureContact).where(StructureContact.contact_id == contact.id))
         .scalars()
         .first()
     )
@@ -1384,9 +1339,7 @@ def upsert_structure_availabilities(
         for availability in structure.availabilities
     ]
 
-    existing = {
-        availability.id: availability for availability in structure.availabilities
-    }
+    existing = {availability.id: availability for availability in structure.availabilities}
     seen_ids: set[int] = set()
 
     for payload in availabilities_in:
@@ -1438,8 +1391,7 @@ def upsert_structure_availabilities(
     db.commit()
 
     return [
-        _serialize_availability(availability)
-        for availability in updated_structure.availabilities
+        _serialize_availability(availability) for availability in updated_structure.availabilities
     ]
 
 
@@ -1570,8 +1522,7 @@ def upsert_structure_cost_options(
 
     updated_structure = _get_structure_or_404(db, structure_id, with_details=True)
     after_snapshot = [
-        _serialize_cost_option(option).model_dump()
-        for option in updated_structure.cost_options
+        _serialize_cost_option(option).model_dump() for option in updated_structure.cost_options
     ]
 
     record_audit(
@@ -1647,11 +1598,7 @@ def create_structure_photo(
         )
 
     existing = (
-        db.execute(
-            select(StructurePhoto.id).where(
-                StructurePhoto.attachment_id == attachment.id
-            )
-        )
+        db.execute(select(StructurePhoto.id).where(StructurePhoto.attachment_id == attachment.id))
         .scalars()
         .first()
     )
@@ -1685,9 +1632,7 @@ def create_structure_photo(
     return _serialize_photo(photo, attachment, bucket=bucket, client=client)
 
 
-@router.delete(
-    "/{structure_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{structure_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_structure_photo(
     structure_id: int,
     photo_id: int,

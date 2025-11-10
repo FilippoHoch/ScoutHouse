@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
 import re
+from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
@@ -46,18 +46,18 @@ class ContactCreate(ContactBase):
     contact_id: int | None = None
 
     @model_validator(mode="after")
-    def validate_payload(self) -> "ContactCreate":
+    def validate_payload(self) -> ContactCreate:
         if self.contact_id is None:
-            if not any([
-                self.first_name,
-                self.last_name,
-                self.email,
-                self.phone,
-                self.notes,
-            ]):
-                raise ValueError(
-                    "Provide at least one detail or specify an existing contact"
-                )
+            if not any(
+                [
+                    self.first_name,
+                    self.last_name,
+                    self.email,
+                    self.phone,
+                    self.notes,
+                ]
+            ):
+                raise ValueError("Provide at least one detail or specify an existing contact")
         return self
 
 

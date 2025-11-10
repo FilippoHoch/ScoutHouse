@@ -1,5 +1,5 @@
 import os
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,7 +10,6 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import AuditLog  # noqa: E402
-
 from tests.utils import auth_headers, ensure_user  # noqa: E402
 
 
@@ -34,7 +33,12 @@ def test_audit_entries_created_for_core_actions() -> None:
     admin_client = get_client(authenticated=True, is_admin=True)
     structure_resp = admin_client.post(
         "/api/v1/structures/",
-        json={"name": "Audit Structure", "slug": "audit-structure", "province": "MI", "type": "house"},
+        json={
+            "name": "Audit Structure",
+            "slug": "audit-structure",
+            "province": "MI",
+            "type": "house",
+        },
     )
     assert structure_resp.status_code == 201
     structure_id = structure_resp.json()["id"]

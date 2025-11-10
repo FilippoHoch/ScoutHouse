@@ -35,9 +35,9 @@ def upgrade() -> None:
         )
         drop_enum_if_exists("structure_type_old")
 
-    add_column_if_not_exists("structures", 'address TEXT')
-    add_column_if_not_exists("structures", 'latitude NUMERIC(9, 6)')
-    add_column_if_not_exists("structures", 'longitude NUMERIC(9, 6)')
+    add_column_if_not_exists("structures", "address TEXT")
+    add_column_if_not_exists("structures", "latitude NUMERIC(9, 6)")
+    add_column_if_not_exists("structures", "longitude NUMERIC(9, 6)")
 
     inspector = sa.inspect(bind)
     unique_constraints = {
@@ -58,9 +58,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute('DROP INDEX IF EXISTS idx_structures_name_lower')
-    op.execute('DROP INDEX IF EXISTS idx_structures_province')
-    op.execute('DROP INDEX IF EXISTS idx_structures_slug_unique')
+    op.execute("DROP INDEX IF EXISTS idx_structures_name_lower")
+    op.execute("DROP INDEX IF EXISTS idx_structures_province")
+    op.execute("DROP INDEX IF EXISTS idx_structures_slug_unique")
     add_constraint_if_not_exists(
         "structures",
         "structures_slug_key",

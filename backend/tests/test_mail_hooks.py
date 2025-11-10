@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import Generator
-
 import os
-
-import pytest
+from collections.abc import Generator
 from types import SimpleNamespace
 from uuid import uuid4
+
+import pytest
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
@@ -17,7 +16,6 @@ from app.core.db import Base, SessionLocal, engine  # noqa: E402
 from app.core.mail import override_mail_provider, reset_mail_provider  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import EventMemberRole, Structure, StructureType  # noqa: E402
-
 from tests.utils import (  # noqa: E402
     TEST_RATE_LIMIT_HEADER,
     TEST_USER_EMAIL,

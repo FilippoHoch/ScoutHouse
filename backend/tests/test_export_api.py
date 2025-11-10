@@ -1,8 +1,8 @@
 import csv
 import json
 import os
+from collections.abc import Generator
 from io import BytesIO
-from typing import Generator
 from urllib.parse import quote
 from uuid import uuid4
 from zipfile import ZipFile
@@ -17,7 +17,6 @@ from app.api.v1.export import CSV_HEADERS_OPEN_PERIODS  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.core.limiter import TEST_RATE_LIMIT_HEADER  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers, create_user  # noqa: E402
 
 
@@ -29,7 +28,9 @@ def setup_database() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
-def get_client(*, authenticated: bool = False, is_admin: bool = False, email: str | None = None) -> TestClient:
+def get_client(
+    *, authenticated: bool = False, is_admin: bool = False, email: str | None = None
+) -> TestClient:
     client = TestClient(app)
     if authenticated:
         if email is not None and email != "test@example.com":

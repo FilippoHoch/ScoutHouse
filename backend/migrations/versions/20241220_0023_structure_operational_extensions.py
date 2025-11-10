@@ -1,7 +1,7 @@
 """Add operational extensions to structures"""
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "20241220_0023"
@@ -68,9 +68,7 @@ def upgrade() -> None:
         sa.Column("max_vehicle_height_m", sa.Numeric(4, 2), nullable=True),
     )
     op.add_column("structures", sa.Column("road_access_notes", sa.Text(), nullable=True))
-    op.add_column(
-        "structures", sa.Column("power_capacity_kw", sa.Numeric(7, 2), nullable=True)
-    )
+    op.add_column("structures", sa.Column("power_capacity_kw", sa.Numeric(7, 2), nullable=True))
     op.add_column("structures", sa.Column("power_outlets_count", sa.Integer(), nullable=True))
     op.add_column("structures", sa.Column("power_outlet_types", sa.JSON(), nullable=True))
     op.add_column("structures", sa.Column("generator_available", sa.Boolean(), nullable=True))
@@ -116,26 +114,18 @@ def upgrade() -> None:
     )
     op.add_column(
         "structures",
-        sa.Column(
-            "risk_assessment_template_url", sa.String(length=255), nullable=True
-        ),
+        sa.Column("risk_assessment_template_url", sa.String(length=255), nullable=True),
     )
     op.add_column("structures", sa.Column("wildlife_notes", sa.Text(), nullable=True))
-    op.add_column(
-        "structures", sa.Column("river_swimming", river_swimming_enum, nullable=True)
-    )
-    op.add_column(
-        "structures", sa.Column("flood_risk", flood_risk_enum, nullable=True)
-    )
+    op.add_column("structures", sa.Column("river_swimming", river_swimming_enum, nullable=True))
+    op.add_column("structures", sa.Column("flood_risk", flood_risk_enum, nullable=True))
     op.add_column("structures", sa.Column("weather_risk_notes", sa.Text(), nullable=True))
     op.add_column("structures", sa.Column("activity_spaces", sa.JSON(), nullable=True))
     op.add_column("structures", sa.Column("activity_equipment", sa.JSON(), nullable=True))
     op.add_column("structures", sa.Column("inclusion_services", sa.JSON(), nullable=True))
     op.add_column("structures", sa.Column("inclusion_notes", sa.Text(), nullable=True))
     op.add_column("structures", sa.Column("pec_email", sa.String(length=255), nullable=True))
-    op.add_column(
-        "structures", sa.Column("sdi_recipient_code", sa.String(length=7), nullable=True)
-    )
+    op.add_column("structures", sa.Column("sdi_recipient_code", sa.String(length=7), nullable=True))
     op.add_column("structures", sa.Column("invoice_available", sa.Boolean(), nullable=True))
     op.add_column("structures", sa.Column("iban", sa.String(length=34), nullable=True))
     op.add_column("structures", sa.Column("payment_methods", sa.JSON(), nullable=True))
@@ -144,9 +134,7 @@ def upgrade() -> None:
     op.add_column("structures", sa.Column("data_quality_notes", sa.Text(), nullable=True))
     op.add_column("structures", sa.Column("data_quality_flags", sa.JSON(), nullable=True))
     op.add_column("structures", sa.Column("logistics_arrival_notes", sa.Text(), nullable=True))
-    op.add_column(
-        "structures", sa.Column("logistics_departure_notes", sa.Text(), nullable=True)
-    )
+    op.add_column("structures", sa.Column("logistics_departure_notes", sa.Text(), nullable=True))
 
     op.execute("UPDATE structures SET country='IT' WHERE country IS NULL")
     op.alter_column("structures", "country", server_default=None)
@@ -202,9 +190,7 @@ def downgrade() -> None:
         "structures",
         type_="check",
     )
-    op.drop_constraint(
-        "power_outlets_count_non_negative", "structures", type_="check"
-    )
+    op.drop_constraint("power_outlets_count_non_negative", "structures", type_="check")
     op.drop_constraint("power_capacity_kw_non_negative", "structures", type_="check")
 
     op.drop_column("structures", "logistics_departure_notes")

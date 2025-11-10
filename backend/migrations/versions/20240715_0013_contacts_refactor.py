@@ -7,10 +7,9 @@ Create Date: 2024-07-15 00:00:00.000000
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
-
 
 revision = "20240715_0013"
 down_revision = "20240710_0013"
@@ -148,13 +147,10 @@ def upgrade() -> None:
             op.drop_index("uix_contacts_primary_per_structure", table_name="contacts")
 
         existing_constraints = {
-            constraint["name"]
-            for constraint in insp.get_unique_constraints("contacts")
+            constraint["name"] for constraint in insp.get_unique_constraints("contacts")
         }
         if "uq_contact_structure_email" in existing_constraints:
-            op.drop_constraint(
-                "uq_contact_structure_email", "contacts", type_="unique"
-            )
+            op.drop_constraint("uq_contact_structure_email", "contacts", type_="unique")
 
     op.drop_column("contacts", "structure_id")
     op.drop_column("contacts", "role")
@@ -184,9 +180,7 @@ def downgrade() -> None:
     )
     op.add_column(
         "contacts",
-        sa.Column(
-            "is_primary", sa.Boolean(), nullable=False, server_default=sa.false()
-        ),
+        sa.Column("is_primary", sa.Boolean(), nullable=False, server_default=sa.false()),
     )
     op.add_column(
         "contacts",
@@ -249,9 +243,11 @@ def downgrade() -> None:
             SET name = TRIM(
                 COALESCE(NULLIF(first_name, ''), '') ||
                 CASE
-                    WHEN first_name IS NOT NULL AND first_name <> '' AND last_name IS NOT NULL AND last_name <> ''
+                    WHEN first_name IS NOT NULL AND first_name <> ''
+                        AND last_name IS NOT NULL AND last_name <> ''
                         THEN ' ' || last_name
-                    WHEN (first_name IS NULL OR first_name = '') AND last_name IS NOT NULL AND last_name <> ''
+                    WHEN (first_name IS NULL OR first_name = '')
+                        AND last_name IS NOT NULL AND last_name <> ''
                         THEN last_name
                     ELSE ''
                 END
@@ -297,9 +293,7 @@ def downgrade() -> None:
         postgresql_where=sa.text("is_primary"),
         sqlite_where=sa.text("is_primary = 1"),
     )
-    op.create_unique_constraint(
-        "uq_contact_structure_email", "contacts", ["structure_id", "email"]
-    )
+    op.create_unique_constraint("uq_contact_structure_email", "contacts", ["structure_id", "email"])
 
     op.drop_index("uix_structure_contacts_primary", table_name="structure_contacts")
     op.drop_index("idx_structure_contacts_contact", table_name="structure_contacts")
@@ -310,4 +304,3 @@ def downgrade() -> None:
     op.drop_column("contacts", "first_name")
 
     op.alter_column("contacts", "structure_id", nullable=False)
-

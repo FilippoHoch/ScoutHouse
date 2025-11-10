@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 from migrations.utils.postgres import (
@@ -50,9 +50,7 @@ def upgrade() -> None:
                 sa.ForeignKey("structures.id", ondelete="CASCADE"),
                 nullable=False,
             ),
-            sa.Column(
-                "scenario", scenario_enum, nullable=False, server_default="realistic"
-            ),
+            sa.Column("scenario", scenario_enum, nullable=False, server_default="realistic"),
             sa.Column("currency", sa.CHAR(length=3), nullable=False, server_default="EUR"),
             sa.Column("totals", json_type, nullable=False),
             sa.Column("breakdown", json_type, nullable=False),
@@ -74,8 +72,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute('DROP INDEX IF EXISTS ix_quotes_structure_id')
-    op.execute('DROP INDEX IF EXISTS ix_quotes_event_id')
+    op.execute("DROP INDEX IF EXISTS ix_quotes_structure_id")
+    op.execute("DROP INDEX IF EXISTS ix_quotes_event_id")
     bind = op.get_bind()
     inspector = sa.inspect(bind)
     if inspector.has_table("quotes"):

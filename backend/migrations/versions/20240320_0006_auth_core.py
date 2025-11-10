@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
@@ -60,7 +60,7 @@ def upgrade() -> None:
         )
 
     create_index_if_not_exists(
-        'CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id_revoked '
+        "CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id_revoked "
         'ON "refresh_tokens" (user_id, revoked)'
     )
 
@@ -82,27 +82,24 @@ def upgrade() -> None:
         )
 
     create_index_if_not_exists(
-        'CREATE INDEX IF NOT EXISTS ix_event_members_event_id '
-        'ON "event_members" (event_id)'
+        'CREATE INDEX IF NOT EXISTS ix_event_members_event_id ON "event_members" (event_id)'
     )
 
-    add_column_if_not_exists(
-        "event_structure_candidate", 'assigned_user_id VARCHAR(36)'
-    )
+    add_column_if_not_exists("event_structure_candidate", "assigned_user_id VARCHAR(36)")
     add_constraint_if_not_exists(
         "event_structure_candidate",
         "event_structure_candidate_assigned_user_id_fkey",
         'ALTER TABLE "event_structure_candidate" ADD CONSTRAINT '
-        'event_structure_candidate_assigned_user_id_fkey '
+        "event_structure_candidate_assigned_user_id_fkey "
         'FOREIGN KEY (assigned_user_id) REFERENCES "users" (id) ON DELETE SET NULL',
     )
 
-    add_column_if_not_exists("event_contact_task", 'assigned_user_id VARCHAR(36)')
+    add_column_if_not_exists("event_contact_task", "assigned_user_id VARCHAR(36)")
     add_constraint_if_not_exists(
         "event_contact_task",
         "event_contact_task_assigned_user_id_fkey",
         'ALTER TABLE "event_contact_task" ADD CONSTRAINT '
-        'event_contact_task_assigned_user_id_fkey '
+        "event_contact_task_assigned_user_id_fkey "
         'FOREIGN KEY (assigned_user_id) REFERENCES "users" (id) ON DELETE SET NULL',
     )
 
@@ -113,23 +110,21 @@ def downgrade() -> None:
 
     op.execute(
         'ALTER TABLE "event_contact_task" '
-        'DROP CONSTRAINT IF EXISTS event_contact_task_assigned_user_id_fkey'
+        "DROP CONSTRAINT IF EXISTS event_contact_task_assigned_user_id_fkey"
     )
     op.execute('ALTER TABLE "event_contact_task" DROP COLUMN IF EXISTS assigned_user_id')
 
     op.execute(
         'ALTER TABLE "event_structure_candidate" '
-        'DROP CONSTRAINT IF EXISTS event_structure_candidate_assigned_user_id_fkey'
+        "DROP CONSTRAINT IF EXISTS event_structure_candidate_assigned_user_id_fkey"
     )
-    op.execute(
-        'ALTER TABLE "event_structure_candidate" DROP COLUMN IF EXISTS assigned_user_id'
-    )
+    op.execute('ALTER TABLE "event_structure_candidate" DROP COLUMN IF EXISTS assigned_user_id')
 
-    op.execute('DROP INDEX IF EXISTS ix_event_members_event_id')
+    op.execute("DROP INDEX IF EXISTS ix_event_members_event_id")
     if inspector.has_table("event_members"):
         op.drop_table("event_members")
 
-    op.execute('DROP INDEX IF EXISTS ix_refresh_tokens_user_id_revoked')
+    op.execute("DROP INDEX IF EXISTS ix_refresh_tokens_user_id_revoked")
     if inspector.has_table("refresh_tokens"):
         op.drop_table("refresh_tokens")
 

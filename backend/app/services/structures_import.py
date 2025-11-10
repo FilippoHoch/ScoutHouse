@@ -2,16 +2,18 @@ from __future__ import annotations
 
 import csv
 import re
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from io import BytesIO, StringIO
-from typing import Iterator, Literal, Sequence
+from typing import Literal
 from urllib.parse import urlparse
 
 from openpyxl import Workbook, load_workbook
 from pydantic import EmailStr, TypeAdapter
 
+from app.models.availability import StructureUnit
 from app.models.structure import (
     FirePolicy,
     StructureOpenPeriodKind,
@@ -19,7 +21,6 @@ from app.models.structure import (
     StructureType,
     WaterSource,
 )
-from app.models.availability import StructureUnit
 
 EMAIL_ADAPTER = TypeAdapter(EmailStr)
 
@@ -585,7 +586,12 @@ def _process_rows(
             longitude = _validate_longitude(_normalise_decimal(longitude_raw))
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="longitude", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="longitude",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             longitude = None
 
@@ -609,7 +615,12 @@ def _process_rows(
             indoor_beds = _validate_positive_int(indoor_beds_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="indoor_beds", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="indoor_beds",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             indoor_beds = None
 
@@ -617,7 +628,12 @@ def _process_rows(
             indoor_bathrooms = _validate_positive_int(indoor_bathrooms_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="indoor_bathrooms", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="indoor_bathrooms",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             indoor_bathrooms = None
 
@@ -625,7 +641,12 @@ def _process_rows(
             indoor_showers = _validate_positive_int(indoor_showers_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="indoor_showers", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="indoor_showers",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             indoor_showers = None
 
@@ -646,7 +667,12 @@ def _process_rows(
             has_kitchen = _validate_bool(has_kitchen_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="has_kitchen", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="has_kitchen",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             has_kitchen = None
 
@@ -654,7 +680,12 @@ def _process_rows(
             hot_water = _validate_bool(hot_water_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="hot_water", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="hot_water",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             hot_water = None
 
@@ -662,7 +693,12 @@ def _process_rows(
             land_area_m2 = _validate_decimal_non_negative(land_area_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="land_area_m2", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="land_area_m2",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             land_area_m2 = None
 
@@ -670,7 +706,12 @@ def _process_rows(
             shelter_on_field = _validate_bool(shelter_on_field_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="shelter_on_field", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="shelter_on_field",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             shelter_on_field = None
 
@@ -722,7 +763,12 @@ def _process_rows(
             fire_policy = _validate_fire_policy(fire_policy_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="fire_policy", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="fire_policy",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             fire_policy = None
 
@@ -730,7 +776,12 @@ def _process_rows(
             access_by_car = _validate_bool(access_by_car_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="access_by_car", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="access_by_car",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             access_by_car = None
 
@@ -738,7 +789,12 @@ def _process_rows(
             access_by_coach = _validate_bool(access_by_coach_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="access_by_coach", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="access_by_coach",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             access_by_coach = None
 
@@ -785,7 +841,12 @@ def _process_rows(
             weekend_only = _validate_bool(weekend_only_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="weekend_only", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="weekend_only",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             weekend_only = None
 
@@ -793,7 +854,12 @@ def _process_rows(
             has_field_poles = _validate_bool(has_field_poles_raw)
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="has_field_poles", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="has_field_poles",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             has_field_poles = None
 
@@ -813,21 +879,42 @@ def _process_rows(
         contact_emails, email_errors = _parse_contact_emails(contact_emails_raw)
         for message in email_errors:
             row_errors.append(
-                RowError(row=index, field="contact_emails", message=message, source_format=source_format)
+                RowError(
+                    row=index,
+                    field="contact_emails",
+                    message=message,
+                    source_format=source_format,
+                )
             )
 
         website_urls, url_errors = _parse_website_urls(website_urls_raw)
         for message in url_errors:
             row_errors.append(
-                RowError(row=index, field="website_urls", message=message, source_format=source_format)
+                RowError(
+                    row=index,
+                    field="website_urls",
+                    message=message,
+                    source_format=source_format,
+                )
             )
 
         notes_logistics = _normalise_text(notes_logistics_raw) or None
         notes = _normalise_text(notes_raw) or None
 
-        def _warn(field: str, message: str) -> None:
-            row_warnings.append(
-                RowError(row=index, field=field, message=message, source_format=source_format)
+        def _warn(
+            field: str,
+            message: str,
+            *,
+            _warnings=row_warnings,
+            _row=index,
+        ) -> None:
+            _warnings.append(
+                RowError(
+                    row=_row,
+                    field=field,
+                    message=message,
+                    source_format=source_format,
+                )
             )
 
         if structure_type == StructureType.HOUSE:
@@ -969,16 +1056,26 @@ def _process_open_period_rows(
             structure_slug = _validate_slug(_normalise_text(slug_raw))
         except ValueError as exc:
             row_errors.append(
-                RowError(row=index, field="structure_slug", message=str(exc), source_format=source_format)
+                RowError(
+                    row=index,
+                    field="structure_slug",
+                    message=str(exc),
+                    source_format=source_format,
+                )
             )
             structure_slug = ""
 
         kind_text = _normalise_text(kind_raw).lower()
         try:
             kind = StructureOpenPeriodKind(kind_text)
-        except ValueError as exc:
+        except ValueError:
             row_errors.append(
-                RowError(row=index, field="kind", message="must be 'season' or 'range'", source_format=source_format)
+                RowError(
+                    row=index,
+                    field="kind",
+                    message="must be 'season' or 'range'",
+                    source_format=source_format,
+                )
             )
             kind = StructureOpenPeriodKind.SEASON
 
@@ -993,7 +1090,12 @@ def _process_open_period_rows(
                 season = StructureOpenPeriodSeason(season_text)
             except ValueError as exc:
                 row_errors.append(
-                    RowError(row=index, field="season", message=str(exc), source_format=source_format)
+                    RowError(
+                        row=index,
+                        field="season",
+                        message=str(exc),
+                        source_format=source_format,
+                    )
                 )
                 season = None
 
@@ -1014,9 +1116,14 @@ def _process_open_period_rows(
         if date_start_text:
             try:
                 date_start = date.fromisoformat(date_start_text)
-            except ValueError as exc:
+            except ValueError:
                 row_errors.append(
-                    RowError(row=index, field="date_start", message="Invalid date", source_format=source_format)
+                    RowError(
+                        row=index,
+                        field="date_start",
+                        message="Invalid date",
+                        source_format=source_format,
+                    )
                 )
                 date_start = None
 
@@ -1024,9 +1131,14 @@ def _process_open_period_rows(
         if date_end_text:
             try:
                 date_end = date.fromisoformat(date_end_text)
-            except ValueError as exc:
+            except ValueError:
                 row_errors.append(
-                    RowError(row=index, field="date_end", message="Invalid date", source_format=source_format)
+                    RowError(
+                        row=index,
+                        field="date_end",
+                        message="Invalid date",
+                        source_format=source_format,
+                    )
                 )
                 date_end = None
 
@@ -1125,7 +1237,13 @@ def parse_structures_xlsx(data: bytes, *, max_rows: int = 2000) -> ParsedWorkboo
             raise ValueError("Invalid header. Please use the provided template")
 
         rows = _process_rows(
-            ((index, tuple(row or tuple())) for index, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2)),
+            (
+                (index, tuple(row or tuple()))
+                for index, row in enumerate(
+                    sheet.iter_rows(min_row=2, values_only=True),
+                    start=2,
+                )
+            ),
             source_format="xlsx",
             max_rows=max_rows,
         )

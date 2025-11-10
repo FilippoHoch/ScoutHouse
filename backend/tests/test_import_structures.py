@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Generator
 from io import BytesIO
-from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -68,7 +68,9 @@ def upload_file(
     )
 
 
-def seed_structure(client: TestClient, *, slug: str, name: str = "Casa", province: str = "MI") -> None:
+def seed_structure(
+    client: TestClient, *, slug: str, name: str = "Casa", province: str = "MI"
+) -> None:
     payload = {
         "name": name,
         "slug": slug,
@@ -147,8 +149,7 @@ def test_validation_errors_reported_per_row() -> None:
 
     error_map = {(item["field"], item["msg"], item["source_format"]) for item in data["errors"]}
     assert (
-        ("name", "cannot be empty", "xlsx")
-        in error_map
+        ("name", "cannot be empty", "xlsx") in error_map
         and ("slug", "cannot be empty", "xlsx") in error_map
         and ("province", "must be 2 letters", "xlsx") in error_map
         and ("latitude", "must be between -90 and 90", "xlsx") in error_map

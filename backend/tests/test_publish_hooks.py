@@ -13,7 +13,6 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Structure, StructureType  # noqa: E402
-
 from tests.utils import auth_headers  # noqa: E402
 
 

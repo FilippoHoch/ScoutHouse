@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 from migrations.utils.postgres import (
@@ -11,7 +11,6 @@ from migrations.utils.postgres import (
     create_index_if_not_exists,
     drop_enum_if_exists,
 )
-
 
 revision = "20240320_0003"
 down_revision = "20240320_0002"
@@ -55,11 +54,11 @@ def upgrade() -> None:
         )
 
     create_index_if_not_exists(
-        'CREATE INDEX IF NOT EXISTS ix_structure_season_availability_structure_id '
+        "CREATE INDEX IF NOT EXISTS ix_structure_season_availability_structure_id "
         'ON "structure_season_availability" (structure_id)'
     )
     create_index_if_not_exists(
-        'CREATE INDEX IF NOT EXISTS ix_structure_season_availability_season '
+        "CREATE INDEX IF NOT EXISTS ix_structure_season_availability_season "
         'ON "structure_season_availability" (season)'
     )
 
@@ -75,9 +74,7 @@ def upgrade() -> None:
             ),
             sa.Column("model", structure_cost_model, nullable=False),
             sa.Column("amount", sa.Numeric(10, 2), nullable=False),
-            sa.Column(
-                "currency", sa.String(length=3), nullable=False, server_default="EUR"
-            ),
+            sa.Column("currency", sa.String(length=3), nullable=False, server_default="EUR"),
             sa.Column("deposit", sa.Numeric(10, 2), nullable=True),
             sa.Column("city_tax_per_night", sa.Numeric(10, 2), nullable=True),
             sa.Column("utilities_flat", sa.Numeric(10, 2), nullable=True),
@@ -85,7 +82,7 @@ def upgrade() -> None:
         )
 
     create_index_if_not_exists(
-        'CREATE INDEX IF NOT EXISTS ix_structure_cost_option_structure_id '
+        "CREATE INDEX IF NOT EXISTS ix_structure_cost_option_structure_id "
         'ON "structure_cost_option" (structure_id)'
     )
 
@@ -94,12 +91,12 @@ def downgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
 
-    op.execute('DROP INDEX IF EXISTS ix_structure_cost_option_structure_id')
+    op.execute("DROP INDEX IF EXISTS ix_structure_cost_option_structure_id")
     if inspector.has_table("structure_cost_option"):
         op.drop_table("structure_cost_option")
 
-    op.execute('DROP INDEX IF EXISTS ix_structure_season_availability_season')
-    op.execute('DROP INDEX IF EXISTS ix_structure_season_availability_structure_id')
+    op.execute("DROP INDEX IF EXISTS ix_structure_season_availability_season")
+    op.execute("DROP INDEX IF EXISTS ix_structure_season_availability_structure_id")
     if inspector.has_table("structure_season_availability"):
         op.drop_table("structure_season_availability")
 

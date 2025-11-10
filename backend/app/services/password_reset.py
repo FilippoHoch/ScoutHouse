@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -12,7 +12,7 @@ from app.models import PasswordResetToken, User
 
 def _expiry_time() -> datetime:
     settings = get_settings()
-    return datetime.now(timezone.utc) + timedelta(minutes=settings.password_reset_ttl_minutes)
+    return datetime.now(UTC) + timedelta(minutes=settings.password_reset_ttl_minutes)
 
 
 def create_reset_token(db: Session, user: User) -> tuple[str, PasswordResetToken]:
@@ -38,16 +38,14 @@ def create_reset_token(db: Session, user: User) -> tuple[str, PasswordResetToken
 def verify_reset_token(db: Session, token: str) -> PasswordResetToken:
     token_hash = hash_token(token)
     record = (
-        db.query(PasswordResetToken)
-        .filter(PasswordResetToken.token_hash == token_hash)
-        .first()
+        db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).first()
     )
     if record is None or record.used:
         raise ValueError("Invalid token")
     expires_at = record.expires_at
     if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if expires_at < datetime.now(timezone.utc):
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if expires_at < datetime.now(UTC):
         raise ValueError("Token expired")
     return record
 

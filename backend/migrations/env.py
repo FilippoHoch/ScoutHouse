@@ -43,9 +43,7 @@ def run_migrations_online() -> None:
     database_url = config.get_main_option("sqlalchemy.url")
     connectable = create_engine(database_url, poolclass=pool.NullPool)
 
-    lock_conn: Connection = connectable.connect().execution_options(
-        isolation_level="AUTOCOMMIT"
-    )
+    lock_conn: Connection = connectable.connect().execution_options(isolation_level="AUTOCOMMIT")
     lock_conn.execute(text("SELECT pg_advisory_lock(72726001)"))
     try:
         with connectable.connect() as connection:

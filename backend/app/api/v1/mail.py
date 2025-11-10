@@ -32,9 +32,7 @@ class MailPreviewResponse(BaseModel):
 class MailTestRequest(BaseModel):
     to: EmailStr
     template: MailTemplateName
-    sample_data: dict[str, Any] | None = Field(
-        default=None, description="Override sample data"
-    )
+    sample_data: dict[str, Any] | None = Field(default=None, description="Override sample data")
 
 
 class MailTestResponse(BaseModel):
@@ -67,9 +65,7 @@ def preview_mail_template(
     )
 
 
-@router.post(
-    "/test", response_model=MailTestResponse, status_code=status.HTTP_202_ACCEPTED
-)
+@router.post("/test", response_model=MailTestResponse, status_code=status.HTTP_202_ACCEPTED)
 def send_test_mail(
     payload: MailTestRequest,
     _admin: AdminUser,

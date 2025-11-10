@@ -3,8 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Index
-from sqlalchemy import ForeignKey, Integer
+from sqlalchemy import ForeignKey, Index, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import JSON
 
@@ -47,7 +46,7 @@ class StructureSeasonAvailability(Base):
     capacity_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
     capacity_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    structure: Mapped["Structure"] = relationship(
+    structure: Mapped[Structure] = relationship(
         "Structure",
         back_populates="availabilities",
     )

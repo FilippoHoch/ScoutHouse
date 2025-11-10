@@ -1,6 +1,5 @@
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision = "20240320_0009_contacts"
@@ -50,13 +49,9 @@ def upgrade():
                 nullable=False,
                 server_default=sa.text("'email'"),
             ),
-            sa.Column(
-                "is_primary", sa.Boolean, nullable=False, server_default=sa.false()
-            ),
+            sa.Column("is_primary", sa.Boolean, nullable=False, server_default=sa.false()),
             sa.Column("notes", sa.Text, nullable=True),
-            sa.Column(
-                "gdpr_consent_at", sa.DateTime(timezone=True), nullable=True
-            ),
+            sa.Column("gdpr_consent_at", sa.DateTime(timezone=True), nullable=True),
             sa.Column(
                 "created_at",
                 sa.DateTime(timezone=True),
@@ -97,8 +92,7 @@ def upgrade():
             )
 
         existing_constraints = {
-            constraint["name"]
-            for constraint in insp.get_unique_constraints("contacts")
+            constraint["name"] for constraint in insp.get_unique_constraints("contacts")
         }
         if "uq_contact_structure_email" not in existing_constraints:
             op.create_unique_constraint(
@@ -150,22 +144,17 @@ def downgrade():
     if insp.has_table("contacts"):
         existing_indexes = {idx["name"] for idx in insp.get_indexes("contacts")}
         if "uix_contacts_primary_per_structure" in existing_indexes:
-            op.drop_index(
-                "uix_contacts_primary_per_structure", table_name="contacts"
-            )
+            op.drop_index("uix_contacts_primary_per_structure", table_name="contacts")
         if "idx_contacts_email" in existing_indexes:
             op.drop_index("idx_contacts_email", table_name="contacts")
         if "idx_contacts_structure" in existing_indexes:
             op.drop_index("idx_contacts_structure", table_name="contacts")
 
         existing_constraints = {
-            constraint["name"]
-            for constraint in insp.get_unique_constraints("contacts")
+            constraint["name"] for constraint in insp.get_unique_constraints("contacts")
         }
         if "uq_contact_structure_email" in existing_constraints:
-            op.drop_constraint(
-                "uq_contact_structure_email", "contacts", type_="unique"
-            )
+            op.drop_constraint("uq_contact_structure_email", "contacts", type_="unique")
 
         op.drop_table("contacts")
 

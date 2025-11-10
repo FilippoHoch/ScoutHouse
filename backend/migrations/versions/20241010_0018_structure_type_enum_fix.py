@@ -2,8 +2,6 @@
 
 from collections.abc import Sequence
 
-from alembic import op
-
 from migrations.utils.postgres import add_enum_value_if_missing
 
 revision: str = "20241010_0018"

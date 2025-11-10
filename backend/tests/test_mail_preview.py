@@ -1,10 +1,10 @@
 import os
-from typing import Generator
+from collections.abc import Generator
+from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from types import SimpleNamespace
-from uuid import uuid4
 
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
@@ -13,7 +13,6 @@ from app.core.config import get_settings  # noqa: E402
 from app.core.db import Base, engine  # noqa: E402
 from app.core.mail import override_mail_provider, reset_mail_provider  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers, ensure_user  # noqa: E402
 
 
@@ -67,7 +66,10 @@ def get_admin_client() -> TestClient:
 def test_admin_can_preview_templates(stub_provider: PreviewStub) -> None:
     ensure_user(is_admin=True)
     client = get_admin_client()
-    response = client.get("/api/v1/mail/preview", params={"template": "reset_password", "sample": True})
+    response = client.get(
+        "/api/v1/mail/preview",
+        params={"template": "reset_password", "sample": True},
+    )
     assert response.status_code == 200
     body = response.json()
     assert body["template"] == "reset_password"
