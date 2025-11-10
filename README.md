@@ -330,4 +330,4 @@ PY
 
 ## License
 
-All rights reserved © ScoutHouse 2024.
+This project is licensed under the [MIT License](./LICENSE).
