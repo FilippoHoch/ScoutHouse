@@ -3165,6 +3165,36 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     {t("structures.create.form.operationalStatusHint")}
                   </span>
                 </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-usage-recommendation">
+                    {t("structures.create.form.usageRecommendation.label")}
+                    <select
+                      id="structure-usage-recommendation"
+                      value={usageRecommendation}
+                      onChange={handleUsageRecommendationChange}
+                      aria-describedby={usageRecommendationDescribedBy}
+                      aria-invalid={usageRecommendationErrorId ? "true" : undefined}
+                    >
+                      <option value="">
+                        {t("structures.create.form.usageRecommendation.placeholder")}
+                      </option>
+                      {usageRecommendationOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.usageRecommendation.options.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={usageRecommendationHintId}>
+                    {t("structures.create.form.usageRecommendation.hint")}
+                  </span>
+                  {usageRecommendationErrorId && (
+                    <p className="error-text" id={usageRecommendationErrorId}>
+                      {fieldErrors.usage_recommendation}
+                    </p>
+                  )}
+                </div>
               </div>
             </fieldset>
 
@@ -4199,36 +4229,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   <span className="helper-text">
                     {t("structures.create.form.weekendOnlyHint")}
                   </span>
-                </div>
-
-                <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-usage-recommendation">
-                    {t("structures.create.form.usageRecommendation.label")}
-                    <select
-                      id="structure-usage-recommendation"
-                      value={usageRecommendation}
-                      onChange={handleUsageRecommendationChange}
-                      aria-describedby={usageRecommendationDescribedBy}
-                      aria-invalid={usageRecommendationErrorId ? "true" : undefined}
-                    >
-                      <option value="">
-                        {t("structures.create.form.usageRecommendation.placeholder")}
-                      </option>
-                      {usageRecommendationOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {t(`structures.create.form.usageRecommendation.options.${option}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <span className="helper-text" id={usageRecommendationHintId}>
-                    {t("structures.create.form.usageRecommendation.hint")}
-                  </span>
-                  {usageRecommendationErrorId && (
-                    <p className="error-text" id={usageRecommendationErrorId}>
-                      {fieldErrors.usage_recommendation}
-                    </p>
-                  )}
                 </div>
 
                 <div className="structure-form-field" data-span="full">
