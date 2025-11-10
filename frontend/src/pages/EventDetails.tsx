@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -40,6 +40,18 @@ import { EventQuotesTab } from "./EventQuotesTab";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import { LogisticsSummary } from "../shared/ui/LogisticsSummary";
 import {
+  Button,
+  EmptyState,
+  InlineActions,
+  InlineFields,
+  InlineMessage,
+  Metric,
+  SectionHeader,
+  Surface,
+  TableWrapper,
+  ToolbarSection,
+} from "../shared/ui/designSystem";
+import {
   NormalizedBranchSegment,
   computeAccommodationRequirements,
   computeParticipantTotals,
@@ -59,11 +71,7 @@ const candidateStatuses: EventCandidateStatus[] = [
 const taskStatuses: EventContactTaskStatus[] = ["todo", "in_progress", "done", "n_a"];
 const taskOutcomes: EventContactTaskOutcome[] = ["pending", "positive", "negative"];
 
-const roleLabels: Record<EventMemberRole, string> = {
-  owner: "Responsabile",
-  collab: "Collaboratore",
-  viewer: "Osservatore"
-};
+type EventDetailsTab = "candidature" | "attivita" | "preventivi" | "allegati";
 
 type CandidateSavePayload = {
   status: EventCandidateStatus;
@@ -101,7 +109,7 @@ const CandidateRow = ({
   eventTitle,
   eventStart,
   eventEnd,
-  segmentsDescription
+  segmentsDescription,
 }: CandidateRowProps) => {
   const { t } = useTranslation();
   const [assignedUserId, setAssignedUserId] = useState(candidate.assigned_user_id ?? "");
@@ -141,6 +149,24 @@ const CandidateRow = ({
     });
   }, [fetchedContacts, candidate.contact]);
 
+  const roleLabels = useMemo(
+    () => ({
+      owner: t("events.members.roles.owner"),
+      collab: t("events.members.roles.collab"),
+      viewer: t("events.members.roles.viewer"),
+    }),
+    [t],
+  );
+
+  const statusOptions = useMemo(
+    () =>
+      candidateStatuses.map((item) => ({
+        value: item,
+        label: t(`events.candidates.status.${item}`),
+      })),
+    [t],
+  );
+
   const selectedContact = contactOptions.find((item) => String(item.id) === contactId) ?? null;
   const emailSubject = selectedContact
     ? t("events.candidates.mail.subject", { title: eventTitle, start: eventStart, end: eventEnd })
@@ -157,9 +183,7 @@ const CandidateRow = ({
   const mailHref = selectedContact?.email
     ? `mailto:${selectedContact.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
     : null;
-  const telHref = selectedContact?.phone
-    ? `tel:${selectedContact.phone.replace(/\s+/g, "")}`
-    : null;
+  const telHref = selectedContact?.phone ? `tel:${selectedContact.phone.replace(/\s+/g, "")}` : null;
 
   const handleSendEmail = () => {
     if (mailHref) {
@@ -204,15 +228,17 @@ const CandidateRow = ({
         ) : (
           t("events.candidates.labels.structure")
         )}
-        {candidate.status === "confirmed" && hasConflict && <span className="badge">{t("events.candidates.conflict")}</span>}
+        {candidate.status === "confirmed" && hasConflict && (
+          <span className="badge">{t("events.candidates.conflict")}</span>
+        )}
       </td>
       <td>
         {contactsLoading ? (
-          <span>{t("events.candidates.contact.loading")}</span>
+          <InlineMessage>{t("events.candidates.contact.loading")}</InlineMessage>
         ) : contactsError ? (
-          <span className="error">{t("events.candidates.contact.error")}</span>
+          <InlineMessage tone="danger">{t("events.candidates.contact.error")}</InlineMessage>
         ) : contactOptions.length === 0 ? (
-          <span>{t("events.candidates.contact.none")}</span>
+          <InlineMessage>{t("events.candidates.contact.none")}</InlineMessage>
         ) : (
           <select
             value={contactId}
@@ -230,14 +256,14 @@ const CandidateRow = ({
         )}
       </td>
       <td>
-        <div className="inline-actions" style={{ display: "flex", gap: "0.5rem" }}>
-          <button type="button" onClick={handleSendEmail} disabled={!mailHref}>
+        <InlineActions>
+          <Button type="button" size="sm" onClick={handleSendEmail} disabled={!mailHref}>
             {t("events.candidates.actions.email")}
-          </button>
-          <button type="button" onClick={handleCall} disabled={!telHref}>
+          </Button>
+          <Button type="button" size="sm" variant="secondary" onClick={handleCall} disabled={!telHref}>
             {t("events.candidates.actions.call")}
-          </button>
-        </div>
+          </Button>
+        </InlineActions>
       </td>
       <td>
         <select
@@ -253,26 +279,34 @@ const CandidateRow = ({
           ))}
         </select>
         {candidate.assigned_user_name && (
-          <p className="muted">
+          <InlineMessage>
             {t("events.candidates.labels.currentAssignee", { name: candidate.assigned_user_name })}
-          </p>
+          </InlineMessage>
         )}
       </td>
       <td>
-        <select value={status} onChange={(event) => setStatus(event.target.value as EventCandidateStatus)} aria-label={t("events.candidates.labels.status")}>
-          {candidateStatuses.map((item) => (
-            <option key={item} value={item}>
-              {item}
+        <select
+          value={status}
+          onChange={(event) => setStatus(event.target.value as EventCandidateStatus)}
+          aria-label={t("events.candidates.labels.status")}
+        >
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
       </td>
-      <td>{new Date(candidate.last_update).toLocaleString()}</td>
       <td>
-        <button type="button" onClick={handleSave} disabled={saving}>
+        <time dateTime={candidate.last_update}>
+          {new Date(candidate.last_update).toLocaleString("it-IT")}
+        </time>
+      </td>
+      <td>
+        <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
           {saving ? t("events.candidates.actions.saving") : t("events.candidates.actions.save")}
-        </button>
-        {error && <p className="error">{error}</p>}
+        </Button>
+        {error && <InlineMessage tone="danger">{error}</InlineMessage>}
       </td>
     </tr>
   );
@@ -285,12 +319,40 @@ interface TaskRowProps {
 }
 
 const TaskRow = ({ task, members, onSave }: TaskRowProps) => {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<EventContactTaskStatus>(task.status);
   const [outcome, setOutcome] = useState<EventContactTaskOutcome>(task.outcome);
   const [assignedUserId, setAssignedUserId] = useState(task.assigned_user_id ?? "");
   const [notes, setNotes] = useState(task.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const roleLabels = useMemo(
+    () => ({
+      owner: t("events.members.roles.owner"),
+      collab: t("events.members.roles.collab"),
+      viewer: t("events.members.roles.viewer"),
+    }),
+    [t],
+  );
+
+  const statusOptions = useMemo(
+    () =>
+      taskStatuses.map((value) => ({
+        value,
+        label: t(`events.tasks.status.${value}`),
+      })),
+    [t],
+  );
+
+  const outcomeOptions = useMemo(
+    () =>
+      taskOutcomes.map((value) => ({
+        value,
+        label: t(`events.tasks.outcome.${value}`),
+      })),
+    [t],
+  );
 
   const handleSave = async () => {
     setSaving(true);
@@ -300,10 +362,14 @@ const TaskRow = ({ task, members, onSave }: TaskRowProps) => {
         status,
         outcome,
         assigned_user_id: assignedUserId ? assignedUserId : null,
-        notes: notes.trim() ? notes.trim() : null
+        notes: notes.trim() ? notes.trim() : null,
       });
     } catch (apiError) {
-      setError(apiError instanceof ApiError ? apiError.message : "Aggiornamento non riuscito.");
+      setError(
+        apiError instanceof ApiError
+          ? apiError.message
+          : t("events.tasks.errors.updateFailed"),
+      );
     } finally {
       setSaving(false);
     }
@@ -311,45 +377,68 @@ const TaskRow = ({ task, members, onSave }: TaskRowProps) => {
 
   return (
     <tr>
-      <td>{task.structure_id ?? "N/A"}</td>
+      <td>{task.structure_id ?? t("events.tasks.structureFallback")}</td>
       <td>
-        <select value={assignedUserId} onChange={(event) => setAssignedUserId(event.target.value)} aria-label="Assegnato">
-          <option value="">Non assegnato</option>
+        <select
+          value={assignedUserId}
+          onChange={(event) => setAssignedUserId(event.target.value)}
+          aria-label={t("events.tasks.assignee.label")}
+        >
+          <option value="">{t("events.tasks.assignee.none")}</option>
           {members.map((member) => (
             <option key={member.id} value={member.user.id}>
               {member.user.name} ({roleLabels[member.role]})
             </option>
           ))}
         </select>
-        {task.assigned_user_name && <p className="muted">Attuale: {task.assigned_user_name}</p>}
+        {task.assigned_user_name && (
+          <InlineMessage>
+            {t("events.tasks.assignee.current", { name: task.assigned_user_name })}
+          </InlineMessage>
+        )}
       </td>
       <td>
-        <select value={status} onChange={(event) => setStatus(event.target.value as EventContactTaskStatus)}>
-          {taskStatuses.map((value) => (
-            <option key={value} value={value}>
-              {value}
+        <select
+          value={status}
+          onChange={(event) => setStatus(event.target.value as EventContactTaskStatus)}
+          aria-label={t("events.tasks.table.status")}
+        >
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
       </td>
       <td>
-        <select value={outcome} onChange={(event) => setOutcome(event.target.value as EventContactTaskOutcome)}>
-          {taskOutcomes.map((value) => (
-            <option key={value} value={value}>
-              {value}
+        <select
+          value={outcome}
+          onChange={(event) => setOutcome(event.target.value as EventContactTaskOutcome)}
+          aria-label={t("events.tasks.table.outcome")}
+        >
+          {outcomeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
       </td>
       <td>
-        <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} />
+        <textarea
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          rows={2}
+          aria-label={t("events.tasks.table.notes")}
+        />
       </td>
-      <td>{new Date(task.updated_at).toLocaleString()}</td>
       <td>
-        <button type="button" onClick={handleSave} disabled={saving}>
-          {saving ? "Salvataggio…" : "Salva"}
-        </button>
-        {error && <p className="error">{error}</p>}
+        <time dateTime={task.updated_at}>{new Date(task.updated_at).toLocaleString("it-IT")}</time>
+      </td>
+      <td>
+        <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
+          {saving ? t("events.tasks.actions.saving") : t("events.tasks.actions.save")}
+        </Button>
+        {error && <InlineMessage tone="danger">{error}</InlineMessage>}
       </td>
     </tr>
   );
@@ -363,9 +452,7 @@ export const EventDetailsPage = () => {
   const isValidEventId = Number.isFinite(numericId);
   const liveState = useEventLive(isValidEventId ? numericId : null);
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<
-    "candidature" | "attivita" | "preventivi" | "allegati"
-  >("candidature");
+  const [activeTab, setActiveTab] = useState<EventDetailsTab>("candidature");
   const [candidateSlug, setCandidateSlug] = useState("");
   const [candidateAssignee, setCandidateAssignee] = useState("");
   const [candidateError, setCandidateError] = useState<string | null>(null);
@@ -407,7 +494,9 @@ export const EventDetailsPage = () => {
       setCandidateError(null);
     },
     onError: (error: unknown) => {
-      setCandidateError(error instanceof ApiError ? error.message : "Impossibile aggiungere la struttura.");
+      setCandidateError(
+        error instanceof ApiError ? error.message : t("events.candidates.add.error"),
+      );
     }
   });
 
@@ -445,10 +534,11 @@ export const EventDetailsPage = () => {
       setMemberError(null);
     },
     onError: (error: unknown) => {
+      const fallback = t("events.details.team.invite.error");
       const message =
         error instanceof ApiError && typeof error.body === "object" && error.body && "detail" in error.body
-          ? String((error.body as { detail?: unknown }).detail ?? "Impossibile aggiungere il membro")
-          : "Impossibile aggiungere il membro";
+          ? String((error.body as { detail?: unknown }).detail ?? fallback)
+          : fallback;
       setMemberError(message);
     }
   });
@@ -461,10 +551,11 @@ export const EventDetailsPage = () => {
       setMemberError(null);
     },
     onError: (error: unknown) => {
+      const fallback = t("events.details.team.roleUpdateError");
       const message =
         error instanceof ApiError && typeof error.body === "object" && error.body && "detail" in error.body
-          ? String((error.body as { detail?: unknown }).detail ?? "Impossibile aggiornare il ruolo")
-          : "Impossibile aggiornare il ruolo";
+          ? String((error.body as { detail?: unknown }).detail ?? fallback)
+          : fallback;
       setMemberError(message);
     }
   });
@@ -476,7 +567,7 @@ export const EventDetailsPage = () => {
       setMemberError(null);
     },
     onError: () => {
-      setMemberError("Impossibile rimuovere il membro.");
+      setMemberError(t("events.details.team.removeError"));
     }
   });
 
@@ -491,7 +582,7 @@ export const EventDetailsPage = () => {
   const handleAddCandidate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!candidateSlug.trim()) {
-      setCandidateError("Indica lo slug della struttura.");
+      setCandidateError(t("events.candidates.add.missingSlug"));
       return;
     }
     await addCandidateMutation.mutateAsync({
@@ -508,14 +599,14 @@ export const EventDetailsPage = () => {
       const result = await getSuggestions(numericId);
       setSuggestions(result);
     } catch (error) {
-      setCandidateError("Impossibile caricare i suggerimenti.");
+      setCandidateError(t("events.candidates.suggestions.error"));
     }
   };
 
   const handleInvite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!inviteEmail.trim()) {
-      setMemberError("Indica un indirizzo email.");
+      setMemberError(t("events.details.team.invite.missingEmail"));
       return;
     }
     await addMemberMutation.mutateAsync({ email: inviteEmail.trim(), role: inviteRole });
@@ -531,13 +622,34 @@ export const EventDetailsPage = () => {
 
   const event = eventQuery.data as Event | undefined;
   const summary = summaryQuery.data as EventSummary | undefined;
-
-  const participantsTotal = useMemo(() => {
-    if (!event) {
-      return 0;
-    }
-    return Object.values(event.participants).reduce((acc, value) => acc + value, 0);
-  }, [event]);
+  const tabPrefix = useId();
+  const tabs = useMemo<Array<{ id: EventDetailsTab; label: string }>>(
+    () => [
+      { id: "candidature", label: t("events.details.tabs.candidates") },
+      { id: "attivita", label: t("events.details.tabs.activities") },
+      { id: "preventivi", label: t("events.details.tabs.quotes") },
+      { id: "allegati", label: t("events.details.tabs.attachments") },
+    ],
+    [t],
+  );
+  const tabListId = `${tabPrefix}-tablist`;
+  const numberFormatter = useMemo(() => new Intl.NumberFormat("it-IT"), []);
+  const candidateStatusOptions = useMemo(
+    () =>
+      candidateStatuses.map((status) => ({
+        value: status,
+        label: t(`events.candidates.status.${status}`),
+      })),
+    [t],
+  );
+  const statusMetrics = useMemo(
+    () =>
+      candidateStatusOptions.map((option) => ({
+        ...option,
+        count: summary?.status_counts[option.value] ?? 0,
+      })),
+    [candidateStatusOptions, summary],
+  );
 
   const branchSegments = useMemo(
     () => event?.branch_segments ?? [],
@@ -581,6 +693,14 @@ export const EventDetailsPage = () => {
   const displayedTotalParticipants = useMemo(
     () => Object.values(displayedParticipantsTotals).reduce((acc, value) => acc + value, 0),
     [displayedParticipantsTotals],
+  );
+  const roleLabels = useMemo(
+    () => ({
+      owner: t("events.members.roles.owner"),
+      collab: t("events.members.roles.collab"),
+      viewer: t("events.members.roles.viewer"),
+    }),
+    [t],
   );
   const segmentsMailDescription = useMemo(() => {
     if (normalizedSegments.length === 0) {
@@ -659,20 +779,26 @@ export const EventDetailsPage = () => {
 
   if (!isValidEventId) {
     return (
-      <section>
-        <div className="card">
-          <p>Identificativo evento non valido.</p>
-        </div>
+      <section aria-labelledby="event-details-error">
+        <Surface>
+          <SectionHeader>
+            <h2 id="event-details-error">{t("events.details.errors.invalidId.title")}</h2>
+          </SectionHeader>
+          <InlineMessage tone="danger">{t("events.details.errors.invalidId.message")}</InlineMessage>
+        </Surface>
       </section>
     );
   }
 
   if (eventQuery.isLoading) {
     return (
-      <section>
-        <div className="card">
-          <p>Caricamento evento…</p>
-        </div>
+      <section aria-busy="true" aria-labelledby="event-details-loading">
+        <Surface>
+          <SectionHeader>
+            <h2 id="event-details-loading">{t("events.details.states.title")}</h2>
+          </SectionHeader>
+          <InlineMessage>{t("events.details.states.loading")}</InlineMessage>
+        </Surface>
       </section>
     );
   }
@@ -681,10 +807,17 @@ export const EventDetailsPage = () => {
     const error = eventQuery.error;
     const isForbidden = error instanceof ApiError && error.status === 403;
     return (
-      <section>
-        <div className="card">
-          <p>{isForbidden ? "Non hai accesso a questo evento." : "Impossibile trovare l'evento richiesto."}</p>
-        </div>
+      <section aria-labelledby="event-details-error">
+        <Surface>
+          <SectionHeader>
+            <h2 id="event-details-error">{t("events.details.errors.title")}</h2>
+          </SectionHeader>
+          <InlineMessage tone="danger">
+            {isForbidden
+              ? t("events.details.errors.forbidden")
+              : t("events.details.errors.notFound")}
+          </InlineMessage>
+        </Surface>
       </section>
     );
   }
@@ -733,49 +866,107 @@ export const EventDetailsPage = () => {
     }
   };
 
+  const branchLabel = t(`events.branches.${event.branch}`, event.branch);
+  const liveMode = liveState.mode === "sse" ? "sse" : "polling";
+  const liveModeLabel = t(`events.details.live.mode.${liveMode}`);
+  const candidateFormSlugId = `${tabPrefix}-candidate-slug`;
+  const candidateFormAssigneeId = `${tabPrefix}-candidate-assignee`;
+  const inviteEmailId = `${tabPrefix}-invite-email`;
+  const inviteRoleId = `${tabPrefix}-invite-role`;
+  const taskAssigneeId = `${tabPrefix}-task-assignee`;
+
   return (
-    <section>
-      <div className="card">
-        <header className="card-header">
-          <h2>{event.title}</h2>
+    <section aria-labelledby="event-details-title">
+      <Surface>
+        <SectionHeader className="event-details__header">
           <div>
-            <span>{event.branch}</span>
-            <span>
-              {event.start_date} → {event.end_date}
-            </span>
-            <span>{participantsTotal} partecipanti</span>
-            <span className="badge" aria-live="polite">
-              {liveState.mode === "sse" ? "Live" : "Polling"}
-            </span>
-            <button
-              type="button"
-              className="button"
-              onClick={handleDownloadIcal}
-              disabled={icalDownloading}
-            >
-              {icalDownloading ? t("common.loading") : t("events.details.downloadIcal")}
-            </button>
-            {auth.user?.is_admin && (
-              <button
-                type="button"
-                className="button secondary"
-                onClick={handleMailPreview}
-              >
-                {t("events.details.mailPreviewButton")}
-              </button>
-            )}
+            <h1 id="event-details-title">{event.title}</h1>
+            <p className="helper-text">
+              {t("events.details.branchSummary", { branch: branchLabel })}
+            </p>
+            <p className="helper-text">
+              {t("events.details.period", { start: eventStartLabel, end: eventEndLabel })}
+            </p>
           </div>
-        </header>
-        {icalError && <p className="error">{icalError}</p>}
-        {mailPreviewError && <p className="error">{mailPreviewError}</p>}
-        <div className="event-branch-segments">
-          <h3>{t("events.details.segments.title")}</h3>
-          <div className="branch-segments__summary">
-            <h4>{t("events.wizard.summary.requirementsTitle")}</h4>
+          <InlineActions>
+            <span
+              className="badge"
+              aria-live="polite"
+              aria-label={t("events.details.live.ariaLabel", { mode: liveModeLabel })}
+            >
+              {liveModeLabel}
+            </span>
+            <Button onClick={handleDownloadIcal} disabled={icalDownloading}>
+              {icalDownloading ? t("common.loading") : t("events.details.downloadIcal")}
+            </Button>
+            {auth.user?.is_admin && (
+              <Button variant="secondary" onClick={handleMailPreview}>
+                {t("events.details.mailPreviewButton")}
+              </Button>
+            )}
+          </InlineActions>
+        </SectionHeader>
+        {icalError && <InlineMessage tone="danger">{icalError}</InlineMessage>}
+        {mailPreviewError && <InlineMessage tone="danger">{mailPreviewError}</InlineMessage>}
+        <ToolbarSection aria-label={t("events.details.metrics.title")}>
+          <Metric label={t("events.details.metrics.branch")} value={branchLabel} />
+          <Metric
+            label={t("events.details.metrics.total")}
+            value={numberFormatter.format(displayedTotalParticipants)}
+          />
+          {peakParticipants > 0 && (
+            <Metric
+              label={t("events.details.metrics.peak")}
+              value={numberFormatter.format(peakParticipants)}
+            />
+          )}
+          {accommodationSummary.needsIndoor && (
+            <Metric
+              label={t("events.details.metrics.indoor")}
+              value={numberFormatter.format(accommodationSummary.indoorCapacity)}
+            />
+          )}
+          {accommodationSummary.needsTents && (
+            <Metric
+              label={t("events.details.metrics.tents")}
+              value={numberFormatter.format(accommodationSummary.tentsCapacity)}
+            />
+          )}
+        </ToolbarSection>
+        {summary && (
+          <ToolbarSection aria-label={t("events.details.summary.title")}>
+            {statusMetrics.map((metric) => (
+              <Metric
+                key={metric.value}
+                label={metric.label}
+                value={numberFormatter.format(metric.count)}
+              />
+            ))}
+          </ToolbarSection>
+        )}
+        {summary?.has_conflicts && (
+          <InlineMessage tone="danger">{t("events.details.summary.hasConflicts")}</InlineMessage>
+        )}
+      </Surface>
+
+      <Surface>
+        <SectionHeader>
+          <div>
+            <h2>{t("events.details.segments.title")}</h2>
+            <p className="helper-text">
+              {t("events.details.segments.subtitle", {
+                total: numberFormatter.format(displayedTotalParticipants),
+              })}
+            </p>
+          </div>
+        </SectionHeader>
+        <ToolbarSection className="branch-segments__summary">
+          <div>
+            <h3>{t("events.details.segments.summaryTitle")}</h3>
             <ul>
               <li>
                 {t("events.wizard.segments.summaryResolvedBranch", {
-                  branch: t(`events.branches.${event.branch}`, event.branch),
+                  branch: branchLabel,
                 })}
               </li>
               {displayedParticipantsTotals.lc > 0 && (
@@ -803,127 +994,169 @@ export const EventDetailsPage = () => {
                 </li>
               )}
               {displayedParticipantsTotals.leaders > 0 && (
-                <li>{t("events.wizard.segments.summaryLeaders", { count: displayedParticipantsTotals.leaders })}</li>
+                <li>
+                  {t("events.wizard.segments.summaryLeaders", {
+                    count: displayedParticipantsTotals.leaders,
+                  })}
+                </li>
               )}
-              <li>{t("events.wizard.segments.summaryTotal", { count: displayedTotalParticipants })}</li>
+              <li>
+                {t("events.wizard.segments.summaryTotal", {
+                  count: displayedTotalParticipants,
+                })}
+              </li>
               {branchSegments.length > 0 && peakParticipants > 0 && (
-                <li>{t("events.wizard.segments.summaryPeak", { count: peakParticipants })}</li>
+                <li>
+                  {t("events.wizard.segments.summaryPeak", { count: peakParticipants })}
+                </li>
               )}
               {branchSegments.length > 0 && accommodationSummary.needsIndoor && (
-                <li>{t("events.wizard.segments.summaryIndoor", { count: accommodationSummary.indoorCapacity })}</li>
+                <li>
+                  {t("events.wizard.segments.summaryIndoor", {
+                    count: accommodationSummary.indoorCapacity,
+                  })}
+                </li>
               )}
               {branchSegments.length > 0 && accommodationSummary.needsTents && (
-                <li>{t("events.wizard.segments.summaryTents", { count: accommodationSummary.tentsCapacity })}</li>
+                <li>
+                  {t("events.wizard.segments.summaryTents", {
+                    count: accommodationSummary.tentsCapacity,
+                  })}
+                </li>
               )}
             </ul>
-            <LogisticsSummary
-              accommodation={accommodationSummary}
-              peakParticipants={peakParticipants}
-            />
           </div>
-          {branchSegments.length === 0 ? (
-            <p>{t("events.details.segments.empty")}</p>
-          ) : (
-            <ul className="branch-segments__list">
-              {branchSegments.map((segment) => {
-                const branchLabel = t(`events.branches.${segment.branch}`, segment.branch);
-                const periodLabel = t("events.list.period", { start: segment.start_date, end: segment.end_date });
-                const participantsLabel = t("events.wizard.summary.segmentParticipants", {
-                  youth: segment.youth_count,
-                  leaders: segment.leaders_count,
-                });
-                const accommodationLabel = t(
-                  `events.wizard.segments.accommodation.options.${segment.accommodation}`,
-                );
-                return (
-                  <li key={segment.id}>
-                    <div className="branch-segments__list-info">
-                      <strong>{branchLabel}</strong>
-                      <span>{periodLabel}</span>
-                      <span>{participantsLabel}</span>
-                      <span>{accommodationLabel}</span>
-                    </div>
-                    {segment.notes && <p className="branch-segments__list-notes">{segment.notes}</p>}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-        <div className="team-section">
-          <h3>Team</h3>
-          {memberError && <p className="error">{memberError}</p>}
-          {membersQuery.isLoading ? (
-            <p>Caricamento membri…</p>
-          ) : membersQuery.isError ? (
-            <p className="error">Impossibile caricare i membri.</p>
-          ) : (
+          <LogisticsSummary
+            accommodation={accommodationSummary}
+            peakParticipants={peakParticipants}
+          />
+        </ToolbarSection>
+        {branchSegments.length === 0 ? (
+          <EmptyState
+            title={t("events.details.segments.emptyTitle")}
+            description={t("events.details.segments.empty")}
+          />
+        ) : (
+          <ul className="branch-segments__list">
+            {branchSegments.map((segment) => {
+              const segmentBranchLabel = t(`events.branches.${segment.branch}`, segment.branch);
+              const periodLabel = t("events.list.period", {
+                start: segment.start_date,
+                end: segment.end_date,
+              });
+              const participantsLabel = t("events.wizard.summary.segmentParticipants", {
+                youth: segment.youth_count,
+                leaders: segment.leaders_count,
+              });
+              const accommodationLabel = t(
+                `events.wizard.segments.accommodation.options.${segment.accommodation}`,
+              );
+              return (
+                <li key={segment.id}>
+                  <div className="branch-segments__list-info">
+                    <strong>{segmentBranchLabel}</strong>
+                    <span>{periodLabel}</span>
+                    <span>{participantsLabel}</span>
+                    <span>{accommodationLabel}</span>
+                  </div>
+                  {segment.notes && (
+                    <p className="branch-segments__list-notes">
+                      <strong>{t("events.details.segments.notesLabel")} </strong>
+                      {segment.notes}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Surface>
+
+      <Surface>
+        <SectionHeader>
+          <div>
+            <h2>{t("events.details.team.title")}</h2>
+          </div>
+        </SectionHeader>
+        {memberError && <InlineMessage tone="danger">{memberError}</InlineMessage>}
+        {membersQuery.isLoading ? (
+          <InlineMessage>{t("events.details.team.loading")}</InlineMessage>
+        ) : membersQuery.isError ? (
+          <InlineMessage tone="danger">{t("events.details.team.error")}</InlineMessage>
+        ) : members.length === 0 ? (
+          <EmptyState
+            title={t("events.details.team.emptyTitle")}
+            description={t("events.details.team.emptyDescription")}
+          />
+        ) : (
+          <TableWrapper>
             <table>
               <thead>
                 <tr>
-                  <th>Nome</th>
-                  <th>Ruolo</th>
-                  {isOwner && <th>Azioni</th>}
+                  <th>{t("events.details.team.table.name")}</th>
+                  <th>{t("events.details.team.table.role")}</th>
+                  {isOwner && <th>{t("events.details.team.table.actions")}</th>}
                 </tr>
               </thead>
               <tbody>
-                {members.length === 0 ? (
-                  <tr>
-                    <td colSpan={isOwner ? 3 : 2}>Nessun membro registrato.</td>
-                  </tr>
-                ) : (
-                  members.map((member) => (
-                    <tr key={member.id}>
-                      <td>
-                        <strong>{member.user.name}</strong>
-                        <br />
-                        <span className="muted">{member.user.email}</span>
-                      </td>
-                      <td>
-                        {isOwner ? (
-                          <select
-                            value={member.role}
-                            onChange={(event) =>
-                              updateMemberMutation.mutate({
-                                memberId: member.id,
-                                role: event.target.value as EventMemberRole
-                              })
-                            }
-                            aria-label={`Ruolo per ${member.user.name}`}
-                            disabled={updateMemberMutation.isPending || (member.user.id === auth.user?.id && member.role === "owner")}
-                          >
-                            {Object.entries(roleLabels).map(([role, label]) => (
-                              <option key={role} value={role}>
-                                {label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="badge">{roleLabels[member.role]}</span>
-                        )}
-                      </td>
-                      {isOwner && (
-                        <td>
-                          <button
-                            type="button"
-                            onClick={() => removeMemberMutation.mutate(member.id)}
-                            disabled={removeMemberMutation.isPending || member.user.id === auth.user?.id}
-                          >
-                            Rimuovi
-                          </button>
-                        </td>
+                {members.map((member) => (
+                  <tr key={member.id}>
+                    <td>
+                      <strong>{member.user.name}</strong>
+                      <br />
+                      <span className="muted">{member.user.email}</span>
+                    </td>
+                    <td>
+                      {isOwner ? (
+                        <select
+                          value={member.role}
+                          onChange={(event) =>
+                            updateMemberMutation.mutate({
+                              memberId: member.id,
+                              role: event.target.value as EventMemberRole,
+                            })
+                          }
+                          aria-label={t("events.details.team.roleSelect", { name: member.user.name })}
+                          disabled={
+                            updateMemberMutation.isPending ||
+                            (member.user.id === auth.user?.id && member.role === "owner")
+                          }
+                        >
+                          {Object.entries(roleLabels).map(([role, label]) => (
+                            <option key={role} value={role}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="badge">{roleLabels[member.role]}</span>
                       )}
-                    </tr>
-                  ))
-                )}
+                    </td>
+                    {isOwner && (
+                      <td>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => removeMemberMutation.mutate(member.id)}
+                          disabled={removeMemberMutation.isPending || member.user.id === auth.user?.id}
+                        >
+                          {t("events.details.team.remove")}
+                        </Button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
               </tbody>
             </table>
-          )}
-          {isOwner && (
-            <form className="inline-form" onSubmit={handleInvite}>
-              <label>
-                Email
+          </TableWrapper>
+        )}
+        {isOwner && (
+          <form onSubmit={handleInvite}>
+            <InlineFields>
+              <label htmlFor={inviteEmailId}>
+                {t("events.details.team.invite.email")}
                 <input
+                  id={inviteEmailId}
                   type="email"
                   value={inviteEmail}
                   onChange={(event) => setInviteEmail(event.target.value)}
@@ -931,9 +1164,13 @@ export const EventDetailsPage = () => {
                   required
                 />
               </label>
-              <label>
-                Ruolo
-                <select value={inviteRole} onChange={(event) => setInviteRole(event.target.value as EventMemberRole)}>
+              <label htmlFor={inviteRoleId}>
+                {t("events.details.team.invite.role")}
+                <select
+                  id={inviteRoleId}
+                  value={inviteRole}
+                  onChange={(event) => setInviteRole(event.target.value as EventMemberRole)}
+                >
                   {Object.entries(roleLabels).map(([role, label]) => (
                     <option key={role} value={role}>
                       {label}
@@ -941,187 +1178,234 @@ export const EventDetailsPage = () => {
                   ))}
                 </select>
               </label>
-              <button type="submit" disabled={addMemberMutation.isPending}>
-                {addMemberMutation.isPending ? "Invio…" : "Invita"}
-              </button>
-            </form>
-          )}
-        </div>
-        {summary && (
-          <div className="summary">
-            <strong>Stato candidature</strong>
-            <ul>
-              {candidateStatuses.map((status) => (
-                <li key={status}>
-                  {status}: {summary.status_counts[status] ?? 0}
-                </li>
-              ))}
-            </ul>
-            {summary.has_conflicts && <p className="warning">Attenzione: conflitti di disponibilità presenti.</p>}
-          </div>
+            </InlineFields>
+            <InlineActions>
+              <Button type="submit" disabled={addMemberMutation.isPending}>
+                {addMemberMutation.isPending
+                  ? t("events.details.team.invite.pending")
+                  : t("events.details.team.invite.submit")}
+              </Button>
+            </InlineActions>
+          </form>
         )}
-        <nav className="tabs">
-          <button type="button" className={activeTab === "candidature" ? "active" : ""} onClick={() => setActiveTab("candidature")}>
-            Candidature
-          </button>
-          <button type="button" className={activeTab === "attivita" ? "active" : ""} onClick={() => setActiveTab("attivita")}>
-            Attività
-          </button>
-          <button type="button" className={activeTab === "preventivi" ? "active" : ""} onClick={() => setActiveTab("preventivi")}> 
-            Preventivi
-          </button>
-          <button type="button" className={activeTab === "allegati" ? "active" : ""} onClick={() => setActiveTab("allegati")}>
-            Allegati
-          </button>
+      </Surface>
+      <Surface>
+        <nav
+          className="tabs"
+          role="tablist"
+          aria-label={t("events.details.tabs.ariaLabel")}
+          id={tabListId}
+        >
+          {tabs.map((tab) => {
+            const tabId = `${tabPrefix}-${tab.id}`;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                id={tabId}
+                aria-selected={activeTab === tab.id}
+                aria-controls={`${tabId}-panel`}
+                className={activeTab === tab.id ? "active" : ""}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </nav>
         {activeTab === "candidature" && (
-          <div className="tab-panel">
-            <form className="inline-form" onSubmit={handleAddCandidate}>
-              <label>
-                Aggiungi struttura (slug)
-                <input
-                  type="text"
-                  value={candidateSlug}
-                  onChange={(event) => setCandidateSlug(event.target.value)}
-                  placeholder="es. casa-inverno"
-                />
-              </label>
-              <label>
-                Assegna a
-                <select value={candidateAssignee} onChange={(event) => setCandidateAssignee(event.target.value)}>
-                  <option value="">Nessuno</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.user.id}>
-                      {member.user.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="submit" disabled={addCandidateMutation.isPending}>
-                {addCandidateMutation.isPending ? "Aggiunta…" : "Aggiungi"}
-              </button>
-              <button type="button" onClick={handleLoadSuggestions}>
-                Suggerimenti
-              </button>
+          <div
+            role="tabpanel"
+            id={`${tabPrefix}-candidature-panel`}
+            aria-labelledby={`${tabPrefix}-candidature`}
+          >
+            <form onSubmit={handleAddCandidate}>
+              <InlineFields>
+                <label htmlFor={candidateFormSlugId}>
+                  {t("events.candidates.add.label")}
+                  <input
+                    id={candidateFormSlugId}
+                    type="text"
+                    value={candidateSlug}
+                    onChange={(event) => setCandidateSlug(event.target.value)}
+                    placeholder={t("events.candidates.add.placeholder")}
+                  />
+                </label>
+                <label htmlFor={candidateFormAssigneeId}>
+                  {t("events.candidates.add.assignee")}
+                  <select
+                    id={candidateFormAssigneeId}
+                    value={candidateAssignee}
+                    onChange={(event) => setCandidateAssignee(event.target.value)}
+                  >
+                    <option value="">{t("events.candidates.labels.noAssignee")}</option>
+                    {members.map((member) => (
+                      <option key={member.id} value={member.user.id}>
+                        {member.user.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </InlineFields>
+              <InlineActions>
+                <Button type="submit" disabled={addCandidateMutation.isPending}>
+                  {addCandidateMutation.isPending
+                    ? t("events.candidates.add.submitting")
+                    : t("events.candidates.add.submit")}
+                </Button>
+                <Button type="button" variant="secondary" onClick={handleLoadSuggestions}>
+                  {t("events.candidates.suggestions.action")}
+                </Button>
+              </InlineActions>
             </form>
-            {candidateError && <p className="error">{candidateError}</p>}
+            {candidateError && <InlineMessage tone="danger">{candidateError}</InlineMessage>}
             {suggestions.length > 0 && (
-              <ul className="suggestions">
-                {suggestions.map((suggestion) => (
-                  <li key={suggestion.structure_id}>
-                    <span>{suggestion.structure_name}</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        addCandidateMutation.mutate({
-                          structure_slug: suggestion.structure_slug,
-                          assigned_user_id: candidateAssignee ? candidateAssignee : undefined
-                        })
-                      }
-                    >
-                      Aggiungi
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="event-details__suggestions">
+                <h3>{t("events.candidates.suggestions.title")}</h3>
+                <ul>
+                  {suggestions.map((suggestion) => (
+                    <li key={suggestion.structure_id}>
+                      <span>{suggestion.structure_name}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() =>
+                          addCandidateMutation.mutate({
+                            structure_slug: suggestion.structure_slug,
+                            assigned_user_id: candidateAssignee ? candidateAssignee : undefined,
+                          })
+                        }
+                      >
+                        {t("events.candidates.suggestions.add")}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
-            <table>
-              <thead>
-                <tr>
-                  <th>Struttura</th>
-                  <th>Contatto</th>
-                  <th>Azioni rapide</th>
-                  <th>Assegnato a</th>
-                  <th>Stato</th>
-                  <th>Aggiornato</th>
-                  <th>Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {event.candidates?.length ? (
-                  event.candidates.map((candidate) => (
-                    <CandidateRow
-                      key={candidate.id}
-                      candidate={candidate}
-                      hasConflict={summary?.has_conflicts ?? false}
-                      members={members}
-                      onSave={handleCandidateSave}
-                      eventTitle={event.title}
-                      eventStart={eventStartLabel}
-                      eventEnd={eventEndLabel}
-                      segmentsDescription={segmentsMailDescription}
-                    />
-                  ))
-                ) : (
+            <TableWrapper>
+              <table>
+                <thead>
                   <tr>
-                    <td colSpan={5}>Nessuna candidatura inserita.</td>
+                    <th>{t("events.candidates.table.structure")}</th>
+                    <th>{t("events.candidates.table.contact")}</th>
+                    <th>{t("events.candidates.table.quickActions")}</th>
+                    <th>{t("events.candidates.table.assignee")}</th>
+                    <th>{t("events.candidates.table.status")}</th>
+                    <th>{t("events.candidates.table.updated")}</th>
+                    <th>{t("events.candidates.table.actions")}</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {event.candidates?.length ? (
+                    event.candidates.map((candidate) => (
+                      <CandidateRow
+                        key={candidate.id}
+                        candidate={candidate}
+                        hasConflict={summary?.has_conflicts ?? false}
+                        members={members}
+                        onSave={handleCandidateSave}
+                        eventTitle={event.title}
+                        eventStart={eventStartLabel}
+                        eventEnd={eventEndLabel}
+                        segmentsDescription={segmentsMailDescription}
+                      />
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7}>{t("events.candidates.table.empty")}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </TableWrapper>
           </div>
         )}
         {activeTab === "attivita" && (
-          <div className="tab-panel">
+          <div
+            role="tabpanel"
+            id={`${tabPrefix}-attivita-panel`}
+            aria-labelledby={`${tabPrefix}-attivita`}
+          >
             <form
-              className="inline-form"
               onSubmit={(event) => {
                 event.preventDefault();
                 addTaskMutation.mutate({
-                  assigned_user_id: newTaskAssignee ? newTaskAssignee : undefined
+                  assigned_user_id: newTaskAssignee ? newTaskAssignee : undefined,
                 });
               }}
             >
-              <label>
-                Assegna a
-                <select value={newTaskAssignee} onChange={(event) => setNewTaskAssignee(event.target.value)}>
-                  <option value="">Nessuno</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.user.id}>
-                      {member.user.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="submit" disabled={addTaskMutation.isPending}>
-                {addTaskMutation.isPending ? "Creazione…" : "Nuova attività"}
-              </button>
+              <InlineFields>
+                <label htmlFor={taskAssigneeId}>
+                  {t("events.tasks.form.assignee")}
+                  <select
+                    id={taskAssigneeId}
+                    value={newTaskAssignee}
+                    onChange={(event) => setNewTaskAssignee(event.target.value)}
+                  >
+                    <option value="">{t("events.tasks.assignee.none")}</option>
+                    {members.map((member) => (
+                      <option key={member.id} value={member.user.id}>
+                        {member.user.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </InlineFields>
+              <InlineActions>
+                <Button type="submit" disabled={addTaskMutation.isPending}>
+                  {addTaskMutation.isPending
+                    ? t("events.tasks.actions.creating")
+                    : t("events.tasks.actions.create")}
+                </Button>
+              </InlineActions>
             </form>
-            <table>
-              <thead>
-                <tr>
-                  <th>Struttura</th>
-                  <th>Assegnato</th>
-                  <th>Stato</th>
-                  <th>Esito</th>
-                  <th>Note</th>
-                  <th>Aggiornato</th>
-                  <th>Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {event.tasks?.length ? (
-                  event.tasks.map((task) => (
-                    <TaskRow key={task.id} task={task} members={members} onSave={handleTaskSave} />
-                  ))
-                ) : (
+            <TableWrapper>
+              <table>
+                <thead>
                   <tr>
-                    <td colSpan={7}>Nessuna attività registrata.</td>
+                    <th>{t("events.tasks.table.structure")}</th>
+                    <th>{t("events.tasks.table.assignee")}</th>
+                    <th>{t("events.tasks.table.status")}</th>
+                    <th>{t("events.tasks.table.outcome")}</th>
+                    <th>{t("events.tasks.table.notes")}</th>
+                    <th>{t("events.tasks.table.updated")}</th>
+                    <th>{t("events.tasks.table.actions")}</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {event.tasks?.length ? (
+                    event.tasks.map((task) => (
+                      <TaskRow key={task.id} task={task} members={members} onSave={handleTaskSave} />
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7}>{t("events.tasks.table.empty")}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </TableWrapper>
           </div>
         )}
         {activeTab === "preventivi" && (
-          <div className="tab-panel">
+          <div
+            role="tabpanel"
+            id={`${tabPrefix}-preventivi-panel`}
+            aria-labelledby={`${tabPrefix}-preventivi`}
+          >
             <EventQuotesTab event={event} />
           </div>
         )}
         {activeTab === "allegati" && (
-          <div className="tab-panel">
+          <div
+            role="tabpanel"
+            id={`${tabPrefix}-allegati-panel`}
+            aria-labelledby={`${tabPrefix}-allegati`}
+          >
             {!canViewAttachments ? (
-              <p>{t("attachments.state.forbidden")}</p>
+              <InlineMessage tone="danger">{t("attachments.state.forbidden")}</InlineMessage>
             ) : (
               <AttachmentsSection
                 ownerType="event"
@@ -1132,7 +1416,7 @@ export const EventDetailsPage = () => {
             )}
           </div>
         )}
-      </div>
+      </Surface>
     </section>
   );
 };

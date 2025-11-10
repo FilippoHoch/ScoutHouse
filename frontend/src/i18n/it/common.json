@@ -1313,7 +1313,76 @@
       "mailPreviewError": "Impossibile mostrare l'anteprima email.",
       "segments": {
         "title": "Branche coinvolte",
-        "empty": "Nessuna suddivisione per branca: sono mostrati solo i totali complessivi."
+        "empty": "Nessuna suddivisione per branca: sono mostrati solo i totali complessivi.",
+        "subtitle": "Totale persone pianificate: {{total}}",
+        "summaryTitle": "Esigenze logistiche",
+        "emptyTitle": "Nessuna branca registrata",
+        "notesLabel": "Note"
+      },
+      "branchSummary": "Branca evento: {{branch}}",
+      "period": "{{start}} → {{end}}",
+      "live": {
+        "ariaLabel": "Modalità aggiornamento: {{mode}}",
+        "mode": {
+          "sse": "Live",
+          "polling": "Polling"
+        }
+      },
+      "metrics": {
+        "title": "Riepilogo evento",
+        "branch": "Branca",
+        "total": "Totale partecipanti",
+        "peak": "Picco presenze",
+        "indoor": "Letti necessari",
+        "tents": "Posti tenda necessari"
+      },
+      "summary": {
+        "title": "Stato candidature",
+        "hasConflicts": "Attenzione: conflitti di disponibilità presenti."
+      },
+      "team": {
+        "title": "Team",
+        "loading": "Caricamento membri…",
+        "error": "Impossibile caricare i membri.",
+        "emptyTitle": "Nessun membro registrato.",
+        "emptyDescription": "Invita colleghi per collaborare all'evento.",
+        "table": {
+          "name": "Nome",
+          "role": "Ruolo",
+          "actions": "Azioni"
+        },
+        "roleSelect": "Ruolo per {{name}}",
+        "remove": "Rimuovi",
+        "invite": {
+          "email": "Email",
+          "role": "Ruolo",
+          "pending": "Invio…",
+          "submit": "Invita",
+          "missingEmail": "Indica un indirizzo email.",
+          "error": "Impossibile aggiungere il membro."
+        },
+        "roleUpdateError": "Impossibile aggiornare il ruolo.",
+        "removeError": "Impossibile rimuovere il membro."
+      },
+      "tabs": {
+        "ariaLabel": "Sezioni evento",
+        "candidates": "Candidature",
+        "activities": "Attività",
+        "quotes": "Preventivi",
+        "attachments": "Allegati"
+      },
+      "states": {
+        "title": "Dettaglio evento",
+        "loading": "Caricamento evento…"
+      },
+      "errors": {
+        "title": "Errore",
+        "forbidden": "Non hai accesso a questo evento.",
+        "notFound": "Impossibile trovare l'evento richiesto.",
+        "invalidId": {
+          "title": "ID evento non valido",
+          "message": "L'identificativo indicato non è valido."
+        }
       }
     },
     "candidates": {
@@ -1355,6 +1424,40 @@
         "noAssignee": "Non assegnato",
         "currentAssignee": "Attuale: {{name}}",
         "status": "Stato"
+      },
+      "status": {
+        "to_contact": "Da contattare",
+        "contacting": "In contatto",
+        "available": "Disponibile",
+        "unavailable": "Non disponibile",
+        "followup": "Da ricontattare",
+        "confirmed": "Confermata",
+        "option": "Opzione"
+      },
+      "add": {
+        "label": "Aggiungi struttura (slug)",
+        "placeholder": "es. casa-inverno",
+        "assignee": "Assegna a",
+        "submit": "Aggiungi",
+        "submitting": "Aggiunta…",
+        "error": "Impossibile aggiungere la struttura.",
+        "missingSlug": "Indica lo slug della struttura."
+      },
+      "suggestions": {
+        "title": "Suggerimenti",
+        "action": "Suggerimenti",
+        "add": "Aggiungi",
+        "error": "Impossibile caricare i suggerimenti."
+      },
+      "table": {
+        "structure": "Struttura",
+        "contact": "Contatto",
+        "quickActions": "Azioni rapide",
+        "assignee": "Assegnato a",
+        "status": "Stato",
+        "updated": "Aggiornato",
+        "actions": "Azioni",
+        "empty": "Nessuna candidatura inserita."
       }
     },
     "filters": {
@@ -1583,6 +1686,54 @@
       "compareTitle": "Confronto scenari",
       "compareScenario": "Scenario",
       "compareDelta": "Differenza"
+    },
+    "members": {
+      "roles": {
+        "owner": "Responsabile",
+        "collab": "Collaboratore",
+        "viewer": "Osservatore"
+      }
+    },
+    "tasks": {
+      "status": {
+        "todo": "Da fare",
+        "in_progress": "In corso",
+        "done": "Completata",
+        "n_a": "N/D"
+      },
+      "outcome": {
+        "pending": "In attesa",
+        "positive": "Positivo",
+        "negative": "Negativo"
+      },
+      "errors": {
+        "updateFailed": "Impossibile aggiornare l'attività."
+      },
+      "structureFallback": "N/D",
+      "assignee": {
+        "label": "Assegnatario",
+        "none": "Nessuno",
+        "current": "Attuale: {{name}}"
+      },
+      "table": {
+        "structure": "Struttura",
+        "assignee": "Assegnato",
+        "status": "Stato",
+        "outcome": "Esito",
+        "notes": "Note",
+        "updated": "Aggiornato",
+        "actions": "Azioni",
+        "empty": "Nessuna attività registrata."
+      },
+      "actions": {
+        "save": "Salva",
+        "saving": "Salvataggio…",
+        "create": "Nuova attività",
+        "creating": "Creazione…"
+      },
+      "form": {
+        "assignee": "Assegna a"
+      }
     }
   }
 }
