@@ -210,7 +210,7 @@ button[disabled] {
   left: var(--space-md);
 }
 
-header {
+.site-header {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(24px);
   border-bottom: 1px solid rgba(229, 231, 235, 0.8);
@@ -220,7 +220,7 @@ header {
   isolation: isolate;
 }
 
-header nav {
+.site-header nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -276,7 +276,7 @@ main {
   margin: 0 auto;
 }
 
-body.layout-wide header nav,
+body.layout-wide .site-header nav,
 body.layout-wide main {
   max-width: 1380px;
 }
@@ -4137,7 +4137,7 @@ table tbody tr:hover {
 }
 
 @media (max-width: 768px) {
-  header nav {
+  .site-header nav {
     padding: var(--space-md);
   }
 

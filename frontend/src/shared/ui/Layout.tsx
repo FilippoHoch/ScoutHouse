@@ -47,7 +47,7 @@ export const Layout = () => {
       <a className="skip-link" href="#main-content">
         {t("layout.skipLink")}
       </a>
-      <header>
+      <header className="site-header">
         <nav aria-label={t("layout.navigationLabel")}>
           <div className="nav-links">
             <Link to="/" aria-label={t("layout.nav.home")} className="nav-home">
