@@ -19,9 +19,14 @@ from .contact import ContactRead
 
 class EventParticipants(BaseModel):
     lc: int = Field(default=0, ge=0)
+    lc_kambusieri: int = Field(default=0, ge=0)
     eg: int = Field(default=0, ge=0)
+    eg_kambusieri: int = Field(default=0, ge=0)
     rs: int = Field(default=0, ge=0)
+    rs_kambusieri: int = Field(default=0, ge=0)
     leaders: int = Field(default=0, ge=0)
+    detached_leaders: int = Field(default=0, ge=0)
+    detached_guests: int = Field(default=0, ge=0)
 
     model_config = {
         "from_attributes": True,
@@ -34,6 +39,7 @@ class EventBranchSegmentBase(BaseModel):
     end_date: date
     youth_count: int = Field(default=0, ge=0)
     leaders_count: int = Field(default=0, ge=0)
+    kambusieri_count: int = Field(default=0, ge=0)
     accommodation: EventAccommodation
     notes: str | None = None
 

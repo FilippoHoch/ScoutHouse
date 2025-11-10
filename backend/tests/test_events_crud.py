@@ -9,7 +9,7 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-from tests.utils import auth_headers
+from tests.utils import auth_headers, participants_payload
 
 
 @pytest.fixture(autouse=True)
@@ -35,7 +35,7 @@ def test_event_crud_flow() -> None:
         "branch": "LC",
         "start_date": "2025-01-10",
         "end_date": "2025-01-12",
-        "participants": {"lc": 12, "leaders": 3, "eg": 0, "rs": 0},
+        "participants": participants_payload(lc=12, leaders=3),
         "budget_total": 1500,
         "status": "planning",
     }
@@ -58,7 +58,7 @@ def test_event_crud_flow() -> None:
 
     update_resp = client.patch(
         f"/api/v1/events/{event_id}",
-        json={"status": "booked", "participants": {"lc": 15, "leaders": 4, "eg": 0, "rs": 0}},
+        json={"status": "booked", "participants": participants_payload(lc=15, leaders=4)},
     )
     assert update_resp.status_code == 200
     updated = update_resp.json()

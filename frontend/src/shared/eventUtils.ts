@@ -8,6 +8,7 @@ export interface NormalizedBranchSegment {
   endDate: string;
   youthCount: number;
   leadersCount: number;
+  kambusieriCount: number;
   accommodation: EventAccommodation;
   notes?: string;
 }
@@ -28,17 +29,31 @@ export const computeParticipantTotals = (
     (acc, segment) => {
       const youth = segment.youthCount;
       const leaders = segment.leadersCount;
+      const kambusieri = segment.kambusieriCount;
       if (segment.branch === "LC") {
         acc.lc += youth;
+        acc.lc_kambusieri += kambusieri;
       } else if (segment.branch === "EG") {
         acc.eg += youth;
+        acc.eg_kambusieri += kambusieri;
       } else if (segment.branch === "RS") {
         acc.rs += youth;
+        acc.rs_kambusieri += kambusieri;
       }
       acc.leaders += leaders;
       return acc;
     },
-    { lc: 0, eg: 0, rs: 0, leaders: 0 },
+    {
+      lc: 0,
+      lc_kambusieri: 0,
+      eg: 0,
+      eg_kambusieri: 0,
+      rs: 0,
+      rs_kambusieri: 0,
+      leaders: 0,
+      detached_leaders: 0,
+      detached_guests: 0,
+    },
   );
 };
 
@@ -53,7 +68,7 @@ const maxConcurrentLoad = (segments: NormalizedBranchSegment[]): number => {
     if (startTime === null || endTime === null) {
       continue;
     }
-    const total = segment.youthCount + segment.leadersCount;
+    const total = segment.youthCount + segment.leadersCount + segment.kambusieriCount;
     if (total <= 0) {
       continue;
     }

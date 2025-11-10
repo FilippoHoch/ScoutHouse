@@ -125,7 +125,17 @@ def _participants_to_dict(participants: Any) -> dict[str, int]:
 
 
 def _participants_from_segments(segments: Sequence[dict[str, Any]]) -> dict[str, int]:
-    totals = {"lc": 0, "eg": 0, "rs": 0, "leaders": 0}
+    totals = {
+        "lc": 0,
+        "lc_kambusieri": 0,
+        "eg": 0,
+        "eg_kambusieri": 0,
+        "rs": 0,
+        "rs_kambusieri": 0,
+        "leaders": 0,
+        "detached_leaders": 0,
+        "detached_guests": 0,
+    }
     for segment in segments:
         branch_value = segment.get("branch")
         if branch_value is None:
@@ -135,14 +145,21 @@ def _participants_from_segments(segments: Sequence[dict[str, Any]]) -> dict[str,
         )
         youth_count = int(segment.get("youth_count", 0) or 0)
         leaders_count = int(segment.get("leaders_count", 0) or 0)
+        kambusieri_count = int(segment.get("kambusieri_count", 0) or 0)
         if branch == EventBranch.LC:
             totals["lc"] += youth_count
+            totals["lc_kambusieri"] += kambusieri_count
         elif branch == EventBranch.EG:
             totals["eg"] += youth_count
+            totals["eg_kambusieri"] += kambusieri_count
         elif branch == EventBranch.RS:
             totals["rs"] += youth_count
+            totals["rs_kambusieri"] += kambusieri_count
         totals["leaders"] += leaders_count
     return totals
+
+
+_SEGMENT_EXTRA_PARTICIPANTS = {"detached_leaders", "detached_guests"}
 
 
 def _branch_from_segments(
@@ -200,6 +217,7 @@ def _build_segment(payload: dict[str, Any]) -> EventBranchSegment:
 
     youth_count = int(payload.get("youth_count", 0) or 0)
     leaders_count = int(payload.get("leaders_count", 0) or 0)
+    kambusieri_count = int(payload.get("kambusieri_count", 0) or 0)
     notes_raw = payload.get("notes")
     notes = notes_raw if isinstance(notes_raw, str) and notes_raw.strip() else None
 
@@ -209,6 +227,7 @@ def _build_segment(payload: dict[str, Any]) -> EventBranchSegment:
         end_date=end_date,
         youth_count=youth_count,
         leaders_count=leaders_count,
+        kambusieri_count=kambusieri_count,
         accommodation=accommodation,
         notes=notes,
     )
@@ -497,7 +516,11 @@ def create_event(
 
     event = Event(slug=slug, **data)
     if branch_segments:
-        event.participants = _participants_from_segments(branch_segments)
+        segment_totals = _participants_from_segments(branch_segments)
+        for key in _SEGMENT_EXTRA_PARTICIPANTS:
+            if key in participants:
+                segment_totals[key] = int(participants[key])
+        event.participants = segment_totals
         branch_override = _branch_from_segments(branch_segments, current_branch=current_branch)
         if branch_override is not None:
             event.branch = branch_override
@@ -637,6 +660,10 @@ def update_event(
     data = event_in.model_dump(exclude_unset=True)
 
     segments_payload = data.pop("branch_segments", None)
+    participants_payload = None
+    if "participants" in data and data["participants"] is not None:
+        participants_payload = _participants_to_dict(data.pop("participants"))
+
     normalized_segments: list[dict[str, Any]] | None = None
     if segments_payload is not None:
         normalized_segments = segments_payload or []
@@ -652,10 +679,14 @@ def update_event(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Segment dates must be within event dates",
                 )
-        data["participants"] = _participants_from_segments(normalized_segments)
-
-    if "participants" in data and data["participants"] is not None:
-        data["participants"] = _participants_to_dict(data["participants"])
+        segment_totals = _participants_from_segments(normalized_segments)
+        if participants_payload:
+            for key in _SEGMENT_EXTRA_PARTICIPANTS:
+                if key in participants_payload:
+                    segment_totals[key] = int(participants_payload[key])
+        data["participants"] = segment_totals
+    elif participants_payload is not None:
+        data["participants"] = participants_payload
 
     branch_target_value = data.get("branch", event.branch)
     current_branch = (

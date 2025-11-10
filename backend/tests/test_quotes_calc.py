@@ -15,6 +15,7 @@ from app.models.cost_option import (
 )
 from app.models.event import Event, EventBranch, EventStatus
 from app.services.costs import apply_scenarios, calc_quote
+from tests.utils import participants_payload
 
 
 @pytest.fixture()
@@ -26,7 +27,7 @@ def sample_event() -> Event:
         branch=EventBranch.ALL,
         start_date=date(2025, 7, 10),
         end_date=date(2025, 7, 12),
-        participants={"lc": 10, "eg": 5, "rs": 0, "leaders": 2},
+        participants=participants_payload(lc=10, eg=5, leaders=2),
         status=EventStatus.DRAFT,
     )
 
@@ -207,7 +208,7 @@ def test_calc_quote_prefers_date_range_modifier(
         branch=EventBranch.ALL,
         start_date=date(2025, 7, 2),
         end_date=date(2025, 7, 4),
-        participants={"lc": 5, "eg": 5, "rs": 0, "leaders": 2},
+        participants=participants_payload(lc=5, eg=5, leaders=2),
         status=EventStatus.PLANNING,
     )
 
@@ -235,7 +236,7 @@ def test_calc_quote_uses_weekend_modifier(
         branch=EventBranch.ALL,
         start_date=date(2025, 10, 3),
         end_date=date(2025, 10, 6),
-        participants={"lc": 8, "eg": 4, "rs": 0, "leaders": 2},
+        participants=participants_payload(lc=8, eg=4, leaders=2),
         status=EventStatus.PLANNING,
     )
 
@@ -261,7 +262,7 @@ def test_calc_quote_uses_weekend_modifier_for_saturday_end(
         branch=EventBranch.ALL,
         start_date=date(2025, 10, 2),
         end_date=date(2025, 10, 4),
-        participants={"lc": 6, "eg": 4, "rs": 0, "leaders": 2},
+        participants=participants_payload(lc=6, eg=4, leaders=2),
         status=EventStatus.PLANNING,
     )
 

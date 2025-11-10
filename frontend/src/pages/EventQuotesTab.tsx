@@ -83,6 +83,36 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
 
   const quotes = useMemo(() => quotesQuery.data ?? [], [quotesQuery.data]);
 
+  const participantOrder: (keyof EventParticipants)[] = useMemo(
+    () => [
+      "lc",
+      "lc_kambusieri",
+      "eg",
+      "eg_kambusieri",
+      "rs",
+      "rs_kambusieri",
+      "leaders",
+      "detached_leaders",
+      "detached_guests",
+    ],
+    [],
+  );
+
+  const participantLabels = useMemo(
+    () => ({
+      lc: t("events.wizard.simple.fields.lc"),
+      lc_kambusieri: t("events.wizard.simple.fields.lcKambusieri"),
+      eg: t("events.wizard.simple.fields.eg"),
+      eg_kambusieri: t("events.wizard.simple.fields.egKambusieri"),
+      rs: t("events.wizard.simple.fields.rs"),
+      rs_kambusieri: t("events.wizard.simple.fields.rsKambusieri"),
+      leaders: t("events.wizard.simple.fields.leaders"),
+      detached_leaders: t("events.wizard.simple.fields.detachedLeaders"),
+      detached_guests: t("events.wizard.simple.fields.detachedGuests"),
+    }),
+    [t],
+  );
+
   const selectedStructureId = useMemo(() => {
     if (
       explicitStructureId !== null &&
@@ -257,20 +287,22 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
               }}
             >
               <ToolbarSection>
-                {Object.entries(event.participants).map(([key, value]) => (
-                  <label key={key}>
-                    {key.toUpperCase()}
+                {participantOrder
+                  .filter((key) => key in event.participants)
+                  .map((key) => (
+                    <label key={key}>
+                      {participantLabels[key]}
                     <input
                       type="number"
                       min={0}
-                      value={participantOverrides[key as keyof EventParticipants] ?? ""}
-                      placeholder={String(value)}
+                      value={participantOverrides[key] ?? ""}
+                      placeholder={String(event.participants[key])}
                       onChange={(event) =>
-                        handleOverrideChange(key as keyof EventParticipants, event.target.value)
+                        handleOverrideChange(key, event.target.value)
                       }
                     />
-                  </label>
-                ))}
+                    </label>
+                  ))}
                 <label>
                   {t("events.quotes.daysOverride", { value: baseDays })}
                   <input

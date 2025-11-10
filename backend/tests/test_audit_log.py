@@ -10,7 +10,7 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import AuditLog  # noqa: E402
-from tests.utils import auth_headers, ensure_user  # noqa: E402
+from tests.utils import auth_headers, ensure_user, participants_payload  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -57,7 +57,7 @@ def test_audit_entries_created_for_core_actions() -> None:
             "branch": "LC",
             "start_date": "2025-05-01",
             "end_date": "2025-05-03",
-            "participants": {"lc": 10, "leaders": 2, "eg": 0, "rs": 0},
+            "participants": participants_payload(lc=10, leaders=2),
         },
     )
     assert event_resp.status_code == 201

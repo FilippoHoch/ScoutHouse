@@ -22,6 +22,7 @@ from tests.utils import (  # noqa: E402
     auth_headers,
     create_user,
     ensure_user,
+    participants_payload,
 )
 
 
@@ -100,7 +101,7 @@ def test_task_assignment_emails_assignee(mail_stub: StubMailProvider) -> None:
         "branch": "LC",
         "start_date": "2025-02-01",
         "end_date": "2025-02-03",
-        "participants": {"lc": 10, "leaders": 2, "eg": 0, "rs": 0},
+        "participants": participants_payload(lc=10, leaders=2),
         "status": "planning",
     }
     event_resp = client.post("/api/v1/events/", json=event_payload)
@@ -158,7 +159,7 @@ def test_candidate_status_change_notifies_members(mail_stub: StubMailProvider) -
         "branch": "EG",
         "start_date": "2025-04-10",
         "end_date": "2025-04-12",
-        "participants": {"lc": 0, "leaders": 2, "eg": 12, "rs": 0},
+        "participants": participants_payload(eg=12, leaders=2),
         "status": "planning",
     }
     event_resp = client.post("/api/v1/events/", json=event_payload)

@@ -13,7 +13,7 @@ os.environ.setdefault("APP_ENV", "test")
 from app.core.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Structure, StructureType  # noqa: E402
-from tests.utils import auth_headers  # noqa: E402
+from tests.utils import auth_headers, participants_payload  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -131,7 +131,7 @@ def test_create_event_auto_sets_branch_all_for_multiple_segments() -> None:
     assert response.status_code == 201, response.text
     payload = response.json()
     assert payload["branch"] == "ALL"
-    assert payload["participants"] == {"lc": 20, "eg": 30, "rs": 0, "leaders": 7}
+    assert payload["participants"] == participants_payload(lc=20, eg=30, leaders=7)
 
 
 def test_create_event_normalises_single_branch_segment() -> None:
@@ -160,7 +160,7 @@ def test_create_event_normalises_single_branch_segment() -> None:
     assert response.status_code == 201, response.text
     payload = response.json()
     assert payload["branch"] == "LC"
-    assert payload["participants"] == {"lc": 16, "eg": 0, "rs": 0, "leaders": 2}
+    assert payload["participants"] == participants_payload(lc=16, leaders=2)
 
 
 def test_suggestions_reflect_branch_requirements() -> None:

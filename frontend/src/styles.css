@@ -1788,25 +1788,31 @@ table tbody tr:hover {
   inset: 0;
   background: rgba(15, 23, 42, 0.4);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: var(--space-lg);
+  padding: clamp(var(--space-md), 4vw, var(--space-xl));
   z-index: 1000;
+  overflow-y: auto;
 }
 
 .modal-content {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   width: min(960px, 100%);
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: var(--space-xl);
+  max-width: clamp(320px, 96vw, 960px);
+  max-height: min(92vh, 960px);
+  overflow: hidden auto;
+  padding: clamp(var(--space-lg), 3vw, var(--space-xl));
   box-shadow: var(--shadow-lg);
 }
 
 .modal-content--full-width {
-  width: min(1120px, calc(100vw - 2 * var(--space-lg)));
-  max-width: 100%;
+  width: min(1240px, 100%);
+  max-width: clamp(320px, 94vw, 1240px);
+}
+
+.event-wizard-modal {
+  padding: clamp(var(--space-lg), 3vw, calc(var(--space-xl) * 1.5));
 }
 
 .modal-header {
@@ -1821,6 +1827,10 @@ table tbody tr:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+}
+
+.modal-body.event-wizard {
+  gap: var(--space-xl);
 }
 
 .modal-actions {
@@ -1839,6 +1849,60 @@ table tbody tr:hover {
 
 .wizard-step--details {
   gap: var(--space-xl);
+}
+
+.wizard-step--planning {
+  gap: var(--space-xl);
+}
+
+.event-wizard__layout {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.event-wizard__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.event-wizard__summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.event-wizard__summary .branch-segments__summary {
+  margin-top: 0;
+}
+
+.event-wizard__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.event-wizard__meta-grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.event-wizard__notes textarea {
+  min-height: 7.5rem;
+}
+
+@media (min-width: 1024px) {
+  .event-wizard__layout {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: start;
+  }
+
+  .event-wizard__summary {
+    position: sticky;
+    top: clamp(var(--space-lg), 5vh, calc(var(--space-xl) * 2));
+    align-self: start;
+  }
 }
 
 .wizard-step fieldset {
@@ -1990,7 +2054,54 @@ table tbody tr:hover {
 .simple-participants {
   display: flex;
   flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.simple-participants__grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 640px) {
+  .simple-participants__grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+.simple-participants__group {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  background: var(--color-surface-muted);
+}
+
+.simple-participants__group h5 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.simple-participants__fields {
+  width: 100%;
+}
+
+.simple-participants__group-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.simple-participants__group-header p {
+  margin: 0;
+  color: var(--color-muted-strong);
+  font-size: 0.875rem;
+}
+
+.simple-participants__group--staff {
+  background: var(--color-surface);
+  border-style: solid;
 }
 
 .branch-segments {

@@ -621,11 +621,11 @@
             "activityEquipment": "Attrezzatura attività",
             "inclusionServices": "Servizi di inclusione",
             "dataQualityFlags": "Segnalazioni qualità dati",
-          "inAreaProtetta": "In area protetta",
-          "floodRisk": "Rischio alluvionale",
-          "environmentalNotes": "Note ambientali",
-          "documentsRequired": "Documenti richiesti",
-          "mapResources": "Risorse cartografiche",
+            "inAreaProtetta": "In area protetta",
+            "floodRisk": "Rischio alluvionale",
+            "environmentalNotes": "Note ambientali",
+            "documentsRequired": "Documenti richiesti",
+            "mapResources": "Risorse cartografiche",
             "paymentMethods": "Metodi di pagamento accettati"
           }
         },
@@ -1414,7 +1414,10 @@
         "segmentsPeak": "- Picco presenze simultanee: {{count}} persone",
         "simpleBranch": "- {{branch}}: {{count}} persone",
         "simpleLeaders": "- Capi: {{count}}",
-        "simpleTotal": "- Totale partecipanti: {{count}} persone"
+        "simpleTotal": "- Totale partecipanti: {{count}} persone",
+        "simpleKambusieri": "{{branch}} kambusieri: {{count}}",
+        "simpleDetachedLeaders": "Distaccati - capi: {{count}}",
+        "simpleDetachedGuests": "Distaccati - ospiti: {{count}}"
       },
       "contact": {
         "loading": "Caricamento contatti…",
@@ -1584,11 +1587,20 @@
       "simple": {
         "title": "Partecipanti previsti",
         "description": "Indica quante persone parteciperanno per ciascuna branca.",
+        "groups": {
+          "staff": "Staff e distaccati",
+          "staffHint": "Includi capi dell'evento, capi distaccati e ospiti."
+        },
         "fields": {
           "lc": "LC (lupetti e coccinelle)",
           "eg": "EG (esploratori e guide)",
           "rs": "RS (rover e scolte)",
-          "leaders": "Capi"
+          "leaders": "Capi",
+          "lcKambusieri": "Kambusieri LC",
+          "egKambusieri": "Kambusieri EG",
+          "rsKambusieri": "Kambusieri RS",
+          "detachedLeaders": "Distaccati - capi",
+          "detachedGuests": "Distaccati - ospiti"
         }
       },
       "actions": {
@@ -1616,7 +1628,8 @@
         "created": "Evento {{title}} creato con successo. Aggiungi una struttura candidata dalle proposte.",
         "requirementsTitle": "Esigenze logistiche",
         "segmentParticipants": "{{youth}} partecipanti · {{leaders}} capi",
-        "noSegments": "Nessuna suddivisione per branca registrata."
+        "noSegments": "Nessuna suddivisione per branca registrata.",
+        "segmentKambusieri": "{{count}} kambusieri"
       },
       "segments": {
         "title": "Branche e presenza",
@@ -1644,7 +1657,11 @@
         "summaryTotal": "Totale persone: {{count}}",
         "summaryPeak": "Picco presenze simultanee: {{count}}",
         "summaryIndoor": "Letti contemporaneamente necessari: {{count}}",
-        "summaryTents": "Posti tenda contemporaneamente necessari: {{count}}"
+        "summaryTents": "Posti tenda contemporaneamente necessari: {{count}}",
+        "kambusieriCount": "Kambusieri",
+        "summaryKambusieri": "Kambusieri {{branch}}: {{count}}",
+        "summaryDetachedLeaders": "Distaccati - capi: {{count}}",
+        "summaryDetachedGuests": "Distaccati - ospiti: {{count}}"
       },
       "suggestions": {
         "loading": "Caricamento suggerimenti…",

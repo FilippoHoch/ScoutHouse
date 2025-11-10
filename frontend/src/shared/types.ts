@@ -604,9 +604,14 @@ export type EventContactTaskOutcome = "pending" | "positive" | "negative";
 
 export interface EventParticipants {
   lc: number;
+  lc_kambusieri: number;
   eg: number;
+  eg_kambusieri: number;
   rs: number;
+  rs_kambusieri: number;
   leaders: number;
+  detached_leaders: number;
+  detached_guests: number;
 }
 
 export interface EventBranchSegment {
@@ -616,6 +621,7 @@ export interface EventBranchSegment {
   end_date: string;
   youth_count: number;
   leaders_count: number;
+  kambusieri_count: number;
   accommodation: EventAccommodation;
   notes: string | null;
 }
@@ -626,6 +632,7 @@ export interface EventBranchSegmentCreate {
   end_date: string;
   youth_count: number;
   leaders_count: number;
+  kambusieri_count: number;
   accommodation: EventAccommodation;
   notes?: string | null;
 }
