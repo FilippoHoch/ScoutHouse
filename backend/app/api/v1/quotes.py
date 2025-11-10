@@ -12,11 +12,11 @@ from app.core.db import get_db
 from app.deps import get_current_user, require_event_member
 from app.models import Event, EventMember, EventMemberRole, Quote, Structure, User
 from app.schemas import (
+    QuoteBreakdownEntry,
     QuoteCalcRequest,
     QuoteCalcResponse,
     QuoteCreate,
     QuoteListItem,
-    QuoteBreakdownEntry,
     QuoteRead,
     QuoteScenarios,
     QuoteTotals,

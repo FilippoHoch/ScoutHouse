@@ -1025,6 +1025,7 @@ export const StructureDetailsPage = () => {
       await refetch();
       resetContactForm();
     } catch (apiError) {
+      console.error(apiError);
       setFormError(t("structures.contacts.errors.saveFailed"));
     } finally {
       setSavingContact(false);
@@ -1067,6 +1068,7 @@ export const StructureDetailsPage = () => {
             return;
           }
         } catch (apiError) {
+          console.error(apiError);
           setActionError(t("structures.contacts.errors.searchFailed"));
           return;
         } finally {
@@ -1123,6 +1125,7 @@ export const StructureDetailsPage = () => {
         setFormError(t("structures.contacts.errors.noMatches"));
       }
     } catch (apiError) {
+      console.error(apiError);
       setActionError(t("structures.contacts.errors.searchFailed"));
     } finally {
       setCheckingDuplicates(false);
@@ -1145,6 +1148,7 @@ export const StructureDetailsPage = () => {
       setActionError(null);
       await refetch();
     } catch (apiError) {
+      console.error(apiError);
       setActionError(t("structures.contacts.errors.deleteFailed"));
     }
   };
@@ -1160,6 +1164,7 @@ export const StructureDetailsPage = () => {
       setActionError(null);
       await refetch();
     } catch (apiError) {
+      console.error(apiError);
       setActionError(t("structures.contacts.errors.saveFailed"));
     }
   };

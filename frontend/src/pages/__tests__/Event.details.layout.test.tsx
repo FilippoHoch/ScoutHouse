@@ -51,7 +51,6 @@ const eventData: Event = {
   branch_segments: [
     {
       id: 1,
-      event_id: 42,
       branch: "LC",
       start_date: "2026-08-03",
       end_date: "2026-08-09",
@@ -62,7 +61,6 @@ const eventData: Event = {
     },
     {
       id: 2,
-      event_id: 42,
       branch: "EG",
       start_date: "2026-07-27",
       end_date: "2026-08-09",
@@ -73,7 +71,6 @@ const eventData: Event = {
     },
     {
       id: 3,
-      event_id: 42,
       branch: "RS",
       start_date: "2026-08-06",
       end_date: "2026-08-09",

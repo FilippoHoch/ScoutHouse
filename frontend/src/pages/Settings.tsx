@@ -54,8 +54,10 @@ const BaseLocationSelector = ({ value, onChange }: BaseLocationSelectorProps) =>
   const [lastQuery, setLastQuery] = useState("");
 
   useEffect(() => {
-    setInputValue(value);
-    setSelectedLabel(value ? value : null);
+    queueMicrotask(() => {
+      setInputValue(value);
+      setSelectedLabel(value ? value : null);
+    });
   }, [value]);
 
   useEffect(() => {
@@ -107,14 +109,18 @@ const BaseLocationSelector = ({ value, onChange }: BaseLocationSelectorProps) =>
         abortControllerRef.current = null;
       }
       if (inputValue === selectedLabel) {
-        setSuggestions([]);
-        setIsOpen(false);
+        queueMicrotask(() => {
+          setSuggestions([]);
+          setIsOpen(false);
+        });
       }
       if (trimmedQuery.length < MIN_LOCATION_QUERY_LENGTH) {
-        setStatus("idle");
-        setLastQuery("");
-        setSuggestions([]);
-        setHighlightedIndex(-1);
+        queueMicrotask(() => {
+          setStatus("idle");
+          setLastQuery("");
+          setSuggestions([]);
+          setHighlightedIndex(-1);
+        });
       }
       return;
     }
@@ -129,8 +135,10 @@ const BaseLocationSelector = ({ value, onChange }: BaseLocationSelectorProps) =>
       abortControllerRef.current = null;
     }
 
-    setStatus("loading");
-    setIsOpen(true);
+    queueMicrotask(() => {
+      setStatus("loading");
+      setIsOpen(true);
+    });
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     const controller = new AbortController();

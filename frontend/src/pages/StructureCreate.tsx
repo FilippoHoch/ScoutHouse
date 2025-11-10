@@ -246,7 +246,7 @@ const parseStreetAddress = (value: string | null | undefined) => {
   }
 
   const sanitized = normalized.replace(/[.,;#]/g, " ");
-  const houseMatch = sanitized.match(/(\d+[a-z0-9\/\-]*)$/);
+  const houseMatch = sanitized.match(/(\d+[a-z0-9/-]*)$/);
 
   if (!houseMatch) {
     return {
@@ -1070,10 +1070,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       }
       setContactStatusMessage(t("structures.create.contact.noMatches"));
       return true;
-    } catch (error) {
-      setContactStatusMessage(t("structures.create.contact.searchFailed"));
-      return false;
-    } finally {
+      } catch (error) {
+        console.error(error);
+        setContactStatusMessage(t("structures.create.contact.searchFailed"));
+        return false;
+      } finally {
       setContactCheckingDuplicates(false);
     }
   };
@@ -1124,9 +1125,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       } as const;
       const results = await searchContacts(params);
       setContactPickerResults(results);
-    } catch (error) {
-      setContactPickerError(t("structures.create.form.contact.picker.error"));
-    } finally {
+      } catch (error) {
+        console.error(error);
+        setContactPickerError(t("structures.create.form.contact.picker.error"));
+      } finally {
       setContactPickerLoading(false);
     }
   }, [t]);
@@ -2065,7 +2067,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     try {
       const url = new URL(trimmed);
       return url.protocol === "http:" || url.protocol === "https:" ? "valid" : "invalid";
-    } catch (error) {
+    } catch {
       return "invalid";
     }
   }, []);
@@ -3231,8 +3233,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         }
         try {
           acc[key] = JSON.parse(valueText);
-        } catch (error) {
-          void error;
+        } catch {
           acc[key] = valueText;
         }
         return acc;
@@ -3425,13 +3426,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         }
       }
 
-      if (addContact && (contactHasDetails() || contactId !== null)) {
-        try {
-          await createStructureContact(saved.id, buildContactPayload());
-        } catch (contactError) {
-          window.alert(t("structures.create.contact.saveFailed"));
+        if (addContact && (contactHasDetails() || contactId !== null)) {
+          try {
+            await createStructureContact(saved.id, buildContactPayload());
+          } catch (contactError) {
+            console.error(contactError);
+            window.alert(t("structures.create.contact.saveFailed"));
+          }
         }
-      }
 
       try {
         await uploadQueuedPhotos(saved.id);

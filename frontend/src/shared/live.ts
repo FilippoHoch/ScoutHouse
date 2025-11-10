@@ -46,7 +46,9 @@ export function useEventLive(eventId: number | null | undefined): LiveState {
         window.clearInterval(pollingRef.current);
         pollingRef.current = null;
       }
-      setMode("idle");
+      queueMicrotask(() => {
+        setMode("idle");
+      });
       return;
     }
 
@@ -58,26 +60,32 @@ export function useEventLive(eventId: number | null | undefined): LiveState {
     };
 
     const startPolling = () => {
-      if (typeof window === "undefined") {
-        queryClient.invalidateQueries({ queryKey: ["event", eventId] });
-        queryClient.invalidateQueries({ queryKey: ["event-summary", eventId] });
-        setMode("polling");
-        return;
-      }
+        if (typeof window === "undefined") {
+          queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+          queryClient.invalidateQueries({ queryKey: ["event-summary", eventId] });
+          queueMicrotask(() => {
+            setMode("polling");
+          });
+          return;
+        }
 
-      if (pollingRef.current !== null) {
-        setMode("polling");
-        return;
-      }
+        if (pollingRef.current !== null) {
+        queueMicrotask(() => {
+          setMode("polling");
+        });
+          return;
+        }
 
       queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       queryClient.invalidateQueries({ queryKey: ["event-summary", eventId] });
       pollingRef.current = window.setInterval(() => {
         queryClient.invalidateQueries({ queryKey: ["event", eventId] });
         queryClient.invalidateQueries({ queryKey: ["event-summary", eventId] });
-      }, POLLING_INTERVAL_MS);
-      setMode("polling");
-    };
+        }, POLLING_INTERVAL_MS);
+        queueMicrotask(() => {
+          setMode("polling");
+        });
+      };
 
     if (!accessToken || typeof EventSource === "undefined") {
       if (eventSourceRef.current) {
@@ -99,7 +107,9 @@ export function useEventLive(eventId: number | null | undefined): LiveState {
     eventSourceRef.current = source;
 
     source.onopen = () => {
-      setMode("sse");
+      queueMicrotask(() => {
+        setMode("sse");
+      });
     };
 
     source.onmessage = (event: MessageEvent<string>) => {

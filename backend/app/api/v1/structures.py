@@ -9,13 +9,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import httpx
+from botocore.client import BaseClient
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import AnyHttpUrl
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
-
-from botocore.client import BaseClient
 
 from app.core.config import get_settings
 from app.core.db import get_db

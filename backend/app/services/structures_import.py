@@ -268,7 +268,7 @@ def _normalise_decimal(value: object) -> Decimal | None:
     if value in (None, ""):
         return None
     try:
-        if isinstance(value, (int, float, Decimal)):
+        if isinstance(value, int | float | Decimal):
             return Decimal(str(value))
         return Decimal(str(value).strip())
     except Exception as exc:  # pragma: no cover - defensive
@@ -391,7 +391,7 @@ def _parse_website_urls(value: object) -> tuple[list[str], list[str]]:
     if value is None:
         return [], []
 
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         raw_items = value
     else:
         text = _normalise_text(value)
@@ -425,7 +425,7 @@ def _parse_contact_emails(value: object) -> tuple[list[str], list[str]]:
     if value is None:
         return [], []
 
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         raw_items = value
     else:
         text = _normalise_text(value)

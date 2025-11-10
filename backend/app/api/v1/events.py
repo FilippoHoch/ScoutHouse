@@ -431,7 +431,13 @@ def _get_structure_contact(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Contact does not belong to this structure",
         )
-    return link.contact
+    contact = link.contact
+    if contact is None:  # pragma: no cover - defensive branch
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contact not found",
+        )
+    return contact
 
 
 def _serialize_event_candidate(
@@ -810,7 +816,11 @@ def update_candidate(
                 structure_id=candidate.structure_id,
                 contact_id=contact_id_value,
             )
-            assert contact is not None  # Narrow for type checkers
+            if contact is None:  # pragma: no cover - defensive branch
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Contact not found",
+                )
             candidate.contact_id = contact.id
             candidate.contact = contact
     if "assigned_user_id" in data:

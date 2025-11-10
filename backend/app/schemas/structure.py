@@ -51,7 +51,7 @@ def _normalize_str_list(value: object) -> list[str] | object:
         return []
     if isinstance(value, str):
         value = [value]
-    if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
+    if isinstance(value, Iterable) and not isinstance(value, str | bytes):
         normalized: list[str] = []
         for item in value:
             if item is None:
@@ -76,9 +76,9 @@ def _normalize_optional_str_list(value: object) -> list[str] | None | object:
 def _normalize_url_list(value: object) -> list[AnyHttpUrl] | object:
     if value is None:
         return []
-    if isinstance(value, (str, AnyHttpUrl)):
+    if isinstance(value, str | AnyHttpUrl):
         value = [value]
-    if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
+    if isinstance(value, Iterable) and not isinstance(value, str | bytes):
         return list(value)
     return value
 
