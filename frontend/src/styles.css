@@ -2287,6 +2287,12 @@ table tbody tr:hover {
   align-items: flex-start;
 }
 
+.structure-website-list__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
 .structure-website-list__input {
   flex: 1;
   display: flex;

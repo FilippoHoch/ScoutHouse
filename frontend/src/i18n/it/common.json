@@ -541,42 +541,48 @@
           "hint": "Elenca categorie specifiche di gruppi autorizzati (es. solo reparti, massimo 2 clan, ecc.).",
           "add": "Aggiungi gruppo",
           "remove": "Rimuovi",
-          "entryLabel": "Gruppo ammesso {{index}}"
+          "entryLabel": "Gruppo ammesso {{index}}",
+          "empty": "Nessun gruppo aggiunto."
         },
         "communicationsInfrastructure": {
           "label": "Infrastrutture di comunicazione",
           "hint": "Indica reti o servizi di comunicazione disponibili (es. fibra, radio, rete mobile potenziata).",
           "add": "Aggiungi infrastruttura",
           "remove": "Rimuovi questa voce",
-          "entryLabel": "Infrastruttura {{index}}"
+          "entryLabel": "Infrastruttura {{index}}",
+          "empty": "Nessuna infrastruttura aggiunta."
         },
         "activitySpaces": {
           "label": "Spazi per attività",
           "hint": "Elenca gli spazi dedicati alle attività (es. salone, anfiteatro, prato giochi).",
           "add": "Aggiungi spazio",
           "remove": "Rimuovi questo spazio",
-          "entryLabel": "Spazio {{index}}"
+          "entryLabel": "Spazio {{index}}",
+          "empty": "Nessuno spazio aggiunto."
         },
         "activityEquipment": {
           "label": "Attrezzatura attività",
           "hint": "Specifica le attrezzature disponibili (es. corde, tende, materiale pionieristica).",
           "add": "Aggiungi attrezzatura",
           "remove": "Rimuovi questa attrezzatura",
-          "entryLabel": "Attrezzatura {{index}}"
+          "entryLabel": "Attrezzatura {{index}}",
+          "empty": "Nessuna attrezzatura aggiunta."
         },
         "inclusionServices": {
           "label": "Servizi di inclusione",
           "hint": "Elenca servizi e attenzioni offerte per l'accessibilità e l'inclusione.",
           "add": "Aggiungi servizio",
           "remove": "Rimuovi questo servizio",
-          "entryLabel": "Servizio {{index}}"
+          "entryLabel": "Servizio {{index}}",
+          "empty": "Nessun servizio aggiunto."
         },
         "dataQualityFlags": {
           "label": "Segnalazioni qualità dati",
           "hint": "Annota eventuali avvisi o note sulla qualità delle informazioni inserite.",
           "add": "Aggiungi segnalazione",
           "remove": "Rimuovi questa segnalazione",
-          "entryLabel": "Segnalazione {{index}}"
+          "entryLabel": "Segnalazione {{index}}",
+          "empty": "Nessuna segnalazione aggiunta."
         },
         "usageRules": "Regole di utilizzo",
         "usageRulesHint": "Descrivi vincoli particolari (silenzio, orari, accordi con il territorio).",
