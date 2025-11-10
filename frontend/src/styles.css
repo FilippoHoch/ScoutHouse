@@ -381,6 +381,7 @@ body.layout-wide main {
 .settings-thresholds {
   display: grid;
   gap: var(--space-md);
+  align-items: start;
 }
 
 @media (min-width: 640px) {
