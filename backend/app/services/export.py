@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 import csv
 import json
+from collections.abc import Iterator, Sequence
 from io import BytesIO, StringIO
-from typing import Any, Iterator
+from typing import Any
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
@@ -42,18 +42,22 @@ def quote_to_xlsx(quote: Quote) -> bytes:
     sheet.append(["Utenze", None, None, totals.get("utilities", 0)])
     sheet.append(["Tassa di soggiorno", None, None, totals.get("city_tax", 0)])
     sheet.append(["Totale", None, None, totals.get("total", 0)])
-    sheet.append([
-        "Caparra prenotazione",
-        None,
-        None,
-        totals.get("booking_deposit", 0),
-    ])
-    sheet.append([
-        "Deposito cauzionale",
-        None,
-        None,
-        totals.get("damage_deposit", 0),
-    ])
+    sheet.append(
+        [
+            "Caparra prenotazione",
+            None,
+            None,
+            totals.get("booking_deposit", 0),
+        ]
+    )
+    sheet.append(
+        [
+            "Deposito cauzionale",
+            None,
+            None,
+            totals.get("damage_deposit", 0),
+        ]
+    )
     sheet.append(["Caparre totali", None, None, totals.get("deposit", 0)])
 
     for column in range(1, 5):

@@ -9,6 +9,10 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.pubsub import EventMessage, event_bus
+from app.main import app
+from tests.utils import auth_headers
+
 pytestmark = pytest.mark.anyio
 
 
@@ -16,10 +20,6 @@ pytestmark = pytest.mark.anyio
 def anyio_backend() -> str:
     return "asyncio"
 
-from app.core.pubsub import EventMessage, event_bus
-from app.main import app
-
-from tests.utils import auth_headers
 
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
@@ -88,5 +88,5 @@ async def test_sse_single_event(monkeypatch: pytest.MonkeyPatch) -> None:
                             return
                     else:  # pragma: no cover - safety net
                         pytest.fail("Stream closed without data")
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pytest.fail("Timed out waiting for SSE payload")

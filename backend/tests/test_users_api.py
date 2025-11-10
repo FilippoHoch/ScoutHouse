@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from app.core.db import Base, engine
 from app.main import app
-
 from tests.utils import auth_headers
 
 
@@ -70,9 +69,7 @@ def test_admin_can_create_and_update_user(client: TestClient) -> None:
         "is_admin": True,
         "is_active": False,
     }
-    update_response = client.patch(
-        f"/api/v1/users/{user_id}", json=update_payload, headers=headers
-    )
+    update_response = client.patch(f"/api/v1/users/{user_id}", json=update_payload, headers=headers)
     assert update_response.status_code == 200, update_response.text
     updated = update_response.json()
     assert updated["email"] == update_payload["email"]

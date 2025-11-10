@@ -12,6 +12,7 @@ from app.models.event_contact_task import (
     EventContactTaskStatus,
 )
 from app.models.user import EventMemberRole
+
 from .contact import ContactRead
 
 
@@ -36,7 +37,7 @@ class EventBranchSegmentBase(BaseModel):
     notes: str | None = None
 
     @model_validator(mode="after")
-    def validate_branch_segment(self) -> "EventBranchSegmentBase":
+    def validate_branch_segment(self) -> EventBranchSegmentBase:
         if self.end_date < self.start_date:
             raise ValueError("Segment end_date cannot be earlier than start_date")
         if self.branch == EventBranch.ALL:
@@ -66,7 +67,7 @@ class EventBase(BaseModel):
     branch_segments: list[EventBranchSegmentRead] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def validate_dates(self) -> "EventBase":
+    def validate_dates(self) -> EventBase:
         if self.end_date < self.start_date:
             raise ValueError("end_date cannot be earlier than start_date")
         return self
@@ -76,7 +77,7 @@ class EventCreate(EventBase):
     branch_segments: list[EventBranchSegmentCreate] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def validate_segments(self) -> "EventCreate":
+    def validate_segments(self) -> EventCreate:
         for segment in self.branch_segments:
             if segment.start_date < self.start_date or segment.end_date > self.end_date:
                 raise ValueError("Segment dates must be within event dates")
@@ -95,7 +96,7 @@ class EventUpdate(BaseModel):
     branch_segments: list[EventBranchSegmentCreate] | None = None
 
     @model_validator(mode="after")
-    def validate_dates(self) -> "EventUpdate":
+    def validate_dates(self) -> EventUpdate:
         if self.start_date and self.end_date and self.end_date < self.start_date:
             raise ValueError("end_date cannot be earlier than start_date")
         return self
@@ -132,7 +133,7 @@ class EventCandidateCreate(BaseModel):
     contact_id: int | None = None
 
     @model_validator(mode="after")
-    def validate_structure(self) -> "EventCandidateCreate":
+    def validate_structure(self) -> EventCandidateCreate:
         if bool(self.structure_id) == bool(self.structure_slug):
             raise ValueError("Provide either structure_id or structure_slug")
         return self

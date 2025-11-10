@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from collections.abc import AsyncIterator, Sequence
 from contextlib import suppress
-from datetime import date, datetime, timedelta, timezone
-from typing import Annotated, Any, Sequence
+from datetime import UTC, date, datetime, timedelta
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
@@ -18,7 +19,6 @@ from app.core.security import decode_token
 from app.deps import get_current_user, require_event_member
 from app.models import (
     Contact,
-    StructureContact,
     Event,
     EventAccommodation,
     EventBranch,
@@ -26,10 +26,11 @@ from app.models import (
     EventContactTask,
     EventMember,
     EventMemberRole,
+    EventStatus,
     EventStructureCandidate,
     EventStructureCandidateStatus,
-    EventStatus,
     Structure,
+    StructureContact,
     User,
 )
 from app.schemas import (
@@ -50,13 +51,13 @@ from app.schemas import (
     EventUpdate,
     EventWithRelations,
 )
+from app.schemas.contact import ContactRead
+from app.services.audit import record_audit
 from app.services.events import is_structure_occupied, suggest_structures
 from app.services.mail import (
     schedule_candidate_status_email,
     schedule_task_assigned_email,
 )
-from app.services.audit import record_audit
-from app.schemas.contact import ContactRead
 
 router = APIRouter()
 
@@ -66,20 +67,15 @@ SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
 def _escape_ical_text(value: str) -> str:
-    return (
-        value.replace("\\", "\\\\")
-        .replace("\n", "\\n")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-    )
+    return value.replace("\\", "\\\\").replace("\n", "\\n").replace(";", "\\;").replace(",", "\\,")
 
 
 def _format_utc_timestamp(moment: datetime | None = None) -> str:
-    timestamp = moment or datetime.now(timezone.utc)
+    timestamp = moment or datetime.now(UTC)
     if timestamp.tzinfo is None:
-        timestamp = timestamp.replace(tzinfo=timezone.utc)
+        timestamp = timestamp.replace(tzinfo=UTC)
     else:
-        timestamp = timestamp.astimezone(timezone.utc)
+        timestamp = timestamp.astimezone(UTC)
     return timestamp.strftime("%Y%m%dT%H%M%SZ")
 
 
@@ -130,7 +126,9 @@ def _participants_from_segments(segments: Sequence[dict[str, Any]]) -> dict[str,
         branch_value = segment.get("branch")
         if branch_value is None:
             continue
-        branch = branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
+        branch = (
+            branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
+        )
         youth_count = int(segment.get("youth_count", 0) or 0)
         leaders_count = int(segment.get("leaders_count", 0) or 0)
         if branch == EventBranch.LC:
@@ -153,7 +151,9 @@ def _branch_from_segments(
         branch_value = segment.get("branch")
         if branch_value is None:
             continue
-        branch = branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
+        branch = (
+            branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
+        )
         unique_branches.add(branch)
     if not unique_branches:
         return None
@@ -225,8 +225,9 @@ def _generate_unique_slug(db: Session, base: str) -> str:
     slug = base
     counter = 2
     while (
-        db.execute(select(Event.id).where(func.lower(Event.slug) == slug.lower()))
-        .scalar_one_or_none()
+        db.execute(
+            select(Event.id).where(func.lower(Event.slug) == slug.lower())
+        ).scalar_one_or_none()
         is not None
     ):
         slug = f"{base}-{counter}"
@@ -238,7 +239,10 @@ def _authenticate_access_token(db: Session, token: str) -> User:
     try:
         payload = decode_token(token)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        ) from exc
 
     if payload.get("type") != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
@@ -270,7 +274,7 @@ def _ensure_member_user(db: Session, event_id: int, user_id: str | None) -> str 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User is not a member of the event",
-    )
+        )
     return membership.user_id
 
 
@@ -301,15 +305,19 @@ def _owner_count(db: Session, event_id: int, *, exclude_member_id: int | None = 
     return db.execute(query).scalar_one()
 
 
-def _load_event(db: Session, event_id: int, *, with_candidates: bool = False, with_tasks: bool = False) -> Event:
+def _load_event(
+    db: Session,
+    event_id: int,
+    *,
+    with_candidates: bool = False,
+    with_tasks: bool = False,
+) -> Event:
     options = [selectinload(Event.branch_segments)]
     if with_candidates:
         options.append(
             selectinload(Event.candidates).selectinload(EventStructureCandidate.structure)
         )
-        options.append(
-            selectinload(Event.candidates).selectinload(EventStructureCandidate.contact)
-        )
+        options.append(selectinload(Event.candidates).selectinload(EventStructureCandidate.contact))
     if with_tasks:
         options.append(selectinload(Event.tasks))
     query = select(Event).where(Event.id == event_id)
@@ -326,7 +334,7 @@ async def stream_event_updates(
     event_id: int,
     request: Request,
     db: DbSession,
-    access_token: str = Query(..., alias="access_token"),
+    access_token: Annotated[str, Query(..., alias="access_token")],
 ) -> StreamingResponse:
     request.state.skip_access_log = True
 
@@ -350,7 +358,7 @@ async def stream_event_updates(
                     message = await asyncio.wait_for(
                         subscriber.__anext__(), timeout=KEEPALIVE_INTERVAL_SECONDS
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     yield keepalive_line
                     continue
                 except StopAsyncIteration:  # pragma: no cover - defensive
@@ -379,13 +387,19 @@ async def stream_event_updates(
     return StreamingResponse(event_stream(), media_type="text/event-stream", headers=headers)
 
 
-def _get_structure(db: Session, *, structure_id: int | None = None, slug: str | None = None) -> Structure:
+def _get_structure(
+    db: Session,
+    *,
+    structure_id: int | None = None,
+    slug: str | None = None,
+) -> Structure:
     if structure_id is not None:
         structure = db.get(Structure, structure_id)
     else:
         structure = (
-            db.execute(select(Structure).where(func.lower(Structure.slug) == slug.lower()))
-            .scalar_one_or_none()
+            db.execute(
+                select(Structure).where(func.lower(Structure.slug) == slug.lower())
+            ).scalar_one_or_none()
             if slug is not None
             else None
         )
@@ -404,8 +418,7 @@ def _get_structure_contact(
         return None
     link = (
         db.execute(
-            select(StructureContact)
-            .where(
+            select(StructureContact).where(
                 StructureContact.contact_id == contact_id,
                 StructureContact.structure_id == structure_id,
             )
@@ -462,7 +475,7 @@ def create_event(
     event_in: EventCreate,
     db: DbSession,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> EventRead:
     base_slug = _slugify(event_in.title)
     slug = _generate_unique_slug(db, base_slug)
@@ -473,9 +486,7 @@ def create_event(
     status_value = data.pop("status", EventStatus.DRAFT)
     branch_value = data.get("branch", EventBranch.LC)
     current_branch = (
-        branch_value
-        if isinstance(branch_value, EventBranch)
-        else EventBranch(branch_value)
+        branch_value if isinstance(branch_value, EventBranch) else EventBranch(branch_value)
     )
 
     event = Event(slug=slug, **data)
@@ -516,18 +527,16 @@ def create_event(
 @router.get("/", response_model=EventListResponse)
 def list_events(
     db: DbSession,
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
-    q: str | None = Query(default=None, min_length=1),
-    status_filter: EventStatus | None = Query(default=None, alias="status"),
-    current_user: User = Depends(get_current_user),
+    page: Annotated[int, Query(default=1, ge=1)],
+    page_size: Annotated[int, Query(default=20, ge=1, le=100)],
+    q: Annotated[str | None, Query(default=None, min_length=1)],
+    status_filter: Annotated[EventStatus | None, Query(default=None, alias="status")],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> EventListResponse:
     filters = []
     if q:
         like = f"%{q.lower()}%"
-        filters.append(
-            or_(func.lower(Event.title).like(like), func.lower(Event.slug).like(like))
-        )
+        filters.append(or_(func.lower(Event.title).like(like), func.lower(Event.slug).like(like)))
     if status_filter:
         filters.append(Event.status == status_filter)
 
@@ -564,7 +573,7 @@ def list_events(
 def get_event(
     event_id: int,
     db: DbSession,
-    include: str | None = Query(default=None),
+    include: Annotated[str | None, Query(default=None)],
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
 ) -> EventWithRelations | EventRead:
     include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
@@ -688,7 +697,11 @@ def update_event(
     return EventRead.model_validate(event)
 
 
-@router.post("/{event_id}/candidates", response_model=EventCandidateRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{event_id}/candidates",
+    response_model=EventCandidateRead,
+    status_code=status.HTTP_201_CREATED,
+)
 def add_candidate(
     event_id: int,
     candidate_in: EventCandidateCreate,
@@ -865,9 +878,7 @@ def update_candidate(
             recipients.setdefault(assigned_user.email, assigned_user.name)
 
         if recipients:
-            structure_name = (
-                candidate.structure.name if candidate.structure is not None else ""
-            )
+            structure_name = candidate.structure.name if candidate.structure is not None else ""
             assigned_name = assigned_user.name if assigned_user is not None else None
             notes = candidate.assigned_user or None
             for email, name in recipients.items():
@@ -913,7 +924,11 @@ def get_event_summary(
     return EventSummary(status_counts=counts, has_conflicts=has_conflicts)
 
 
-@router.post("/{event_id}/tasks", response_model=EventContactTaskRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{event_id}/tasks",
+    response_model=EventContactTaskRead,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_task(
     event_id: int,
     task_in: EventContactTaskCreate,
@@ -966,15 +981,12 @@ def update_task(
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.COLLAB))] = None,
 ) -> EventContactTaskRead:
     event = _load_event(db, event_id)
-    task = (
-        db.execute(
-            select(EventContactTask).where(
-                EventContactTask.id == task_id,
-                EventContactTask.event_id == event_id,
-            )
+    task = db.execute(
+        select(EventContactTask).where(
+            EventContactTask.id == task_id,
+            EventContactTask.event_id == event_id,
         )
-        .scalar_one_or_none()
-    )
+    ).scalar_one_or_none()
     if task is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
@@ -1040,9 +1052,7 @@ def add_member(
     payload: EventMemberCreate,
     db: DbSession,
     request: Request,
-    actor_membership: Annotated[
-        EventMember, Depends(require_event_member(EventMemberRole.OWNER))
-    ],
+    actor_membership: Annotated[EventMember, Depends(require_event_member(EventMemberRole.OWNER))],
 ) -> EventMemberRead:
     event = _load_event(db, event_id)
     user = db.query(User).filter(User.email == payload.email).first()
@@ -1084,9 +1094,7 @@ def update_member(
     payload: EventMemberUpdate,
     db: DbSession,
     request: Request,
-    actor_membership: Annotated[
-        EventMember, Depends(require_event_member(EventMemberRole.OWNER))
-    ],
+    actor_membership: Annotated[EventMember, Depends(require_event_member(EventMemberRole.OWNER))],
 ) -> EventMemberRead:
     membership = (
         db.execute(
@@ -1142,9 +1150,7 @@ def delete_member(
     member_id: int,
     db: DbSession,
     request: Request,
-    actor_membership: Annotated[
-        EventMember, Depends(require_event_member(EventMemberRole.OWNER))
-    ],
+    actor_membership: Annotated[EventMember, Depends(require_event_member(EventMemberRole.OWNER))],
 ) -> None:
     membership = (
         db.execute(
@@ -1158,7 +1164,10 @@ def delete_member(
     if membership is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
 
-    if membership.role == EventMemberRole.OWNER and _owner_count(db, event_id, exclude_member_id=member_id) == 0:
+    if (
+        membership.role == EventMemberRole.OWNER
+        and _owner_count(db, event_id, exclude_member_id=member_id) == 0
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one owner must remain",
@@ -1186,7 +1195,7 @@ def delete_member(
 def get_suggestions(
     event_id: int,
     db: DbSession,
-    limit: int = Query(default=20, ge=1, le=50),
+    limit: Annotated[int, Query(default=20, ge=1, le=50)],
     _: Annotated[EventMember, Depends(require_event_member(EventMemberRole.VIEWER))] = None,
 ) -> list[EventSuggestion]:
     event = _load_event(db, event_id)

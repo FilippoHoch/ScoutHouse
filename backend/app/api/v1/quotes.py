@@ -58,11 +58,15 @@ def _get_event(db: Session, event_id: int) -> Event:
 
 
 def _get_structure(db: Session, structure_id: int) -> Structure:
-    structure = db.execute(
-        select(Structure)
-        .options(joinedload(Structure.cost_options))
-        .where(Structure.id == structure_id)
-    ).unique().scalar_one_or_none()
+    structure = (
+        db.execute(
+            select(Structure)
+            .options(joinedload(Structure.cost_options))
+            .where(Structure.id == structure_id)
+        )
+        .unique()
+        .scalar_one_or_none()
+    )
     if structure is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Structure not found")
     return structure
@@ -70,9 +74,7 @@ def _get_structure(db: Session, structure_id: int) -> Structure:
 
 def _get_quote(db: Session, quote_id: int) -> Quote:
     quote = db.execute(
-        select(Quote)
-        .options(joinedload(Quote.structure))
-        .where(Quote.id == quote_id)
+        select(Quote).options(joinedload(Quote.structure)).where(Quote.id == quote_id)
     ).scalar_one_or_none()
     if quote is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quote not found")
@@ -83,16 +85,14 @@ def _get_quote(db: Session, quote_id: int) -> Quote:
 def calculate_quote(
     payload: QuoteCalcRequest,
     db: DbSession,
-    current_user: User = Depends(get_current_user),
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> QuoteCalcResponse:
     _ensure_membership(db, payload.event_id, current_user, EventMemberRole.VIEWER)
     event = _get_event(db, payload.event_id)
     structure = _get_structure(db, payload.structure_id)
 
     calculation = calc_quote(event, structure, overrides=payload.overrides)
-    scenarios = QuoteScenarios.model_validate(
-        apply_scenarios(calculation["totals"]["total"])
-    )
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(calculation["totals"]["total"]))
 
     return QuoteCalcResponse(
         currency=calculation["currency"],
@@ -119,9 +119,7 @@ def create_quote(
     structure = _get_structure(db, payload.structure_id)
 
     calculation = calc_quote(event, structure, overrides=payload.overrides)
-    scenarios = QuoteScenarios.model_validate(
-        apply_scenarios(calculation["totals"]["total"])
-    )
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(calculation["totals"]["total"]))
 
     quote = Quote(
         event_id=event.id,
@@ -200,13 +198,11 @@ def list_quotes(
 def get_quote(
     quote_id: int,
     db: DbSession,
-    current_user: User = Depends(get_current_user),
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> QuoteRead:
     quote = _get_quote(db, quote_id)
     _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)
-    scenarios = QuoteScenarios.model_validate(
-        apply_scenarios(quote.totals.get("total", 0))
-    )
+    scenarios = QuoteScenarios.model_validate(apply_scenarios(quote.totals.get("total", 0)))
     return QuoteRead(
         id=quote.id,
         event_id=quote.event_id,
@@ -225,8 +221,8 @@ def get_quote(
 def export_quote(
     quote_id: int,
     db: DbSession,
-    format: str = Query(default="xlsx", pattern="^(xlsx|html)$"),
-    current_user: User = Depends(get_current_user),
+    format: Annotated[str, Query(default="xlsx", pattern="^(xlsx|html)$")],
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     quote = _get_quote(db, quote_id)
     _ensure_membership(db, quote.event_id, current_user, EventMemberRole.VIEWER)
@@ -286,11 +282,11 @@ def export_quote(
         </table>
         <h2>Riepilogo</h2>
         <ul>
-          <li>Subtotale: {totals.get('subtotal', 0)}</li>
-          <li>Utenze: {totals.get('utilities', 0)}</li>
-          <li>Tassa di soggiorno: {totals.get('city_tax', 0)}</li>
-          <li>Totale: {totals.get('total', 0)}</li>
-          <li>Caparre: {totals.get('deposit', 0)}</li>
+          <li>Subtotale: {totals.get("subtotal", 0)}</li>
+          <li>Utenze: {totals.get("utilities", 0)}</li>
+          <li>Tassa di soggiorno: {totals.get("city_tax", 0)}</li>
+          <li>Totale: {totals.get("total", 0)}</li>
+          <li>Caparre: {totals.get("deposit", 0)}</li>
         </ul>
       </body>
     </html>

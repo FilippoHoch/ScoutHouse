@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from alembic import op
 
@@ -46,13 +46,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute(
-        "DROP INDEX IF EXISTS ix_structure_cost_option_structure_id_model"
-    )
-    op.execute(
-        "DROP INDEX IF EXISTS ix_structure_season_availability_structure_id_season"
-    )
+    op.execute("DROP INDEX IF EXISTS ix_structure_cost_option_structure_id_model")
+    op.execute("DROP INDEX IF EXISTS ix_structure_season_availability_structure_id_season")
     op.execute("DROP INDEX IF EXISTS ix_structures_type")
     op.execute("DROP INDEX IF EXISTS ix_structures_province")
     op.execute("DROP INDEX IF EXISTS ix_structures_lower_name")
-

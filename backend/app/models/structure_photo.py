@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+
+if TYPE_CHECKING:  # pragma: no cover
+    from app.models.attachment import Attachment
+    from app.models.structure import Structure
 
 
 class StructurePhoto(Base):
@@ -32,9 +37,8 @@ class StructurePhoto(Base):
         nullable=False,
     )
 
-    structure: Mapped["Structure"] = relationship("Structure", back_populates="photos")
-    attachment: Mapped["Attachment"] = relationship("Attachment")
+    structure: Mapped[Structure] = relationship("Structure", back_populates="photos")
+    attachment: Mapped[Attachment] = relationship("Attachment")
 
 
 __all__ = ["StructurePhoto"]
-

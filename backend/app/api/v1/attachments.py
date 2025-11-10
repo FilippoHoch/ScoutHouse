@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Annotated, Iterable
+from collections.abc import Iterable
+from typing import Annotated
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -42,7 +43,6 @@ from app.services.attachments import (
     validate_key,
     validate_mime,
 )
-
 
 router = APIRouter(prefix="/attachments", tags=["attachments"])
 
@@ -114,7 +114,9 @@ def _ensure_owner_access(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unsupported owner type")
 
 
-def _serialize_attachment_rows(rows: Iterable[tuple[Attachment, User | None]]) -> list[AttachmentRead]:
+def _serialize_attachment_rows(
+    rows: Iterable[tuple[Attachment, User | None]],
+) -> list[AttachmentRead]:
     items: list[AttachmentRead] = []
     for attachment, creator in rows:
         items.append(
@@ -138,37 +140,40 @@ def _ensure_storage_ready() -> tuple[str, object]:
     try:
         bucket = ensure_bucket()
     except StorageUnavailableError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="File storage not configured") from exc
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File storage not configured",
+        ) from exc
     client = get_s3_client()
     try:
         ensure_bucket_exists(client, bucket)
     except StorageUnavailableError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="File storage not configured") from exc
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File storage not configured",
+        ) from exc
     return bucket, client
 
 
 @router.get("/", response_model=list[AttachmentRead])
 def list_attachments(
-    owner_type: AttachmentOwnerType = Query(..., description="Attachment owner type"),
-    owner_id: int = Query(..., gt=0, description="Attachment owner id"),
+    owner_type: Annotated[AttachmentOwnerType, Query(..., description="Attachment owner type")],
+    owner_id: Annotated[int, Query(..., gt=0, description="Attachment owner id")],
     *,
     db: DbSession,
     user: CurrentUser,
 ) -> list[AttachmentRead]:
     _ensure_owner_access(db, owner_type, owner_id, user, write=False)
 
-    rows = (
-        db.execute(
-            select(Attachment, User)
-            .outerjoin(User, Attachment.created_by == User.id)
-            .where(
-                Attachment.owner_type == owner_type,
-                Attachment.owner_id == owner_id,
-            )
-            .order_by(Attachment.created_at.desc())
+    rows = db.execute(
+        select(Attachment, User)
+        .outerjoin(User, Attachment.created_by == User.id)
+        .where(
+            Attachment.owner_type == owner_type,
+            Attachment.owner_id == owner_id,
         )
-        .all()
-    )
+        .order_by(Attachment.created_at.desc())
+    ).all()
     return _serialize_attachment_rows(rows)
 
 
@@ -214,9 +219,7 @@ def confirm_attachment(
     ensure_size_within_limits(payload.size)
 
     existing = (
-        db.execute(
-            select(Attachment.id).where(Attachment.storage_key == payload.key)
-        )
+        db.execute(select(Attachment.id).where(Attachment.storage_key == payload.key))
         .scalars()
         .first()
     )
@@ -302,9 +305,7 @@ def update_attachment(
     data = payload.model_dump(exclude_unset=True)
     if not data:
         creator_name = (
-            db.execute(select(User.name).where(User.id == attachment.created_by))
-            .scalars()
-            .first()
+            db.execute(select(User.name).where(User.id == attachment.created_by)).scalars().first()
         )
         return AttachmentRead(
             id=attachment.id,
@@ -329,9 +330,7 @@ def update_attachment(
     db.refresh(attachment)
 
     creator_name = (
-        db.execute(select(User.name).where(User.id == attachment.created_by))
-        .scalars()
-        .first()
+        db.execute(select(User.name).where(User.id == attachment.created_by)).scalars().first()
     )
 
     return AttachmentRead(
@@ -365,4 +364,3 @@ def delete_attachment(
 
     db.delete(attachment)
     db.commit()
-

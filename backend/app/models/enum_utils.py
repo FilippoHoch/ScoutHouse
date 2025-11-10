@@ -11,20 +11,17 @@ for enum``.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TypeVar
 
 from sqlalchemy import Enum as SQLEnum
 
-E = TypeVar("E", bound=Enum)
 
-
-def enum_values(enum_cls: type[E]) -> list[str]:
+def enum_values[E: Enum](enum_cls: type[E]) -> list[str]:
     """Return the list of values for the given Enum class."""
 
     return [member.value for member in enum_cls]
 
 
-def sqla_enum(enum_cls: type[E], **kwargs) -> SQLEnum:
+def sqla_enum[E: Enum](enum_cls: type[E], **kwargs) -> SQLEnum:
     """Create an ``SQLEnum`` that stores the enum *values* instead of names."""
 
     return SQLEnum(

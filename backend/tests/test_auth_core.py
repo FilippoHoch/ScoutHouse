@@ -1,5 +1,5 @@
 import os
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -54,7 +54,7 @@ def test_auth_flow_register_login_refresh_logout_me(client: TestClient) -> None:
         json={"email": register_payload["email"], "password": register_payload["password"]},
     )
     assert login_response.status_code == 200
-    login_token = login_response.json()["access_token"]
+    _ = login_response.json()["access_token"]
 
     refresh_response = client.post("/api/v1/auth/refresh")
     assert refresh_response.status_code == 200

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -50,16 +52,27 @@ def _serialize_user(user: User) -> UserRead:
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
+def register(
+    payload: RegisterRequest,
+    response: Response,
+    db: Annotated[Session, Depends(get_db)],
+) -> AuthResponse:
     settings = get_settings()
     if not settings.allow_registration:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration disabled")
 
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
 
-    user = User(name=payload.name, email=payload.email, password_hash=hash_password(payload.password))
+    user = User(
+        name=payload.name,
+        email=payload.email,
+        password_hash=hash_password(payload.password),
+    )
     db.add(user)
     db.flush()
 
@@ -77,7 +90,7 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
 async def login(
     request: Request,
     response: Response,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ) -> AuthResponse:
     payload = LoginRequest.model_validate(await request.json())
 
@@ -100,7 +113,7 @@ async def login(
 @limiter.limit("5/hour")
 async def forgot_password(
     request: Request,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ) -> Response:
     payload = ForgotPasswordRequest.model_validate(await request.json())
 
@@ -122,7 +135,7 @@ async def forgot_password(
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 def reset_password(
     payload: ResetPasswordRequest,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ) -> None:
     try:
         record = verify_reset_token(db, payload.token)
@@ -142,11 +155,14 @@ def reset_password(
 def refresh(
     request: Request,
     response: Response,
-    refresh_token: RefreshToken = Depends(get_refresh_token_from_cookie),
-    db: Session = Depends(get_db),
+    refresh_token: Annotated[RefreshToken, Depends(get_refresh_token_from_cookie)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> RefreshResponse:
     if refresh_token.revoked:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token revoked",
+        )
 
     user = db.get(User, refresh_token.user_id)
     if user is None or not user.is_active:
@@ -163,8 +179,8 @@ def refresh(
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
     response: Response,
-    refresh_token: RefreshToken = Depends(get_refresh_token_from_cookie),
-    db: Session = Depends(get_db),
+    refresh_token: Annotated[RefreshToken, Depends(get_refresh_token_from_cookie)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> None:
     refresh_token.revoked = True
     db.add(refresh_token)
@@ -174,5 +190,5 @@ def logout(
 
 
 @router.get("/me", response_model=UserRead)
-def get_me(user: User = Depends(get_current_user)) -> UserRead:
+def get_me(user: Annotated[User, Depends(get_current_user)]) -> UserRead:
     return _serialize_user(user)

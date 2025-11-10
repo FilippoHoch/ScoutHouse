@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Callable
+from collections.abc import Callable
+from datetime import UTC, datetime
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -16,8 +17,8 @@ auth_scheme = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(auth_scheme),
-    db: Session = Depends(get_db),
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(auth_scheme)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> User:
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
@@ -26,7 +27,10 @@ def get_current_user(
     try:
         payload = decode_token(token)
     except ValueError as exc:  # pragma: no cover - security path
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        ) from exc
 
     if payload.get("type") != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
@@ -42,13 +46,13 @@ def get_current_user(
     return user
 
 
-def require_admin(user: User = Depends(get_current_user)) -> User:
+def require_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
     if not user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin required")
     return user
 
 
-def require_structure_editor(user: User = Depends(get_current_user)) -> User:
+def require_structure_editor(user: Annotated[User, Depends(get_current_user)]) -> User:
     settings = get_settings()
     if settings.allow_non_admin_structure_edit:
         return user
@@ -66,8 +70,8 @@ def require_event_member(min_role: EventMemberRole) -> Callable:
 
     def dependency(
         event_id: int,
-        user: User = Depends(get_current_user),
-        db: Session = Depends(get_db),
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)],
     ) -> EventMember:
         membership = (
             db.query(EventMember)
@@ -83,22 +87,35 @@ def require_event_member(min_role: EventMemberRole) -> Callable:
     return dependency
 
 
-def get_refresh_token_from_cookie(request: Request, db: Session = Depends(get_db)) -> RefreshToken:
+def get_refresh_token_from_cookie(
+    request: Request, db: Annotated[Session, Depends(get_db)]
+) -> RefreshToken:
     token = request.cookies.get("refresh_token")
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing refresh token",
+        )
 
     token_hash = hash_token(token)
 
     token_record = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
     if token_record is None or token_record.revoked:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        )
     expires_at = token_record.expires_at
     if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if expires_at < datetime.now(timezone.utc):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Expired refresh token")
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if expires_at < datetime.now(UTC):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Expired refresh token",
+        )
     return token_record
+
+
 __all__ = [
     "auth_scheme",
     "get_current_user",

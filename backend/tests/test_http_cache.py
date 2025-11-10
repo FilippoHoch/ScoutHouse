@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,7 +11,6 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers  # noqa: E402
 
 
@@ -76,10 +75,7 @@ def test_http_cache_headers_and_etag_roundtrip() -> None:
     assert first.status_code == 200
     etag = first.headers.get("ETag")
     assert etag
-    assert (
-        first.headers.get("Cache-Control")
-        == "public, max-age=120, stale-while-revalidate=600"
-    )
+    assert first.headers.get("Cache-Control") == "public, max-age=120, stale-while-revalidate=600"
 
     second = client.get(
         "/api/v1/structures/search",
@@ -87,10 +83,7 @@ def test_http_cache_headers_and_etag_roundtrip() -> None:
     )
     assert second.status_code == 304
     assert second.headers.get("ETag") == etag
-    assert (
-        second.headers.get("Cache-Control")
-        == "public, max-age=120, stale-while-revalidate=600"
-    )
+    assert second.headers.get("Cache-Control") == "public, max-age=120, stale-while-revalidate=600"
 
 
 def test_http_cache_slug_endpoint() -> None:
@@ -104,10 +97,7 @@ def test_http_cache_slug_endpoint() -> None:
     assert first.status_code == 200
     etag = first.headers.get("ETag")
     assert etag
-    assert (
-        first.headers.get("Cache-Control")
-        == "public, max-age=120, stale-while-revalidate=600"
-    )
+    assert first.headers.get("Cache-Control") == "public, max-age=120, stale-while-revalidate=600"
 
     second = client.get(
         f"/api/v1/structures/by-slug/{structure['slug']}",
@@ -116,8 +106,4 @@ def test_http_cache_slug_endpoint() -> None:
     )
     assert second.status_code == 304
     assert second.headers.get("ETag") == etag
-    assert (
-        second.headers.get("Cache-Control")
-        == "public, max-age=120, stale-while-revalidate=600"
-    )
-
+    assert second.headers.get("Cache-Control") == "public, max-age=120, stale-while-revalidate=600"

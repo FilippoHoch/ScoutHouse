@@ -22,7 +22,6 @@ from app.schemas.attachment import (
     MAX_ATTACHMENT_SIZE,
 )
 
-
 logger = logging.getLogger("app.attachments")
 
 SAFE_CHARS_RE = re.compile(r"[^A-Za-z0-9._-]+")
@@ -94,7 +93,10 @@ def sanitize_filename(filename: str) -> str:
     safe_ext = "".join(ch for ch in ext if ch.isalnum() or ch in {".", "_", "-"})
     candidate = safe_name
     if safe_ext:
-        candidate = f"{safe_name}{safe_ext}" if safe_ext.startswith(".") else f"{safe_name}.{safe_ext}"
+        if safe_ext.startswith("."):
+            candidate = f"{safe_name}{safe_ext}"
+        else:
+            candidate = f"{safe_name}.{safe_ext}"
     return candidate[:255] or "file"
 
 
@@ -127,7 +129,10 @@ def head_object(client: BaseClient, bucket: str, key: str) -> dict[str, Any]:
     except ClientError as exc:  # pragma: no cover - defensive logging
         error_code = exc.response.get("Error", {}).get("Code")
         if error_code in {"404", "NoSuchKey"}:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Uploaded file not found") from exc
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file not found",
+            ) from exc
         logger.exception("Unexpected error while verifying attachment upload: %s", error_code)
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail="Storage backend error") from exc
 

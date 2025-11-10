@@ -1,5 +1,5 @@
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "20241205_0022"
@@ -65,7 +65,10 @@ def upgrade() -> None:
     op.add_column("structures", sa.Column("animal_policy", structure_animal_policy, nullable=True))
     op.add_column("structures", sa.Column("animal_policy_notes", sa.Text(), nullable=True))
     op.add_column("structures", sa.Column("in_area_protetta", sa.Boolean(), nullable=True))
-    op.add_column("structures", sa.Column("ente_area_protetta", sa.String(length=255), nullable=True))
+    op.add_column(
+        "structures",
+        sa.Column("ente_area_protetta", sa.String(length=255), nullable=True),
+    )
     op.add_column("structures", sa.Column("environmental_notes", sa.Text(), nullable=True))
     op.add_column("structures", sa.Column("seasonal_amenities", sa.JSON(), nullable=True))
     op.add_column("structures", sa.Column("booking_url", sa.String(length=255), nullable=True))

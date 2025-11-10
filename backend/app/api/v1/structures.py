@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Iterable, Sequence
 from datetime import date
 from enum import Enum
-import re
-import unicodedata
 from typing import Annotated, Any
 
 import httpx
@@ -14,19 +14,21 @@ from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
-from app.core.http_cache import apply_http_cache
 from app.core.db import get_db
+from app.core.http_cache import apply_http_cache
 from app.deps import get_current_user, require_structure_editor
 from app.models import (
     Attachment,
     AttachmentOwnerType,
+    CellCoverageQuality,
     Contact,
     ContactPreferredChannel,
     FirePolicy,
+    FloodRiskLevel,
+    RiverSwimmingOption,
     Structure,
     StructureContact,
     StructureCostModifier,
-    StructureCostModifierKind,
     StructureCostOption,
     StructureOpenPeriod,
     StructureOpenPeriodKind,
@@ -37,10 +39,7 @@ from app.models import (
     StructureType,
     StructureUnit,
     User,
-    CellCoverageQuality,
-    RiverSwimmingOption,
     WastewaterType,
-    FloodRiskLevel,
 )
 from app.schemas import (
     ContactCreate,
@@ -66,10 +65,6 @@ from app.schemas import (
     StructureSearchResponse,
     StructureUpdate,
 )
-from app.services.audit import record_audit
-from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
-from app.services.filters import structure_matches_filters
-from app.services.geo import haversine_km
 from app.services.attachments import (
     StorageUnavailableError,
     delete_object,
@@ -78,6 +73,10 @@ from app.services.attachments import (
     get_s3_client,
     rewrite_presigned_url,
 )
+from app.services.audit import record_audit
+from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
+from app.services.filters import structure_matches_filters
+from app.services.geo import haversine_km
 
 router = APIRouter()
 
@@ -100,9 +99,7 @@ def _website_responds(client: httpx.Client, url: str) -> bool:
 
     if response is None or response.status_code >= 400:
         try:
-            response = client.get(
-                url, headers={"User-Agent": "ScoutHouse/website-check"}
-            )
+            response = client.get(url, headers={"User-Agent": "ScoutHouse/website-check"})
         except httpx.HTTPError:
             return False
 
@@ -120,9 +117,7 @@ def _check_website_urls(urls: Iterable[str]) -> list[str]:
 
     warnings: list[str] = []
     try:
-        with httpx.Client(
-            timeout=_WEBSITE_CHECK_TIMEOUT, follow_redirects=True
-        ) as client:
+        with httpx.Client(timeout=_WEBSITE_CHECK_TIMEOUT, follow_redirects=True) as client:
             for url in candidates:
                 try:
                     if not _website_responds(client, url):
@@ -312,9 +307,7 @@ def _serialize_photo(
 
 def _slugify(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value)
-    without_marks = "".join(
-        char for char in normalized if not unicodedata.combining(char)
-    )
+    without_marks = "".join(char for char in normalized if not unicodedata.combining(char))
     slug = SLUG_SANITIZE_RE.sub("-", without_marks.lower()).strip("-")
     return slug or "structure"
 
@@ -382,34 +375,29 @@ def _collect_structure_warnings(db: Session, structure: Structure) -> list[str]:
     name = (structure.name or "").strip()
     municipality = (structure.municipality or "").strip()
     if name and municipality:
-        duplicate_exists = (
-            db.execute(
-                select(func.count())
-                .select_from(Structure)
-                .where(
-                    func.lower(Structure.name) == name.lower(),
-                    func.lower(Structure.municipality) == municipality.lower(),
-                    Structure.id != structure.id,
-                )
-            ).scalar_one()
-        )
-        if duplicate_exists:
-            warnings.append(
-                "Esistono altre strutture con lo stesso nome nel medesimo comune"
+        duplicate_exists = db.execute(
+            select(func.count())
+            .select_from(Structure)
+            .where(
+                func.lower(Structure.name) == name.lower(),
+                func.lower(Structure.municipality) == municipality.lower(),
+                Structure.id != structure.id,
             )
+        ).scalar_one()
+        if duplicate_exists:
+            warnings.append("Esistono altre strutture con lo stesso nome nel medesimo comune")
 
     if structure.fire_policy is FirePolicy.WITH_PERMIT and not structure.fire_rules:
         warnings.append("Specificare le regole per i fuochi (fire_rules)")
 
     if structure.in_area_protetta and not structure.ente_area_protetta:
-        warnings.append(
-            "Indicare l'ente responsabile dell'area protetta"
-        )
+        warnings.append("Indicare l'ente responsabile dell'area protetta")
 
     for option in getattr(structure, "cost_options", []) or []:
         if option.utilities_flat is not None and option.utilities_included:
             warnings.append(
-                "Verificare le utenze: utilities_flat e utilities_included sono entrambi valorizzati"
+                "Verificare le utenze: utilities_flat e utilities_included "
+                "sono entrambi valorizzati"
             )
             break
 
@@ -476,25 +464,20 @@ def _build_structure_read(
 
     if include_details:
         update["availabilities"] = [
-            _serialize_availability(availability)
-            for availability in structure.availabilities
+            _serialize_availability(availability) for availability in structure.availabilities
         ]
         update["cost_options"] = [
             _serialize_cost_option(option) for option in structure.cost_options
         ]
 
-    update["open_periods"] = [
-        _serialize_open_period(period) for period in structure.open_periods
-    ]
+    update["open_periods"] = [_serialize_open_period(period) for period in structure.open_periods]
 
     if include_contacts:
         contacts = sorted(
             structure.contacts,
             key=lambda item: (not item.is_primary, item.name.lower()),
         )
-        update["contacts"] = [
-            ContactRead.model_validate(contact) for contact in contacts
-        ]
+        update["contacts"] = [ContactRead.model_validate(contact) for contact in contacts]
     else:
         update["contacts"] = None
 
@@ -513,20 +496,14 @@ def _get_structure_or_404(
         options.extend(
             [
                 selectinload(Structure.availabilities),
-                selectinload(Structure.cost_options).selectinload(
-                    StructureCostOption.modifiers
-                ),
+                selectinload(Structure.cost_options).selectinload(StructureCostOption.modifiers),
             ]
         )
     if with_contacts:
-        options.append(
-            selectinload(Structure.contacts).selectinload(StructureContact.contact)
-        )
+        options.append(selectinload(Structure.contacts).selectinload(StructureContact.contact))
 
     structure = (
-        db.execute(
-            select(Structure).options(*options).where(Structure.id == structure_id)
-        )
+        db.execute(select(Structure).options(*options).where(Structure.id == structure_id))
         .unique()
         .scalar_one_or_none()
     )
@@ -542,9 +519,7 @@ def _serialize_contact(link: StructureContact) -> ContactRead:
     return ContactRead.model_validate(link)
 
 
-def _get_contact_or_404(
-    db: Session, structure_id: int, contact_id: int
-) -> StructureContact:
+def _get_contact_or_404(db: Session, structure_id: int, contact_id: int) -> StructureContact:
     link = (
         db.execute(
             select(StructureContact)
@@ -579,14 +554,12 @@ def list_structures(db: DbSession) -> Sequence[Structure]:
 def get_structure_by_slug(
     slug: str,
     db: DbSession,
-    include: str | None = Query(default=None),
+    include: Annotated[str | None, Query(default=None)],
     *,
     request: Request,
     response: Response,
 ) -> StructureRead | Response:
-    include_parts = {
-        part.strip().lower() for part in (include.split(",") if include else [])
-    }
+    include_parts = {part.strip().lower() for part in (include.split(",") if include else [])}
     include_details = "details" in include_parts
     include_contacts = include_details or "contacts" in include_parts
 
@@ -599,9 +572,7 @@ def get_structure_by_slug(
     if include_contacts:
         query = query.options(selectinload(Structure.contacts))
 
-    structure = (
-        db.execute(query.where(Structure.slug == slug)).unique().scalar_one_or_none()
-    )
+    structure = db.execute(query.where(Structure.slug == slug)).unique().scalar_one_or_none()
     if structure is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -622,30 +593,30 @@ def get_structure_by_slug(
 @router.get("/search", response_model=StructureSearchResponse)
 def search_structures(
     db: DbSession,
-    q: str | None = Query(default=None, min_length=1),
-    province: str | None = Query(default=None, min_length=2, max_length=2),
-    structure_type: StructureType | None = Query(default=None, alias="type"),
-    season: StructureSeason | None = Query(default=None),
-    unit: StructureUnit | None = Query(default=None),
-    cost_band: CostBand | None = Query(default=None),
-    max_km: float | None = Query(default=None, gt=0),
-    access: str | None = Query(default=None),
-    fire_policy: FirePolicy | None = Query(default=None, alias="fire"),
-    min_land_area: float | None = Query(default=None, ge=0),
-    hot_water: bool | None = Query(default=None),
-    cell_coverage: CellCoverageQuality | None = Query(default=None),
-    aed_on_site: bool | None = Query(default=None),
-    river_swimming: RiverSwimmingOption | None = Query(default=None),
-    wastewater_type: WastewaterType | None = Query(default=None),
-    min_power_capacity_kw: float | None = Query(default=None, ge=0),
-    min_parking_car_slots: int | None = Query(default=None, ge=0),
-    flood_risk: FloodRiskLevel | None = Query(default=None),
-    open_in_season: StructureOpenPeriodSeason | None = Query(default=None),
-    open_on_date: date | None = Query(default=None),
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
-    sort: str = Query(default=DEFAULT_SORT_FIELD),
-    order: str = Query(default=DEFAULT_SORT_ORDER),
+    q: Annotated[str | None, Query(default=None, min_length=1)],
+    province: Annotated[str | None, Query(default=None, min_length=2, max_length=2)],
+    structure_type: Annotated[StructureType | None, Query(default=None, alias="type")],
+    season: Annotated[StructureSeason | None, Query(default=None)],
+    unit: Annotated[StructureUnit | None, Query(default=None)],
+    cost_band: Annotated[CostBand | None, Query(default=None)],
+    max_km: Annotated[float | None, Query(default=None, gt=0)],
+    access: Annotated[str | None, Query(default=None)],
+    fire_policy: Annotated[FirePolicy | None, Query(default=None, alias="fire")],
+    min_land_area: Annotated[float | None, Query(default=None, ge=0)],
+    hot_water: Annotated[bool | None, Query(default=None)],
+    cell_coverage: Annotated[CellCoverageQuality | None, Query(default=None)],
+    aed_on_site: Annotated[bool | None, Query(default=None)],
+    river_swimming: Annotated[RiverSwimmingOption | None, Query(default=None)],
+    wastewater_type: Annotated[WastewaterType | None, Query(default=None)],
+    min_power_capacity_kw: Annotated[float | None, Query(default=None, ge=0)],
+    min_parking_car_slots: Annotated[int | None, Query(default=None, ge=0)],
+    flood_risk: Annotated[FloodRiskLevel | None, Query(default=None)],
+    open_in_season: Annotated[StructureOpenPeriodSeason | None, Query(default=None)],
+    open_on_date: Annotated[date | None, Query(default=None)],
+    page: Annotated[int, Query(default=1, ge=1)],
+    page_size: Annotated[int, Query(default=20, ge=1, le=100)],
+    sort: Annotated[str, Query(default=DEFAULT_SORT_FIELD)],
+    order: Annotated[str, Query(default=DEFAULT_SORT_ORDER)],
     *,
     request: Request,
     response: Response,
@@ -790,8 +761,7 @@ def search_structures(
             continue
 
         availability_reads = [
-            _serialize_availability(availability)
-            for availability in structure.availabilities
+            _serialize_availability(availability) for availability in structure.availabilities
         ]
         seasons = sorted(
             {availability.season for availability in availability_reads},
@@ -812,9 +782,7 @@ def search_structures(
 
     if max_km is not None:
         items_with_distance = [
-            item
-            for item in items_with_distance
-            if item[1] is not None and item[1] <= max_km
+            item for item in items_with_distance if item[1] is not None and item[1] <= max_km
         ]
 
     reverse = order == "desc"
@@ -857,15 +825,9 @@ def search_structures(
             postal_code=structure.postal_code,
             type=structure.type,
             address=structure.address,
-            latitude=float(structure.latitude)
-            if structure.latitude is not None
-            else None,
-            longitude=float(structure.longitude)
-            if structure.longitude is not None
-            else None,
-            altitude=float(structure.altitude)
-            if structure.altitude is not None
-            else None,
+            latitude=float(structure.latitude) if structure.latitude is not None else None,
+            longitude=float(structure.longitude) if structure.longitude is not None else None,
+            altitude=float(structure.altitude) if structure.altitude is not None else None,
             distance_km=distance,
             estimated_cost=estimated_cost,
             cost_band=band,
@@ -1069,11 +1031,11 @@ def list_structure_contacts(
 def search_contacts(
     db: DbSession,
     _: Annotated[User, Depends(get_current_user)],
-    first_name: str | None = Query(default=None),
-    last_name: str | None = Query(default=None),
-    email: str | None = Query(default=None),
-    phone: str | None = Query(default=None),
-    limit: int = Query(default=10, ge=1, le=50),
+    first_name: Annotated[str | None, Query(default=None)],
+    last_name: Annotated[str | None, Query(default=None)],
+    email: Annotated[str | None, Query(default=None)],
+    phone: Annotated[str | None, Query(default=None)],
+    limit: Annotated[int, Query(default=10, ge=1, le=50)],
 ) -> list[ContactRead]:
     normalized_clauses: list[Any] = []
 
@@ -1135,9 +1097,7 @@ def create_structure_contact(
     if contact_id is not None:
         contact = db.get(Contact, contact_id)
         if contact is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
         already_linked = (
             db.execute(
                 select(StructureContact).where(
@@ -1178,9 +1138,7 @@ def create_structure_contact(
         structure_id=structure.id,
         contact_id=contact.id,
         role=payload.get("role"),
-        preferred_channel=payload.get(
-            "preferred_channel", ContactPreferredChannel.EMAIL
-        ),
+        preferred_channel=payload.get("preferred_channel", ContactPreferredChannel.EMAIL),
         is_primary=payload.get("is_primary", False),
         gdpr_consent_at=payload.get("gdpr_consent_at"),
     )
@@ -1278,9 +1236,7 @@ def update_structure_contact(
     return _serialize_contact(link)
 
 
-@router.delete(
-    "/{structure_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{structure_id}/contacts/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_structure_contact(
     structure_id: int,
     contact_id: int,
@@ -1298,9 +1254,7 @@ def delete_structure_contact(
     db.flush()
 
     remaining = (
-        db.execute(
-            select(StructureContact).where(StructureContact.contact_id == contact.id)
-        )
+        db.execute(select(StructureContact).where(StructureContact.contact_id == contact.id))
         .scalars()
         .first()
     )
@@ -1385,9 +1339,7 @@ def upsert_structure_availabilities(
         for availability in structure.availabilities
     ]
 
-    existing = {
-        availability.id: availability for availability in structure.availabilities
-    }
+    existing = {availability.id: availability for availability in structure.availabilities}
     seen_ids: set[int] = set()
 
     for payload in availabilities_in:
@@ -1439,8 +1391,7 @@ def upsert_structure_availabilities(
     db.commit()
 
     return [
-        _serialize_availability(availability)
-        for availability in updated_structure.availabilities
+        _serialize_availability(availability) for availability in updated_structure.availabilities
     ]
 
 
@@ -1571,8 +1522,7 @@ def upsert_structure_cost_options(
 
     updated_structure = _get_structure_or_404(db, structure_id, with_details=True)
     after_snapshot = [
-        _serialize_cost_option(option).model_dump()
-        for option in updated_structure.cost_options
+        _serialize_cost_option(option).model_dump() for option in updated_structure.cost_options
     ]
 
     record_audit(
@@ -1648,11 +1598,7 @@ def create_structure_photo(
         )
 
     existing = (
-        db.execute(
-            select(StructurePhoto.id).where(
-                StructurePhoto.attachment_id == attachment.id
-            )
-        )
+        db.execute(select(StructurePhoto.id).where(StructurePhoto.attachment_id == attachment.id))
         .scalars()
         .first()
     )
@@ -1686,9 +1632,7 @@ def create_structure_photo(
     return _serialize_photo(photo, attachment, bucket=bucket, client=client)
 
 
-@router.delete(
-    "/{structure_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{structure_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_structure_photo(
     structure_id: int,
     photo_id: int,

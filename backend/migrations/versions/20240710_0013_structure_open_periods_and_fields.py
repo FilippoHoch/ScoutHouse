@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "20240710_0013"
@@ -76,8 +76,10 @@ def upgrade() -> None:
         sa.Column("date_end", sa.Date(), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.CheckConstraint(
-            "(kind='season' AND season IS NOT NULL AND date_start IS NULL AND date_end IS NULL)"
-            " OR (kind='range' AND season IS NULL AND date_start IS NOT NULL AND date_end IS NOT NULL AND date_start<=date_end)",
+            "(kind='season' AND season IS NOT NULL AND date_start IS NULL "
+            "AND date_end IS NULL)"
+            " OR (kind='range' AND season IS NULL AND date_start IS NOT NULL "
+            "AND date_end IS NOT NULL AND date_start<=date_end)",
             name="ck_structure_open_periods_kind_constraints",
         ),
     )

@@ -65,7 +65,10 @@ def _database_ready() -> tuple[bool, str]:
     if expected.issubset(versions):
         return True, "ok"
 
-    logger.error("Database not on latest migration", extra={"expected": list(expected), "found": list(versions)})
+    logger.error(
+        "Database not on latest migration",
+        extra={"expected": list(expected), "found": list(versions)},
+    )
     return False, "pending_migrations"
 
 

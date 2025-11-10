@@ -5,11 +5,10 @@ Revises: 20240730_0014
 Create Date: 2024-08-20 00:15:00.000000
 """
 
-from typing import Sequence
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision: str = "20240820_0015"
 down_revision: str | None = "20240730_0014"
@@ -18,15 +17,6 @@ depends_on: Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    water_source_enum = sa.Enum(
-        "none",
-        "fountain",
-        "tap",
-        "river",
-        name="water_source",
-        create_type=False,
-    )
-
     op.add_column(
         "structures",
         sa.Column("water_sources", sa.JSON(), nullable=True),

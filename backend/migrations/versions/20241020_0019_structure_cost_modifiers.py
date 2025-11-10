@@ -7,12 +7,11 @@ Create Date: 2024-10-20 00:19:00.000000
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 from migrations.utils.postgres import create_enum_if_not_exists
-
 
 # revision identifiers, used by Alembic.
 revision = "20241020_0019"
@@ -55,7 +54,8 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
         sa.CheckConstraint(
-            "(kind != 'date_range') OR (date_start IS NOT NULL AND date_end IS NOT NULL AND date_start <= date_end)",
+            "(kind != 'date_range') OR "
+            "(date_start IS NOT NULL AND date_end IS NOT NULL AND date_start <= date_end)",
             name="ck_structure_cost_modifier_date_range",
         ),
     )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, Field
@@ -44,8 +44,8 @@ class MailTestResponse(BaseModel):
 @router.get("/preview", response_model=MailPreviewResponse)
 def preview_mail_template(
     template: MailTemplateName,
-    sample: bool = Query(True),
-    _: None = Depends(require_admin),
+    sample: Annotated[bool, Query(True)],
+    _: Annotated[None, Depends(require_admin)],
 ) -> MailPreviewResponse:
     if not sample:
         raise HTTPException(
@@ -65,7 +65,7 @@ def preview_mail_template(
 @router.post("/test", response_model=MailTestResponse, status_code=status.HTTP_202_ACCEPTED)
 def send_test_mail(
     payload: MailTestRequest,
-    _: None = Depends(require_admin),
+    _: Annotated[None, Depends(require_admin)],
 ) -> MailTestResponse:
     context = get_sample_context(payload.template)
     if payload.sample_data:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Any
 
@@ -51,7 +51,9 @@ def estimate_mean_daily_cost(structure: Structure) -> Decimal | None:
     totals: list[Decimal] = []
     for option in cost_options:
         amount = _sanitize_decimal(option.amount)
-        extras = _sanitize_decimal(option.city_tax_per_night) + _sanitize_decimal(option.utilities_flat)
+        extras = _sanitize_decimal(option.city_tax_per_night) + _sanitize_decimal(
+            option.utilities_flat
+        )
         totals.append(amount + extras)
 
     if not totals:
@@ -159,12 +161,8 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                     "kind": modifier.kind.value,
                     "amount": float(_quantize(_sanitize_decimal(modifier.amount))),
                     "season": modifier.season.value if modifier.season else None,
-                    "date_start": modifier.date_start.isoformat()
-                    if modifier.date_start
-                    else None,
-                    "date_end": modifier.date_end.isoformat()
-                    if modifier.date_end
-                    else None,
+                    "date_start": modifier.date_start.isoformat() if modifier.date_start else None,
+                    "date_end": modifier.date_end.isoformat() if modifier.date_end else None,
                     "price_per_resource": _serialize_price_map(
                         getattr(modifier, "price_per_resource", None)
                     ),
@@ -176,14 +174,10 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                 "model": option.model.value,
                 "amount": float(_quantize(_sanitize_decimal(option.amount))),
                 "currency": option.currency,
-                "booking_deposit": float(
-                    _quantize(_sanitize_decimal(option.booking_deposit))
-                )
+                "booking_deposit": float(_quantize(_sanitize_decimal(option.booking_deposit)))
                 if getattr(option, "booking_deposit", None) is not None
                 else None,
-                "damage_deposit": float(
-                    _quantize(_sanitize_decimal(option.damage_deposit))
-                )
+                "damage_deposit": float(_quantize(_sanitize_decimal(option.damage_deposit)))
                 if getattr(option, "damage_deposit", None) is not None
                 else None,
                 "city_tax_per_night": float(_quantize(option.city_tax_per_night))
@@ -409,9 +403,7 @@ def calc_quote(
 
         if option.city_tax_per_night is not None:
             tax_unit = _quantize(_sanitize_decimal(option.city_tax_per_night))
-            tax_total = _quantize(
-                tax_unit * Decimal(taxable_people) * Decimal(nights)
-            )
+            tax_total = _quantize(tax_unit * Decimal(taxable_people) * Decimal(nights))
             city_tax_total += tax_total
             breakdown.append(
                 {
@@ -461,9 +453,7 @@ def calc_quote(
 
     settings = get_settings()
     mean_daily_cost = estimate_mean_daily_cost(structure)
-    cost_band_value = (
-        band_for_cost(mean_daily_cost).value if mean_daily_cost is not None else None
-    )
+    cost_band_value = band_for_cost(mean_daily_cost).value if mean_daily_cost is not None else None
 
     sanitized_overrides: dict[str, Any] = {}
     participants_override = overrides.get("participants")
@@ -474,9 +464,7 @@ def calc_quote(
             )
         elif isinstance(participants_override, dict):
             sanitized_overrides["participants"] = {
-                key: int(value)
-                for key, value in participants_override.items()
-                if value is not None
+                key: int(value) for key, value in participants_override.items() if value is not None
             }
     if "days" in overrides:
         sanitized_overrides["days"] = int(overrides["days"])

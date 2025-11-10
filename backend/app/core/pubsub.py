@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 import logging
 from asyncio import QueueEmpty, QueueFull
+from collections.abc import AsyncGenerator, AsyncIterator
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, AsyncGenerator, AsyncIterator
+from typing import Any
 from uuid import uuid4
 
 

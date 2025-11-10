@@ -77,7 +77,11 @@ def add_enum_value_if_missing(name: str, value: str) -> None:
                      WHERE t.typname = enum_name
                        AND e.enumlabel = enum_value
                 ) THEN
-                    EXECUTE format('ALTER TYPE %I ADD VALUE IF NOT EXISTS %L', enum_name, enum_value);
+                    EXECUTE format(
+                        'ALTER TYPE %I ADD VALUE IF NOT EXISTS %L',
+                        enum_name,
+                        enum_value
+                    );
                 END IF;
             END$$;
             """
@@ -116,9 +120,7 @@ def create_index_if_not_exists(index_sql: str) -> None:
     op.execute(sa.text(index_sql))
 
 
-def add_constraint_if_not_exists(
-    table: str, constraint_name: str, constraint_sql: str
-) -> None:
+def add_constraint_if_not_exists(table: str, constraint_name: str, constraint_sql: str) -> None:
     """Create a constraint if it does not already exist on ``table``."""
 
     bind = _get_bind()

@@ -9,7 +9,6 @@ os.environ.setdefault("APP_ENV", "test")
 
 from app.core.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
-
 from tests.utils import auth_headers
 
 
@@ -535,9 +534,7 @@ def test_search_supports_extended_filters() -> None:
         "access_by_coach": True,
         "access_by_public_transport": True,
         "coach_turning_area": True,
-        "open_periods": [
-            {"kind": "season", "season": "summer", "units": ["ALL"]}
-        ],
+        "open_periods": [{"kind": "season", "season": "summer", "units": ["ALL"]}],
     }
 
     land_payload = {
@@ -581,9 +578,7 @@ def test_search_supports_extended_filters() -> None:
         "access_by_car": True,
         "access_by_coach": True,
         "access_by_public_transport": False,
-        "open_periods": [
-            {"kind": "season", "season": "autumn", "units": ["RS"]}
-        ],
+        "open_periods": [{"kind": "season", "season": "autumn", "units": ["RS"]}],
     }
 
     for payload in (house_payload, land_payload, mixed_payload):
