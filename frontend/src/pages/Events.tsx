@@ -1,5 +1,5 @@
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -78,6 +78,7 @@ interface WizardState {
   planningMode: PlanningMode;
   branchSegments: BranchSegmentFormValue[];
   participants: ParticipantsFormValue;
+  branchSelection: EventBranch[];
 }
 
 const defaultWizardState: WizardState = {
@@ -96,9 +97,52 @@ const defaultWizardState: WizardState = {
     rs: "",
     leaders: "",
   },
+  branchSelection: ["LC"],
 };
 
 const generateSegmentId = (): string => Math.random().toString(36).slice(2, 10);
+
+const orderedBranches: EventBranch[] = ["LC", "EG", "RS"];
+
+const resolveBranchFromSelection = (selection: EventBranch[], fallback: EventBranch): EventBranch => {
+  if (selection.length === 0) {
+    return fallback;
+  }
+  if (selection.includes("ALL")) {
+    return "ALL";
+  }
+  if (selection.length === 1) {
+    return selection[0];
+  }
+  return "ALL";
+};
+
+const isMultiBranchSelection = (selection: EventBranch[]): boolean => {
+  if (selection.includes("ALL")) {
+    return true;
+  }
+  return selection.filter((branch) => branch !== "ALL").length > 1;
+};
+
+const resolveSegmentBranchesFromSelection = (selection: EventBranch[]): EventBranch[] => {
+  if (selection.length === 0) {
+    return [];
+  }
+  if (selection.includes("ALL")) {
+    return orderedBranches;
+  }
+  return selection.filter((branch) => branch !== "ALL");
+};
+
+const defaultAccommodationForBranch = (branch: EventBranch): EventAccommodation => {
+  if (branch === "LC") {
+    return "indoor";
+  }
+  if (branch === "EG" || branch === "RS") {
+    return "tents";
+  }
+  return "indoor";
+};
 
 interface EventWizardProps {
   onClose: () => void;
@@ -128,12 +172,26 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
       })),
     [t],
   );
+  const branchSelectionOptions = useMemo(
+    () =>
+      [...orderedBranches, "ALL"].map((branch) => ({
+        value: branch,
+        label: t(`events.branches.${branch}`, branch),
+        description: t(`events.wizard.details.branches.options.${branch}.description`, ""),
+        hint: t(`events.wizard.details.branches.options.${branch}.hint`, ""),
+      })),
+    [t],
+  );
   const statusOptions = useMemo(
     () =>
       statuses.map((status) => ({
         value: status,
         label: t(`events.status.${status}`, status),
       })),
+    [t],
+  );
+  const detailHighlights = useMemo(
+    () => t("events.wizard.details.introHighlights", { returnObjects: true }) as string[],
     [t],
   );
 
@@ -230,6 +288,26 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
     });
   }, [resolvedBranch, state.branch, state.branchSegments.length, t]);
 
+  const branchSelectionSummary = useMemo(() => {
+    if (state.branchSelection.includes("ALL")) {
+      return t("events.wizard.details.branches.summaryAll");
+    }
+    const selected = state.branchSelection.filter((branch) => branch !== "ALL");
+    if (selected.length === 0) {
+      return t("events.wizard.details.branches.summaryEmpty");
+    }
+    if (selected.length === 1) {
+      return t("events.wizard.details.branches.summarySingle", {
+        branch: t(`events.branches.${selected[0]}`, selected[0]),
+      });
+    }
+    const labelList = selected.map((branch) => t(`events.branches.${branch}`, branch)).join(", ");
+    return t("events.wizard.details.branches.summaryMultiple", {
+      count: selected.length,
+      branches: labelList,
+    });
+  }, [state.branchSelection, t]);
+
   const segmentsTotals = useMemo(() => computeParticipantTotals(normalizedSegments), [normalizedSegments]);
   const participantsTotals = state.planningMode === "segments" ? segmentsTotals : simpleParticipants;
   const accommodationSummary = useMemo(
@@ -309,8 +387,54 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
       setError(t("events.wizard.errors.required"));
       return;
     }
+    if (state.branchSelection.length === 0) {
+      setError(t("events.wizard.errors.branchSelection"));
+      return;
+    }
+    setState((prev) => {
+      const selection = prev.branchSelection;
+      const nextBranch = resolveBranchFromSelection(selection, prev.branch);
+      const shouldForceSegments = isMultiBranchSelection(selection);
+      return {
+        ...prev,
+        branch: nextBranch,
+        planningMode: shouldForceSegments ? "segments" : prev.planningMode,
+      };
+    });
     setError(null);
     setStep(2);
+  };
+
+  const toggleBranchSelection = (branch: EventBranch) => {
+    setState((prev) => {
+      let nextSelection: EventBranch[];
+      if (branch === "ALL") {
+        if (prev.branchSelection.includes("ALL")) {
+          nextSelection = ["LC"];
+        } else {
+          nextSelection = ["ALL"];
+        }
+      } else {
+        const withoutAll = prev.branchSelection.filter((value) => value !== "ALL");
+        if (withoutAll.includes(branch)) {
+          const filtered = withoutAll.filter((value) => value !== branch);
+          if (filtered.length === 0) {
+            return prev;
+          }
+          nextSelection = filtered;
+        } else {
+          nextSelection = [...withoutAll, branch];
+        }
+      }
+      const nextBranch = resolveBranchFromSelection(nextSelection, prev.branch);
+      const forceSegments = isMultiBranchSelection(nextSelection);
+      return {
+        ...prev,
+        branchSelection: nextSelection,
+        branch: nextBranch,
+        planningMode: forceSegments ? "segments" : prev.planningMode,
+      };
+    });
   };
 
   const updateSegment = (id: string, partial: Partial<BranchSegmentFormValue>) => {
@@ -323,11 +447,10 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
   };
 
   const handleAddSegment = () => {
+    const preferredBranches = resolveSegmentBranchesFromSelection(state.branchSelection);
     const fallbackBranch =
-      state.branch === "ALL"
-        ? (segmentBranchOptions[0]?.value as EventBranch | undefined) ?? "LC"
-        : state.branch;
-    const defaultAccommodation: EventAccommodation = fallbackBranch === "LC" ? "indoor" : "tents";
+      preferredBranches[0] ?? (segmentBranchOptions[0]?.value as EventBranch | undefined) ?? "LC";
+    const defaultAccommodation = defaultAccommodationForBranch(fallbackBranch);
     setState((prev) => ({
       ...prev,
       branchSegments: [
@@ -352,6 +475,48 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
       branchSegments: prev.branchSegments.filter((segment) => segment.id !== id),
     }));
   };
+
+  useEffect(() => {
+    if (step !== 2) {
+      return;
+    }
+    setState((prev) => {
+      if (prev.planningMode !== "segments") {
+        return prev;
+      }
+      const targetBranches = resolveSegmentBranchesFromSelection(prev.branchSelection);
+      if (targetBranches.length === 0) {
+        return prev;
+      }
+      const segmentsByBranch = new Map(prev.branchSegments.map((segment) => [segment.branch, segment]));
+      const nextSegments = targetBranches.map((branch) => {
+        const existing = segmentsByBranch.get(branch);
+        if (existing) {
+          return existing;
+        }
+        return {
+          id: generateSegmentId(),
+          branch,
+          startDate: prev.start_date,
+          endDate: prev.end_date,
+          youthCount: "",
+          leadersCount: "",
+          accommodation: defaultAccommodationForBranch(branch),
+          notes: "",
+        };
+      });
+      const hasChange =
+        nextSegments.length !== prev.branchSegments.length ||
+        nextSegments.some((segment, index) => segment !== prev.branchSegments[index]);
+      if (!hasChange) {
+        return prev;
+      }
+      return {
+        ...prev,
+        branchSegments: nextSegments,
+      };
+    });
+  }, [step, state.branchSelection, state.planningMode, state.branchSegments, state.start_date, state.end_date]);
 
   const validateSimpleParticipants = (): string | null => {
     const totals = simpleParticipants;
@@ -515,56 +680,96 @@ const EventWizard = ({ onClose, onCreated }: EventWizardProps) => {
                   event.preventDefault();
                   handleNextFromDetails();
                 }}
-                className="wizard-step"
+                className="wizard-step wizard-step--details"
               >
-                <label>
-                  {t("events.wizard.fields.title")}
-                  <input
-                    type="text"
-                    value={state.title}
-                    onChange={(event) => setState((prev) => ({ ...prev, title: event.target.value }))}
-                    required
-                  />
-                </label>
-                <label>
-                  {t("events.wizard.fields.branch")}
-                  <select
-                    value={state.branch}
-                    onChange={(event) =>
-                      setState((prev) => ({ ...prev, branch: event.target.value as EventBranch }))
-                    }
-                  >
-                    {branchOptions.map((branch) => (
-                      <option key={branch.value} value={branch.value}>
-                        {branch.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <InlineFields>
-                  <label>
-                    {t("events.wizard.fields.start")}
-                    <input
-                      type="date"
-                      value={state.start_date}
-                      onChange={(event) =>
-                        setState((prev) => ({ ...prev, start_date: event.target.value }))
-                      }
-                      required
-                    />
-                  </label>
-                  <label>
-                    {t("events.wizard.fields.end")}
-                    <input
-                      type="date"
-                      value={state.end_date}
-                      onChange={(event) =>
-                        setState((prev) => ({ ...prev, end_date: event.target.value }))
-                      }
-                      required
-                    />
-                  </label>
-                </InlineFields>
+                <div className="wizard-details__grid">
+                  <section className="wizard-details__intro">
+                    <h4>{t("events.wizard.details.introTitle")}</h4>
+                    <p>{t("events.wizard.details.introDescription")}</p>
+                    {detailHighlights.length > 0 && (
+                      <ul className="wizard-details__highlights">
+                        {detailHighlights
+                          .filter((item) => typeof item === "string" && item.trim().length > 0)
+                          .map((item, index) => (
+                            <li key={`${item}-${index}`}>{item}</li>
+                          ))}
+                      </ul>
+                    )}
+                  </section>
+                  <section className="wizard-details__form">
+                    <fieldset className="wizard-details__basics">
+                      <legend>{t("events.wizard.details.basicsTitle")}</legend>
+                      <label>
+                        {t("events.wizard.fields.title")}
+                        <input
+                          type="text"
+                          value={state.title}
+                          onChange={(event) =>
+                            setState((prev) => ({ ...prev, title: event.target.value }))
+                          }
+                          required
+                        />
+                      </label>
+                      <InlineFields>
+                        <label>
+                          {t("events.wizard.fields.start")}
+                          <input
+                            type="date"
+                            value={state.start_date}
+                            onChange={(event) =>
+                              setState((prev) => ({ ...prev, start_date: event.target.value }))
+                            }
+                            required
+                          />
+                        </label>
+                        <label>
+                          {t("events.wizard.fields.end")}
+                          <input
+                            type="date"
+                            value={state.end_date}
+                            onChange={(event) =>
+                              setState((prev) => ({ ...prev, end_date: event.target.value }))
+                            }
+                            required
+                          />
+                        </label>
+                      </InlineFields>
+                    </fieldset>
+                    <fieldset className="wizard-details__branches">
+                      <legend>{t("events.wizard.details.branches.title")}</legend>
+                      <p className="wizard-details__hint">{t("events.wizard.details.branches.hint")}</p>
+                      <div className="branch-selector">
+                        {branchSelectionOptions.map((option) => {
+                          const isSelected = state.branchSelection.includes(option.value);
+                          return (
+                            <label
+                              key={option.value}
+                              className="branch-selector__option"
+                              data-active={isSelected.toString()}
+                            >
+                              <input
+                                type="checkbox"
+                                className="sr-only"
+                                checked={isSelected}
+                                onChange={() => toggleBranchSelection(option.value)}
+                              />
+                              <span className="branch-selector__title">{option.label}</span>
+                              {option.description && (
+                                <span className="branch-selector__description">{option.description}</span>
+                              )}
+                              {option.hint && (
+                                <span className="branch-selector__hint">{option.hint}</span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="branch-selector__summary" aria-live="polite">
+                        {branchSelectionSummary}
+                      </p>
+                    </fieldset>
+                  </section>
+                </div>
                 <InlineActions>
                   <Button type="button" variant="ghost" onClick={onClose}>
                     {t("events.wizard.actions.cancel")}
