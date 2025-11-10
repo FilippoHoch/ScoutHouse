@@ -293,28 +293,30 @@ export const AdminPage = () => {
       <div className="card">
         <h2>{t("admin.notifications.title")}</h2>
         <p>{t("admin.notifications.description")}</p>
-        <label>
-          <span>{t("admin.notifications.templateLabel")}</span>
-          <select
-            value={selectedTemplate}
-            onChange={(event) => setSelectedTemplate(event.target.value as MailTemplate)}
-          >
-            {templates.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        {errorMessage && <p className="error">{errorMessage}</p>}
-        {statusMessage && <p className="success">{statusMessage}</p>}
-        <div className="actions">
-          <button type="button" onClick={handlePreview} className="button secondary">
-            {t("admin.notifications.preview")}
-          </button>
-          <button type="button" onClick={handleSendTest} className="button" disabled={sending}>
-            {sending ? t("common.loading") : t("admin.notifications.test")}
-          </button>
+        <div className="admin-notifications__controls">
+          <label className="admin-notifications__field">
+            <span>{t("admin.notifications.templateLabel")}</span>
+            <select
+              value={selectedTemplate}
+              onChange={(event) => setSelectedTemplate(event.target.value as MailTemplate)}
+            >
+              {templates.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {errorMessage && <p className="error">{errorMessage}</p>}
+          {statusMessage && <p className="success">{statusMessage}</p>}
+          <div className="admin-notifications__actions">
+            <button type="button" onClick={handlePreview} className="button secondary">
+              {t("admin.notifications.preview")}
+            </button>
+            <button type="button" onClick={handleSendTest} className="button" disabled={sending}>
+              {sending ? t("common.loading") : t("admin.notifications.test")}
+            </button>
+          </div>
         </div>
       </div>
       <div className="card">

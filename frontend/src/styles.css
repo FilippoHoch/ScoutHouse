@@ -1090,6 +1090,23 @@ table tbody tr:hover {
   flex-wrap: wrap;
 }
 
+.admin-notifications__controls {
+  display: grid;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.admin-notifications__field {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.admin-notifications__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
 .export-actions {
   display: flex;
   flex-wrap: wrap;
