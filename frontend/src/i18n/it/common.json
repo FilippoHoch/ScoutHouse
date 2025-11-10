@@ -221,6 +221,8 @@
       "downloadTemplateXlsx": "Scarica template strutture (XLSX)",
       "downloadTemplateCsv": "Scarica template strutture (CSV)",
       "fileLabel": "File strutture CSV o XLSX",
+      "selectFile": "Seleziona file",
+      "noFileSelected": "Nessun file selezionato",
       "loading": "Elaborazione anteprima…",
       "summary": "Righe valide: {{valid}}, righe con errori: {{invalid}}",
       "actions": {
@@ -234,6 +236,8 @@
       "downloadTemplateXlsx": "Scarica template periodi (XLSX)",
       "downloadTemplateCsv": "Scarica template periodi (CSV)",
       "fileLabel": "File periodi CSV o XLSX",
+      "selectFile": "Seleziona file",
+      "noFileSelected": "Nessun file selezionato",
       "loading": "Elaborazione anteprima…",
       "summary": "Righe valide: {{valid}}, con errori: {{invalid}}, da creare: {{create}}, duplicate: {{skip}}",
       "blockingErrors": "Correggi gli errori segnalati prima di procedere con l'import.",

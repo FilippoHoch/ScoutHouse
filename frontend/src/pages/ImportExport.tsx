@@ -553,7 +553,7 @@ export const ImportExportPage = () => {
               <div className="actions export-actions">
                 <button
                   type="button"
-                  className="button button--option"
+                  className="button button--option button--compact"
                   onClick={() => handleStructureExport("csv")}
                   disabled={structureExportLoading}
                 >
@@ -563,7 +563,7 @@ export const ImportExportPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="button button--option"
+                  className="button button--option button--compact"
                   onClick={() => handleStructureExport("xlsx")}
                   disabled={structureExportLoading}
                 >
@@ -573,7 +573,7 @@ export const ImportExportPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="button button--option"
+                  className="button button--option button--compact"
                   onClick={() => handleStructureExport("json")}
                   disabled={structureExportLoading}
                 >
@@ -618,7 +618,7 @@ export const ImportExportPage = () => {
               <div className="actions export-actions">
                 <button
                   type="button"
-                  className="button button--option"
+                  className="button button--option button--compact"
                   onClick={() => handleEventsExport("csv")}
                   disabled={eventsExportLoading}
                 >
@@ -628,7 +628,7 @@ export const ImportExportPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="button button--option"
+                  className="button button--option button--compact"
                   onClick={() => handleEventsExport("xlsx")}
                   disabled={eventsExportLoading}
                 >
@@ -638,7 +638,7 @@ export const ImportExportPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="button button--option"
+                  className="button button--option button--compact"
                   onClick={() => handleEventsExport("json")}
                   disabled={eventsExportLoading}
                 >
@@ -675,17 +675,33 @@ export const ImportExportPage = () => {
                   </a>
                 </div>
                 <label className="file-input">
-                  <span>{t("importExport.structures.fileLabel")}</span>
-                  <input type="file" accept=".xlsx,.csv" onChange={handleFileChange} />
-                  {file && (
-                    <span
-                      className="file-input__selected"
-                      aria-live="polite"
-                      title={file.name}
-                    >
-                      {file.name}
+                  <span className="file-input__label">
+                    {t("importExport.structures.fileLabel")}
+                  </span>
+                  <div className="file-input__control">
+                    <input
+                      type="file"
+                      className="file-input__field"
+                      accept=".xlsx,.csv"
+                      onChange={handleFileChange}
+                    />
+                    <span className="file-input__button">
+                      {t("importExport.structures.selectFile")}
                     </span>
-                  )}
+                    {file ? (
+                      <span
+                        className="file-input__selected"
+                        aria-live="polite"
+                        title={file.name}
+                      >
+                        {file.name}
+                      </span>
+                    ) : (
+                      <span className="file-input__placeholder">
+                        {t("importExport.structures.noFileSelected")}
+                      </span>
+                    )}
+                  </div>
                 </label>
                 {loading && <p>{t("importExport.structures.loading")}</p>}
                 {errorMessage && <p className="error">{errorMessage}</p>}
@@ -794,17 +810,33 @@ export const ImportExportPage = () => {
                   </a>
                 </div>
                 <label className="file-input">
-                  <span>{t("importExport.openPeriods.fileLabel")}</span>
-                  <input type="file" accept=".xlsx,.csv" onChange={handleOpenPeriodsFileChange} />
-                  {openPeriodsFile && (
-                    <span
-                      className="file-input__selected"
-                      aria-live="polite"
-                      title={openPeriodsFile.name}
-                    >
-                      {openPeriodsFile.name}
+                  <span className="file-input__label">
+                    {t("importExport.openPeriods.fileLabel")}
+                  </span>
+                  <div className="file-input__control">
+                    <input
+                      type="file"
+                      className="file-input__field"
+                      accept=".xlsx,.csv"
+                      onChange={handleOpenPeriodsFileChange}
+                    />
+                    <span className="file-input__button">
+                      {t("importExport.openPeriods.selectFile")}
                     </span>
-                  )}
+                    {openPeriodsFile ? (
+                      <span
+                        className="file-input__selected"
+                        aria-live="polite"
+                        title={openPeriodsFile.name}
+                      >
+                        {openPeriodsFile.name}
+                      </span>
+                    ) : (
+                      <span className="file-input__placeholder">
+                        {t("importExport.openPeriods.noFileSelected")}
+                      </span>
+                    )}
+                  </div>
                 </label>
                 {openPeriodsLoading && <p>{t("importExport.openPeriods.loading")}</p>}
                 {openPeriodsErrorMessage && <p className="error">{openPeriodsErrorMessage}</p>}
