@@ -539,7 +539,10 @@ export const EventDetailsPage = () => {
     return Object.values(event.participants).reduce((acc, value) => acc + value, 0);
   }, [event]);
 
-  const branchSegments = event?.branch_segments ?? [];
+  const branchSegments = useMemo(
+    () => event?.branch_segments ?? [],
+    [event?.branch_segments],
+  );
   const normalizedSegments = useMemo<NormalizedBranchSegment[]>(
     () =>
       branchSegments.map((segment) => ({

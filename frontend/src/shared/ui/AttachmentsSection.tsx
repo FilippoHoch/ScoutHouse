@@ -205,7 +205,10 @@ export const AttachmentsSection = ({
     setDropActive(false);
   };
 
-  const attachments = attachmentsQuery.data ?? [];
+  const attachments = useMemo(
+    () => attachmentsQuery.data ?? [],
+    [attachmentsQuery.data],
+  );
   const downloadableAttachments = useMemo(
     () =>
       attachments.filter((attachment) => {
