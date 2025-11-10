@@ -183,68 +183,36 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
   const hasStats = item.distance_km !== null || item.estimated_cost !== null;
   const hasQuickIcons = quickIcons.length > 0;
   const hasBadges = hasSeasons || hasUnits || item.pit_latrine_allowed;
-  const hasBodyContent = hasStats || hasQuickIcons || hasBadges;
 
   return (
     <li className="structure-card">
-      <header className="structure-card__header">
-        <div className="structure-card__header-primary">
-          <span className="structure-card__avatar" aria-hidden="true">
-            {item.name.charAt(0).toUpperCase()}
-          </span>
-          <div className="structure-card__headline">
-            <span className="structure-card__type">{typeLabel}</span>
-            <h3 className="structure-card__title">
-              <Link to={`/structures/${item.slug}`}>{item.name}</Link>
-            </h3>
-            <p className="structure-card__location">{locationParts.join(" · ")}</p>
+      <div className="structure-card__content">
+        <div className="structure-card__main">
+          <div className="structure-card__title-row">
+            <span className="structure-card__avatar" aria-hidden="true">
+              {item.name.charAt(0).toUpperCase()}
+            </span>
+            <div className="structure-card__info">
+              <div className="structure-card__label-row">
+                <span className="structure-card__type">{typeLabel}</span>
+                {costBandLabel && (
+                  <span
+                    className="structure-card__chip"
+                    title={t("structures.cards.costBand", { value: costBandLabel })}
+                  >
+                    {costBandLabel}
+                  </span>
+                )}
+              </div>
+              <h3 className="structure-card__title">
+                <Link to={`/structures/${item.slug}`}>{item.name}</Link>
+              </h3>
+              <p className="structure-card__location">{locationParts.join(" · ")}</p>
+            </div>
           </div>
-        </div>
-        {costBandLabel && (
-          <span
-            className="structure-card__chip"
-            title={t("structures.cards.costBand", { value: costBandLabel })}
-          >
-            {costBandLabel}
-          </span>
-        )}
-      </header>
-
-      {hasBodyContent && (
-        <div className="structure-card__body">
-          {hasStats && (
-            <div className="structure-card__stats">
-              {item.distance_km !== null && (
-                <span className="structure-card__stat">
-                  {t("structures.cards.distance", { value: item.distance_km.toFixed(1) })}
-                </span>
-              )}
-              {item.estimated_cost !== null && (
-                <span className="structure-card__stat structure-card__stat--accent">
-                  {t("structures.cards.estimatedCost", { value: formatCurrency(item.estimated_cost) })}
-                </span>
-              )}
-            </div>
-          )}
-
-          {hasQuickIcons && (
-            <div className="structure-card__icons" aria-label={t("structures.cards.icons.label")}>
-              {quickIcons.map(({ icon, label }) => (
-                <span
-                  key={`${item.id}-${label}`}
-                  className="structure-card__icon"
-                  role="img"
-                  aria-label={label}
-                  title={label}
-                >
-                  {icon}
-                </span>
-              ))}
-            </div>
-          )}
 
           {hasBadges && (
-            <div className="structure-card__badges">
+            <div className="structure-card__meta-line">
               {hasSeasons && (
                 <div className="badge-group" aria-label={t("structures.cards.seasonsLabel")}>
                   {item.seasons.map((season) => (
@@ -272,6 +240,37 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
               )}
             </div>
           )}
+        </div>
+
+        {hasStats && (
+          <div className="structure-card__meta">
+            {item.distance_km !== null && (
+              <span className="structure-card__meta-item">
+                {t("structures.cards.distance", { value: item.distance_km.toFixed(1) })}
+              </span>
+            )}
+            {item.estimated_cost !== null && (
+              <span className="structure-card__meta-item structure-card__meta-item--accent">
+                {t("structures.cards.estimatedCost", { value: formatCurrency(item.estimated_cost) })}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {hasQuickIcons && (
+        <div className="structure-card__icons" aria-label={t("structures.cards.icons.label")}>
+          {quickIcons.map(({ icon, label }) => (
+            <span
+              key={`${item.id}-${label}`}
+              className="structure-card__icon"
+              role="img"
+              aria-label={label}
+              title={label}
+            >
+              {icon}
+            </span>
+          ))}
         </div>
       )}
 
