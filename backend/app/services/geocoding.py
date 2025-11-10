@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import httpx
@@ -15,11 +16,86 @@ class GeocodingError(Exception):
         self.message = message
 
 
+_CAP_PREFIX_RE = re.compile(r"(?i)\bcap\b[\s.:]*")
+_ITALIA_RE = re.compile(r"(?i)\bitalia\b")
+_MULTIPLE_WHITESPACE_RE = re.compile(r"\s+")
+_HOUSE_NUMBER_SUFFIX_RE = re.compile(r"(?i)(\d+[A-Za-z]?(?:/\d+[A-Za-z]?)?)$")
+_HOUSE_NUMBER_PREFIX_RE = re.compile(r"(?i)^(?:n\.?|n°)\s*")
+
+
 def _normalize_query_part(value: str | None) -> str | None:
     if value is None:
         return None
     stripped = value.strip()
     return stripped or None
+
+
+def _split_address_components(value: str) -> list[str]:
+    components: list[str] = []
+    for piece in value.replace("\n", ",").split(","):
+        cleaned = piece.strip()
+        if cleaned:
+            components.append(cleaned)
+    if not components:
+        collapsed = value.strip()
+        return [collapsed] if collapsed else []
+    return components
+
+
+def _cleanup_query_token(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = _CAP_PREFIX_RE.sub("", value)
+    cleaned = _ITALIA_RE.sub("", cleaned)
+    cleaned = _MULTIPLE_WHITESPACE_RE.sub(" ", cleaned)
+    cleaned = cleaned.strip(" ,")
+    return cleaned or None
+
+
+def _normalize_postal_code(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = _CAP_PREFIX_RE.sub("", value)
+    cleaned = cleaned.strip()
+    cleaned = cleaned.replace(" ", "")
+    return cleaned or None
+
+
+def _normalize_house_number(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = _HOUSE_NUMBER_PREFIX_RE.sub("", value.strip())
+    cleaned = cleaned.replace(" ", "")
+    if not cleaned:
+        return None
+    if not re.fullmatch(r"\d+[A-Za-z]?(?:/\d+[A-Za-z]?)?", cleaned):
+        return None
+    return cleaned
+
+
+def _extract_street_components(value: str | None) -> tuple[str | None, str | None]:
+    if not value:
+        return None, None
+    components = _split_address_components(value)
+    if not components:
+        return None, None
+
+    street_candidate = components[0]
+    match = _HOUSE_NUMBER_SUFFIX_RE.search(street_candidate)
+    if match:
+        number = _normalize_house_number(match.group(1))
+        street_name = street_candidate[: match.start()].strip(" ,")
+        cleaned_street = _cleanup_query_token(street_name) or street_name.strip()
+        return (cleaned_street or None), number
+
+    for component in components[1:]:
+        number = _normalize_house_number(component)
+        if number:
+            cleaned_street = _cleanup_query_token(street_candidate) or street_candidate.strip()
+            return (cleaned_street or None), number
+
+    cleaned_street = _cleanup_query_token(street_candidate) or street_candidate.strip()
+    return (cleaned_street or None), None
 
 
 def _pick(address: dict[str, Any], *keys: str) -> str | None:
@@ -79,36 +155,50 @@ def _build_params(
         "limit": str(max(1, min(limit, 10))),
     }
 
-    parts = [
-        value
-        for value in (
-            _normalize_query_part(address),
-            _normalize_query_part(locality),
-            _normalize_query_part(municipality),
-            _normalize_query_part(province),
-            _normalize_query_part(postal_code),
-            _normalize_query_part(country),
-        )
-        if value
-    ]
+    normalized_address = _normalize_query_part(address)
+    address_parts = _split_address_components(normalized_address) if normalized_address else []
+    postal_value = _normalize_postal_code(_normalize_query_part(postal_code))
+
+    parts: list[str] = []
+    seen_parts: set[str] = set()
+    for candidate in [
+        *address_parts,
+        _normalize_query_part(locality),
+        _normalize_query_part(municipality),
+        _normalize_query_part(province),
+        postal_value,
+        _normalize_query_part(country),
+    ]:
+        cleaned = _cleanup_query_token(candidate)
+        if not cleaned:
+            continue
+        lowered = cleaned.lower()
+        if lowered in seen_parts:
+            continue
+        seen_parts.add(lowered)
+        parts.append(cleaned)
+
     if parts:
         params["q"] = ", ".join(parts)
 
-    street = _normalize_query_part(address)
-    if street:
-        params["street"] = street
+    street_name, house_number = _extract_street_components(normalized_address)
+    if street_name:
+        if house_number:
+            params["street"] = f"{house_number} {street_name}"
+            params["housenumber"] = house_number
+        else:
+            params["street"] = street_name
 
-    city = _normalize_query_part(locality) or _normalize_query_part(municipality)
+    city = _normalize_query_part(municipality) or _normalize_query_part(locality)
     if city:
         params["city"] = city
 
-    county = _normalize_query_part(province)
+    county = _normalize_query_part(province) or _normalize_query_part(municipality)
     if county:
         params["county"] = county
 
-    code = _normalize_query_part(postal_code)
-    if code:
-        params["postalcode"] = code
+    if postal_value:
+        params["postalcode"] = postal_value
 
     country_code = _normalize_query_part(country)
     if country_code:
