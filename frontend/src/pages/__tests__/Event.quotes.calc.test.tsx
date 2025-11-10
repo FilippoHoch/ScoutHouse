@@ -45,7 +45,17 @@ const baseEvent: Event = {
   branch: "ALL",
   start_date: "2025-07-10",
   end_date: "2025-07-12",
-  participants: { lc: 10, eg: 5, rs: 0, leaders: 2 },
+  participants: {
+    lc: 10,
+    eg: 5,
+    rs: 0,
+    leaders: 2,
+    lc_kambusieri: 0,
+    eg_kambusieri: 0,
+    rs_kambusieri: 0,
+    detached_leaders: 0,
+    detached_guests: 0,
+  },
   budget_total: null,
   status: "planning",
   notes: null,
@@ -133,7 +143,7 @@ describe("Event quotes tab", () => {
     await waitFor(() => expect(screen.getByText(/Campo Estivo/)).toBeInTheDocument());
 
     await act(async () => {
-      await user.click(screen.getByRole("button", { name: /Preventivi/i }));
+      await user.click(screen.getByRole("tab", { name: /Preventivi/i }));
     });
 
     await screen.findByText(/Nessun preventivo salvato/);

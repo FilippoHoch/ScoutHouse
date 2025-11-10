@@ -1783,30 +1783,34 @@ table tbody tr:hover {
   }
 }
 
+
 .modal {
+  --modal-padding: clamp(var(--space-md), 4vw, var(--space-xl));
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-lg);
+  padding: var(--modal-padding);
   z-index: 1000;
 }
 
 .modal-content {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  width: min(960px, 100%);
-  max-height: 90vh;
+  width: min(960px, calc(100vw - 2 * var(--modal-padding)));
+  max-width: 100%;
+  max-height: calc(100vh - 2 * var(--modal-padding));
   overflow-y: auto;
   padding: var(--space-xl);
   box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-content--full-width {
-  width: min(1120px, calc(100vw - 2 * var(--space-lg)));
-  max-width: 100%;
+  width: min(1080px, calc(100vw - 2 * var(--modal-padding)));
 }
 
 .modal-header {

@@ -69,6 +69,7 @@ def test_create_event_with_branch_segments() -> None:
                     "end_date": "2025-07-10",
                     "youth_count": 28,
                     "leaders_count": 4,
+                    "kambusieri_count": 2,
                     "accommodation": "tents",
                 },
                 {
@@ -77,6 +78,7 @@ def test_create_event_with_branch_segments() -> None:
                     "end_date": "2025-07-10",
                     "youth_count": 24,
                     "leaders_count": 2,
+                    "kambusieri_count": 1,
                     "accommodation": "indoor",
                 },
             ],
@@ -90,6 +92,10 @@ def test_create_event_with_branch_segments() -> None:
     assert payload["participants"]["eg"] == 28
     assert payload["participants"]["lc"] == 24
     assert payload["participants"]["leaders"] == 6
+    assert payload["participants"]["eg_kambusieri"] == 2
+    assert payload["participants"]["lc_kambusieri"] == 1
+    assert payload["participants"]["detached_leaders"] == 0
+    assert payload["participants"]["detached_guests"] == 0
     assert len(payload["branch_segments"]) == 2
     assert {segment["accommodation"] for segment in payload["branch_segments"]} == {
         "tents",
@@ -114,6 +120,7 @@ def test_create_event_auto_sets_branch_all_for_multiple_segments() -> None:
                     "end_date": "2025-07-05",
                     "youth_count": 20,
                     "leaders_count": 3,
+                    "kambusieri_count": 1,
                     "accommodation": "indoor",
                 },
                 {
@@ -122,6 +129,7 @@ def test_create_event_auto_sets_branch_all_for_multiple_segments() -> None:
                     "end_date": "2025-07-10",
                     "youth_count": 30,
                     "leaders_count": 4,
+                    "kambusieri_count": 2,
                     "accommodation": "tents",
                 },
             ],
@@ -131,7 +139,17 @@ def test_create_event_auto_sets_branch_all_for_multiple_segments() -> None:
     assert response.status_code == 201, response.text
     payload = response.json()
     assert payload["branch"] == "ALL"
-    assert payload["participants"] == {"lc": 20, "eg": 30, "rs": 0, "leaders": 7}
+    assert payload["participants"] == {
+        "lc": 20,
+        "eg": 30,
+        "rs": 0,
+        "leaders": 7,
+        "lc_kambusieri": 1,
+        "eg_kambusieri": 2,
+        "rs_kambusieri": 0,
+        "detached_leaders": 0,
+        "detached_guests": 0,
+    }
 
 
 def test_create_event_normalises_single_branch_segment() -> None:
@@ -151,6 +169,7 @@ def test_create_event_normalises_single_branch_segment() -> None:
                     "end_date": "2025-04-18",
                     "youth_count": 16,
                     "leaders_count": 2,
+                    "kambusieri_count": 1,
                     "accommodation": "indoor",
                 }
             ],
@@ -160,7 +179,17 @@ def test_create_event_normalises_single_branch_segment() -> None:
     assert response.status_code == 201, response.text
     payload = response.json()
     assert payload["branch"] == "LC"
-    assert payload["participants"] == {"lc": 16, "eg": 0, "rs": 0, "leaders": 2}
+    assert payload["participants"] == {
+        "lc": 16,
+        "eg": 0,
+        "rs": 0,
+        "leaders": 2,
+        "lc_kambusieri": 1,
+        "eg_kambusieri": 0,
+        "rs_kambusieri": 0,
+        "detached_leaders": 0,
+        "detached_guests": 0,
+    }
 
 
 def test_suggestions_reflect_branch_requirements() -> None:

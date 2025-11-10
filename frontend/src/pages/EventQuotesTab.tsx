@@ -257,17 +257,27 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
               }}
             >
               <ToolbarSection>
-                {Object.entries(event.participants).map(([key, value]) => (
+                {(
+                  [
+                    "lc",
+                    "lc_kambusieri",
+                    "eg",
+                    "eg_kambusieri",
+                    "rs",
+                    "rs_kambusieri",
+                    "leaders",
+                    "detached_leaders",
+                    "detached_guests",
+                  ] as Array<keyof EventParticipants>
+                ).map((key) => (
                   <label key={key}>
-                    {key.toUpperCase()}
+                    {t(`events.quotes.participants.${key}` as const)}
                     <input
                       type="number"
                       min={0}
-                      value={participantOverrides[key as keyof EventParticipants] ?? ""}
-                      placeholder={String(value)}
-                      onChange={(event) =>
-                        handleOverrideChange(key as keyof EventParticipants, event.target.value)
-                      }
+                      value={participantOverrides[key] ?? ""}
+                      placeholder={String(event.participants[key] ?? 0)}
+                      onChange={(event) => handleOverrideChange(key, event.target.value)}
                     />
                   </label>
                 ))}
