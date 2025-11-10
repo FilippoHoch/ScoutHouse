@@ -1222,6 +1222,7 @@ table tbody tr:hover {
   display: flex;
   gap: var(--space-sm);
   flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
 }
 
 .admin-notifications__controls {
