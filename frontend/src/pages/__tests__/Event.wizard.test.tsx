@@ -138,67 +138,60 @@ describe("Event wizard", () => {
     await user.type(screen.getByLabelText(/Titolo/i), "Campo gruppo estivo");
     await user.type(screen.getByLabelText(/Inizio/i), "2025-07-01");
     await user.type(screen.getByLabelText(/Fine/i), "2025-07-10");
+    await user.click(screen.getByRole("checkbox", { name: /Esploratori e Guide/i }));
     await user.click(screen.getByRole("button", { name: /Continua/i }));
 
     const detailedPlanningOption = await screen.findByRole("radio", {
       name: /Pianificazione dettagliata/i,
     });
-    await user.click(detailedPlanningOption);
     expect(detailedPlanningOption).toBeChecked();
 
-    await user.click(screen.getByRole("button", { name: /Aggiungi branca/i }));
+    const segmentHeadings = await screen.findAllByRole("heading", { name: /Branca \d+/i });
+    expect(segmentHeadings).toHaveLength(2);
 
-    const firstSegmentHeading = await screen.findByRole("heading", { name: /Branca 1/i });
+    const firstSegmentHeading = segmentHeadings[0];
     const firstSegment = firstSegmentHeading.closest(".branch-segment");
     if (!firstSegment) {
       throw new Error("Segment container not found");
     }
-    const firstBranchSelect = within(firstSegment).getByLabelText(/^Branca$/i);
-    await user.selectOptions(firstBranchSelect, "EG");
-
     const firstStartInput = within(firstSegment).getByLabelText(/Inizio/i);
     const firstEndInput = within(firstSegment).getByLabelText(/Fine/i);
     await user.clear(firstStartInput);
-    await user.type(firstStartInput, "2025-07-01");
+    await user.type(firstStartInput, "2025-07-05");
     await user.clear(firstEndInput);
     await user.type(firstEndInput, "2025-07-10");
 
     const firstYouthInput = within(firstSegment).getByLabelText(/Partecipanti/i);
     const firstLeaderInput = within(firstSegment).getByLabelText(/Capi/i);
-    await user.type(firstYouthInput, "28");
-    await user.type(firstLeaderInput, "4");
+    await user.type(firstYouthInput, "24");
+    await user.type(firstLeaderInput, "2");
 
     const firstAccommodationSelect = within(firstSegment).getByLabelText(/Sistemazione/i);
-    await user.selectOptions(firstAccommodationSelect, "tents");
+    await user.selectOptions(firstAccommodationSelect, "indoor");
 
-    await user.click(screen.getByRole("button", { name: /Aggiungi branca/i }));
-
-    const secondSegmentHeading = await screen.findByRole("heading", { name: /Branca 2/i });
+    const secondSegmentHeading = segmentHeadings[1];
     const secondSegment = secondSegmentHeading.closest(".branch-segment");
     if (!secondSegment) {
       throw new Error("Second segment container not found");
     }
     const secondBranchSelect = within(secondSegment).getByLabelText(/^Branca$/i);
-    await user.selectOptions(secondBranchSelect, "LC");
+    await user.selectOptions(secondBranchSelect, "EG");
 
     const secondStartInput = within(secondSegment).getByLabelText(/Inizio/i);
     const secondEndInput = within(secondSegment).getByLabelText(/Fine/i);
     await user.clear(secondStartInput);
-    await user.type(secondStartInput, "2025-07-05");
+    await user.type(secondStartInput, "2025-07-01");
     await user.clear(secondEndInput);
     await user.type(secondEndInput, "2025-07-10");
 
     const secondYouthInput = within(secondSegment).getByLabelText(/Partecipanti/i);
     const secondLeaderInput = within(secondSegment).getByLabelText(/Capi/i);
-    await user.type(secondYouthInput, "24");
-    await user.type(secondLeaderInput, "2");
+    await user.type(secondYouthInput, "28");
+    await user.type(secondLeaderInput, "4");
 
     const secondAccommodationSelect = within(secondSegment).getByLabelText(/Sistemazione/i);
-    await user.selectOptions(secondAccommodationSelect, "indoor");
+    await user.selectOptions(secondAccommodationSelect, "tents");
 
-    expect(
-      screen.getByText(/L'evento verrà contrassegnato come "Tutte le branche"/i),
-    ).toBeInTheDocument();
     expect(screen.getByText(/Picco presenze simultanee: 58/i)).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/Budget totale/i), "3000");
@@ -212,21 +205,21 @@ describe("Event wizard", () => {
     expect(payload.participants).toEqual({ lc: 24, eg: 28, rs: 0, leaders: 6 });
     expect(payload.branch_segments).toEqual([
       {
-        branch: "EG",
-        start_date: "2025-07-01",
-        end_date: "2025-07-10",
-        youth_count: 28,
-        leaders_count: 4,
-        accommodation: "tents",
-        notes: undefined
-      },
-      {
         branch: "LC",
         start_date: "2025-07-05",
         end_date: "2025-07-10",
         youth_count: 24,
         leaders_count: 2,
         accommodation: "indoor",
+        notes: undefined
+      },
+      {
+        branch: "EG",
+        start_date: "2025-07-01",
+        end_date: "2025-07-10",
+        youth_count: 28,
+        leaders_count: 4,
+        accommodation: "tents",
         notes: undefined
       }
     ]);
@@ -265,7 +258,7 @@ describe("Event wizard", () => {
 
     await user.click(screen.getByRole("button", { name: /Nuovo evento/i }));
     await user.type(screen.getByLabelText(/Titolo/i), "Uscita di branca");
-    await user.selectOptions(screen.getByLabelText(/^Branca$/i), "LC");
+    expect(screen.getByRole("checkbox", { name: /Lupetti e Coccinelle/i })).toBeChecked();
     await user.type(screen.getByLabelText(/Inizio/i), "2025-03-15");
     await user.type(screen.getByLabelText(/Fine/i), "2025-03-17");
     await user.click(screen.getByRole("button", { name: /Continua/i }));

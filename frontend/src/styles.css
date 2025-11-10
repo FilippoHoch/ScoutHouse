@@ -1717,10 +1717,120 @@ table tbody tr:hover {
   gap: var(--space-md);
 }
 
+.wizard-step--details {
+  gap: var(--space-xl);
+}
+
 .wizard-step fieldset {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-md);
+}
+
+.wizard-details__grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 768px) {
+  .wizard-details__grid {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: start;
+  }
+}
+
+.wizard-details__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+
+.wizard-details__highlights {
+  margin: 0;
+  padding-inline-start: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  color: var(--color-muted-strong);
+}
+
+.wizard-details__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.wizard-details__basics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.wizard-details__branches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.wizard-details__hint {
+  margin: 0;
+  color: var(--color-muted-strong);
+}
+
+.branch-selector {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+@media (min-width: 640px) {
+  .branch-selector {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+.branch-selector__option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  padding: var(--space-md);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.branch-selector__option:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.branch-selector__option[data-active="true"] {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.branch-selector__title {
+  font-weight: 600;
+}
+
+.branch-selector__description {
+  color: var(--color-muted-strong);
+}
+
+.branch-selector__hint {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.branch-selector__summary {
+  margin: 0;
+  color: var(--color-muted-strong);
 }
 
 .planning-mode__options {

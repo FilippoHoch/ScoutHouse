@@ -1374,6 +1374,42 @@
         "notes": "Note",
         "status": "Stato iniziale"
       },
+      "details": {
+        "introTitle": "Definisci le basi dell'evento",
+        "introDescription": "Imposta titolo, periodo e branche coinvolte prima di passare alla pianificazione dettagliata.",
+        "introHighlights": [
+          "Puoi combinare branche diverse e indicare periodi di presenza differenti per ciascuna.",
+          "Somma automaticamente le esigenze logistiche: casa, tende e spazi comuni in base alle branche selezionate.",
+          "Le informazioni inserite alimentano riepiloghi, suggerimenti di strutture e comunicazioni automatiche."
+        ],
+        "basicsTitle": "Dettagli principali",
+        "branches": {
+          "title": "Branche coinvolte",
+          "hint": "Scegli chi parteciperà: potrai definire periodi, presenze e sistemazioni specifiche per ogni branca.",
+          "summaryEmpty": "Seleziona almeno una branca per continuare.",
+          "summarySingle": "{{branch}} parteciperà all'evento.",
+          "summaryMultiple": "{{count}} branche coinvolte: {{branches}}.",
+          "summaryAll": "Evento di gruppo con tutte le branche.",
+          "options": {
+            "LC": {
+              "description": "Attività per Lupetti e Coccinelle.",
+              "hint": "Spesso preferiscono una casa con letti."
+            },
+            "EG": {
+              "description": "Uscite o campi di reparto (Esploratori e Guide).",
+              "hint": "Generalmente in tenda con area campo."
+            },
+            "RS": {
+              "description": "Programmi di Clan e Fuoco (Rover e Scolte).",
+              "hint": "Possono usare il campo o spazi separati."
+            },
+            "ALL": {
+              "description": "Campo di gruppo con tutte le branche.",
+              "hint": "Pianifica casa + terreno e coordinamento degli arrivi."
+            }
+          }
+        }
+      },
       "steps": {
         "label": "Passaggi creazione evento",
         "details": "Dettagli",
@@ -1419,7 +1455,8 @@
         "segmentOrder": "La data di fine della branca non può essere precedente all'inizio.",
         "segmentRange": "Le date di ogni branca devono essere comprese nell'evento.",
         "segmentBranch": "Seleziona una branca specifica (LC, EG o RS).",
-        "simpleParticipants": "Indica almeno un partecipante o un capo."
+        "simpleParticipants": "Indica almeno un partecipante o un capo.",
+        "branchSelection": "Seleziona almeno una branca."
       },
       "summary": {
         "created": "Evento {{title}} creato con successo. Aggiungi una struttura candidata dalle proposte.",
