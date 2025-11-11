@@ -263,11 +263,6 @@ describe("StructureDetailsPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Note generiche/i)).toBeInTheDocument();
     expect(
-      screen.getByText((content, element) =>
-        element?.tagName === "LI" && /River Swimming: si/i.test(element.textContent ?? "")
-      )
-    ).toBeInTheDocument();
-    expect(
       screen.getByRole("link", { name: "https://maps.example.org/base" })
     ).toBeInTheDocument();
     expect(screen.getByText(/Documenti richiesti/i)).toBeInTheDocument();
@@ -293,37 +288,6 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 
-  it("shows a fallback message when no advanced metadata is available", async () => {
-    const fallbackStructure: Structure = {
-      ...sampleStructure,
-      name: "Base senza extra",
-      slug: "base-senza-extra",
-      country: null,
-      municipality: null,
-      river_swimming: null,
-      flood_risk: null
-    };
-    vi.mocked(getStructureBySlug).mockResolvedValueOnce(fallbackStructure);
-
-    const Wrapper = createWrapper("/structures/base-senza-extra");
-
-    render(
-      <Routes>
-        <Route path="/structures/:slug" element={<StructureDetailsPage />} />
-      </Routes>,
-      { wrapper: Wrapper }
-    );
-
-    await waitFor(() =>
-      expect(screen.getByText("Base senza extra")).toBeInTheDocument()
-    );
-
-    expect(
-      screen.getByText(
-        i18n.t("structures.details.overview.advancedMetadataFallback")!
-      )
-    ).toBeInTheDocument();
-  });
 
   it("shows not found state for missing structure", async () => {
     const Wrapper = createWrapper("/structures/unknown");

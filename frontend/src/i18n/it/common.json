@@ -479,10 +479,6 @@
             "title": "Costi e preventivi",
             "description": "Aggiungi le opzioni di costo per aiutare i capi a stimare il preventivo."
           },
-          "advanced": {
-            "title": "Metadati avanzati",
-            "description": "Usa questa sezione per impostare campi extra tramite JSON conforme allo schema delle API."
-          },
           "photos": {
             "title": "Foto",
             "description": "Prepara le immagini che saranno allegate alla scheda della struttura."
@@ -659,23 +655,6 @@
         },
         "notesLogistics": "Note logistiche",
         "notesLogisticsHint": "Indica istruzioni operative (chiavi, accessi, limitazioni) utili per i capi.",
-        "advancedMetadata": {
-          "label": "Dettagli aggiuntivi",
-          "empty": "Nessun dettaglio aggiuntivo aggiunto.",
-          "add": "Aggiungi dettaglio",
-          "remove": "Rimuovi",
-          "keyLabel": "Chiave metadato {{index}}",
-          "valueLabel": "Valore metadato {{index}}",
-          "keyPlaceholder": "es. generator_available",
-          "valuePlaceholder": "es. sì / true / 12",
-          "hint": "Aggiungi coppie chiave/valore per informazioni extra. I campi protetti vengono ignorati automaticamente.",
-          "errors": {
-            "missingKey": "Specifica una chiave per ogni dettaglio aggiuntivo.",
-            "missingValue": "Specifica un valore per ogni dettaglio aggiuntivo.",
-            "duplicateKey": "Ogni dettaglio aggiuntivo deve avere una chiave univoca.",
-            "invalidJson": "Il valore non è valido. Usa numeri, true/false, null o JSON valido."
-          }
-        },
         "costOptions": {
           "title": "Opzioni di costo",
           "hint": "Imposta uno o più listini per descrivere come viene calcolato il costo della struttura.",
@@ -701,23 +680,7 @@
           "paymentMethods": "Metodi di pagamento accettati",
           "paymentMethodsHint": "Inserisci un metodo per riga (es. bonifico, contanti, carta).",
           "paymentTerms": "Condizioni di pagamento",
-          "advancedMetadata": {
-            "label": "Dettagli aggiuntivi",
-            "empty": "Nessun metadato aggiuntivo per questa opzione.",
-            "add": "Aggiungi metadato",
-            "remove": "Rimuovi",
-            "keyLabel": "Chiave metadato {{index}}",
-            "valueLabel": "Valore metadato {{index}}",
-            "keyPlaceholder": "es. modifiers",
-            "valuePlaceholder": "es. [{\"kind\":\"weekend\"}]",
-            "hint": "Aggiungi coppie chiave/valore per arricchire i listini (es. modifiers, age_rules, price_per_resource).",
-            "errors": {
-              "missingKey": "Specifica una chiave per ogni metadato dell'opzione di costo.",
-              "missingValue": "Specifica un valore per ogni metadato dell'opzione di costo.",
-              "duplicateKey": "Ogni metadato dell'opzione di costo deve avere una chiave univoca.",
-              "invalidJson": "Il valore non è valido. Usa numeri, true/false, null o JSON valido."
-            }
-          },
+
           "models": {
             "per_person_day": "Per persona al giorno",
             "per_person_night": "Per persona a notte",
@@ -802,8 +765,7 @@
         "costOptionsCurrencyInvalid": "La valuta deve contenere tre lettere.",
         "costOptionsExtraInvalid": "Inserisci importi validi maggiori o uguali a zero per caparra, tassa o utenze.",
         "costOptionsTotalsInvalid": "Il totale minimo deve essere minore o uguale al totale massimo.",
-        "postalCodeInvalid": "Inserisci un CAP valido composto da lettere o numeri.",
-        "costOptionsAdvancedInvalid": "Completa i metadati aggiuntivi delle opzioni di costo con chiavi e valori validi."
+        "postalCodeInvalid": "Inserisci un CAP valido composto da lettere o numeri."
       },
       "warnings": {
         "websiteUnreachable": "Attenzione: {{count, plural, one {il seguente link non risponde} other {i seguenti link non rispondono}}:\n{{urls}}\nLa struttura è stata creata comunque."
@@ -982,8 +944,6 @@
         "notesLogistics": "Note logistiche",
         "notesLogisticsFallback": "Nessuna nota logistica specificata",
         "notesFallback": "Nessuna nota specificata",
-        "advancedMetadata": "Dettagli aggiuntivi",
-        "advancedMetadataFallback": "Nessun dettaglio aggiuntivo specificato",
         "notAvailable": "Non specificato"
       },
       "meta": {
@@ -1053,8 +1013,7 @@
         "minimumTotal": "Totale minimo: {{value}}",
         "maximumTotal": "Totale massimo: {{value}}",
         "paymentMethods": "Metodi di pagamento: {{value}}",
-        "paymentTerms": "Condizioni di pagamento: {{value}}",
-        "advancedMetadata": "Dettagli aggiuntivi"
+        "paymentTerms": "Condizioni di pagamento: {{value}}"
       },
       "actions": {
         "edit": "Modifica struttura"

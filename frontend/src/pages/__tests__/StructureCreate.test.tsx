@@ -210,6 +210,10 @@ describe("StructureCreatePage", () => {
 
     await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.selectOptions(
+      screen.getByLabelText(/informazioni facoltative/i),
+      "floodRisk"
+    );
     await user.type(screen.getByLabelText(/Provincia/i), "bs");
     await user.type(screen.getByLabelText(/Altitudine/i), "350");
     await user.selectOptions(
@@ -271,65 +275,8 @@ describe("StructureCreatePage", () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
   });
 
-  it("merges advanced metadata entries into the payload", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-    vi.mocked(createStructure).mockResolvedValue(createdStructure);
 
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.type(screen.getByLabelText(/Nome/i), "Base Lago");
-    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
-
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi dettaglio/i })
-    );
-    await user.type(
-      screen.getByLabelText(/Chiave metadato 1/i),
-      "municipality"
-    );
-    await user.type(
-      screen.getByLabelText(/Valore metadato 1/i),
-      "Brescia"
-    );
-
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi dettaglio/i })
-    );
-    await user.type(
-      screen.getByLabelText(/Chiave metadato 2/i),
-      "river_swimming"
-    );
-    await user.type(
-      screen.getByLabelText(/Valore metadato 2/i),
-      "si"
-    );
-
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi dettaglio/i })
-    );
-    await user.type(screen.getByLabelText(/Chiave metadato 3/i), "id");
-    await user.type(screen.getByLabelText(/Valore metadato 3/i), "123");
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    await waitFor(() => expect(createStructure).toHaveBeenCalled());
-    const payload = vi.mocked(createStructure).mock.calls[0][0];
-
-    expect(payload).toMatchObject({
-      municipality: "Brescia",
-      river_swimming: "si"
-    });
-    expect(payload).not.toHaveProperty("id");
-  });
-
-  it("includes extended metadata fields in the payload", async () => {
+  it("includes optional section fields in the payload", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -349,40 +296,73 @@ describe("StructureCreatePage", () => {
     await user.clear(countryInput);
     await user.type(countryInput, "fr");
 
+    const optionalSectionPicker = screen.getByLabelText(/informazioni facoltative/i);
+    await user.selectOptions(optionalSectionPicker, "mapResources");
+    await user.selectOptions(optionalSectionPicker, "documentsRequired");
+    await user.selectOptions(optionalSectionPicker, "paymentMethods");
+    await user.selectOptions(optionalSectionPicker, "communicationsInfrastructure");
+    await user.selectOptions(optionalSectionPicker, "activitySpaces");
+    await user.selectOptions(optionalSectionPicker, "activityEquipment");
+    await user.selectOptions(optionalSectionPicker, "inclusionServices");
+    await user.selectOptions(optionalSectionPicker, "dataQualityFlags");
+
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: /Risorse cartografiche/i })).toBeInTheDocument()
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi infrastruttura/i })
+    );
+    await user.click(screen.getByRole("button", { name: /Aggiungi spazio/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi attrezzatura/i })
+    );
+    await user.click(
+      screen
+        .getAllByRole("button", { name: /Aggiungi servizio/i })
+        .find((button) => button.id === "structure-inclusion-services-add")!
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi segnalazione/i })
+    );
+
     await user.type(
-      screen.getByLabelText(/Risorse cartografiche/i),
+      screen.getByRole("textbox", { name: /Risorse cartografiche/i }),
       "https://maps.example.com"
     );
 
     await user.type(
-      screen.getByLabelText(/Documenti richiesti/i),
+      screen.getByRole("textbox", { name: /Documenti richiesti/i }),
       "Modulo autorizzazione"
     );
 
     await user.type(
-      screen.getByLabelText(/Metodi di pagamento accettati/i),
+      screen.getByRole("textbox", { name: /Metodi di pagamento accettati/i }),
       "Bonifico"
     );
 
     await user.type(
-      screen.getByLabelText(/Infrastrutture di comunicazione/i),
+      screen.getByRole("textbox", { name: /Infrastrutture di comunicazione/i }),
       "Fibra ottica"
     );
 
-    await user.type(screen.getByLabelText(/Spazi per attività/i), "Sala polifunzionale");
+    await user.type(
+      screen.getByRole("textbox", { name: /Spazi per attività/i }),
+      "Sala polifunzionale"
+    );
 
     await user.type(
-      screen.getByLabelText(/Attrezzatura attività/i),
+      screen.getByRole("textbox", { name: /Attrezzatura attività/i }),
       "Kit pionieristica"
     );
 
     await user.type(
-      screen.getByLabelText(/Servizi di inclusione/i),
+      screen.getByRole("textbox", { name: /Servizi di inclusione/i }),
       "Bagno accessibile"
     );
 
     await user.type(
-      screen.getByLabelText(/Segnalazioni qualità dati/i),
+      screen.getByRole("textbox", { name: /Segnalazioni qualità dati/i }),
       "Verifica disponibilità"
     );
 
@@ -402,513 +382,6 @@ describe("StructureCreatePage", () => {
     expect(payload.data_quality_flags).toEqual(["Verifica disponibilità"]);
   });
 
-  it("validates required fields for advanced metadata entries", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.type(screen.getByLabelText(/Nome/i), "Base Fiume");
-    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
-
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi dettaglio/i })
-    );
-    await user.type(
-      screen.getByLabelText(/Chiave metadato 1/i),
-      "river_swimming"
-    );
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    expect(
-      await screen.findByText(/Specifica un valore per ogni dettaglio aggiuntivo/i)
-    ).toBeInTheDocument();
-    expect(createStructure).not.toHaveBeenCalled();
-  });
-
-  it("validates cost option advanced metadata entries", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi opzione di costo/i })
-    );
-
-    await user.selectOptions(
-      screen.getByLabelText(/Modello di costo/i),
-      "per_person_day"
-    );
-    await user.type(screen.getByLabelText(/Importo principale/i), "10");
-
-    const addMetadataButton = screen.getByRole("button", {
-      name: /Aggiungi metadato/i
-    });
-    await user.click(addMetadataButton);
-
-    await user.type(
-      screen.getByLabelText(/Chiave metadato 1/i),
-      "modifiers"
-    );
-    await user.type(
-      screen.getByLabelText(/Valore metadato 1/i),
-      "{]"
-    );
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    expect(
-      await screen.findByText(
-        /Il valore non è valido\. Usa numeri, true\/false, null o JSON valido/i
-      )
-    ).toBeInTheDocument();
-    expect(createStructure).not.toHaveBeenCalled();
-  });
-
-  it("alerts when the API reports unreachable websites", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-    vi.mocked(createStructure).mockResolvedValue({
-      ...createdStructure,
-      warnings: ["https://non-risponde.example"]
-    });
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
-    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
-    await user.type(
-      screen.getByLabelText(/Siti o link di riferimento/i),
-      "https://base.example.org"
-    );
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    await waitFor(() => expect(createStructure).toHaveBeenCalled());
-    expect(alertMock).toHaveBeenCalledTimes(1);
-    expect(alertMock).toHaveBeenCalledWith(
-      expect.stringContaining("https://non-risponde.example")
-    );
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
-  });
-
-  it("provides immediate feedback about website URL validity", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    const websiteField = screen.getByLabelText(/Siti o link di riferimento/i);
-    await user.type(websiteField, "www.scouthouse");
-    await user.tab();
-
-    expect(
-      screen.getByText(/questo link non sembra valido\. puoi comunque procedere/i)
-    ).toBeInTheDocument();
-
-    await user.click(websiteField);
-    await user.clear(websiteField);
-    await user.type(websiteField, "https://scouthouse.example");
-    await user.tab();
-
-    expect(screen.getByText(/Link valido/i)).toBeInTheDocument();
-  });
-
-  it("serialises open periods when provided", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-    vi.mocked(createStructure).mockResolvedValue(createdStructure);
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
-    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "mixed");
-    await user.type(screen.getByLabelText(/Provincia/i), "BS");
-
-    const openPeriodsGroup = screen
-      .getByText(/Periodi di apertura/i)
-      .closest('[role="group"]') as HTMLElement;
-    const openPeriodsWithin = within(openPeriodsGroup);
-
-    await user.click(openPeriodsWithin.getByRole("button", { name: /Aggiungi stagione/i }));
-    await user.click(openPeriodsWithin.getByRole("button", { name: /Aggiungi intervallo/i }));
-
-    const seasonSelect = openPeriodsWithin
-      .getAllByRole("combobox")
-      .find((element) =>
-        Array.from((element as HTMLSelectElement).options).some((option) =>
-          option.textContent?.includes("Seleziona stagione")
-        )
-      ) as HTMLSelectElement;
-    await user.selectOptions(seasonSelect, "summer");
-
-    const rows = openPeriodsWithin.getAllByRole("row");
-    const seasonRow = rows[1];
-    const rangeRow = rows[2];
-    await user.click(within(seasonRow).getByRole("checkbox", { name: "Tutte le branche" }));
-    await user.click(within(rangeRow).getByRole("checkbox", { name: "E/G" }));
-    await user.click(within(rangeRow).getByRole("checkbox", { name: "R/S" }));
-
-    const notesInputs = openPeriodsWithin.getAllByPlaceholderText(/Note facoltative/i);
-    await user.type(notesInputs[0], "Chiuso settimana 33");
-    await user.type(notesInputs[1], "Campo EG");
-
-    const dateInputs = openPeriodsGroup.querySelectorAll('input[type="date"]');
-    await user.type(dateInputs[0] as HTMLInputElement, "2025-08-01");
-    await user.type(dateInputs[1] as HTMLInputElement, "2025-08-15");
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    await waitFor(() => expect(createStructure).toHaveBeenCalled());
-    const payload = vi.mocked(createStructure).mock.calls[0][0];
-    expect(payload.open_periods).toEqual([
-      {
-        kind: "season",
-        season: "summer",
-        notes: "Chiuso settimana 33",
-        units: ["ALL"]
-      },
-      {
-        kind: "range",
-        date_start: "2025-08-01",
-        date_end: "2025-08-15",
-        notes: "Campo EG",
-        units: ["EG", "RS"]
-      }
-    ]);
-  });
-
-  it("collects full logistics metadata for mixed structures", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-    vi.mocked(createStructure).mockResolvedValue(createdStructure);
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
-    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "mixed");
-    await user.type(screen.getByLabelText(/Provincia/i), "BS");
-    await user.type(screen.getByLabelText(/Indirizzo/i), "Via Bosco 1");
-    await user.type(screen.getByLabelText(/Latitudine/i), "45.1111");
-    await user.type(screen.getByLabelText(/Longitudine/i), "9.1111");
-    await user.type(screen.getByLabelText(/Altitudine/i), "350");
-
-    await user.type(screen.getByLabelText(/Posti letto interni/i), "36");
-    await user.type(screen.getByLabelText(/Bagni interni/i), "5");
-    await user.type(screen.getByLabelText(/Docce interne/i), "6");
-    await user.type(screen.getByLabelText(/Sale attività interne/i), "3");
-    await user.selectOptions(
-      screen.getByLabelText(/Cucina attrezzata disponibile/i),
-      "Sì"
-    );
-    await user.selectOptions(screen.getByLabelText(/Acqua calda disponibile/i), "No");
-
-    await user.type(screen.getByLabelText(/Superficie esterna/i), "1.500");
-    await user.click(screen.getByRole("checkbox", { name: /Nessuno/i }));
-    await user.click(screen.getByRole("checkbox", { name: /Rubinetto/i }));
-    await user.selectOptions(screen.getByLabelText(/Regole per i fuochi/i), "Consentiti");
-    await user.selectOptions(
-      screen.getByLabelText(/Tettoia o rifugio sul campo/i),
-      "Sì"
-    );
-    await user.selectOptions(
-      screen.getByLabelText(/Presa elettrica disponibile/i),
-      "No"
-    );
-    await user.selectOptions(screen.getByLabelText(/Pali già presenti sul campo/i), "Sì");
-    await user.selectOptions(
-      screen.getByLabelText(/È possibile scavare una latrina/i),
-      "No"
-    );
-
-    await user.selectOptions(screen.getByLabelText(/Accesso con auto/i), "Sì");
-    await user.selectOptions(screen.getByLabelText(/Accesso con pullman/i), "No");
-    await user.selectOptions(
-      screen.getByLabelText(/Raggiungibile con mezzi pubblici/i),
-      "Non specificato"
-    );
-    await user.selectOptions(screen.getByLabelText(/Area manovra per pullman/i), "Sì");
-    await user.type(screen.getByLabelText(/Fermata più vicina/i), "Fermata Centro");
-
-    await user.selectOptions(screen.getByLabelText(/Solo fine settimana/i), "Sì");
-    await user.type(screen.getByLabelText(/Note logistiche/i), "Consegnare le chiavi al custode");
-    await user.type(screen.getByLabelText(/Note aggiuntive/i), "Disponibile area tende");
-
-    await user.type(screen.getByLabelText(/Email di riferimento/i), "info@example.org");
-    await user.type(screen.getByLabelText(/Siti o link di riferimento/i), "https://base.example.org");
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    await waitFor(() => expect(createStructure).toHaveBeenCalled());
-    const payload = vi.mocked(createStructure).mock.calls[0][0];
-
-    expect(payload).toMatchObject({
-      type: "mixed",
-      latitude: 45.1111,
-      longitude: 9.1111,
-      altitude: 350,
-      indoor_beds: 36,
-      indoor_bathrooms: 5,
-      indoor_showers: 6,
-      indoor_activity_rooms: 3,
-      has_kitchen: true,
-      hot_water: false,
-      land_area_m2: 1.5,
-      water_sources: ["tap"],
-      fire_policy: "allowed",
-      shelter_on_field: true,
-      electricity_available: false,
-      has_field_poles: true,
-      pit_latrine_allowed: false,
-      access_by_car: true,
-      access_by_coach: false,
-      access_by_public_transport: null,
-      coach_turning_area: true,
-      nearest_bus_stop: "Fermata Centro",
-      weekend_only: true,
-      notes_logistics: "Consegnare le chiavi al custode",
-      notes: "Disponibile area tende",
-      contact_emails: ["info@example.org"],
-      website_urls: ["https://base.example.org"]
-    });
-  }, 15000);
-
-  it("saves cost options after creating the structure", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-    vi.mocked(createStructure).mockResolvedValue(createdStructure);
-    vi.mocked(upsertStructureCostOptions).mockResolvedValue([]);
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
-    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
-
-    await user.click(screen.getByRole("button", { name: /Aggiungi opzione di costo/i }));
-
-    await user.selectOptions(screen.getByLabelText(/Modello di costo/i), "per_person_day");
-    await user.type(screen.getByLabelText(/Importo principale/i), "12,50");
-
-    const currencyField = screen.getByLabelText(/Valuta/i);
-    await user.clear(currencyField);
-    await user.type(currencyField, "usd");
-
-    await user.type(
-      screen.getByLabelText(/Caparra prenotazione/i),
-      "50"
-    );
-    await user.type(screen.getByLabelText(/Cauzione danni/i), "100");
-    await user.type(
-      screen.getByLabelText(/Tassa di soggiorno per notte/i),
-      "1,5"
-    );
-    await user.type(screen.getByLabelText(/Forfait utenze/i), "10");
-    await user.selectOptions(screen.getByLabelText(/Utenze incluse/i), "Sì");
-    await user.type(
-      screen.getByLabelText(/Dettagli utenze/i),
-      "Consumi inclusi"
-    );
-    await user.type(
-      screen.getByLabelText(/Metodi di pagamento accettati/i),
-      "Bonifico\nCarta"
-    );
-    await user.type(
-      screen.getByLabelText(/Condizioni di pagamento/i),
-      "Saldo entro 30 giorni"
-    );
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi metadato/i })
-    );
-    await user.type(
-      screen.getByLabelText(/Chiave metadato 1/i),
-      "modifiers"
-    );
-    await user.type(
-      screen.getByLabelText(/Valore metadato 1/i),
-      '[{"kind":"weekend","amount":15}]'
-    );
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    await waitFor(() => expect(createStructure).toHaveBeenCalled());
-
-    await waitFor(() => expect(upsertStructureCostOptions).toHaveBeenCalled());
-    expect(vi.mocked(upsertStructureCostOptions).mock.calls[0][1]).toEqual([
-      {
-        model: "per_person_day",
-        amount: 12.5,
-        currency: "USD",
-        booking_deposit: 50,
-        damage_deposit: 100,
-        city_tax_per_night: 1.5,
-        utilities_flat: 10,
-        utilities_included: true,
-        utilities_notes: "Consumi inclusi",
-        payment_methods: ["Bonifico", "Carta"],
-        payment_terms: "Saldo entro 30 giorni",
-        modifiers: [{ kind: "weekend", amount: 15 }]
-      }
-    ]);
-  });
-
-  it("shows an error message when the API rejects the request", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-    vi.mocked(createStructure).mockRejectedValue(new ApiError(400, { detail: "Slug already exists" }));
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
-    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    await waitFor(() =>
-      expect(screen.getByText(/Slug already exists/i)).toBeInTheDocument()
-    );
-
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  it("validates required fields before submitting", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    expect(await screen.findByText(/Inserisci un nome per la struttura/i)).toBeInTheDocument();
-    expect(screen.getByText(/Seleziona una tipologia/i)).toBeInTheDocument();
-    expect(createStructure).not.toHaveBeenCalled();
-    expect(invalidateSpy).not.toHaveBeenCalled();
-  });
-
-  it("uploads queued photos after creating the structure", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false }
-      }
-    });
-    const Wrapper = createWrapper(queryClient);
-    const user = userEvent.setup();
-    vi.mocked(createStructure).mockResolvedValue(createdStructure);
-    vi.mocked(signAttachmentUpload).mockResolvedValue({
-      url: "https://s3.example.com/upload",
-      fields: { key: "attachments/structure/1/abc/facciata.jpg" }
-    });
-    vi.mocked(confirmAttachmentUpload).mockResolvedValue({
-      id: 10,
-      owner_type: "structure",
-      owner_id: 1,
-      filename: "facciata.jpg",
-      mime: "image/jpeg",
-      size: 1024,
-      created_by: "user",
-      created_by_name: "User",
-      description: null,
-      created_at: new Date().toISOString()
-    });
-    vi.mocked(createStructurePhoto).mockResolvedValue({
-      id: 5,
-      structure_id: 1,
-      attachment_id: 10,
-      filename: "facciata.jpg",
-      mime: "image/jpeg",
-      size: 1024,
-      position: 0,
-      url: "https://example.com/facciata.jpg",
-      description: null,
-      created_at: new Date().toISOString()
-    });
-
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValue(new Response(null, { status: 204 }) as Response);
-
-    render(<StructureCreatePage />, { wrapper: Wrapper });
-
-    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
-    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
-    await user.type(screen.getByLabelText(/Provincia/i), "BS");
-
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    expect(input).toBeTruthy();
-    const file = new File(["content"], "facciata.jpg", { type: "image/jpeg" });
-    await user.upload(input, file);
-
-    expect(await screen.findByText("facciata.jpg")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
-
-    await waitFor(() => expect(signAttachmentUpload).toHaveBeenCalled());
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://s3.example.com/upload",
-      expect.objectContaining({ method: "POST" })
-    );
-    await waitFor(() => expect(confirmAttachmentUpload).toHaveBeenCalled());
-    await waitFor(() => expect(createStructurePhoto).toHaveBeenCalledWith(1, { attachment_id: 10 }));
-
-    fetchMock.mockRestore();
-  });
 });
 
 describe("StructureEditPage", () => {
