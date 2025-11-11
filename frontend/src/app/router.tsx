@@ -13,6 +13,9 @@ import { ImportExportPage } from "../pages/ImportExport";
 import { ensureSession, restoreSession, useAuth } from "../shared/auth";
 
 const EventsPage = lazy(() => import("../pages/Events").then((module) => ({ default: module.EventsPage })));
+const EventCreatePage = lazy(() =>
+  import("../pages/EventCreate").then((module) => ({ default: module.EventCreatePage }))
+);
 const StructureDetailsPage = lazy(() =>
   import("../pages/StructureDetails").then((module) => ({ default: module.StructureDetailsPage }))
 );
@@ -75,6 +78,7 @@ export const AppRouter = () => {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route element={<ProtectedRoute />}>
+              <Route path="/events/new" element={<EventCreatePage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:eventId" element={<EventDetailsPage />} />
               <Route path="/structures/new" element={<StructureCreatePage />} />
