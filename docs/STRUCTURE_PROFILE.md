@@ -51,7 +51,6 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 
 ### Costi
 - Lista dinamica di `StructureCostOptionInput` (`model`, `amount`, `currency`, `booking_deposit`, `damage_deposit`, `city_tax_per_night`, `utilities_flat`, `utilities_included`, `utilities_notes`, `payment_methods`, `payment_terms`, `min_total`, `max_total`).
-- Textarea "Metadati avanzati (JSON)" per ogni opzione di costo: consente di impostare campi aggiuntivi come `modifiers`, `age_rules`, `price_per_resource` senza sovrascrivere i valori gestiti dal modulo.
 
 ### Contatti, link e note
 - Array `contact_emails`.
@@ -65,8 +64,7 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 #### Copertura test
 
 - `StructureCreate.test.tsx > collects full logistics metadata for mixed structures` esercita l'inserimento combinato di campi interni, esterni, accessibilità e note operative garantendo la serializzazione completa del payload.
-- `StructureCreate.test.tsx > merges advanced metadata JSON into the payload` valida l'integrazione dei campi aggiuntivi impostati tramite la textarea di metadati avanzati, inclusa l'esclusione delle chiavi bloccate.
-- `StructureDetails.test.tsx > renders structure details when found` verifica il rendering della scheda con i campi di logistica, posizione, costi e include asserzioni sui metadati avanzati mostrati nel riquadro dedicato.
+- `StructureDetails.test.tsx > renders structure details when found` verifica il rendering della scheda con i campi di logistica, posizione e costi principali.
 
 ## Visualizzazione (`/structures/:slug`)
 
@@ -80,14 +78,12 @@ La pagina dettaglio mostra gli stessi campi organizzati in tab.
 - Griglia "Spazi esterni" con `land_area_m2`, `field_slope`, `pitches_tende`, `water_at_field`, `shelter_on_field`, `has_field_poles`, `water_sources`, `pit_latrine_allowed`, `electricity_available`, `fire_policy`.
 - Griglia "Accessibilità" con `access_by_car`, `access_by_coach`, `coach_turning_area`, `access_by_public_transport`, `nearest_bus_stop`, `wheelchair_accessible`, `step_free_access`, `parking_car_slots`, `parking_bus_slots`, `parking_notes`, `accessibility_notes`.
 - Sezione Operatività con `website_urls`, `weekend_only`, `allowed_audiences`, `usage_rules`, `animal_policy`, `animal_policy_notes`, `in_area_protetta`, `ente_area_protetta`, `environmental_notes`, `seasonal_amenities`, `notes_logistics`, `notes`.
-- Box "Metadati avanzati" che visualizza (in JSON formattato) i campi extra presenti sull'entità.
 
 ### Tab "Disponibilità"
 - Tabella delle `availabilities` (stagione, branche, capacità) e `open_periods` con note/unità.
 
 ### Tab "Costi"
 - Elenco formattato delle `cost_options`, inclusi depositi (prenotazione/danni), tassa di soggiorno, forfait utenze con flag di inclusione e note, soglie min/max e metodi/condizioni di pagamento.
-- Per ogni voce viene mostrato un riquadro espandibile con i metadati avanzati serializzati via JSON (es. `modifiers`, `age_rules`, `price_per_resource`).
 
 ### Tab "Contatti"
 - Sezione link per `website_urls` e `contact_emails`.
