@@ -18,6 +18,8 @@ def test_geocoding_search(monkeypatch: pytest.MonkeyPatch) -> None:
             GeocodingResult(
                 latitude=45.4642,
                 longitude=9.19,
+                altitude=123.0,
+                altitude_is_approximate=True,
                 label="Via Roma 1, Milano, Lombardia, Italia",
                 address=GeocodingAddress(
                     street="Via Roma",
@@ -39,6 +41,9 @@ def test_geocoding_search(monkeypatch: pytest.MonkeyPatch) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["results"][0]["latitude"] == pytest.approx(45.4642, rel=1e-3)
+    assert payload["results"][0]["altitude"] == pytest.approx(123.0)
+    assert payload["results"][0]["altitude_is_approximate"] is True
+    assert payload["results"][0]["is_approximate"] is True
     assert payload["results"][0]["address"]["postal_code"] == "20121"
 
 

@@ -510,6 +510,9 @@ export interface GeocodingAddress {
 export interface GeocodingResult {
   latitude: number;
   longitude: number;
+  altitude: number | null;
+  is_approximate: boolean;
+  altitude_is_approximate: boolean;
   label: string;
   address: GeocodingAddress | null;
 }
