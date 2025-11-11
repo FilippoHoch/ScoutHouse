@@ -477,6 +477,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [geocodingSuggestion, setGeocodingSuggestion] = useState<GeocodingResult | null>(null);
   const [geocodingError, setGeocodingError] = useState<string | null>(null);
   const [geocodingApplied, setGeocodingApplied] = useState(false);
+  const [geocodingAltitudeApplied, setGeocodingAltitudeApplied] = useState(false);
+  const [altitudeManuallyEdited, setAltitudeManuallyEdited] = useState(false);
   const [type, setType] = useState<StructureType | "">("");
   const [operationalStatus, setOperationalStatus] =
     useState<StructureOperationalStatus | "">("");
@@ -582,6 +584,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const coordinatesEditedRef = useRef(false);
   const latitudeRef = useRef("");
   const longitudeRef = useRef("");
+  const altitudeRef = useRef("");
+  const altitudeEditedRef = useRef(false);
 
   useEffect(() => {
     coordinatesEditedRef.current = coordinatesManuallyEdited;
@@ -594,6 +598,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   useEffect(() => {
     longitudeRef.current = longitude.trim();
   }, [longitude]);
+
+  useEffect(() => {
+    altitudeRef.current = altitude.trim();
+  }, [altitude]);
+
+  useEffect(() => {
+    altitudeEditedRef.current = altitudeManuallyEdited;
+  }, [altitudeManuallyEdited]);
   const shouldFetchStructure = isEditing && Boolean(editingSlug);
   const {
     data: existingStructure,
@@ -628,6 +640,37 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       lon: selectedCoordinates.lng.toFixed(6)
     });
   }, [selectedCoordinates, t]);
+
+  const automaticCoordinates = geocodingApplied && !coordinatesManuallyEdited;
+  const automaticAltitude = geocodingAltitudeApplied && !altitudeManuallyEdited;
+
+  const automaticAltitudeValue = useMemo(() => {
+    if (!automaticAltitude) {
+      return null;
+    }
+    const parsed = parseCoordinateValue(altitude);
+    return parsed !== null ? Math.round(parsed) : null;
+  }, [altitude, automaticAltitude]);
+
+  const automaticGeocodingMessage = useMemo(() => {
+    if (!automaticCoordinates) {
+      return null;
+    }
+    if (automaticAltitudeValue !== null) {
+      return t("structures.create.form.geocoding.appliedWithAltitude", {
+        alt: automaticAltitudeValue
+      });
+    }
+    return t("structures.create.form.geocoding.appliedApproximate");
+  }, [automaticAltitudeValue, automaticCoordinates, t]);
+
+  const manualCoordinatesMessage = coordinatesManuallyEdited
+    ? t("structures.create.form.geocoding.manualCoordinates")
+    : null;
+
+  const manualAltitudeMessage = altitudeManuallyEdited
+    ? t("structures.create.form.geocoding.manualAltitude")
+    : null;
 
   const saveMutation = useMutation({
     mutationFn: (dto: StructureCreateDto) => {
@@ -665,6 +708,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     clearFieldErrorsGroup(["latitude", "longitude"]);
     setCoordinatesManuallyEdited(true);
     setGeocodingApplied(false);
+    setGeocodingAltitudeApplied(false);
   };
 
   const handleApplyGeocodingSuggestion = () => {
@@ -676,6 +720,18 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setLatitude(latString);
     setLongitude(lonString);
     setCoordinatesManuallyEdited(false);
+    const altitudeValue =
+      typeof geocodingSuggestion.altitude === "number" &&
+      Number.isFinite(geocodingSuggestion.altitude)
+        ? Math.round(geocodingSuggestion.altitude)
+        : null;
+    if (altitudeValue !== null) {
+      setAltitude(String(altitudeValue));
+      setAltitudeManuallyEdited(false);
+      setGeocodingAltitudeApplied(true);
+    } else {
+      setGeocodingAltitudeApplied(false);
+    }
     setGeocodingApplied(true);
     setApiError(null);
     clearFieldErrorsGroup(["latitude", "longitude"]);
@@ -1118,6 +1174,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     clearFieldError("latitude");
     setCoordinatesManuallyEdited(true);
     setGeocodingApplied(false);
+    setGeocodingAltitudeApplied(false);
   };
 
   const handleLongitudeChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -1126,12 +1183,16 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     clearFieldError("longitude");
     setCoordinatesManuallyEdited(true);
     setGeocodingApplied(false);
+    setGeocodingAltitudeApplied(false);
   };
 
   const handleAltitudeChange = (event: ChangeEvent<HTMLInputElement>) => {
     setAltitude(event.target.value);
     setApiError(null);
     clearFieldError("altitude");
+    setAltitudeManuallyEdited(true);
+    setGeocodingAltitudeApplied(false);
+    setGeocodingApplied(false);
   };
 
   const handleIndoorBedsChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -2225,6 +2286,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setGeocodingStatus("loading");
     setGeocodingError(null);
     setGeocodingApplied(false);
+    setGeocodingAltitudeApplied(false);
 
     geocodingDebounceRef.current = window.setTimeout(() => {
       const params = {
@@ -2255,6 +2317,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           setGeocodingSuggestion(bestMatch);
           if (!bestMatch) {
             setGeocodingApplied(false);
+            setGeocodingAltitudeApplied(false);
             return;
           }
 
@@ -2264,6 +2327,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
             const shouldUpdateLatitude = latitudeRef.current !== suggestedLatitude;
             const shouldUpdateLongitude = longitudeRef.current !== suggestedLongitude;
+            let shouldUpdateAltitude = false;
+            const suggestedAltitudeValue =
+              typeof bestMatch.altitude === "number" &&
+              Number.isFinite(bestMatch.altitude)
+                ? Math.round(bestMatch.altitude)
+                : null;
+            const canApplyAltitude =
+              !altitudeEditedRef.current && suggestedAltitudeValue !== null;
 
             if (shouldUpdateLatitude) {
               setLatitude(suggestedLatitude);
@@ -2272,11 +2343,30 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
               setLongitude(suggestedLongitude);
             }
 
+            if (canApplyAltitude) {
+              const altitudeString = String(suggestedAltitudeValue);
+              if (altitudeRef.current !== altitudeString) {
+                setAltitude(altitudeString);
+                shouldUpdateAltitude = true;
+              }
+              setAltitudeManuallyEdited(false);
+            }
+
             setGeocodingApplied((current) =>
-              current || shouldUpdateLatitude || shouldUpdateLongitude
+              current ||
+              shouldUpdateLatitude ||
+              shouldUpdateLongitude ||
+              shouldUpdateAltitude
             );
+
+            if (canApplyAltitude) {
+              setGeocodingAltitudeApplied(true);
+            } else if (altitudeEditedRef.current || suggestedAltitudeValue === null) {
+              setGeocodingAltitudeApplied(false);
+            }
           } else {
             setGeocodingApplied(false);
+            setGeocodingAltitudeApplied(false);
           }
         })
         .catch((error: unknown) => {
@@ -2304,6 +2394,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           setGeocodingSuggestion(null);
           setGeocodingStatus("error");
           setGeocodingApplied(false);
+          setGeocodingAltitudeApplied(false);
         })
         .finally(() => {
           if (geocodingDebounceRef.current !== null) {
@@ -3786,6 +3877,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             {geocodingSuggestion.latitude.toFixed(6)}, {" "}
                             {geocodingSuggestion.longitude.toFixed(6)}
                           </span>
+                          {typeof geocodingSuggestion.altitude === "number" &&
+                            Number.isFinite(geocodingSuggestion.altitude) && (
+                              <span className="structure-geocode-status__coords">
+                                {t("structures.create.form.geocoding.suggestionAltitude", {
+                                  alt: Math.round(geocodingSuggestion.altitude)
+                                })}
+                              </span>
+                            )}
                           <Button
                             type="button"
                             variant="ghost"
@@ -3796,9 +3895,19 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                           </Button>
                         </div>
                       )}
-                      {geocodingApplied && (
+                      {automaticGeocodingMessage && (
                         <span className="structure-geocode-status structure-geocode-status__message structure-geocode-status__message--success">
-                          {t("structures.create.form.geocoding.applied")}
+                          {automaticGeocodingMessage}
+                        </span>
+                      )}
+                      {manualCoordinatesMessage && (
+                        <span className="structure-geocode-status structure-geocode-status__message">
+                          {manualCoordinatesMessage}
+                        </span>
+                      )}
+                      {manualAltitudeMessage && (
+                        <span className="structure-geocode-status structure-geocode-status__message">
+                          {manualAltitudeMessage}
                         </span>
                       )}
                       {selectedCoordinatesLabel && (

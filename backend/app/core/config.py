@@ -48,6 +48,10 @@ class Settings(BaseSettings):
         "ScoutHouse/0.2 (+https://scouthouse.local)",
         alias="GEOCODING_USER_AGENT",
     )
+    elevation_base_url: str = Field(
+        "https://api.open-meteo.com",
+        alias="ELEVATION_BASE_URL",
+    )
     s3_endpoint: str | None = Field(default=None, alias="S3_ENDPOINT")
     s3_bucket: str | None = Field(default=None, alias="S3_BUCKET")
     s3_access_key: str | None = Field(default=None, alias="S3_ACCESS_KEY")

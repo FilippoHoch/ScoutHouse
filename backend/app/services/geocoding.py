@@ -271,48 +271,131 @@ async def search(
     timeout = httpx.Timeout(10.0, connect=5.0)
     limits = httpx.Limits(max_connections=10, max_keepalive_connections=5)
 
-    async def _execute(query_params: dict[str, str]) -> list[dict[str, Any]]:
-        if client is not None:
-            return await _perform(client, query_params)
-        async with httpx.AsyncClient(timeout=timeout, limits=limits) as owned_client:
-            return await _perform(owned_client, query_params)
+    async def _fetch_altitudes(
+        request_client: httpx.AsyncClient,
+        coordinates: list[tuple[float, float]],
+    ) -> list[float | None]:
+        if not coordinates:
+            return []
 
-    raw_results = await _execute(params)
+        altitude_url = f"{settings.elevation_base_url.rstrip('/')}/v1/elevation"
+        lat_values = ",".join(f"{lat:.6f}" for lat, _ in coordinates)
+        lon_values = ",".join(f"{lon:.6f}" for _, lon in coordinates)
+        altitude_headers = {
+            "User-Agent": settings.geocoding_user_agent,
+            "Accept": "application/json",
+        }
 
-    if not raw_results and should_retry_without_structure:
-        fallback_params = _build_params(
-            address=address,
-            locality=locality,
-            municipality=municipality,
-            province=province,
-            postal_code=postal_code,
-            country=country,
-            limit=limit,
-            structured=False,
-        )
-
-        raw_results = await _execute(fallback_params)
-
-    results: list[GeocodingResult] = []
-    for entry in raw_results:
-        if not isinstance(entry, dict):
-            continue
-        lat = entry.get("lat")
-        lon = entry.get("lon")
-        if lat is None or lon is None:
-            continue
         try:
-            latitude = float(lat)
-            longitude = float(lon)
-        except (TypeError, ValueError):
-            continue
-        label = str(entry.get("display_name", "")).strip() or ""
-        results.append(
-            GeocodingResult(
-                latitude=latitude,
-                longitude=longitude,
-                label=label,
-                address=_build_address(entry),
+            response = await request_client.get(
+                altitude_url,
+                params={"latitude": lat_values, "longitude": lon_values},
+                headers=altitude_headers,
+                timeout=10.0,
             )
-        )
-    return results
+        except httpx.RequestError:
+            return [None] * len(coordinates)
+
+        if response.status_code >= 500 or response.status_code == 429:
+            return [None] * len(coordinates)
+        if response.status_code >= 400:
+            return [None] * len(coordinates)
+
+        try:
+            payload = response.json()
+        except ValueError:
+            return [None] * len(coordinates)
+
+        altitudes: list[float | None] = [None] * len(coordinates)
+
+        if isinstance(payload, dict):
+            elevation_value = payload.get("elevation")
+            if isinstance(elevation_value, list):
+                for index, value in enumerate(elevation_value[: len(altitudes)]):
+                    try:
+                        altitudes[index] = float(value)
+                    except (TypeError, ValueError):
+                        altitudes[index] = None
+            elif isinstance(elevation_value, (int, float, str)):
+                try:
+                    altitudes[0] = float(elevation_value)
+                except (TypeError, ValueError):
+                    altitudes[0] = None
+
+            results_payload = payload.get("results")
+            if isinstance(results_payload, list):
+                for index, entry in enumerate(results_payload[: len(altitudes)]):
+                    if not isinstance(entry, dict):
+                        continue
+                    try:
+                        altitude_value = float(entry.get("elevation"))
+                    except (TypeError, ValueError):
+                        altitude_value = None
+                    altitudes[index] = altitude_value
+
+        return altitudes
+
+    async def _collect(
+        request_client: httpx.AsyncClient,
+    ) -> list[GeocodingResult]:
+        raw_results = await _perform(request_client, params)
+
+        if not raw_results and should_retry_without_structure:
+            fallback_params = _build_params(
+                address=address,
+                locality=locality,
+                municipality=municipality,
+                province=province,
+                postal_code=postal_code,
+                country=country,
+                limit=limit,
+                structured=False,
+            )
+
+            raw_results = await _perform(request_client, fallback_params)
+
+        processed: list[tuple[float, float, str, GeocodingAddress | None]] = []
+        for entry in raw_results:
+            if not isinstance(entry, dict):
+                continue
+            lat = entry.get("lat")
+            lon = entry.get("lon")
+            if lat is None or lon is None:
+                continue
+            try:
+                latitude = float(lat)
+                longitude = float(lon)
+            except (TypeError, ValueError):
+                continue
+            label = str(entry.get("display_name", "")).strip() or ""
+            processed.append(
+                (latitude, longitude, label, _build_address(entry))
+            )
+
+        coordinates = [(item[0], item[1]) for item in processed]
+        altitudes = await _fetch_altitudes(request_client, coordinates)
+
+        results: list[GeocodingResult] = []
+        for index, (latitude, longitude, label, geocoded_address) in enumerate(
+            processed
+        ):
+            altitude = altitudes[index] if index < len(altitudes) else None
+            results.append(
+                GeocodingResult(
+                    latitude=latitude,
+                    longitude=longitude,
+                    altitude=altitude,
+                    is_approximate=True,
+                    altitude_is_approximate=altitude is not None,
+                    label=label,
+                    address=geocoded_address,
+                )
+            )
+
+        return results
+
+    if client is not None:
+        return await _collect(client)
+
+    async with httpx.AsyncClient(timeout=timeout, limits=limits) as owned_client:
+        return await _collect(owned_client)

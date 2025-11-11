@@ -14,6 +14,9 @@ class GeocodingAddress(BaseModel):
 class GeocodingResult(BaseModel):
     latitude: float
     longitude: float
+    altitude: float | None = None
+    is_approximate: bool = True
+    altitude_is_approximate: bool = False
     label: str
     address: GeocodingAddress | None = None
 

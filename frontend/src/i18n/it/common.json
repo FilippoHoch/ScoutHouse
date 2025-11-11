@@ -343,8 +343,12 @@
         "geocoding": {
           "searching": "Ricerca coordinate basata sull'indirizzo…",
           "suggestion": "Coordinate suggerite per {{label}}",
+          "suggestionAltitude": "Altitudine stimata circa {{alt}} m s.l.m.",
           "apply": "Usa coordinate suggerite",
-          "applied": "Coordinate aggiornate automaticamente dalle informazioni inserite.",
+          "appliedApproximate": "Coordinate suggerite automaticamente (posizione approssimativa).",
+          "appliedWithAltitude": "Coordinate e altitudine suggerite automaticamente (altitudine stimata circa {{alt}} m s.l.m.).",
+          "manualCoordinates": "Coordinate impostate manualmente dall'operatore.",
+          "manualAltitude": "Altitudine aggiornata manualmente dall'operatore.",
           "error": "Impossibile suggerire le coordinate al momento.",
           "unableToResolve": "Non siamo riusciti a trovare coordinate con i dati inseriti. Controlla indirizzo, comune, provincia e CAP oppure aggiungi maggiori dettagli."
         },

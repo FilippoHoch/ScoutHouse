@@ -29,6 +29,9 @@ def _install_schema_stubs() -> None:
     class GeocodingResult(BaseModel):
         latitude: float
         longitude: float
+        altitude: float | None = None
+        is_approximate: bool = True
+        altitude_is_approximate: bool = False
         label: str
         address: GeocodingAddress | None = None
 
@@ -99,32 +102,41 @@ def test_search_retries_without_structured_params() -> None:
 
     async def handler(request: httpx.Request) -> httpx.Response:
         params = dict(request.url.params)
-        calls.append(params)
 
-        if "street" in params:
-            return httpx.Response(200, json=[])
+        if request.url.path.endswith("/search"):
+            calls.append(params)
 
-        assert "street" not in params
-        assert "city" not in params
-        assert "county" not in params
-        assert "postalcode" not in params
+            if "street" in params:
+                return httpx.Response(200, json=[])
 
-        payload = [
-            {
-                "lat": "45.635",
-                "lon": "10.151",
-                "display_name": "Via Brione 26, Gussago, Brescia, Italia",
-                "address": {
-                    "road": "Via Brione",
-                    "house_number": "26",
-                    "city": "Gussago",
-                    "state_district": "Brescia",
-                    "postcode": "25064",
-                    "country": "Italia",
-                },
-            }
-        ]
-        return httpx.Response(200, json=payload)
+            assert "street" not in params
+            assert "city" not in params
+            assert "county" not in params
+            assert "postalcode" not in params
+
+            payload = [
+                {
+                    "lat": "45.635",
+                    "lon": "10.151",
+                    "display_name": "Via Brione 26, Gussago, Brescia, Italia",
+                    "address": {
+                        "road": "Via Brione",
+                        "house_number": "26",
+                        "city": "Gussago",
+                        "state_district": "Brescia",
+                        "postcode": "25064",
+                        "country": "Italia",
+                    },
+                }
+            ]
+            return httpx.Response(200, json=payload)
+
+        if request.url.path.endswith("/v1/elevation"):
+            assert params["latitude"] == "45.635000"
+            assert params["longitude"] == "10.151000"
+            return httpx.Response(200, json={"elevation": [320.5]})
+
+        raise AssertionError(f"Unexpected request path: {request.url}")
 
     transport = httpx.MockTransport(handler)
 
@@ -144,4 +156,7 @@ def test_search_retries_without_structured_params() -> None:
 
     assert len(results) == 1
     assert results[0].latitude == pytest.approx(45.635, rel=1e-5)
+    assert results[0].altitude == pytest.approx(320.5, rel=1e-5)
+    assert results[0].is_approximate is True
+    assert results[0].altitude_is_approximate is True
     assert len(calls) == 2
