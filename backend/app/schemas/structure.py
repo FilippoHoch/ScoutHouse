@@ -261,9 +261,7 @@ class StructureBase(BaseModel):
     river_swimming: RiverSwimmingOption | None = None
     flood_risk: FloodRiskLevel | None = None
     weather_risk_notes: str | None = None
-    activity_spaces: list[str] = Field(default_factory=list)
     activity_equipment: list[str] = Field(default_factory=list)
-    inclusion_services: list[str] = Field(default_factory=list)
     inclusion_notes: str | None = None
     pec_email: EmailStr | None = None
     sdi_recipient_code: str | None = Field(default=None, min_length=7, max_length=7)
@@ -389,9 +387,7 @@ class StructureBase(BaseModel):
     @field_validator(
         "documents_required",
         "communications_infrastructure",
-        "activity_spaces",
         "activity_equipment",
-        "inclusion_services",
         "payment_methods",
         "data_quality_flags",
         mode="before",

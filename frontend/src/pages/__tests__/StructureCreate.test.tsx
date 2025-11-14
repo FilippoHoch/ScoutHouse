@@ -126,9 +126,7 @@ const createdStructure = {
   river_swimming: null,
   flood_risk: null,
   weather_risk_notes: null,
-  activity_spaces: [],
   activity_equipment: [],
-  inclusion_services: [],
   inclusion_notes: null,
   pec_email: null,
   sdi_recipient_code: null,
@@ -301,9 +299,6 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(optionalSectionPicker, "documentsRequired");
     await user.selectOptions(optionalSectionPicker, "paymentMethods");
     await user.selectOptions(optionalSectionPicker, "communicationsInfrastructure");
-    await user.selectOptions(optionalSectionPicker, "activitySpaces");
-    await user.selectOptions(optionalSectionPicker, "activityEquipment");
-    await user.selectOptions(optionalSectionPicker, "inclusionServices");
     await user.selectOptions(optionalSectionPicker, "dataQualityFlags");
 
     await waitFor(() =>
@@ -313,14 +308,8 @@ describe("StructureCreatePage", () => {
     await user.click(
       screen.getByRole("button", { name: /Aggiungi infrastruttura/i })
     );
-    await user.click(screen.getByRole("button", { name: /Aggiungi spazio/i }));
     await user.click(
       screen.getByRole("button", { name: /Aggiungi attrezzatura/i })
-    );
-    await user.click(
-      screen
-        .getAllByRole("button", { name: /Aggiungi servizio/i })
-        .find((button) => button.id === "structure-inclusion-services-add")!
     );
     await user.click(
       screen.getByRole("button", { name: /Aggiungi segnalazione/i })
@@ -347,18 +336,8 @@ describe("StructureCreatePage", () => {
     );
 
     await user.type(
-      screen.getByRole("textbox", { name: /Spazi per attività/i }),
-      "Sala polifunzionale"
-    );
-
-    await user.type(
       screen.getByRole("textbox", { name: /Attrezzatura attività/i }),
       "Kit pionieristica"
-    );
-
-    await user.type(
-      screen.getByRole("textbox", { name: /Servizi di inclusione/i }),
-      "Bagno accessibile"
     );
 
     await user.type(
@@ -376,9 +355,9 @@ describe("StructureCreatePage", () => {
     expect(payload.documents_required).toEqual(["Modulo autorizzazione"]);
     expect(payload.payment_methods).toEqual(["Bonifico"]);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
-    expect(payload.activity_spaces).toEqual(["Sala polifunzionale"]);
     expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
-    expect(payload.inclusion_services).toEqual(["Bagno accessibile"]);
+    expect(payload).not.toHaveProperty("activity_spaces");
+    expect(payload).not.toHaveProperty("inclusion_services");
     expect(payload.data_quality_flags).toEqual(["Verifica disponibilità"]);
   });
 
