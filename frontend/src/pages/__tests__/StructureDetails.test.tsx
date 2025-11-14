@@ -122,6 +122,10 @@ const sampleStructure: Structure = {
   operational_status: "operational",
   cell_coverage: null,
   cell_coverage_notes: null,
+  cell_data_quality: "good",
+  cell_voice_quality: "limited",
+  wifi_available: true,
+  landline_available: false,
   communications_infrastructure: ["Rete cellulare potenziata"],
   aed_on_site: null,
   emergency_phone_available: null,
@@ -286,9 +290,13 @@ describe("StructureDetailsPage", () => {
     await user.click(screen.getByRole("button", { name: /Costi/i }));
     const seasonalTitle = await screen.findByText(/Tariffe stagionali/i);
     expect(seasonalTitle.parentElement?.textContent).toMatch(/Inverno:\s+22,00\s+€/i);
-    expect(
-      screen.getByText(/Infrastrutture di comunicazione/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Qualità rete dati/i)).toBeInTheDocument();
+    expect(screen.getByText(/Buona copertura/i)).toBeInTheDocument();
+    expect(screen.getByText(/Qualità chiamate/i)).toBeInTheDocument();
+    expect(screen.getByText(/Copertura limitata/i)).toBeInTheDocument();
+    expect(screen.getByText(/Wi-Fi disponibile/i)).toBeInTheDocument();
+    expect(screen.getByText(/Linea fissa disponibile/i)).toBeInTheDocument();
+    expect(screen.getByText(/Note sulle comunicazioni/i)).toBeInTheDocument();
     expect(screen.getByText(/Rete cellulare potenziata/i)).toBeInTheDocument();
     expect(screen.getByText(/Spazi per attività/i)).toBeInTheDocument();
     expect(screen.getByText(/Sala polivalente/i)).toBeInTheDocument();

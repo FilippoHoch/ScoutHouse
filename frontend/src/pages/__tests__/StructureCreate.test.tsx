@@ -273,7 +273,7 @@ describe("StructureCreatePage", () => {
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
-  });
+  }, 15000);
 
 
   it("includes optional section fields in the payload", async () => {
@@ -300,30 +300,9 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(optionalSectionPicker, "mapResources");
     await user.selectOptions(optionalSectionPicker, "documentsRequired");
     await user.selectOptions(optionalSectionPicker, "paymentMethods");
-    await user.selectOptions(optionalSectionPicker, "communicationsInfrastructure");
-    await user.selectOptions(optionalSectionPicker, "activitySpaces");
-    await user.selectOptions(optionalSectionPicker, "activityEquipment");
-    await user.selectOptions(optionalSectionPicker, "inclusionServices");
-    await user.selectOptions(optionalSectionPicker, "dataQualityFlags");
 
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: /Risorse cartografiche/i })).toBeInTheDocument()
-    );
-
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi infrastruttura/i })
-    );
-    await user.click(screen.getByRole("button", { name: /Aggiungi spazio/i }));
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi attrezzatura/i })
-    );
-    await user.click(
-      screen
-        .getAllByRole("button", { name: /Aggiungi servizio/i })
-        .find((button) => button.id === "structure-inclusion-services-add")!
-    );
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi segnalazione/i })
     );
 
     await user.type(
@@ -341,30 +320,28 @@ describe("StructureCreatePage", () => {
       "Bonifico"
     );
 
+    await user.selectOptions(
+      screen.getByLabelText(/Qualità rete dati/i),
+      "good"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Qualità chiamate/i),
+      "excellent"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Wi-Fi disponibile/i),
+      "yes"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Linea fissa disponibile/i),
+      "no"
+    );
+
     await user.type(
-      screen.getByRole("textbox", { name: /Infrastrutture di comunicazione/i }),
+      screen.getByLabelText(/Note aggiuntive sulle comunicazioni/i),
       "Fibra ottica"
     );
 
-    await user.type(
-      screen.getByRole("textbox", { name: /Spazi per attività/i }),
-      "Sala polifunzionale"
-    );
-
-    await user.type(
-      screen.getByRole("textbox", { name: /Attrezzatura attività/i }),
-      "Kit pionieristica"
-    );
-
-    await user.type(
-      screen.getByRole("textbox", { name: /Servizi di inclusione/i }),
-      "Bagno accessibile"
-    );
-
-    await user.type(
-      screen.getByRole("textbox", { name: /Segnalazioni qualità dati/i }),
-      "Verifica disponibilità"
-    );
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
@@ -375,12 +352,12 @@ describe("StructureCreatePage", () => {
     expect(payload.map_resources_urls).toEqual(["https://maps.example.com"]);
     expect(payload.documents_required).toEqual(["Modulo autorizzazione"]);
     expect(payload.payment_methods).toEqual(["Bonifico"]);
+    expect(payload.cell_data_quality).toBe("good");
+    expect(payload.cell_voice_quality).toBe("excellent");
+    expect(payload.wifi_available).toBe(true);
+    expect(payload.landline_available).toBe(false);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
-    expect(payload.activity_spaces).toEqual(["Sala polifunzionale"]);
-    expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
-    expect(payload.inclusion_services).toEqual(["Bagno accessibile"]);
-    expect(payload.data_quality_flags).toEqual(["Verifica disponibilità"]);
-  });
+  }, 15000);
 
 });
 

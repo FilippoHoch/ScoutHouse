@@ -8,6 +8,7 @@ export type WaterSource =
   | "field_shower"
   | "unknown";
 export type CellCoverageQuality = "none" | "limited" | "good" | "excellent";
+export type CellSignalQuality = CellCoverageQuality;
 export type WastewaterType = "none" | "septic" | "holding_tank" | "mains" | "unknown";
 export type FloodRiskLevel = "none" | "low" | "medium" | "high";
 export type RiverSwimmingOption = "si" | "no" | "unknown";
@@ -233,6 +234,10 @@ export interface Structure {
   indoor_rooms?: Record<string, unknown>[] | null;
   has_kitchen: boolean | null;
   hot_water: boolean | null;
+  cell_data_quality: CellSignalQuality | null;
+  cell_voice_quality: CellSignalQuality | null;
+  wifi_available: boolean | null;
+  landline_available: boolean | null;
   land_area_m2: number | null;
   field_slope?: FieldSlope | null;
   pitches_tende: number | null;
@@ -291,7 +296,7 @@ export interface Structure {
   operational_status: StructureOperationalStatus | null;
   cell_coverage: CellCoverageQuality | null;
   cell_coverage_notes: string | null;
-  communications_infrastructure: string[];
+  communications_infrastructure: string[] | null;
   aed_on_site: boolean | null;
   emergency_phone_available: boolean | null;
   emergency_response_time_minutes: number | null;
@@ -362,6 +367,10 @@ export interface StructureCreateDto {
   indoor_rooms?: Record<string, unknown>[] | null;
   has_kitchen?: boolean | null;
   hot_water?: boolean | null;
+  cell_data_quality?: CellSignalQuality | null;
+  cell_voice_quality?: CellSignalQuality | null;
+  wifi_available?: boolean | null;
+  landline_available?: boolean | null;
   land_area_m2?: number | null;
   field_slope?: FieldSlope | null;
   pitches_tende?: number | null;
@@ -420,7 +429,7 @@ export interface StructureCreateDto {
   operational_status?: StructureOperationalStatus | null;
   cell_coverage?: CellCoverageQuality | null;
   cell_coverage_notes?: string | null;
-  communications_infrastructure?: string[];
+  communications_infrastructure?: string[] | null;
   aed_on_site?: boolean | null;
   emergency_phone_available?: boolean | null;
   emergency_response_time_minutes?: number | null;
@@ -479,6 +488,10 @@ export interface StructureSearchItem {
   hot_water: boolean | null;
   pit_latrine_allowed: boolean | null;
   cell_coverage: CellCoverageQuality | null;
+  cell_data_quality: CellSignalQuality | null;
+  cell_voice_quality: CellSignalQuality | null;
+  wifi_available: boolean | null;
+  landline_available: boolean | null;
   aed_on_site: boolean | null;
   river_swimming: RiverSwimmingOption | null;
   wastewater_type: WastewaterType | null;
@@ -584,6 +597,10 @@ export interface StructureSearchParams {
   min_land_area?: number;
   hot_water?: boolean;
   cell_coverage?: CellCoverageQuality;
+  cell_data_quality?: CellSignalQuality;
+  cell_voice_quality?: CellSignalQuality;
+  wifi_available?: boolean;
+  landline_available?: boolean;
   aed_on_site?: boolean;
   river_swimming?: RiverSwimmingOption;
   wastewater_type?: WastewaterType;

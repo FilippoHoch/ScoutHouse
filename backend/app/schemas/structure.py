@@ -250,7 +250,11 @@ class StructureBase(BaseModel):
     operational_status: StructureOperationalStatus | None = None
     cell_coverage: CellCoverageQuality | None = None
     cell_coverage_notes: str | None = None
-    communications_infrastructure: list[str] = Field(default_factory=list)
+    cell_data_quality: CellCoverageQuality | None = None
+    cell_voice_quality: CellCoverageQuality | None = None
+    wifi_available: bool | None = None
+    landline_available: bool | None = None
+    communications_infrastructure: list[str] | None = None
     aed_on_site: bool | None = None
     emergency_phone_available: bool | None = None
     emergency_response_time_minutes: int | None = Field(default=None, ge=0)
@@ -388,7 +392,6 @@ class StructureBase(BaseModel):
 
     @field_validator(
         "documents_required",
-        "communications_infrastructure",
         "activity_spaces",
         "activity_equipment",
         "inclusion_services",
@@ -404,6 +407,13 @@ class StructureBase(BaseModel):
     @classmethod
     def normalize_map_urls(cls, value: object) -> list[AnyHttpUrl] | object:
         return _normalize_url_list(value)
+
+    @field_validator("communications_infrastructure", mode="before")
+    @classmethod
+    def normalize_communications_infrastructure(
+        cls, value: object
+    ) -> list[str] | None | object:
+        return _normalize_optional_str_list(value)
 
     @field_validator("sdi_recipient_code")
     @classmethod
@@ -750,6 +760,10 @@ class StructureSearchItem(BaseModel):
     has_kitchen: bool | None = None
     hot_water: bool | None = None
     cell_coverage: CellCoverageQuality | None = None
+    cell_data_quality: CellCoverageQuality | None = None
+    cell_voice_quality: CellCoverageQuality | None = None
+    wifi_available: bool | None = None
+    landline_available: bool | None = None
     aed_on_site: bool | None = None
     river_swimming: RiverSwimmingOption | None = None
     wastewater_type: WastewaterType | None = None
