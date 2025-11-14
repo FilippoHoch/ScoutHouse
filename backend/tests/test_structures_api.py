@@ -55,8 +55,14 @@ def test_structures_flow() -> None:
         "indoor_activity_rooms": 4,
         "has_kitchen": True,
         "hot_water": True,
+        "cell_coverage": "good",
+        "cell_data_quality": "excellent",
+        "cell_voice_quality": "limited",
+        "wifi_available": True,
+        "landline_available": False,
         "access_by_car": True,
         "access_by_public_transport": True,
+        "communications_infrastructure": ["Rete potenziata"],
         "contact_emails": ["info@example.org", "prenotazioni@example.org"],
         "website_urls": ["https://example.org/scout-center"],
         "usage_recommendation": "prefer_camps",
@@ -98,6 +104,12 @@ def test_structures_flow() -> None:
     assert created["contact_emails"] == payload["contact_emails"]
     assert created["website_urls"] == payload["website_urls"]
     assert created["usage_recommendation"] == payload["usage_recommendation"]
+    assert created["cell_coverage"] == payload["cell_coverage"]
+    assert created["cell_data_quality"] == payload["cell_data_quality"]
+    assert created["cell_voice_quality"] == payload["cell_voice_quality"]
+    assert created["wifi_available"] is True
+    assert created["landline_available"] is False
+    assert created["communications_infrastructure"] == payload["communications_infrastructure"]
     assert created["notes_logistics"] == payload["notes_logistics"]
     assert created["notes"] == payload["notes"]
     assert len(created["open_periods"]) == 2

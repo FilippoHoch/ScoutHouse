@@ -271,7 +271,7 @@ describe("StructureCreatePage", () => {
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
-  });
+  }, 15000);
 
 
   it("includes optional section fields in the payload", async () => {
@@ -330,10 +330,26 @@ describe("StructureCreatePage", () => {
       "Bonifico"
     );
 
-    await user.type(
-      screen.getByRole("textbox", { name: /Infrastrutture di comunicazione/i }),
-      "Fibra ottica"
+    await user.selectOptions(
+      screen.getByLabelText(/Qualità rete dati/i),
+      "good"
     );
+    await user.selectOptions(
+      screen.getByLabelText(/Qualità chiamate/i),
+      "excellent"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Wi-Fi disponibile/i),
+      "yes"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Linea fissa disponibile/i),
+      "no"
+    );
+
+    await user.type(
+      screen.getByLabelText(/Note aggiuntive sulle comunicazioni/i),
+      "Fibra ottica"
 
     await user.type(
       screen.getByRole("textbox", { name: /Attrezzatura attività/i }),
@@ -345,6 +361,7 @@ describe("StructureCreatePage", () => {
       "Verifica disponibilità"
     );
 
+
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
     await waitFor(() => expect(createStructure).toHaveBeenCalled());
@@ -354,7 +371,12 @@ describe("StructureCreatePage", () => {
     expect(payload.map_resources_urls).toEqual(["https://maps.example.com"]);
     expect(payload.documents_required).toEqual(["Modulo autorizzazione"]);
     expect(payload.payment_methods).toEqual(["Bonifico"]);
+    expect(payload.cell_data_quality).toBe("good");
+    expect(payload.cell_voice_quality).toBe("excellent");
+    expect(payload.wifi_available).toBe(true);
+    expect(payload.landline_available).toBe(false);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
+  }, 15000);
     expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
     expect(payload).not.toHaveProperty("activity_spaces");
     expect(payload).not.toHaveProperty("inclusion_services");

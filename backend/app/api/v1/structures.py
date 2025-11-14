@@ -370,6 +370,14 @@ def _structure_payload(
         payload["wastewater_type"] = structure_in.wastewater_type.value
     if structure_in.cell_coverage is not None:
         payload["cell_coverage"] = structure_in.cell_coverage.value
+    if structure_in.cell_data_quality is not None:
+        payload["cell_data_quality"] = structure_in.cell_data_quality.value
+    else:
+        payload["cell_data_quality"] = None
+    if structure_in.cell_voice_quality is not None:
+        payload["cell_voice_quality"] = structure_in.cell_voice_quality.value
+    else:
+        payload["cell_voice_quality"] = None
     if structure_in.river_swimming is not None:
         payload["river_swimming"] = structure_in.river_swimming.value
     if structure_in.flood_risk is not None:
@@ -619,6 +627,10 @@ def search_structures(
     min_land_area: Annotated[float | None, Query(ge=0)] = None,
     hot_water: Annotated[bool | None, Query()] = None,
     cell_coverage: Annotated[CellCoverageQuality | None, Query()] = None,
+    cell_data_quality: Annotated[CellCoverageQuality | None, Query()] = None,
+    cell_voice_quality: Annotated[CellCoverageQuality | None, Query()] = None,
+    wifi_available: Annotated[bool | None, Query()] = None,
+    landline_available: Annotated[bool | None, Query()] = None,
     aed_on_site: Annotated[bool | None, Query()] = None,
     river_swimming: Annotated[RiverSwimmingOption | None, Query()] = None,
     wastewater_type: Annotated[WastewaterType | None, Query()] = None,
@@ -693,6 +705,14 @@ def search_structures(
 
     if cell_coverage is not None:
         filters.append(Structure.cell_coverage == cell_coverage)
+    if cell_data_quality is not None:
+        filters.append(Structure.cell_data_quality == cell_data_quality)
+    if cell_voice_quality is not None:
+        filters.append(Structure.cell_voice_quality == cell_voice_quality)
+    if wifi_available is not None:
+        filters.append(Structure.wifi_available.is_(wifi_available))
+    if landline_available is not None:
+        filters.append(Structure.landline_available.is_(landline_available))
 
     if aed_on_site is not None:
         filters.append(Structure.aed_on_site.is_(aed_on_site))
@@ -852,6 +872,10 @@ def search_structures(
             has_kitchen=structure.has_kitchen,
             hot_water=structure.hot_water,
             cell_coverage=structure.cell_coverage,
+            cell_data_quality=structure.cell_data_quality,
+            cell_voice_quality=structure.cell_voice_quality,
+            wifi_available=structure.wifi_available,
+            landline_available=structure.landline_available,
             aed_on_site=structure.aed_on_site,
             river_swimming=structure.river_swimming,
             wastewater_type=structure.wastewater_type,

@@ -342,6 +342,51 @@ def test_search_filters_by_cell_coverage_and_aed() -> None:
     assert data["items"][0]["slug"] == "campo-sicuro"
 
 
+def test_search_filters_by_connectivity_fields() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+
+    create_structure(
+        client,
+        {
+            "name": "Base Digitale",
+            "slug": "base-digitale",
+            "province": "MI",
+            "type": "house",
+            "cell_data_quality": "excellent",
+            "cell_voice_quality": "good",
+            "wifi_available": True,
+            "landline_available": False,
+        },
+    )
+    create_structure(
+        client,
+        {
+            "name": "Base Analogica",
+            "slug": "base-analogica",
+            "province": "MI",
+            "type": "house",
+            "cell_data_quality": "limited",
+            "cell_voice_quality": "limited",
+            "wifi_available": False,
+            "landline_available": True,
+        },
+    )
+
+    response = client.get(
+        "/api/v1/structures/search",
+        params={
+            "cell_data_quality": "excellent",
+            "cell_voice_quality": "good",
+            "wifi_available": True,
+            "landline_available": False,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["slug"] == "base-digitale"
+
+
 def test_search_filters_by_wastewater_and_river_swimming() -> None:
     client = get_client(authenticated=True, is_admin=True)
 
