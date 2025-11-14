@@ -638,14 +638,6 @@
             "excellent": "Ottima"
           }
         },
-        "activitySpaces": {
-          "label": "Spazi per attività",
-          "hint": "Elenca gli spazi dedicati alle attività (es. salone, anfiteatro, prato giochi).",
-          "add": "Aggiungi spazio",
-          "remove": "Rimuovi questo spazio",
-          "entryLabel": "Spazio {{index}}",
-          "empty": "Nessuno spazio aggiunto."
-        },
         "activityEquipment": {
           "label": "Attrezzatura attività",
           "hint": "Specifica le attrezzature disponibili (es. corde, tende, materiale pionieristica).",
@@ -653,14 +645,6 @@
           "remove": "Rimuovi questa attrezzatura",
           "entryLabel": "Attrezzatura {{index}}",
           "empty": "Nessuna attrezzatura aggiunta."
-        },
-        "inclusionServices": {
-          "label": "Servizi di inclusione",
-          "hint": "Elenca servizi e attenzioni offerte per l'accessibilità e l'inclusione.",
-          "add": "Aggiungi servizio",
-          "remove": "Rimuovi questo servizio",
-          "entryLabel": "Servizio {{index}}",
-          "empty": "Nessun servizio aggiunto."
         },
         "dataQualityFlags": {
           "label": "Segnalazioni qualità dati",
@@ -680,6 +664,7 @@
             "activitySpaces": "Spazi per attività",
             "activityEquipment": "Attrezzatura attività",
             "inclusionServices": "Servizi di inclusione",
+            "communicationsInfrastructure": "Infrastrutture di comunicazione",
             "dataQualityFlags": "Segnalazioni qualità dati",
             "inAreaProtetta": "In area protetta",
             "floodRisk": "Rischio alluvionale",
@@ -747,7 +732,7 @@
             },
             "notes": {
               "title": "Metodi di pagamento e note specifiche",
-              "hint": "Inserisci come si paga e note come \"solo Agesci\" o gruppi di zona Sebino senza dover combinare altri parametri."
+              "hint": "Inserisci come si paga e note come \"solo Agesci\", \"solo oratori\" o gruppi di zona Sebino senza dover combinare altri parametri."
             }
           },
           "model": "Modello di costo",
@@ -771,7 +756,7 @@
           "paymentMethods": "Metodi di pagamento accettati",
           "paymentMethodsHint": "Inserisci un metodo per riga (es. bonifico, contanti, carta).",
           "paymentTerms": "Note e condizioni",
-          "paymentTermsHint": "Specifiche aggiuntive come \"solo Agesci\", fasce territoriali o accordi particolari.",
+          "paymentTermsHint": "Specifiche aggiuntive come \"solo Agesci\", \"solo oratori\", fasce territoriali o accordi particolari.",
           "summaryMissingAmount": "importo non indicato",
           "modifiers": {
             "title": "Variazioni stagionali",
@@ -1035,10 +1020,10 @@
         },
         "activitySpaces": "Spazi per attività",
         "activitySpacesFallback": "Nessuno spazio aggiuntivo indicato",
+        "communicationsInfrastructure": "Infrastrutture di comunicazione",
+        "communicationsInfrastructureFallback": "Nessuna infrastruttura specificata",
         "activityEquipment": "Attrezzatura attività",
         "activityEquipmentFallback": "Nessuna attrezzatura specificata",
-        "inclusionServices": "Servizi di inclusione",
-        "inclusionServicesFallback": "Nessun servizio indicato",
         "paymentMethods": "Metodi di pagamento accettati",
         "paymentMethodsFallback": "Non specificati",
         "dataQualityFlags": "Segnalazioni qualità dati",

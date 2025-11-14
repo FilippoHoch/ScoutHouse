@@ -465,6 +465,8 @@ export const StructureDetailsPage = () => {
 
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
+  const activityEquipmentValue = formatStringList(structure.activity_equipment);
+
   const indoorDetails: LogisticsDetail[] = filterVisibleDetails([
     {
       id: "kitchen",
@@ -564,6 +566,13 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.firePolicy"),
       value: formatFirePolicy(structure.fire_policy),
       icon: "🔥"
+    },
+    {
+      id: "activityEquipment",
+      label: t("structures.details.overview.activityEquipment"),
+      value: activityEquipmentValue,
+      icon: "🎒",
+      isFull: true
     }
   ]);
 
@@ -671,6 +680,7 @@ export const StructureDetailsPage = () => {
   const activitySpacesValue = formatStringList(structure.activity_spaces);
   const activityEquipmentValue = formatStringList(structure.activity_equipment);
   const inclusionServicesValue = formatStringList(structure.inclusion_services);
+  const communicationsInfrastructureValue = formatStringList(structure.communications_infrastructure);
   const paymentMethodsValue = formatStringList(structure.payment_methods);
   const dataQualityFlagsValue = formatStringList(structure.data_quality_flags);
 
@@ -777,6 +787,10 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.inclusionServices"),
       value: inclusionServicesValue,
       icon: "♿",
+      id: "communicationsInfrastructure",
+      label: t("structures.details.overview.communicationsInfrastructure"),
+      value: communicationsInfrastructureValue,
+      icon: "📡",
       isFull: true
     },
     {

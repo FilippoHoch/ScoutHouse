@@ -340,9 +340,7 @@ class Structure(Base):
         nullable=True,
     )
     weather_risk_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    activity_spaces: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     activity_equipment: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
-    inclusion_services: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     inclusion_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     pec_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     sdi_recipient_code: Mapped[str | None] = mapped_column(String(7), nullable=True)

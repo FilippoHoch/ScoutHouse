@@ -126,9 +126,7 @@ const createdStructure = {
   river_swimming: null,
   flood_risk: null,
   weather_risk_notes: null,
-  activity_spaces: [],
   activity_equipment: [],
-  inclusion_services: [],
   inclusion_notes: null,
   pec_email: null,
   sdi_recipient_code: null,
@@ -300,9 +298,21 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(optionalSectionPicker, "mapResources");
     await user.selectOptions(optionalSectionPicker, "documentsRequired");
     await user.selectOptions(optionalSectionPicker, "paymentMethods");
+    await user.selectOptions(optionalSectionPicker, "communicationsInfrastructure");
+    await user.selectOptions(optionalSectionPicker, "dataQualityFlags");
 
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: /Risorse cartografiche/i })).toBeInTheDocument()
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi infrastruttura/i })
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi attrezzatura/i })
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Aggiungi segnalazione/i })
     );
 
     await user.type(
@@ -340,6 +350,15 @@ describe("StructureCreatePage", () => {
     await user.type(
       screen.getByLabelText(/Note aggiuntive sulle comunicazioni/i),
       "Fibra ottica"
+
+    await user.type(
+      screen.getByRole("textbox", { name: /Attrezzatura attività/i }),
+      "Kit pionieristica"
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: /Segnalazioni qualità dati/i }),
+      "Verifica disponibilità"
     );
 
 
@@ -358,6 +377,11 @@ describe("StructureCreatePage", () => {
     expect(payload.landline_available).toBe(false);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
   }, 15000);
+    expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
+    expect(payload).not.toHaveProperty("activity_spaces");
+    expect(payload).not.toHaveProperty("inclusion_services");
+    expect(payload.data_quality_flags).toEqual(["Verifica disponibilità"]);
+  });
 
 });
 
