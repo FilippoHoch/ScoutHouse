@@ -457,6 +457,8 @@ export const StructureDetailsPage = () => {
 
   const availabilities = structure.availabilities ?? [];
   const costOptions = structure.cost_options ?? [];
+  const activityEquipmentValue = formatStringList(structure.activity_equipment);
+
   const indoorDetails: LogisticsDetail[] = filterVisibleDetails([
     {
       id: "kitchen",
@@ -556,6 +558,13 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.firePolicy"),
       value: formatFirePolicy(structure.fire_policy),
       icon: "🔥"
+    },
+    {
+      id: "activityEquipment",
+      label: t("structures.details.overview.activityEquipment"),
+      value: activityEquipmentValue,
+      icon: "🎒",
+      isFull: true
     }
   ]);
 
@@ -660,9 +669,6 @@ export const StructureDetailsPage = () => {
 
   const documentsRequiredValue = formatStringList(structure.documents_required);
   const communicationsInfrastructureValue = formatStringList(structure.communications_infrastructure);
-  const activitySpacesValue = formatStringList(structure.activity_spaces);
-  const activityEquipmentValue = formatStringList(structure.activity_equipment);
-  const inclusionServicesValue = formatStringList(structure.inclusion_services);
   const paymentMethodsValue = formatStringList(structure.payment_methods);
   const dataQualityFlagsValue = formatStringList(structure.data_quality_flags);
 
@@ -720,27 +726,6 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.communicationsInfrastructure"),
       value: communicationsInfrastructureValue,
       icon: "📡",
-      isFull: true
-    },
-    {
-      id: "activitySpaces",
-      label: t("structures.details.overview.activitySpaces"),
-      value: activitySpacesValue,
-      icon: "🏕️",
-      isFull: true
-    },
-    {
-      id: "activityEquipment",
-      label: t("structures.details.overview.activityEquipment"),
-      value: activityEquipmentValue,
-      icon: "🎒",
-      isFull: true
-    },
-    {
-      id: "inclusionServices",
-      label: t("structures.details.overview.inclusionServices"),
-      value: inclusionServicesValue,
-      icon: "♿",
       isFull: true
     },
     {

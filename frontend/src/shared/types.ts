@@ -302,9 +302,7 @@ export interface Structure {
   river_swimming: RiverSwimmingOption | null;
   flood_risk: FloodRiskLevel | null;
   weather_risk_notes: string | null;
-  activity_spaces: string[];
   activity_equipment: string[];
-  inclusion_services: string[];
   inclusion_notes: string | null;
   pec_email: string | null;
   sdi_recipient_code: string | null;
@@ -431,9 +429,7 @@ export interface StructureCreateDto {
   river_swimming?: RiverSwimmingOption | null;
   flood_risk?: FloodRiskLevel | null;
   weather_risk_notes?: string | null;
-  activity_spaces?: string[];
   activity_equipment?: string[];
-  inclusion_services?: string[];
   inclusion_notes?: string | null;
   pec_email?: string | null;
   sdi_recipient_code?: string | null;

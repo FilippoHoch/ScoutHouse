@@ -133,9 +133,7 @@ const sampleStructure: Structure = {
   river_swimming: "si",
   flood_risk: "medium",
   weather_risk_notes: null,
-  activity_spaces: ["Sala polivalente"],
   activity_equipment: ["Proiettore"],
-  inclusion_services: ["Bagno accessibile"],
   inclusion_notes: null,
   pec_email: null,
   sdi_recipient_code: null,
@@ -290,12 +288,8 @@ describe("StructureDetailsPage", () => {
       screen.getByText(/Infrastrutture di comunicazione/i)
     ).toBeInTheDocument();
     expect(screen.getByText(/Rete cellulare potenziata/i)).toBeInTheDocument();
-    expect(screen.getByText(/Spazi per attività/i)).toBeInTheDocument();
-    expect(screen.getByText(/Sala polivalente/i)).toBeInTheDocument();
     expect(screen.getByText(/Attrezzatura attività/i)).toBeInTheDocument();
     expect(screen.getByText(/Proiettore/i)).toBeInTheDocument();
-    expect(screen.getByText(/Servizi di inclusione/i)).toBeInTheDocument();
-    expect(screen.getByText(/Bagno accessibile/i)).toBeInTheDocument();
     expect(screen.getByText(/Segnalazioni qualità dati/i)).toBeInTheDocument();
     expect(
       screen.getByText(/Verifica disponibilità energia/i)
