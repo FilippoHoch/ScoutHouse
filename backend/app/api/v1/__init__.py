@@ -10,6 +10,7 @@ from . import (
     imports,
     mail,
     ops,
+    public,
     quotes,
     structures,
     templates,
@@ -29,6 +30,7 @@ api_router.include_router(quotes.router, tags=["quotes"])
 api_router.include_router(export.router, prefix="/export", tags=["export"])
 api_router.include_router(mail.router)
 api_router.include_router(ops.router)
+api_router.include_router(public.router)
 api_router.include_router(users.router)
 
 __all__ = ["api_router"]

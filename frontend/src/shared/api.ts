@@ -41,7 +41,8 @@ import {
   StructureOpenPeriodsImportResult,
   User,
   UserType,
-  GeocodingResult
+  GeocodingResult,
+  LandingSnapshot,
 } from "./types";
 import { clearSession, getAccessToken, refreshAccessToken } from "./auth";
 import { API_URL, ApiError } from "./http";
@@ -416,6 +417,10 @@ export async function getStructureBySlug(
 ): Promise<Structure> {
   const query = options.include ? `?include=${encodeURIComponent(options.include)}` : "";
   return apiFetch<Structure>(`/api/v1/structures/by-slug/${slug}${query}`);
+}
+
+export async function getLandingSnapshot(): Promise<LandingSnapshot> {
+  return apiFetch<LandingSnapshot>("/api/v1/public/landing");
 }
 
 export async function searchGeocoding(

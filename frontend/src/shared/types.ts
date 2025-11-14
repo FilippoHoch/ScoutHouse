@@ -739,6 +739,32 @@ export interface EventCandidateCreateDto {
   contact_id?: number | null;
 }
 
+export interface LandingStructureSample {
+  name: string;
+  slug: string;
+  province: string | null;
+  indoor_beds: number | null;
+}
+
+export interface LandingEventSample {
+  id: number;
+  title: string;
+  status: EventStatus;
+  start_date: string;
+  end_date: string;
+  participants_total: number;
+}
+
+export interface LandingSnapshot {
+  structures_total: number;
+  provinces_total: number;
+  beds_total: number;
+  events_total: number;
+  participants_total: number;
+  structures: LandingStructureSample[];
+  events: LandingEventSample[];
+}
+
 export interface EventCandidateUpdateDto {
   status?: EventCandidateStatus;
   assigned_user?: string | null;

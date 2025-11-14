@@ -1,60 +1,69 @@
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
-const STRUCTURES_COUNT = 21;
-const PROVINCES_COUNT = 16;
-const TOTAL_BEDS = 776;
-const EVENTS_COUNT = 2;
-const TOTAL_PARTICIPANTS = 52;
+import { ApiError, getLandingSnapshot } from "../shared/api";
+import type { LandingSnapshot } from "../shared/types";
 
-const structureSamples = [
-  { name: "Casa Alpina", province: "BS", beds: 52 },
-  { name: "Campo Bosco San Francesco", province: "BS", beds: 120 },
-  { name: "Centro Scout del Garda", province: "VR", beds: 80 },
-];
+const numberFormatter = new Intl.NumberFormat("it-IT");
 
-const eventSamples = [
-  {
-    title: "Campi Invernali",
-    range: "1-4 febbraio 2025",
-    participants: 30,
-    status: "pianificazione",
-  },
-  {
-    title: "Route Estiva",
-    range: "12-20 luglio 2025",
-    participants: 22,
-    status: "bozza",
-  },
-];
+const statusLabels: Record<string, string> = {
+  draft: "bozza",
+  planning: "pianificazione",
+  booked: "confermato",
+  archived: "archiviato",
+};
+
+const formatDateRange = (start: string, end: string) => {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return `${start} – ${end}`;
+  }
+  const formatter = new Intl.DateTimeFormat("it-IT", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  return `${formatter.format(startDate)} – ${formatter.format(endDate)}`;
+};
+
+const formatStatus = (status: string) => statusLabels[status] ?? status;
 
 export const LandingPage = () => {
+  const { data, isLoading, isError } = useQuery<LandingSnapshot, ApiError>({
+    queryKey: ["landing-snapshot"],
+    queryFn: () => getLandingSnapshot(),
+  });
+
+  const heroDescription = (() => {
+    if (isLoading) {
+      return "Caricamento dei dati reali dalle pattuglie logistiche…";
+    }
+    if (isError || !data) {
+      return "Non è stato possibile caricare i dati aggiornati in questo momento.";
+    }
+    return `Questa pagina riporta ${numberFormatter.format(
+      data.structures_total,
+    )} strutture attive, ${numberFormatter.format(data.provinces_total)} province coperte e ${numberFormatter.format(
+      data.beds_total,
+    )} posti letto confermati dalle pattuglie locali.`;
+  })();
+
+  const stats = [
+    { label: "Strutture censite", value: data?.structures_total ?? 0 },
+    { label: "Province coperte", value: data?.provinces_total ?? 0 },
+    { label: "Posti letto registrati", value: data?.beds_total ?? 0 },
+    { label: "Eventi pianificati", value: data?.events_total ?? 0 },
+    { label: "Partecipanti previsti", value: data?.participants_total ?? 0 },
+  ];
+
   return (
     <section className="landing">
       <div className="landing__container">
         <div className="landing__hero">
           <span className="landing__badge">Benvenuto su ScoutHouse</span>
-          <h1>Situazione aggiornata delle strutture scout</h1>
-          <p>
-            Questa pagina riassume i dati presenti nel registro condiviso: {STRUCTURES_COUNT}{" "}
-            strutture attive, {PROVINCES_COUNT} province coperte, {TOTAL_BEDS} posti letto descritti
-            e {EVENTS_COUNT} eventi in preparazione con {TOTAL_PARTICIPANTS} partecipanti previsti.
-          </p>
-          <ul className="landing__highlights">
-            <li>
-              <span aria-hidden="true">✔</span>
-              Schede con indirizzi completi, servizi e note logistiche utili alle pattuglie di zona.
-            </li>
-            <li>
-              <span aria-hidden="true">✔</span>
-              Situazione posti letto e cucine aggiornata dai censimenti locali, compresi i periodi di
-              indisponibilità.
-            </li>
-            <li>
-              <span aria-hidden="true">✔</span>
-              Stato degli eventi con numero di partecipanti e responsabili assegnati, senza testi
-              promozionali.
-            </li>
-          </ul>
+          <h1>Dati reali delle strutture scout</h1>
+          <p>{heroDescription}</p>
           <div className="landing__actions">
             <Link className="button" to="/structures">
               Vai alle strutture
@@ -64,26 +73,12 @@ export const LandingPage = () => {
             </Link>
           </div>
           <dl className="landing__stats">
-            <div>
-              <dt>Strutture censite</dt>
-              <dd>{STRUCTURES_COUNT}</dd>
-            </div>
-            <div>
-              <dt>Province coperte</dt>
-              <dd>{PROVINCES_COUNT}</dd>
-            </div>
-            <div>
-              <dt>Posti letto registrati</dt>
-              <dd>{TOTAL_BEDS}</dd>
-            </div>
-            <div>
-              <dt>Eventi pianificati</dt>
-              <dd>{EVENTS_COUNT}</dd>
-            </div>
-            <div>
-              <dt>Partecipanti previsti</dt>
-              <dd>{TOTAL_PARTICIPANTS}</dd>
-            </div>
+            {stats.map((stat) => (
+              <div key={stat.label}>
+                <dt>{stat.label}</dt>
+                <dd>{numberFormatter.format(stat.value)}</dd>
+              </div>
+            ))}
           </dl>
         </div>
 
@@ -92,30 +87,52 @@ export const LandingPage = () => {
             <h2>Strutture registrate</h2>
             <p>I dati sono caricati dalle pattuglie logistiche e riportano valori reali.</p>
             <ul className="landing__showcase-list">
-              {structureSamples.map((structure) => (
-                <li key={structure.name}>
-                  <strong>{structure.name}</strong>
-                  <span>
-                    Provincia {structure.province} · {structure.beds} posti letto disponibili
-                  </span>
-                </li>
-              ))}
+              {isLoading && <li>Caricamento delle strutture…</li>}
+              {!isLoading && (data?.structures.length ?? 0) === 0 && (
+                <li>Nessuna struttura disponibile al momento.</li>
+              )}
+              {!isLoading &&
+                data?.structures.map((structure) => {
+                  const provinceLabel = structure.province
+                    ? structure.province.toUpperCase()
+                    : "n.d.";
+                  const bedsLabel =
+                    typeof structure.indoor_beds === "number"
+                      ? `${numberFormatter.format(structure.indoor_beds)} posti letto`
+                      : "Posti letto non indicati";
+                  return (
+                    <li key={structure.slug}>
+                      <strong>{structure.name}</strong>
+                      <span>
+                        Provincia {provinceLabel} · {bedsLabel}
+                      </span>
+                    </li>
+                  );
+                })}
             </ul>
           </div>
 
           <div className="landing__panel">
             <h3>Eventi in lavorazione</h3>
             <ul>
-              {eventSamples.map((event) => (
-                <li key={event.title}>
-                  <div>
-                    <strong>{event.title}</strong>
-                    <span>
-                      {event.range} · {event.participants} partecipanti · stato {event.status}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {isLoading && <li>Caricamento degli eventi…</li>}
+              {!isLoading && (data?.events.length ?? 0) === 0 && (
+                <li>Nessun evento in pianificazione.</li>
+              )}
+              {!isLoading &&
+                data?.events.map((event) => (
+                  <li key={event.id}>
+                    <div>
+                      <strong>{event.title}</strong>
+                      <span>
+                        {formatDateRange(event.start_date, event.end_date)} · {numberFormatter.format(
+                          event.participants_total,
+                        )}{" "}
+                        partecipanti · stato {formatStatus(event.status)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
             </ul>
           </div>
         </aside>
