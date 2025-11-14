@@ -2483,6 +2483,31 @@ table tbody tr:hover {
   resize: vertical;
 }
 
+.structure-field-with-action {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+}
+
+.structure-field-with-action__control {
+  flex: 1;
+}
+
+.structure-field-with-action__button {
+  white-space: nowrap;
+}
+
+.structure-form-field--nearest-bus-stop textarea {
+  min-height: 90px;
+}
+
+.structure-form-field__note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
 .structure-form-field--optional {
   position: relative;
   padding-top: var(--space-md);
