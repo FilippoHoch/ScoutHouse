@@ -726,7 +726,7 @@
             },
             "notes": {
               "title": "Metodi di pagamento e note specifiche",
-              "hint": "Inserisci come si paga e note come \"solo Agesci\" o gruppi di zona Sebino senza dover combinare altri parametri."
+              "hint": "Inserisci come si paga e note come \"solo Agesci\", \"solo oratori\" o gruppi di zona Sebino senza dover combinare altri parametri."
             }
           },
           "model": "Modello di costo",
@@ -750,7 +750,7 @@
           "paymentMethods": "Metodi di pagamento accettati",
           "paymentMethodsHint": "Inserisci un metodo per riga (es. bonifico, contanti, carta).",
           "paymentTerms": "Note e condizioni",
-          "paymentTermsHint": "Specifiche aggiuntive come \"solo Agesci\", fasce territoriali o accordi particolari.",
+          "paymentTermsHint": "Specifiche aggiuntive come \"solo Agesci\", \"solo oratori\", fasce territoriali o accordi particolari.",
           "summaryMissingAmount": "importo non indicato",
           "modifiers": {
             "title": "Variazioni stagionali",
