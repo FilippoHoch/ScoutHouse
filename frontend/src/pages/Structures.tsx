@@ -32,6 +32,7 @@ import {
   KitchenIcon,
   TrainIcon,
 } from "../shared/ui/icons";
+import { createGoogleMapsViewUrl } from "../shared/utils/googleMaps";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
 const seasons: Season[] = ["winter", "spring", "summer", "autumn"];
@@ -184,6 +185,11 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
   const hasQuickIcons = quickIcons.length > 0;
   const hasBadges = hasSeasons || hasUnits || item.pit_latrine_allowed;
 
+  const hasCoordinates = typeof item.latitude === "number" && typeof item.longitude === "number";
+  const googleMapsLink = hasCoordinates
+    ? createGoogleMapsViewUrl({ lat: item.latitude, lng: item.longitude })
+    : null;
+
   return (
     <li className="structure-card">
       <div className="structure-card__content">
@@ -278,9 +284,9 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
         <LinkButton to={`/structures/${item.slug}`} variant="ghost" size="sm">
           {t("structures.cards.viewDetails")}
         </LinkButton>
-        {item.latitude && item.longitude && (
+        {googleMapsLink && (
           <a
-            href={`https://www.openstreetmap.org/?mlat=${item.latitude}&mlon=${item.longitude}#map=13/${item.latitude}/${item.longitude}`}
+            href={googleMapsLink}
             target="_blank"
             rel="noreferrer"
           >
