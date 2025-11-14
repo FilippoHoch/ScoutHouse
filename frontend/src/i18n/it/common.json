@@ -291,6 +291,14 @@
           "bytes": "{{value}} B"
         }
       },
+      "attachments": {
+        "title": "Allegati",
+        "description": "Aggiungi documenti (PDF, guide, moduli) da associare alla struttura: saranno caricati dopo il salvataggio.",
+        "queueHint": "I file selezionati saranno caricati automaticamente al termine della creazione.",
+        "queueEmpty": "Nessun file selezionato al momento.",
+        "remove": "Rimuovi",
+        "uploadFailed": "Caricamento degli allegati non riuscito. Potrai aggiungerli in seguito dalla pagina della struttura."
+      },
       "form": {
         "name": "Nome",
         "namePlaceholder": "Es. Base scout Pian delle Betulle",

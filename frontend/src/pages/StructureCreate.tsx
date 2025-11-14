@@ -598,9 +598,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoDropActive, setPhotoDropActive] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [attachmentDropActive, setAttachmentDropActive] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const geocodingRequestId = useRef(0);
   const geocodingDebounceRef = useRef<number | null>(null);
   const geocodingAbortController = useRef<AbortController | null>(null);
@@ -857,6 +860,30 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     [t]
   );
 
+  const addAttachmentFiles = useCallback((files: File[]) => {
+    if (files.length === 0) {
+      return;
+    }
+    setAttachmentFiles((previous) => {
+      let changed = false;
+      const next = [...previous];
+      for (const file of files) {
+        const duplicate = next.some(
+          (existing) =>
+            existing.name === file.name &&
+            existing.size === file.size &&
+            existing.lastModified === file.lastModified
+        );
+        if (duplicate) {
+          continue;
+        }
+        next.push(file);
+        changed = true;
+      }
+      return changed ? next : previous;
+    });
+  }, []);
+
   const handlePhotoInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
     addPhotoFiles(files);
@@ -895,6 +922,40 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       }
       return next;
     });
+  };
+
+  const handleAttachmentInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    addAttachmentFiles(files);
+    event.target.value = "";
+  };
+
+  const handleAttachmentDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setAttachmentDropActive(false);
+    const files = event.dataTransfer.files ? Array.from(event.dataTransfer.files) : [];
+    addAttachmentFiles(files);
+  };
+
+  const handleAttachmentDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!attachmentDropActive) {
+      setAttachmentDropActive(true);
+    }
+  };
+
+  const handleAttachmentDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (attachmentDropActive) {
+      setAttachmentDropActive(false);
+    }
+  };
+
+  const handleAttachmentRemove = (index: number) => {
+    setAttachmentFiles((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const uploadQueuedPhotos = useCallback(
@@ -942,7 +1003,50 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     [photoFiles]
   );
 
-  const formatQueuedPhotoSize = useCallback(
+  const uploadQueuedAttachments = useCallback(
+    async (structureId: number) => {
+      if (attachmentFiles.length === 0) {
+        return;
+      }
+      for (const file of attachmentFiles) {
+        const payload: AttachmentUploadRequest = {
+          owner_type: "structure",
+          owner_id: structureId,
+          filename: file.name,
+          mime: file.type || "application/octet-stream",
+        };
+        const signature = await signAttachmentUpload(payload);
+        const key = signature.fields.key;
+        if (!key) {
+          throw new Error("missing-key");
+        }
+        const formData = new FormData();
+        Object.entries(signature.fields).forEach(([name, value]) => {
+          formData.append(name, value);
+        });
+        formData.append("file", file);
+
+        const response = await fetch(signature.url, {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) {
+          throw new Error("upload-failed");
+        }
+
+        const confirmPayload: AttachmentConfirmRequest = {
+          ...payload,
+          size: file.size,
+          key,
+        };
+        await confirmAttachmentUpload(confirmPayload);
+      }
+      setAttachmentFiles([]);
+    },
+    [attachmentFiles]
+  );
+
+  const formatQueuedFileSize = useCallback(
     (size: number) => {
       if (size >= 1024 * 1024) {
         const value = new Intl.NumberFormat("it-IT", {
@@ -3360,6 +3464,13 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       } catch (photoUploadError) {
         console.error("Unable to upload structure photos", photoUploadError);
         window.alert(t("structures.create.photos.uploadFailed"));
+      }
+
+      try {
+        await uploadQueuedAttachments(saved.id);
+      } catch (attachmentUploadError) {
+        console.error("Unable to upload structure attachments", attachmentUploadError);
+        window.alert(t("structures.create.attachments.uploadFailed"));
       }
 
       await queryClient.invalidateQueries({ queryKey: ["structures"] });
@@ -6187,7 +6298,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                             <li key={`${file.name}-${file.size}-${file.lastModified}`}>
                               <span className="structure-photos__queue-name">{file.name}</span>
                               <span className="structure-photos__queue-size">
-                                {formatQueuedPhotoSize(file.size)}
+                                {formatQueuedFileSize(file.size)}
                               </span>
                               <Button
                                 type="button"
@@ -6196,6 +6307,70 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                                 onClick={() => handlePhotoRemove(index)}
                               >
                                 {t("structures.create.photos.remove")}
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.attachments.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.attachments.description")}
+              </p>
+              <div className="structure-field-grid">
+                <div className="structure-form-field" data-span="full">
+                  <div className="structure-photos">
+                    <div
+                      className={`structure-photos__dropzone ${attachmentDropActive ? "is-active" : ""}`}
+                      onDragOver={handleAttachmentDragOver}
+                      onDragLeave={handleAttachmentDragLeave}
+                      onDrop={handleAttachmentDrop}
+                    >
+                      <p>{t("attachments.upload.prompt")}</p>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => attachmentInputRef.current?.click()}
+                      >
+                        {t("attachments.upload.button")}
+                      </Button>
+                      <input
+                        ref={attachmentInputRef}
+                        type="file"
+                        multiple
+                        style={{ display: "none" }}
+                        onChange={handleAttachmentInputChange}
+                      />
+                    </div>
+                    <div className="structure-photos__queue-wrapper">
+                      <p className="helper-text">
+                        {t("structures.create.attachments.queueHint")}
+                      </p>
+                      {attachmentFiles.length === 0 ? (
+                        <p className="helper-text">
+                          {t("structures.create.attachments.queueEmpty")}
+                        </p>
+                      ) : (
+                        <ul className="structure-photos__queue">
+                          {attachmentFiles.map((file, index) => (
+                            <li key={`${file.name}-${file.size}-${file.lastModified}`}>
+                              <span className="structure-photos__queue-name">{file.name}</span>
+                              <span className="structure-photos__queue-size">
+                                {formatQueuedFileSize(file.size)}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleAttachmentRemove(index)}
+                              >
+                                {t("structures.create.attachments.remove")}
                               </Button>
                             </li>
                           ))}
