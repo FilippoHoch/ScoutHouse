@@ -183,11 +183,19 @@ def _rewrite_presigned_url(url: str) -> str:
     path = url_parts.path
     public_path = public_parts.path.rstrip("/")
     if public_path:
+        # When using path-style URLs the bucket name is part of the path.
+        # Remove it before re-applying the public prefix to avoid duplicated
+        # segments like `/cdn/bucket/bucket/object`.
+        bucket = (settings.s3_bucket or "").strip()
         suffix = path.lstrip("/")
+        if bucket and suffix.startswith(f"{bucket}/"):
+            suffix = suffix[len(bucket) + 1 :]
+
         if suffix:
             path = f"{public_path}/{suffix}"
         else:
             path = public_path
+
         if not path.startswith("/"):
             path = f"/{path}"
 
