@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import io
 import types
 from collections.abc import Generator
 from typing import Any
@@ -90,11 +91,17 @@ class FakeS3Client:
         self.head_responses: dict[str, dict[str, Any]] = {}
         self.deleted: list[tuple[str, str]] = []
         self.presigned_posts: list[dict[str, Any]] = []
-        self.presigned_urls: list[dict[str, Any]] = []
         self.buckets: set[str] = set()
+        self.objects: dict[str, bytes] = {}
+        self.object_types: dict[str, str] = {}
 
-    def add_head(self, key: str, response: dict[str, Any]) -> None:
+    def add_head(self, key: str, response: dict[str, Any], body: bytes | None = None) -> None:
         self.head_responses[key] = response
+        size = int(response.get("ContentLength") or 0)
+        if body is None:
+            body = b"x" * max(size, 1)
+        self.objects[key] = body
+        self.object_types[key] = response.get("ContentType", "application/octet-stream")
 
     def head_bucket(self, *, Bucket: str) -> dict[str, Any]:
         if Bucket not in self.buckets:
@@ -143,23 +150,18 @@ class FakeS3Client:
             },
         }
 
-    def generate_presigned_url(
-        self,
-        client_method: str,
-        *,
-        Params: dict[str, Any] | None = None,
-        ExpiresIn: int = 3600,
-    ) -> str:
-        params = Params or {}
-        self.presigned_urls.append(
-            {
-                "ClientMethod": client_method,
-                "Params": params,
-                "ExpiresIn": ExpiresIn,
-            }
-        )
-        key = params.get("Key", "object")
-        return f"https://s3.example.com/{key}"
+    def get_object(self, *, Bucket: str, Key: str) -> dict[str, Any]:
+        del Bucket
+        try:
+            body = self.objects[Key]
+        except KeyError as exc:  # pragma: no cover - defensive guard
+            raise AssertionError(f"Unexpected get_object call for {Key}") from exc
+        content_type = self.object_types.get(Key, "application/octet-stream")
+        return {
+            "Body": io.BytesIO(body),
+            "ContentType": content_type,
+            "ContentLength": len(body),
+        }
 
 
 @pytest.fixture(autouse=True)
@@ -289,10 +291,11 @@ def test_event_attachment_flow(monkeypatch: pytest.MonkeyPatch) -> None:
 
     download = client.get(f"/api/v1/attachments/{attachment_id}/sign-get", headers=headers)
     assert download.status_code == 200, download.text
-    assert download.json()["url"].startswith("http")
-    assert fake_s3.presigned_urls[-1]["Params"]["ResponseContentDisposition"].startswith(
-        "attachment;"
-    )
+    url = download.json()["url"]
+    assert url.startswith("http")
+    streamed = client.get(url)
+    assert streamed.status_code == 200
+    assert streamed.headers["Content-Disposition"].startswith("attachment;")
 
     delete = client.delete(f"/api/v1/attachments/{attachment_id}", headers=headers)
     assert delete.status_code == 204, delete.text
@@ -500,7 +503,10 @@ def test_structure_photo_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert create_photo.status_code == 201, create_photo.text
     photo_payload = create_photo.json()
-    assert photo_payload["url"].startswith("https://")
+    assert photo_payload["url"].startswith("http://testserver")
+    inline_response = client.get(photo_payload["url"])
+    assert inline_response.status_code == 200
+    assert inline_response.headers["Content-Disposition"].startswith("inline;")
     photo_id = photo_payload["id"]
 
     listing = client.get(f"/api/v1/structures/{structure_id}/photos")

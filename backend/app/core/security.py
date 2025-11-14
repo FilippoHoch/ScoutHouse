@@ -27,9 +27,13 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def _token_expiry(minutes: int | None = None, days: int | None = None) -> datetime:
+def _token_expiry(
+    minutes: int | None = None,
+    days: int | None = None,
+    seconds: int | None = None,
+) -> datetime:
     now = datetime.now(UTC)
-    delta = timedelta(minutes=minutes or 0, days=days or 0)
+    delta = timedelta(minutes=minutes or 0, days=days or 0, seconds=seconds or 0)
     return now + delta
 
 
@@ -60,6 +64,46 @@ def decode_token(token: str) -> dict:
 
 def hash_token(token: str) -> str:
     return sha256(token.encode("utf-8")).hexdigest()
+
+
+def create_attachment_token(
+    attachment_id: int,
+    *,
+    disposition: str = "attachment",
+    ttl_seconds: int = 300,
+) -> str:
+    settings = get_settings()
+    expire = _token_expiry(seconds=ttl_seconds)
+    payload = {
+        "sub": str(attachment_id),
+        "type": "attachment",
+        "mode": disposition,
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+
+
+def verify_attachment_token(token: str) -> tuple[int, str]:
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+    except JWTError as exc:  # pragma: no cover - jose raises generic JWTError
+        raise ValueError("Invalid token") from exc
+
+    if payload.get("type") != "attachment":
+        raise ValueError("Invalid token")
+
+    subject = payload.get("sub")
+    if subject is None:
+        raise ValueError("Invalid token")
+
+    try:
+        attachment_id = int(subject)
+    except (TypeError, ValueError) as exc:  # pragma: no cover - defensive guard
+        raise ValueError("Invalid token") from exc
+
+    disposition = payload.get("mode", "attachment")
+    return attachment_id, str(disposition)
 
 
 def issue_refresh_cookie(response: Response, token: str, expires: datetime) -> None:

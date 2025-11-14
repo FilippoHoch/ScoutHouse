@@ -1,9 +1,9 @@
 # File Storage Guidelines
 
 The ScoutHouse platform stores binary attachments (PDF documents and images) on
-an S3-compatible object storage. The application never proxies file contents
-through the backend API; clients upload and download files directly using
-presigned URLs.
+an S3-compatible object storage. Uploads happen directly from the browser to S3
+via presigned forms, while downloads are proxied through the API using
+short-lived signed tokens.
 
 ## Storage policy
 
@@ -14,8 +14,10 @@ presigned URLs.
 - **Max size** – Each attachment can be up to **5 MiB**.
 - **Allowed types** – `application/pdf` and any `image/*` MIME type.
 - **Retention** – Attachments remain until explicitly deleted via the API.
-- **Security** – All objects are stored privately and accessed through
-  presigned URLs that expire after a short time window (default 2 minutes).
+- **Security** – All objects are stored privately. Upload URLs are presigned for
+  direct browser access, while download links are API URLs backed by
+  short-lived tokens (default 3 minutes for attachments, 10 minutes for inline
+  previews).
 
 ## Upload flow
 
@@ -27,8 +29,9 @@ presigned URLs.
 
 ## Download flow
 
-- The client requests a short-lived URL with `GET /api/v1/attachments/{id}/sign-get`
-  and then downloads the file straight from S3.
+- The client requests a short-lived URL with `GET /api/v1/attachments/{id}/sign-get`.
+- The API returns a signed API URL (`/api/v1/attachments/download/{token}`) that
+  streams the file to the browser without exposing the underlying S3 endpoint.
 
 ## Cleanup
 
