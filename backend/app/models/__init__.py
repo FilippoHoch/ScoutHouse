@@ -41,7 +41,7 @@ from .structure import (
     WaterSource,
 )
 from .structure_photo import StructurePhoto
-from .user import EventMember, EventMemberRole, PasswordResetToken, RefreshToken, User
+from .user import EventMember, EventMemberRole, PasswordResetToken, RefreshToken, User, UserType
 
 __all__ = [
     "Structure",
@@ -68,9 +68,10 @@ __all__ = [
     "EventContactTaskOutcome",
     "Quote",
     "QuoteScenario",
-    "Attachment",
+    "Attachment", 
     "AttachmentOwnerType",
     "User",
+    "UserType",
     "RefreshToken",
     "PasswordResetToken",
     "EventMember",

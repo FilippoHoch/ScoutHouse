@@ -40,6 +40,7 @@ import {
   StructureOpenPeriodsImportDryRunResponse,
   StructureOpenPeriodsImportResult,
   User,
+  UserType,
   GeocodingResult
 } from "./types";
 import { clearSession, getAccessToken, refreshAccessToken } from "./auth";
@@ -129,6 +130,7 @@ export interface UserAdminCreateRequest {
   password: string;
   is_admin: boolean;
   is_active: boolean;
+  user_type?: UserType | null;
 }
 
 export interface UserAdminUpdateRequest {
@@ -137,6 +139,11 @@ export interface UserAdminUpdateRequest {
   password?: string;
   is_admin?: boolean;
   is_active?: boolean;
+  user_type?: UserType | null;
+}
+
+export interface UserProfileUpdateRequest {
+  user_type?: UserType | null;
 }
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
@@ -212,6 +219,14 @@ export async function updateUser(
   payload: UserAdminUpdateRequest
 ): Promise<User> {
   return apiFetch<User>(`/api/v1/users/${userId}`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateProfile(payload: UserProfileUpdateRequest): Promise<User> {
+  return apiFetch<User>("/api/v1/auth/me", {
     method: "PATCH",
     auth: true,
     body: JSON.stringify(payload)

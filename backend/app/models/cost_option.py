@@ -52,6 +52,9 @@ class StructureCostOption(Base):
     utilities_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     min_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
     max_total: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    forfait_trigger_total: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2), nullable=True
+    )
     age_rules: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     payment_methods: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     payment_terms: Mapped[str | None] = mapped_column(Text, nullable=True)

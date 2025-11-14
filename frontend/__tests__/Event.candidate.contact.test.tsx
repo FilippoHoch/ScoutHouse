@@ -52,7 +52,9 @@ vi.mock("../src/shared/auth", () => ({
       name: "Tester",
       email: "tester@example.com",
       is_admin: true,
+      is_active: true,
       can_edit_structures: true,
+      user_type: null,
       created_at: "2024-01-01T00:00:00Z"
     },
     accessToken: "token",

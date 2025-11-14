@@ -63,7 +63,14 @@ from .structure import (
     StructureUpdate,
 )
 from .structure_photo import StructurePhotoCreate, StructurePhotoRead
-from .user import UserAdminCreate, UserAdminUpdate, UserCreate, UserRead, UserUpdate
+from .user import (
+    UserAdminCreate,
+    UserAdminUpdate,
+    UserCreate,
+    UserRead,
+    UserSelfUpdate,
+    UserUpdate,
+)
 
 __all__ = [
     "StructureAvailabilityCreate",
@@ -123,6 +130,7 @@ __all__ = [
     "UserUpdate",
     "UserAdminCreate",
     "UserAdminUpdate",
+    "UserSelfUpdate",
     "AuthResponse",
     "RegisterRequest",
     "LoginRequest",

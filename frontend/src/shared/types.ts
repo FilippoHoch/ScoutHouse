@@ -31,6 +31,7 @@ export type StructureUsageRecommendation =
   | "prefer_camps";
 export type Season = "winter" | "spring" | "summer" | "autumn";
 export type Unit = "LC" | "EG" | "RS" | "ALL";
+export type UserType = "LC" | "EG" | "RS" | "LEADERS" | "OTHER";
 export type CostModel = "per_person_day" | "per_person_night" | "forfait";
 export type CostBand = "cheap" | "medium" | "expensive";
 export type ContactPreferredChannel = "email" | "phone" | "other";
@@ -93,6 +94,7 @@ export interface User {
   is_admin: boolean;
   can_edit_structures: boolean;
   is_active: boolean;
+  user_type: UserType | null;
   created_at: string;
 }
 
@@ -139,6 +141,7 @@ export interface CostOption {
   utilities_notes: string | null;
   min_total: number | null;
   max_total: number | null;
+  forfait_trigger_total: number | null;
   age_rules?: Record<string, unknown> | null;
   payment_methods?: string[] | null;
   payment_terms?: string | null;
@@ -159,6 +162,7 @@ export interface StructureCostOptionInput {
   utilities_notes?: string | null;
   min_total?: number | null;
   max_total?: number | null;
+  forfait_trigger_total?: number | null;
   age_rules?: Record<string, unknown> | null;
   payment_methods?: string[] | null;
   payment_terms?: string | null;

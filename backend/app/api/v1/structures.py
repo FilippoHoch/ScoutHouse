@@ -216,6 +216,7 @@ def _serialize_cost_option(option: StructureCostOption) -> StructureCostOptionRe
         utilities_notes=option.utilities_notes,
         min_total=option.min_total,
         max_total=option.max_total,
+        forfait_trigger_total=getattr(option, "forfait_trigger_total", None),
         age_rules=option.age_rules,
         payment_methods=option.payment_methods,
         payment_terms=option.payment_terms,
@@ -1432,6 +1433,7 @@ def create_structure_cost_option(
         utilities_notes=cost_option_in.utilities_notes,
         min_total=cost_option_in.min_total,
         max_total=cost_option_in.max_total,
+        forfait_trigger_total=cost_option_in.forfait_trigger_total,
         age_rules=cost_option_in.age_rules,
         payment_methods=cost_option_in.payment_methods,
         payment_terms=cost_option_in.payment_terms,
@@ -1494,6 +1496,7 @@ def upsert_structure_cost_options(
             option.utilities_notes = payload.utilities_notes
             option.min_total = payload.min_total
             option.max_total = payload.max_total
+            option.forfait_trigger_total = payload.forfait_trigger_total
             option.age_rules = payload.age_rules
             option.payment_methods = payload.payment_methods
             option.payment_terms = payload.payment_terms
@@ -1515,6 +1518,7 @@ def upsert_structure_cost_options(
                 utilities_notes=payload.utilities_notes,
                 min_total=payload.min_total,
                 max_total=payload.max_total,
+                forfait_trigger_total=payload.forfait_trigger_total,
                 age_rules=payload.age_rules,
                 payment_methods=payload.payment_methods,
                 payment_terms=payload.payment_terms,

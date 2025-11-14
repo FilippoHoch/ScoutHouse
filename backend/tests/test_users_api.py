@@ -52,6 +52,7 @@ def test_admin_can_create_and_update_user(client: TestClient) -> None:
         "password": "password123",
         "is_admin": False,
         "is_active": True,
+        "user_type": "LC",
     }
     create_response = client.post("/api/v1/users", json=create_payload, headers=headers)
     assert create_response.status_code == 201, create_response.text
@@ -59,6 +60,7 @@ def test_admin_can_create_and_update_user(client: TestClient) -> None:
     assert created["email"] == create_payload["email"]
     assert created["is_admin"] is False
     assert created["is_active"] is True
+    assert created["user_type"] == "LC"
 
     user_id = created["id"]
 
@@ -68,6 +70,7 @@ def test_admin_can_create_and_update_user(client: TestClient) -> None:
         "password": "nuovasegreta",
         "is_admin": True,
         "is_active": False,
+        "user_type": "LEADERS",
     }
     update_response = client.patch(f"/api/v1/users/{user_id}", json=update_payload, headers=headers)
     assert update_response.status_code == 200, update_response.text
@@ -75,6 +78,7 @@ def test_admin_can_create_and_update_user(client: TestClient) -> None:
     assert updated["email"] == update_payload["email"]
     assert updated["is_admin"] is True
     assert updated["is_active"] is False
+    assert updated["user_type"] == "LEADERS"
 
     # User should be unable to log in while disabled.
     disabled_login = client.post(
@@ -115,3 +119,24 @@ def test_cannot_create_duplicate_email(client: TestClient) -> None:
 
     second = client.post("/api/v1/users", json=payload, headers=headers)
     assert second.status_code == 400
+
+
+def test_user_can_update_own_type(client: TestClient) -> None:
+    headers = auth_headers(client, is_admin=False)
+
+    response = client.patch(
+        "/api/v1/auth/me",
+        json={"user_type": "RS"},
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["user_type"] == "RS"
+
+    clear_response = client.patch(
+        "/api/v1/auth/me",
+        json={"user_type": None},
+        headers=headers,
+    )
+    assert clear_response.status_code == 200, clear_response.text
+    assert clear_response.json()["user_type"] is None
