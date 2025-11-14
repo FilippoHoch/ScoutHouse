@@ -286,6 +286,18 @@
     "loading": "Caricamento…"
   },
   "structures": {
+    "paymentMethods": {
+      "label": "Metodi di pagamento accettati",
+      "hint": "Seleziona uno o più metodi disponibili. Se non conosci il dettaglio lascia \"Non specificato\".",
+      "options": {
+        "not_specified": "Non specificato",
+        "cash": "Contanti",
+        "bank_transfer": "Bonifico bancario",
+        "card": "Carta / POS",
+        "online": "Pagamento online",
+        "other": "Altro"
+      }
+    },
     "title": "Strutture",
     "states": {
       "loading": "Caricamento strutture…",
@@ -408,13 +420,6 @@
           "add": "Aggiungi documento",
           "remove": "Rimuovi questo documento",
           "entryLabel": "Documento {{index}}"
-        },
-        "paymentMethods": {
-          "label": "Metodi di pagamento accettati",
-          "hint": "Specifica i metodi di pagamento accettati in generale dalla struttura.",
-          "add": "Aggiungi metodo",
-          "remove": "Rimuovi questo metodo",
-          "entryLabel": "Metodo {{index}}"
         },
         "notes": "Note aggiuntive",
         "notesHint": "Condividi informazioni pratiche e includi indicazioni sulle prenotazioni: tempi di risposta, modalità o costi.",
@@ -664,8 +669,7 @@
             "floodRisk": "Rischio alluvionale",
             "environmentalNotes": "Note ambientali",
             "documentsRequired": "Documenti richiesti",
-            "mapResources": "Risorse cartografiche",
-            "paymentMethods": "Metodi di pagamento accettati"
+            "mapResources": "Risorse cartografiche"
           }
         },
         "usageRules": "Regole di utilizzo",
@@ -747,8 +751,8 @@
           "maxTotalHint": "Importo massimo complessivo applicato alle tariffe a persona.",
           "forfaitTrigger": "Forfait automatico",
           "forfaitTriggerHint": "Quando il calcolo a persona supera questa soglia applica direttamente il forfait indicato.",
-          "paymentMethods": "Metodi di pagamento accettati",
-          "paymentMethodsHint": "Inserisci un metodo per riga (es. bonifico, contanti, carta).",
+          "paymentMethods": "Note sui metodi di pagamento",
+          "paymentMethodsHint": "Usa questo campo solo per indicazioni specifiche di questa opzione (una per riga). L'elenco principale dei metodi è disponibile sopra.",
           "paymentTerms": "Note e condizioni",
           "paymentTermsHint": "Specifiche aggiuntive come \"solo Agesci\", fasce territoriali o accordi particolari.",
           "summaryMissingAmount": "importo non indicato",
@@ -1007,7 +1011,7 @@
         "inclusionServices": "Servizi di inclusione",
         "inclusionServicesFallback": "Nessun servizio indicato",
         "paymentMethods": "Metodi di pagamento accettati",
-        "paymentMethodsFallback": "Non specificati",
+        "paymentMethodsFallback": "Non specificato",
         "dataQualityFlags": "Segnalazioni qualità dati",
         "dataQualityFlagsFallback": "Nessuna segnalazione",
         "usageRules": "Regole di utilizzo",

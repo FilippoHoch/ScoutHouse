@@ -21,6 +21,7 @@ import type {
   FirePolicy,
   FieldSlope,
   FloodRiskLevel,
+  PaymentMethod,
   Structure,
   StructureUsageRecommendation,
   StructureOpenPeriod,
@@ -108,6 +109,19 @@ export const StructureDetailsPage = () => {
     [t]
   );
 
+  const paymentMethodLabels = useMemo(
+    () =>
+      ({
+        not_specified: t("structures.paymentMethods.options.not_specified"),
+        cash: t("structures.paymentMethods.options.cash"),
+        bank_transfer: t("structures.paymentMethods.options.bank_transfer"),
+        card: t("structures.paymentMethods.options.card"),
+        online: t("structures.paymentMethods.options.online"),
+        other: t("structures.paymentMethods.options.other")
+      }) satisfies Record<PaymentMethod, string>,
+    [t]
+  );
+
   const fallbackLabels = useMemo(
     () => ({
       yes: t("structures.details.common.yes"),
@@ -183,6 +197,41 @@ export const StructureDetailsPage = () => {
       return null;
     }
     return audiences.join(", ");
+  };
+
+  const formatPaymentMethods = (
+    methods: (PaymentMethod | string)[] | null | undefined,
+    { includeFallbackLabel = true }: { includeFallbackLabel?: boolean } = {}
+  ) => {
+    if (!methods || methods.length === 0) {
+      return includeFallbackLabel
+        ? t("structures.details.overview.paymentMethodsFallback")
+        : null;
+    }
+    const resolved = methods
+      .map((method) => {
+        const rawValue = typeof method === "string" ? method : method.toString();
+        const normalizedKey = rawValue.trim().toLowerCase();
+        const translation = paymentMethodLabels[normalizedKey as PaymentMethod];
+        if (translation) {
+          return translation;
+        }
+        return rawValue.trim();
+      })
+      .filter((value) => value.length > 0);
+    if (resolved.length === 0) {
+      return includeFallbackLabel
+        ? t("structures.details.overview.paymentMethodsFallback")
+        : null;
+    }
+    if (
+      !includeFallbackLabel &&
+      resolved.length === 1 &&
+      resolved[0] === paymentMethodLabels.not_specified
+    ) {
+      return null;
+    }
+    return resolved.join(", ");
   };
 
   const formatStringList = (items: string[] | null | undefined) => {
@@ -663,7 +712,7 @@ export const StructureDetailsPage = () => {
   const activitySpacesValue = formatStringList(structure.activity_spaces);
   const activityEquipmentValue = formatStringList(structure.activity_equipment);
   const inclusionServicesValue = formatStringList(structure.inclusion_services);
-  const paymentMethodsValue = formatStringList(structure.payment_methods);
+  const paymentMethodsValue = formatPaymentMethods(structure.payment_methods);
   const dataQualityFlagsValue = formatStringList(structure.data_quality_flags);
 
   const operationsDetails: LogisticsDetail[] = filterVisibleDetails([
@@ -1399,6 +1448,10 @@ export const StructureDetailsPage = () => {
                       const seasonalModifiers = (option.modifiers ?? []).filter(
                         (modifier) => modifier.kind === "season" && modifier.season
                       );
+                      const optionPaymentMethods = formatPaymentMethods(
+                        option.payment_methods,
+                        { includeFallbackLabel: false }
+                      );
 
                       return (
                         <li key={option.id}>
@@ -1472,10 +1525,10 @@ export const StructureDetailsPage = () => {
                                 })}
                               </span>
                             )}
-                            {option.payment_methods && option.payment_methods.length > 0 && (
+                            {optionPaymentMethods && (
                               <span>
                                 {t("structures.details.costs.paymentMethods", {
-                                  value: option.payment_methods.join(", ")
+                                  value: optionPaymentMethods
                                 })}
                               </span>
                             )}

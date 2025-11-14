@@ -37,6 +37,7 @@ import {
   FieldSlope,
   FirePolicy,
   FloodRiskLevel,
+  PaymentMethod,
   StructureCreateDto,
   StructureOperationalStatus,
   StructureType,
@@ -134,8 +135,7 @@ type OptionalSectionKey =
   | "floodRisk"
   | "environmentalNotes"
   | "documentsRequired"
-  | "mapResources"
-  | "paymentMethods";
+  | "mapResources";
 
 const optionalSectionOrder: OptionalSectionKey[] = [
   "allowedAudiences",
@@ -148,8 +148,7 @@ const optionalSectionOrder: OptionalSectionKey[] = [
   "floodRisk",
   "environmentalNotes",
   "documentsRequired",
-  "mapResources",
-  "paymentMethods"
+  "mapResources"
 ];
 
 const sortOptionalSections = (sections: OptionalSectionKey[]) =>
@@ -374,6 +373,14 @@ const pickBestGeocodingResult = (
 };
 
 const costModelOptions: CostModel[] = ["per_person_day", "per_person_night", "forfait"];
+const paymentMethodOptions: PaymentMethod[] = [
+  "not_specified",
+  "cash",
+  "bank_transfer",
+  "card",
+  "online",
+  "other"
+];
 
 type CostModifierFormRow = {
   key: string;
@@ -551,7 +558,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [activitySpaces, setActivitySpaces] = useState<string[]>([]);
   const [activityEquipment, setActivityEquipment] = useState<string[]>([]);
   const [inclusionServices, setInclusionServices] = useState<string[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<string[]>([""]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
+    "not_specified"
+  ]);
   const [dataQualityFlags, setDataQualityFlags] = useState<string[]>([]);
   const [activeOptionalSections, setActiveOptionalSections] = useState<OptionalSectionKey[]>([]);
   const [optionalSectionSelection, setOptionalSectionSelection] = useState<
@@ -1860,22 +1869,21 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handlePaymentMethodChange = (index: number, value: string) => {
+  const handlePaymentMethodToggle = (method: PaymentMethod, checked: boolean) => {
     setPaymentMethods((current) => {
-      const next = [...current];
-      next[index] = value;
-      return next;
+      if (checked) {
+        if (method === "not_specified") {
+          return ["not_specified"];
+        }
+        const withoutDefault = current.filter((value) => value !== "not_specified");
+        if (withoutDefault.includes(method)) {
+          return withoutDefault;
+        }
+        return [...withoutDefault, method];
+      }
+      const next = current.filter((value) => value !== method);
+      return next.length === 0 ? ["not_specified"] : next;
     });
-    setApiError(null);
-  };
-
-  const handleAddPaymentMethod = () => {
-    setPaymentMethods((current) => [...current, ""]);
-    setApiError(null);
-  };
-
-  const handleRemovePaymentMethod = (index: number) => {
-    setPaymentMethods((current) => current.filter((_, itemIndex) => itemIndex !== index));
     setApiError(null);
   };
 
@@ -1952,9 +1960,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         case "mapResources":
           setMapResourcesUrls([""]);
           break;
-        case "paymentMethods":
-          setPaymentMethods([""]);
-          break;
       }
     },
     [
@@ -1968,7 +1973,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       setInAreaProtetta,
       setInclusionServices,
       setMapResourcesUrls,
-      setPaymentMethods,
       setFloodRisk
     ]
   );
@@ -1988,13 +1992,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       if (section === "mapResources") {
         setMapResourcesUrls((current) => (current.length === 0 ? [""] : current));
       }
-      if (section === "paymentMethods") {
-        setPaymentMethods((current) => (current.length === 0 ? [""] : current));
-      }
-
       setApiError(null);
     },
-    [setApiError, setDocumentsRequired, setMapResourcesUrls, setPaymentMethods]
+    [setApiError, setDocumentsRequired, setMapResourcesUrls]
   );
 
   const deactivateOptionalSection = useCallback(
@@ -2299,11 +2299,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const paymentMethodValues =
       existingStructure.payment_methods && existingStructure.payment_methods.length > 0
         ? [...existingStructure.payment_methods]
-        : [""];
-    setPaymentMethods(paymentMethodValues);
-    if (existingStructure.payment_methods && existingStructure.payment_methods.length > 0) {
-      nextActiveSections.push("paymentMethods");
-    }
+        : ["not_specified"];
+    setPaymentMethods(paymentMethodValues as PaymentMethod[]);
 
     const dataQualityFlagValues =
       existingStructure.data_quality_flags && existingStructure.data_quality_flags.length > 0
@@ -3083,7 +3080,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedActivitySpaces = activitySpaces.map((value) => value.trim());
     const trimmedActivityEquipment = activityEquipment.map((value) => value.trim());
     const trimmedInclusionServices = inclusionServices.map((value) => value.trim());
-    const trimmedPaymentMethods = paymentMethods.map((value) => value.trim());
     const trimmedDataQualityFlags = dataQualityFlags.map((value) => value.trim());
     const trimmedCostOptions = costOptions.map((option) => ({
       key: option.key,
@@ -3275,10 +3271,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.inclusion_services = nonEmptyInclusionServices;
     }
 
-    const nonEmptyPaymentMethods = trimmedPaymentMethods.filter((value) => value);
-    if (nonEmptyPaymentMethods.length > 0) {
-      payload.payment_methods = nonEmptyPaymentMethods;
-    }
+    payload.payment_methods = paymentMethods;
 
     const nonEmptyDataQualityFlags = trimmedDataQualityFlags.filter((value) => value);
     if (nonEmptyDataQualityFlags.length > 0) {
@@ -3694,8 +3687,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     inclusionServices.length > 0 ? "structure-inclusion-service-0" : undefined;
   const inclusionServicesAddButtonId = "structure-inclusion-services-add";
   const inclusionServicesLabelFor = firstInclusionServiceInputId ?? inclusionServicesAddButtonId;
+  const paymentMethodsLabelId = "structure-payment-methods-label";
   const paymentMethodsHintId = "structure-payment-methods-hint";
-  const paymentMethodsDescribedBy = paymentMethodsHintId;
   const dataQualityFlagsHintId = "structure-data-quality-flags-hint";
   const dataQualityFlagsDescribedBy = dataQualityFlagsHintId;
   const firstDataQualityFlagInputId =
@@ -5771,58 +5764,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
               </div>
             )}
 
-            {isOptionalSectionActive("paymentMethods") && (
-              <div className="structure-form-field structure-form-field--optional" data-span="full">
-                {renderOptionalSectionRemoveButton("paymentMethods")}
-                <label htmlFor="structure-payment-method-0" id="structure-payment-methods-label">
-                  {t("structures.create.form.paymentMethods.label")}
-                </label>
-                <div className="structure-website-list">
-                  {paymentMethods.map((value, index) => {
-                    const inputId = `structure-payment-method-${index}`;
-                    const ariaLabel =
-                      index === 0
-                        ? undefined
-                        : t("structures.create.form.paymentMethods.entryLabel", { index: index + 1 });
-                    return (
-                      <div className="structure-website-list__row" key={inputId}>
-                        <div className="structure-website-list__input">
-                          <input
-                            id={inputId}
-                            value={value}
-                            onChange={(event) => handlePaymentMethodChange(index, event.target.value)}
-                            aria-describedby={paymentMethodsDescribedBy}
-                            aria-label={ariaLabel}
-                          />
-                        </div>
-                        {paymentMethods.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePaymentMethod(index)}
-                            className="link-button"
-                          >
-                            {t("structures.create.form.paymentMethods.remove")}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="structure-website-actions">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleAddPaymentMethod}
-                  >
-                    {t("structures.create.form.paymentMethods.add")}
-                  </Button>
-                </div>
-                <span className="helper-text" id={paymentMethodsHintId}>
-                  {t("structures.create.form.paymentMethods.hint")}
-                </span>
-              </div>
-            )}
           </div>
         </fieldset>
 
@@ -5832,6 +5773,41 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 {t("structures.create.form.sections.costs.description")}
               </p>
               <div className="structure-field-grid">
+                <div className="structure-form-field" data-span="full">
+                  <span className="field-label" id={paymentMethodsLabelId}>
+                    {t("structures.paymentMethods.label")}
+                  </span>
+                  <div
+                    className="structure-checkbox-list"
+                    role="group"
+                    aria-labelledby={paymentMethodsLabelId}
+                    aria-describedby={paymentMethodsHintId}
+                  >
+                    {paymentMethodOptions.map((method) => {
+                      const checkboxId = `structure-payment-method-${method}`;
+                      return (
+                        <label
+                          key={method}
+                          htmlFor={checkboxId}
+                          className="structure-checkbox-list__option"
+                        >
+                          <input
+                            id={checkboxId}
+                            type="checkbox"
+                            checked={paymentMethods.includes(method)}
+                            onChange={(event) =>
+                              handlePaymentMethodToggle(method, event.target.checked)
+                            }
+                          />
+                          <span>{t(`structures.paymentMethods.options.${method}`)}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <span className="helper-text" id={paymentMethodsHintId}>
+                    {t("structures.paymentMethods.hint")}
+                  </span>
+                </div>
                 <div
                   className="structure-form-field"
                   data-span="full"

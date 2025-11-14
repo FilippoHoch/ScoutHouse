@@ -26,6 +26,7 @@ from app.models.structure import (
     FieldSlope,
     FirePolicy,
     FloodRiskLevel,
+    PaymentMethod,
     RiverSwimmingOption,
     StructureContactStatus,
     StructureOpenPeriodKind,
@@ -71,6 +72,53 @@ def _normalize_optional_str_list(value: object) -> list[str] | None | object:
     if isinstance(normalized, list):
         return normalized
     return normalized
+
+
+def _normalize_payment_methods(value: object) -> list[PaymentMethod]:
+    normalized = _normalize_str_list(value)
+    if not isinstance(normalized, list):
+        raise ValueError("Formato metodi di pagamento non valido")
+    if not normalized:
+        return []
+
+    alias_map: dict[str, PaymentMethod] = {
+        PaymentMethod.NOT_SPECIFIED.value: PaymentMethod.NOT_SPECIFIED,
+        "non specificato": PaymentMethod.NOT_SPECIFIED,
+        "non specificati": PaymentMethod.NOT_SPECIFIED,
+        "n/d": PaymentMethod.NOT_SPECIFIED,
+        PaymentMethod.CASH.value: PaymentMethod.CASH,
+        "contanti": PaymentMethod.CASH,
+        PaymentMethod.BANK_TRANSFER.value: PaymentMethod.BANK_TRANSFER,
+        "bonifico": PaymentMethod.BANK_TRANSFER,
+        PaymentMethod.CARD.value: PaymentMethod.CARD,
+        "carta": PaymentMethod.CARD,
+        "pos": PaymentMethod.CARD,
+        PaymentMethod.ONLINE.value: PaymentMethod.ONLINE,
+        "online": PaymentMethod.ONLINE,
+        PaymentMethod.OTHER.value: PaymentMethod.OTHER,
+        "altro": PaymentMethod.OTHER,
+    }
+
+    validated: list[PaymentMethod] = []
+    for raw_value in normalized:
+        if isinstance(raw_value, PaymentMethod):
+            validated.append(raw_value)
+            continue
+        normalized_value = raw_value.strip().lower()
+        if not normalized_value:
+            continue
+        if normalized_value in alias_map:
+            validated.append(alias_map[normalized_value])
+            continue
+        try:
+            validated.append(PaymentMethod(normalized_value))
+            continue
+        except ValueError:
+            pass
+        raise ValueError(
+            "Metodi di pagamento non supportati. Usa le opzioni predefinite."
+        )
+    return validated
 
 
 def _normalize_url_list(value: object) -> list[AnyHttpUrl] | object:
@@ -269,7 +317,7 @@ class StructureBase(BaseModel):
     sdi_recipient_code: str | None = Field(default=None, min_length=7, max_length=7)
     invoice_available: bool | None = None
     iban: str | None = None
-    payment_methods: list[str] = Field(default_factory=list)
+    payment_methods: list[PaymentMethod] = Field(default_factory=list)
     fiscal_notes: str | None = None
     data_source: str | None = Field(default=None, max_length=255)
     data_source_url: AnyHttpUrl | None = None
@@ -392,13 +440,17 @@ class StructureBase(BaseModel):
         "activity_spaces",
         "activity_equipment",
         "inclusion_services",
-        "payment_methods",
         "data_quality_flags",
         mode="before",
     )
     @classmethod
     def normalize_string_lists(cls, value: object) -> list[str] | object:
         return _normalize_str_list(value)
+
+    @field_validator("payment_methods", mode="before")
+    @classmethod
+    def normalize_payment_methods(cls, value: object) -> list[PaymentMethod]:
+        return _normalize_payment_methods(value)
 
     @field_validator("map_resources_urls", mode="before")
     @classmethod

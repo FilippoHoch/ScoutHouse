@@ -50,6 +50,7 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 - Mappa chiave/valore `seasonal_amenities` (servizi stagionali serializzati in oggetto JSON).
 
 ### Costi
+- Selettore multiplo `payment_methods` (enum: `not_specified`, `cash`, `bank_transfer`, `card`, `online`, `other`).
 - Lista dinamica di `StructureCostOptionInput` (`model`, `amount`, `currency`, `booking_deposit`, `damage_deposit`, `city_tax_per_night`, `utilities_flat`, `utilities_included`, `utilities_notes`, `payment_methods`, `payment_terms`, `min_total`, `max_total`).
 
 ### Contatti, link e note

@@ -133,6 +133,15 @@ class RiverSwimmingOption(str, Enum):
     UNKNOWN = "unknown"
 
 
+class PaymentMethod(str, Enum):
+    NOT_SPECIFIED = "not_specified"
+    CASH = "cash"
+    BANK_TRANSFER = "bank_transfer"
+    CARD = "card"
+    ONLINE = "online"
+    OTHER = "other"
+
+
 class StructureUsageRecommendation(str, Enum):
     OUTINGS_ONLY = "outings_only"
     CAMPS_ONLY = "camps_only"
@@ -338,7 +347,9 @@ class Structure(Base):
     sdi_recipient_code: Mapped[str | None] = mapped_column(String(7), nullable=True)
     invoice_available: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
     iban: Mapped[str | None] = mapped_column(String(34), nullable=True)
-    payment_methods: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    payment_methods: Mapped[list[PaymentMethod] | None] = mapped_column(
+        JSON, nullable=True
+    )
     fiscal_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     data_source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     data_source_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -511,4 +522,5 @@ __all__ = [
     "WastewaterType",
     "FloodRiskLevel",
     "RiverSwimmingOption",
+    "PaymentMethod",
 ]

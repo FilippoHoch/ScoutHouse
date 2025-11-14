@@ -150,7 +150,7 @@ const structureWithDetails = {
       min_total: null,
       max_total: null,
       age_rules: null,
-      payment_methods: ["Bonifico"],
+      payment_methods: ["bank_transfer"],
       payment_terms: "Saldo in 30 giorni",
       price_per_resource: null,
       modifiers: [
