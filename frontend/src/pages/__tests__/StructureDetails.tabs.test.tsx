@@ -153,7 +153,17 @@ const structureWithDetails = {
       payment_methods: ["Bonifico"],
       payment_terms: "Saldo in 30 giorni",
       price_per_resource: null,
-      modifiers: null
+      modifiers: [
+        {
+          id: 5,
+          kind: "season",
+          amount: 11,
+          season: "summer",
+          date_start: null,
+          date_end: null,
+          price_per_resource: null
+        }
+      ]
     }
   ],
   contacts: [],

@@ -1396,6 +1396,9 @@ export const StructureDetailsPage = () => {
                         `structures.create.form.costOptions.models.${option.model}`,
                         { defaultValue: option.model }
                       );
+                      const seasonalModifiers = (option.modifiers ?? []).filter(
+                        (modifier) => modifier.kind === "season" && modifier.season
+                      );
 
                       return (
                         <li key={option.id}>
@@ -1477,6 +1480,29 @@ export const StructureDetailsPage = () => {
                               </span>
                             )}
                           </div>
+                          {seasonalModifiers.length > 0 && (
+                            <div className="cost-option__modifiers">
+                              <span className="cost-option__modifiers-title">
+                                {t("structures.details.costs.seasonalAdjustments")}
+                              </span>
+                              <ul>
+                                {seasonalModifiers.map((modifier) => {
+                                  const seasonLabel = t(
+                                    `structures.details.costs.seasonLabels.${modifier.season}`,
+                                    { defaultValue: modifier.season ?? "" }
+                                  );
+                                  return (
+                                    <li key={modifier.id ?? `${modifier.season}-${modifier.amount}`}>
+                                      {t("structures.details.costs.seasonalAdjustment", {
+                                        season: seasonLabel,
+                                        value: formatCurrency(modifier.amount, option.currency)
+                                      })}
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          )}
                         </li>
                       );
                     })}

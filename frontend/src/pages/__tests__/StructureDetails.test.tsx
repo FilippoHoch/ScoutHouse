@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -177,7 +178,17 @@ const sampleStructure: Structure = {
       payment_methods: null,
       payment_terms: null,
       price_per_resource: null,
-      modifiers: null
+      modifiers: [
+        {
+          id: 10,
+          kind: "season",
+          amount: 22,
+          season: "winter",
+          date_start: null,
+          date_end: null,
+          price_per_resource: null
+        }
+      ]
     }
   ],
   contacts: [],
@@ -211,6 +222,7 @@ describe("StructureDetailsPage", () => {
 
   it("renders structure details when found", async () => {
     const Wrapper = createWrapper("/structures/casa-alpina");
+    const user = userEvent.setup();
 
     render(
       <Routes>
@@ -271,6 +283,9 @@ describe("StructureDetailsPage", () => {
       screen.getByText(/Metodi di pagamento accettati/i)
     ).toBeInTheDocument();
     expect(screen.getByText(/Bonifico/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Costi/i }));
+    const seasonalTitle = await screen.findByText(/Tariffe stagionali/i);
+    expect(seasonalTitle.parentElement?.textContent).toMatch(/Inverno:\s+22,00\s+€/i);
     expect(
       screen.getByText(/Infrastrutture di comunicazione/i)
     ).toBeInTheDocument();

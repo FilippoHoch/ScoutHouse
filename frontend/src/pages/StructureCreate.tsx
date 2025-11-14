@@ -29,6 +29,7 @@ import {
 } from "../shared/api";
 import {
   CostModel,
+  CostModifierKind,
   Contact,
   ContactCreateDto,
   ContactPreferredChannel,
@@ -43,6 +44,7 @@ import {
   StructureOpenPeriodInput,
   StructureOpenPeriodSeason,
   StructureCostOptionInput,
+  StructureCostModifierInput,
   StructureUsageRecommendation,
   Unit,
   WaterSource
@@ -373,6 +375,14 @@ const pickBestGeocodingResult = (
 
 const costModelOptions: CostModel[] = ["per_person_day", "per_person_night", "forfait"];
 
+type CostModifierFormRow = {
+  key: string;
+  id?: number;
+  kind: CostModifierKind;
+  season: StructureOpenPeriodSeason | "";
+  amount: string;
+};
+
 type CostOptionFormRow = {
   key: string;
   id?: number;
@@ -389,9 +399,20 @@ type CostOptionFormRow = {
   paymentTerms: string;
   minTotal: string;
   maxTotal: string;
+  modifiers: CostModifierFormRow[];
+  hadModifiers: boolean;
 };
 
 const createCostOptionKey = () => `co-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+
+const createCostModifierKey = () => `cm-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+
+const createSeasonalModifierRow = (): CostModifierFormRow => ({
+  key: createCostModifierKey(),
+  kind: "season",
+  season: "",
+  amount: "",
+});
 
 const createCostOptionRow = (): CostOptionFormRow => ({
   key: createCostOptionKey(),
@@ -407,7 +428,9 @@ const createCostOptionRow = (): CostOptionFormRow => ({
   paymentMethods: "",
   paymentTerms: "",
   minTotal: "",
-  maxTotal: ""
+  maxTotal: "",
+  modifiers: [],
+  hadModifiers: false
 });
 
 const parseCoordinateValue = (value: string): number | null => {
@@ -1382,6 +1405,51 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     updateCostOption(key, updates);
   };
 
+  const handleAddSeasonalModifier = (optionKey: string) => {
+    setCostOptions((prev) =>
+      prev.map((row) =>
+        row.key === optionKey
+          ? { ...row, modifiers: [...row.modifiers, createSeasonalModifierRow()] }
+          : row
+      )
+    );
+    setApiError(null);
+    clearFieldError("cost_options");
+  };
+
+  const handleCostModifierFieldChange = (
+    optionKey: string,
+    modifierKey: string,
+    field: "season" | "amount",
+    value: string
+  ) => {
+    setCostOptions((prev) =>
+      prev.map((row) => {
+        if (row.key !== optionKey) {
+          return row;
+        }
+        const nextModifiers = row.modifiers.map((modifier) =>
+          modifier.key === modifierKey ? { ...modifier, [field]: value } : modifier
+        );
+        return { ...row, modifiers: nextModifiers };
+      })
+    );
+    setApiError(null);
+    clearFieldError("cost_options");
+  };
+
+  const handleRemoveCostModifier = (optionKey: string, modifierKey: string) => {
+    setCostOptions((prev) =>
+      prev.map((row) =>
+        row.key === optionKey
+          ? { ...row, modifiers: row.modifiers.filter((modifier) => modifier.key !== modifierKey) }
+          : row
+      )
+    );
+    setApiError(null);
+    clearFieldError("cost_options");
+  };
+
   const handleWaterSourceToggle = (option: WaterSource, checked: boolean) => {
     setWaterSources((prev) => {
       const exclusiveOptions: WaterSource[] = ["none", "unknown"];
@@ -2159,6 +2227,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setOpenPeriods(mappedOpenPeriods);
 
     const mappedCostOptions = (existingStructure.cost_options ?? []).map((option) => {
+      const seasonalModifiers = (option.modifiers ?? []).filter(
+        (modifier) => modifier.kind === "season"
+      );
       return {
         key: createCostOptionKey(),
         id: option.id,
@@ -2199,6 +2270,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           option.max_total !== null && option.max_total !== undefined
             ? String(option.max_total)
             : "",
+        modifiers: seasonalModifiers.map((modifier) => ({
+          key: createCostModifierKey(),
+          id: modifier.id,
+          kind: modifier.kind,
+          season: modifier.season ?? "",
+          amount:
+            modifier.amount !== null && modifier.amount !== undefined
+              ? String(modifier.amount)
+              : "",
+        })),
+        hadModifiers: seasonalModifiers.length > 0,
       } satisfies CostOptionFormRow;
     });
     setCostOptions(mappedCostOptions);
@@ -2545,7 +2627,15 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       paymentMethods: option.paymentMethods.trim(),
       paymentTerms: option.paymentTerms.trim(),
       minTotal: option.minTotal.trim(),
-      maxTotal: option.maxTotal.trim()
+      maxTotal: option.maxTotal.trim(),
+      modifiers: option.modifiers.map((modifier) => ({
+        key: modifier.key,
+        id: modifier.id,
+        kind: modifier.kind,
+        season: modifier.season,
+        amount: modifier.amount.trim()
+      })),
+      hadModifiers: option.hadModifiers
     }));
 
     const errors: FieldErrors = {};
@@ -2709,7 +2799,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       !option.utilitiesNotes &&
       !option.paymentMethods &&
       !option.paymentTerms &&
-      option.utilitiesIncluded === "";
+      option.utilitiesIncluded === "" &&
+      option.modifiers.length === 0;
 
     for (const option of trimmedCostOptions) {
       if (isCostOptionEmpty(option)) {
@@ -2761,6 +2852,24 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           errors.cost_options = t("structures.create.errors.costOptionsTotalsInvalid");
           break;
         }
+      }
+      for (const modifier of option.modifiers) {
+        if (!modifier.season) {
+          errors.cost_options = t("structures.create.errors.costOptionsSeasonalInvalid");
+          break;
+        }
+        if (!modifier.amount) {
+          errors.cost_options = t("structures.create.errors.costOptionsSeasonalInvalid");
+          break;
+        }
+        const modifierValue = Number.parseFloat(modifier.amount.replace(",", "."));
+        if (Number.isNaN(modifierValue) || modifierValue <= 0) {
+          errors.cost_options = t("structures.create.errors.costOptionsSeasonalInvalid");
+          break;
+        }
+      }
+      if (errors.cost_options) {
+        break;
       }
     }
 
@@ -2842,7 +2951,15 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       paymentMethods: option.paymentMethods.trim(),
       paymentTerms: option.paymentTerms.trim(),
       minTotal: option.minTotal.trim(),
-      maxTotal: option.maxTotal.trim()
+      maxTotal: option.maxTotal.trim(),
+      modifiers: option.modifiers.map((modifier) => ({
+        key: modifier.key,
+        id: modifier.id,
+        kind: modifier.kind,
+        season: modifier.season,
+        amount: modifier.amount.trim()
+      })),
+      hadModifiers: option.hadModifiers
     }));
 
     const payload: StructureCreateDto = {
@@ -3176,6 +3293,31 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         const trimmedPaymentTerms = option.paymentTerms.trim();
         if (trimmedPaymentTerms) {
           payloadItem.payment_terms = trimmedPaymentTerms;
+        }
+        const modifierPayloads: StructureCostModifierInput[] = option.modifiers
+          .map((modifier) => {
+            if (!modifier.season || !modifier.amount) {
+              return null;
+            }
+            const modifierValue = Number.parseFloat(modifier.amount.replace(",", "."));
+            if (Number.isNaN(modifierValue) || modifierValue <= 0) {
+              return null;
+            }
+            const payloadModifier: StructureCostModifierInput = {
+              kind: modifier.kind,
+              amount: modifierValue,
+              season: modifier.season as StructureOpenPeriodSeason,
+            };
+            if (modifier.id !== undefined) {
+              payloadModifier.id = modifier.id;
+            }
+            return payloadModifier;
+          })
+          .filter((item): item is StructureCostModifierInput => item !== null);
+        if (modifierPayloads.length > 0) {
+          payloadItem.modifiers = modifierPayloads;
+        } else if (option.hadModifiers) {
+          payloadItem.modifiers = [];
         }
         return payloadItem;
       })
@@ -5507,7 +5649,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     </p>
                   ) : (
                     <div className="structure-cost-options-list">
-                      {costOptions.map((option) => {
+                      {costOptions.map((option, index) => {
                         const modelId = `structure-cost-option-${option.key}-model`;
                         const amountId = `structure-cost-option-${option.key}-amount`;
                         const currencyId = `structure-cost-option-${option.key}-currency`;
@@ -5521,275 +5663,460 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                         const maxTotalId = `structure-cost-option-${option.key}-max-total`;
                         const paymentMethodsId = `structure-cost-option-${option.key}-payment-methods`;
                         const paymentTermsId = `structure-cost-option-${option.key}-payment-terms`;
+                        const cardTitle = t("structures.create.form.costOptions.cardTitle", {
+                          index: index + 1,
+                        });
+                        const modelLabel = option.model
+                          ? t(`structures.create.form.costOptions.models.${option.model}`, {
+                              defaultValue: option.model,
+                            })
+                          : t("structures.create.form.costOptions.modelPlaceholder");
+                        const summaryAmount = option.amount.trim().length
+                          ? `${option.amount} ${option.currency || "EUR"}`
+                          : t("structures.create.form.costOptions.summaryMissingAmount");
+                        const seasonInputId = (modifierKey: string) =>
+                          `structure-cost-option-${option.key}-modifier-${modifierKey}-season`;
+                        const modifierAmountId = (modifierKey: string) =>
+                          `structure-cost-option-${option.key}-modifier-${modifierKey}-amount`;
                         return (
-                          <div className="structure-cost-option-row" key={option.key}>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={modelId}>
-                                {t("structures.create.form.costOptions.model")}
-                                <select
-                                  id={modelId}
-                                  value={option.model}
-                                  onChange={(event) =>
-                                    handleCostOptionModelChange(
-                                      option.key,
-                                      event.target.value as CostModel | ""
-                                    )
-                                  }
-                                >
-                                  <option value="">
-                                    {t("structures.create.form.costOptions.modelPlaceholder")}
-                                  </option>
-                                  {costModelOptions.map((value) => (
-                                    <option key={value} value={value}>
-                                      {t(`structures.create.form.costOptions.models.${value}`)}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={amountId}>
-                                {t("structures.create.form.costOptions.amount")}
-                                <input
-                                  id={amountId}
-                                  value={option.amount}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "amount",
-                                      event.target.value
-                                    )
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="0,00"
-                                />
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-field structure-cost-option-field--currency">
-                              <label htmlFor={currencyId}>
-                                {t("structures.create.form.costOptions.currency")}
-                                <input
-                                  id={currencyId}
-                                  value={option.currency}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "currency",
-                                      event.target.value.toUpperCase()
-                                    )
-                                  }
-                                  maxLength={3}
-                                />
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={bookingDepositId}>
-                                {t("structures.create.form.costOptions.bookingDeposit")}
-                                <input
-                                  id={bookingDepositId}
-                                  value={option.bookingDeposit}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "bookingDeposit",
-                                      event.target.value
-                                    )
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="0,00"
-                                />
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={damageDepositId}>
-                                {t("structures.create.form.costOptions.damageDeposit")}
-                                <input
-                                  id={damageDepositId}
-                                  value={option.damageDeposit}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "damageDeposit",
-                                      event.target.value
-                                    )
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="0,00"
-                                />
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={cityTaxId}>
-                                {t("structures.create.form.costOptions.cityTax")}
-                                <input
-                                  id={cityTaxId}
-                                  value={option.cityTaxPerNight}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "cityTaxPerNight",
-                                      event.target.value
-                                    )
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="0,00"
-                                />
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={utilitiesFlatId}>
-                                {t("structures.create.form.costOptions.utilities")}
-                                <input
-                                  id={utilitiesFlatId}
-                                  value={option.utilitiesFlat}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "utilitiesFlat",
-                                      event.target.value
-                                    )
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="0,00"
-                                />
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={utilitiesIncludedId}>
-                                {t("structures.create.form.costOptions.utilitiesIncluded")}
-                                <select
-                                  id={utilitiesIncludedId}
-                                  value={option.utilitiesIncluded}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "utilitiesIncluded",
-                                      event.target.value
-                                    )
-                                  }
-                                >
-                                  <option value="">
-                                    {t("structures.create.form.costOptions.utilitiesIncludedUnset")}
-                                  </option>
-                                  <option value="yes">
-                                    {t("structures.details.common.yes")}
-                                  </option>
-                                  <option value="no">
-                                    {t("structures.details.common.no")}
-                                  </option>
-                                </select>
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-field structure-cost-option-field--wide">
-                              <label htmlFor={utilitiesNotesId}>
-                                {t("structures.create.form.costOptions.utilitiesNotes")}
-                                <textarea
-                                  id={utilitiesNotesId}
-                                  value={option.utilitiesNotes}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "utilitiesNotes",
-                                      event.target.value
-                                    )
-                                  }
-                                  rows={2}
-                                />
-                              </label>
-                              <span className="helper-text">
-                                {t("structures.create.form.costOptions.utilitiesNotesHint")}
-                              </span>
-                            </div>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={minTotalId}>
-                                {t("structures.create.form.costOptions.minTotal")}
-                                <input
-                                  id={minTotalId}
-                                  value={option.minTotal}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "minTotal",
-                                      event.target.value
-                                    )
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="0,00"
-                                />
-                              </label>
-                              <span className="helper-text">
-                                {t("structures.create.form.costOptions.minTotalHint")}
-                              </span>
-                            </div>
-                            <div className="structure-cost-option-field">
-                              <label htmlFor={maxTotalId}>
-                                {t("structures.create.form.costOptions.maxTotal")}
-                                <input
-                                  id={maxTotalId}
-                                  value={option.maxTotal}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "maxTotal",
-                                      event.target.value
-                                    )
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="0,00"
-                                />
-                              </label>
-                              <span className="helper-text">
-                                {t("structures.create.form.costOptions.maxTotalHint")}
-                              </span>
-                            </div>
-                            <div className="structure-cost-option-field structure-cost-option-field--wide">
-                              <label htmlFor={paymentMethodsId}>
-                                {t("structures.create.form.costOptions.paymentMethods")}
-                                <textarea
-                                  id={paymentMethodsId}
-                                  value={option.paymentMethods}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "paymentMethods",
-                                      event.target.value
-                                    )
-                                  }
-                                  rows={2}
-                                />
-                              </label>
-                              <span className="helper-text">
-                                {t("structures.create.form.costOptions.paymentMethodsHint")}
-                              </span>
-                            </div>
-                            <div className="structure-cost-option-field structure-cost-option-field--wide">
-                              <label htmlFor={paymentTermsId}>
-                                {t("structures.create.form.costOptions.paymentTerms")}
-                                <textarea
-                                  id={paymentTermsId}
-                                  value={option.paymentTerms}
-                                  onChange={(event) =>
-                                    handleCostOptionFieldChange(
-                                      option.key,
-                                      "paymentTerms",
-                                      event.target.value
-                                    )
-                                  }
-                                  rows={2}
-                                />
-                              </label>
-                            </div>
-                            <div className="structure-cost-option-actions">
+                          <Surface className="structure-cost-option-card" key={option.key}>
+                            <div className="structure-cost-option-card__header">
+                              <div>
+                                <p className="structure-cost-option-card__title">{cardTitle}</p>
+                                <p className="structure-cost-option-card__summary">
+                                  {t("structures.create.form.costOptions.cardSummary", {
+                                    summary: `${modelLabel} · ${summaryAmount}`,
+                                  })}
+                                </p>
+                              </div>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
+                                aria-label={t("structures.create.form.costOptions.removeLabel", {
+                                  index: index + 1,
+                                })}
                                 onClick={() => handleRemoveCostOption(option.key)}
                               >
                                 {t("structures.create.form.costOptions.remove")}
                               </Button>
                             </div>
-                          </div>
+
+                            <div className="structure-cost-option-sections">
+                              <div className="structure-cost-option-section">
+                                <div className="structure-cost-option-section__header">
+                                  <span className="form-label">
+                                    {t("structures.create.form.costOptions.layout.base.title")}
+                                  </span>
+                                  <p className="helper-text">
+                                    {t("structures.create.form.costOptions.layout.base.hint")}
+                                  </p>
+                                </div>
+                                <div className="structure-cost-option-grid structure-cost-option-grid--base">
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={modelId}>
+                                      {t("structures.create.form.costOptions.model")}
+                                      <select
+                                        id={modelId}
+                                        value={option.model}
+                                        onChange={(event) =>
+                                          handleCostOptionModelChange(
+                                            option.key,
+                                            event.target.value as CostModel | ""
+                                          )
+                                        }
+                                      >
+                                        <option value="">
+                                          {t("structures.create.form.costOptions.modelPlaceholder")}
+                                        </option>
+                                        {costModelOptions.map((value) => (
+                                          <option key={value} value={value}>
+                                            {t(`structures.create.form.costOptions.models.${value}`)}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                  </div>
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={amountId}>
+                                      {t("structures.create.form.costOptions.amount")}
+                                      <input
+                                        id={amountId}
+                                        value={option.amount}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "amount",
+                                            event.target.value
+                                          )
+                                        }
+                                        inputMode="decimal"
+                                        placeholder="0,00"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="structure-cost-option-field structure-cost-option-field--currency">
+                                    <label htmlFor={currencyId}>
+                                      {t("structures.create.form.costOptions.currency")}
+                                      <input
+                                        id={currencyId}
+                                        value={option.currency}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "currency",
+                                            event.target.value.toUpperCase()
+                                          )
+                                        }
+                                        maxLength={3}
+                                      />
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="structure-cost-option-section">
+                                <div className="structure-cost-option-section__header">
+                                  <span className="form-label">
+                                    {t("structures.create.form.costOptions.layout.thresholds.title")}
+                                  </span>
+                                  <p className="helper-text">
+                                    {t("structures.create.form.costOptions.layout.thresholds.hint")}
+                                  </p>
+                                </div>
+                                <div className="structure-cost-option-grid structure-cost-option-grid--two">
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={minTotalId}>
+                                      {t("structures.create.form.costOptions.minTotal")}
+                                      <input
+                                        id={minTotalId}
+                                        value={option.minTotal}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "minTotal",
+                                            event.target.value
+                                          )
+                                        }
+                                        inputMode="decimal"
+                                        placeholder="0,00"
+                                      />
+                                    </label>
+                                    <span className="helper-text">
+                                      {t("structures.create.form.costOptions.minTotalHint")}
+                                    </span>
+                                  </div>
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={maxTotalId}>
+                                      {t("structures.create.form.costOptions.maxTotal")}
+                                      <input
+                                        id={maxTotalId}
+                                        value={option.maxTotal}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "maxTotal",
+                                            event.target.value
+                                          )
+                                        }
+                                        inputMode="decimal"
+                                        placeholder="0,00"
+                                      />
+                                    </label>
+                                    <span className="helper-text">
+                                      {t("structures.create.form.costOptions.maxTotalHint")}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="structure-cost-option-section">
+                                <div className="structure-cost-option-section__header">
+                                  <span className="form-label">
+                                    {t("structures.create.form.costOptions.layout.deposits.title")}
+                                  </span>
+                                  <p className="helper-text">
+                                    {t("structures.create.form.costOptions.layout.deposits.hint")}
+                                  </p>
+                                </div>
+                                <div className="structure-cost-option-grid structure-cost-option-grid--three">
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={bookingDepositId}>
+                                      {t("structures.create.form.costOptions.bookingDeposit")}
+                                      <input
+                                        id={bookingDepositId}
+                                        value={option.bookingDeposit}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "bookingDeposit",
+                                            event.target.value
+                                          )
+                                        }
+                                        inputMode="decimal"
+                                        placeholder="0,00"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={damageDepositId}>
+                                      {t("structures.create.form.costOptions.damageDeposit")}
+                                      <input
+                                        id={damageDepositId}
+                                        value={option.damageDeposit}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "damageDeposit",
+                                            event.target.value
+                                          )
+                                        }
+                                        inputMode="decimal"
+                                        placeholder="0,00"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={cityTaxId}>
+                                      {t("structures.create.form.costOptions.cityTax")}
+                                      <input
+                                        id={cityTaxId}
+                                        value={option.cityTaxPerNight}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "cityTaxPerNight",
+                                            event.target.value
+                                          )
+                                        }
+                                        inputMode="decimal"
+                                        placeholder="0,00"
+                                      />
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="structure-cost-option-section">
+                                <div className="structure-cost-option-section__header">
+                                  <span className="form-label">
+                                    {t("structures.create.form.costOptions.layout.utilities.title")}
+                                  </span>
+                                  <p className="helper-text">
+                                    {t("structures.create.form.costOptions.layout.utilities.hint")}
+                                  </p>
+                                </div>
+                                <div className="structure-cost-option-grid structure-cost-option-grid--utilities">
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={utilitiesFlatId}>
+                                      {t("structures.create.form.costOptions.utilities")}
+                                      <input
+                                        id={utilitiesFlatId}
+                                        value={option.utilitiesFlat}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "utilitiesFlat",
+                                            event.target.value
+                                          )
+                                        }
+                                        inputMode="decimal"
+                                        placeholder="0,00"
+                                      />
+                                    </label>
+                                  </div>
+                                  <div className="structure-cost-option-field">
+                                    <label htmlFor={utilitiesIncludedId}>
+                                      {t("structures.create.form.costOptions.utilitiesIncluded")}
+                                      <select
+                                        id={utilitiesIncludedId}
+                                        value={option.utilitiesIncluded}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "utilitiesIncluded",
+                                            event.target.value as "" | "yes" | "no"
+                                          )
+                                        }
+                                      >
+                                        <option value="">
+                                          {t("structures.create.form.costOptions.utilitiesIncludedUnset")}
+                                        </option>
+                                        <option value="yes">
+                                          {t("structures.details.common.yes")}
+                                        </option>
+                                        <option value="no">
+                                          {t("structures.details.common.no")}
+                                        </option>
+                                      </select>
+                                    </label>
+                                  </div>
+                                  <div className="structure-cost-option-field structure-cost-option-field--wide">
+                                    <label htmlFor={utilitiesNotesId}>
+                                      {t("structures.create.form.costOptions.utilitiesNotes")}
+                                      <textarea
+                                        id={utilitiesNotesId}
+                                        value={option.utilitiesNotes}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "utilitiesNotes",
+                                            event.target.value
+                                          )
+                                        }
+                                        rows={2}
+                                      />
+                                    </label>
+                                    <span className="helper-text">
+                                      {t("structures.create.form.costOptions.utilitiesNotesHint")}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="structure-cost-option-section">
+                                <div className="structure-cost-option-section__header">
+                                  <span className="form-label">
+                                    {t("structures.create.form.costOptions.layout.notes.title")}
+                                  </span>
+                                  <p className="helper-text">
+                                    {t("structures.create.form.costOptions.layout.notes.hint")}
+                                  </p>
+                                </div>
+                                <div className="structure-cost-option-grid">
+                                  <div className="structure-cost-option-field structure-cost-option-field--wide">
+                                    <label htmlFor={paymentMethodsId}>
+                                      {t("structures.create.form.costOptions.paymentMethods")}
+                                      <textarea
+                                        id={paymentMethodsId}
+                                        value={option.paymentMethods}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "paymentMethods",
+                                            event.target.value
+                                          )
+                                        }
+                                        rows={2}
+                                      />
+                                    </label>
+                                    <span className="helper-text">
+                                      {t("structures.create.form.costOptions.paymentMethodsHint")}
+                                    </span>
+                                  </div>
+                                  <div className="structure-cost-option-field structure-cost-option-field--wide">
+                                    <label htmlFor={paymentTermsId}>
+                                      {t("structures.create.form.costOptions.paymentTerms")}
+                                      <textarea
+                                        id={paymentTermsId}
+                                        value={option.paymentTerms}
+                                        onChange={(event) =>
+                                          handleCostOptionFieldChange(
+                                            option.key,
+                                            "paymentTerms",
+                                            event.target.value
+                                          )
+                                        }
+                                        rows={2}
+                                      />
+                                    </label>
+                                    <span className="helper-text">
+                                      {t("structures.create.form.costOptions.paymentTermsHint")}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="structure-cost-option-modifiers">
+                              <div className="structure-cost-option-modifiers__header">
+                                <span className="form-label">
+                                  {t("structures.create.form.costOptions.modifiers.title")}
+                                </span>
+                                <p className="helper-text">
+                                  {t("structures.create.form.costOptions.modifiers.hint")}
+                                </p>
+                              </div>
+                              {option.modifiers.length === 0 ? (
+                                <p className="helper-text structure-cost-option-modifiers__empty">
+                                  {t("structures.create.form.costOptions.modifiers.empty")}
+                                </p>
+                              ) : (
+                                <div className="structure-cost-option-modifiers__list">
+                                  {option.modifiers.map((modifier) => {
+                                    const seasonId = seasonInputId(modifier.key);
+                                    const amountInputId = modifierAmountId(modifier.key);
+                                    return (
+                                      <div
+                                        className="structure-cost-option-modifier-row"
+                                        key={modifier.key}
+                                      >
+                                        <label htmlFor={seasonId}>
+                                          {t("structures.create.form.costOptions.modifiers.season")}
+                                          <select
+                                            id={seasonId}
+                                            value={modifier.season}
+                                            onChange={(event) =>
+                                              handleCostModifierFieldChange(
+                                                option.key,
+                                                modifier.key,
+                                                "season",
+                                                event.target.value
+                                              )
+                                            }
+                                          >
+                                            <option value="">
+                                              {t(
+                                                "structures.create.form.costOptions.modifiers.seasonPlaceholder"
+                                              )}
+                                            </option>
+                                            {openPeriodSeasonOptions.map((season) => (
+                                              <option key={season} value={season}>
+                                                {t(`structures.create.form.openPeriods.season.${season}`)}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </label>
+                                        <label htmlFor={amountInputId}>
+                                          {t("structures.create.form.costOptions.modifiers.amount")}
+                                          <input
+                                            id={amountInputId}
+                                            value={modifier.amount}
+                                            onChange={(event) =>
+                                              handleCostModifierFieldChange(
+                                                option.key,
+                                                modifier.key,
+                                                "amount",
+                                                event.target.value
+                                              )
+                                            }
+                                            inputMode="decimal"
+                                            placeholder="0,00"
+                                          />
+                                        </label>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          aria-label={t(
+                                            "structures.create.form.costOptions.modifiers.removeLabel"
+                                          )}
+                                          onClick={() =>
+                                            handleRemoveCostModifier(option.key, modifier.key)
+                                          }
+                                        >
+                                          {t("structures.create.form.costOptions.modifiers.remove")}
+                                        </Button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleAddSeasonalModifier(option.key)}
+                              >
+                                {t("structures.create.form.costOptions.modifiers.addSeasonal")}
+                              </Button>
+                            </div>
+                          </Surface>
                         );
                       })}
                     </div>
