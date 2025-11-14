@@ -74,12 +74,12 @@ from app.services.attachments import (
     ensure_bucket,
     ensure_bucket_exists,
     get_s3_client,
-    rewrite_presigned_url,
 )
 from app.services.audit import record_audit
 from app.services.costs import CostBand, band_for_cost, estimate_mean_daily_cost
 from app.services.filters import structure_matches_filters
 from app.services.geo import haversine_km
+from app.core.security import create_attachment_token
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
@@ -291,15 +291,14 @@ def _serialize_photo(
     photo: StructurePhoto,
     attachment: Attachment,
     *,
-    bucket: str,
-    client: S3Client,
+    request: Request,
 ) -> StructurePhotoRead:
-    url = client.generate_presigned_url(
-        "get_object",
-        Params={"Bucket": bucket, "Key": attachment.storage_key},
-        ExpiresIn=120,
+    token = create_attachment_token(
+        attachment.id,
+        disposition="inline",
+        ttl_seconds=600,
     )
-    url = rewrite_presigned_url(url)
+    url = str(request.url_for("download_attachment_content", token=token))
     return StructurePhotoRead(
         id=photo.id,
         structure_id=photo.structure_id,
@@ -1560,7 +1559,7 @@ def upsert_structure_cost_options(
 
 
 @router.get("/{structure_id}/photos", response_model=list[StructurePhotoRead])
-def list_structure_photos(structure_id: int, db: DbSession) -> list[StructurePhotoRead]:
+def list_structure_photos(structure_id: int, db: DbSession, request: Request) -> list[StructurePhotoRead]:
     _get_structure_or_404(db, structure_id)
 
     rows = db.execute(
@@ -1572,9 +1571,8 @@ def list_structure_photos(structure_id: int, db: DbSession) -> list[StructurePho
     if not rows:
         return []
 
-    bucket, client = _ensure_storage_ready()
     return [
-        _serialize_photo(photo, attachment, bucket=bucket, client=client)
+        _serialize_photo(photo, attachment, request=request)
         for photo, attachment in rows
     ]
 
@@ -1589,6 +1587,7 @@ def create_structure_photo(
     payload: StructurePhotoCreate,
     db: DbSession,
     _current_user: StructureEditor,
+    request: Request,
 ) -> StructurePhotoRead:
     _get_structure_or_404(db, structure_id)
 
@@ -1642,8 +1641,8 @@ def create_structure_photo(
     db.commit()
     db.refresh(photo)
 
-    bucket, client = _ensure_storage_ready()
-    return _serialize_photo(photo, attachment, bucket=bucket, client=client)
+    _ensure_storage_ready()
+    return _serialize_photo(photo, attachment, request=request)
 
 
 @router.delete("/{structure_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)

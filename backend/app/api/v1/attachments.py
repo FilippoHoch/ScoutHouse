@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, Annotated
 from urllib.parse import quote
 
 from botocore.client import BaseClient
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from contextlib import closing
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -40,10 +42,10 @@ from app.services.attachments import (
     get_s3_client,
     head_object,
     rewrite_presigned_post_signature,
-    rewrite_presigned_url,
     validate_key,
     validate_mime,
 )
+from app.core.security import create_attachment_token, verify_attachment_token
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
@@ -274,26 +276,67 @@ def sign_attachment_download(
     *,
     db: DbSession,
     user: CurrentUser,
+    request: Request,
 ) -> AttachmentDownloadSignature:
     attachment = db.get(Attachment, attachment_id)
     if attachment is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
 
     _ensure_owner_access(db, attachment.owner_type, attachment.owner_id, user, write=False)
+    _ensure_storage_ready()
+    token = create_attachment_token(attachment.id, ttl_seconds=180)
+    url = request.url_for("download_attachment_content", token=token)
+    return AttachmentDownloadSignature(url=str(url))
+
+
+@router.get(
+    "/download/{token}",
+    name="download_attachment_content",
+)
+def download_attachment_content(token: str, db: DbSession) -> StreamingResponse:
+    try:
+        attachment_id, mode = verify_attachment_token(token)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+
+    attachment = db.get(Attachment, attachment_id)
+    if attachment is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+
     bucket, client = _ensure_storage_ready()
-    safe_filename = attachment.filename or "download"
-    disposition = f"attachment; filename*=UTF-8''{quote(safe_filename)}"
-    url = client.generate_presigned_url(
-        "get_object",
-        Params={
-            "Bucket": bucket,
-            "Key": attachment.storage_key,
-            "ResponseContentDisposition": disposition,
-        },
-        ExpiresIn=120,
-    )
-    url = rewrite_presigned_url(url)
-    return AttachmentDownloadSignature(url=url)
+    try:
+        obj = client.get_object(Bucket=bucket, Key=attachment.storage_key)
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code")
+        if error_code in {"404", "NoSuchKey"}:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found") from exc
+        logger.exception("Unable to stream attachment %s: %s", attachment_id, error_code)
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail="Storage backend error") from exc
+
+    body = obj.get("Body")
+    if body is None:  # pragma: no cover - defensive guard
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail="Storage backend error")
+
+    media_type = obj.get("ContentType") or attachment.mime or "application/octet-stream"
+    filename = attachment.filename or "download"
+    disposition_type = "inline" if mode == "inline" else "attachment"
+    disposition = f"{disposition_type}; filename*=UTF-8''{quote(filename)}"
+    content_length = obj.get("ContentLength") or attachment.size
+
+    def _iter_chunks() -> Any:
+        with closing(body):
+            while True:
+                chunk = body.read(8192)
+                if not chunk:
+                    break
+                yield chunk
+
+    response = StreamingResponse(_iter_chunks(), media_type=media_type)
+    response.headers["Content-Disposition"] = disposition
+    if content_length:
+        response.headers["Content-Length"] = str(content_length)
+    response.headers["Cache-Control"] = "private, max-age=60"
+    return response
 
 
 @router.patch("/{attachment_id}", response_model=AttachmentRead)
