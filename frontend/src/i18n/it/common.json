@@ -665,6 +665,31 @@
           "empty": "Nessuna opzione di costo aggiunta.",
           "add": "Aggiungi opzione di costo",
           "remove": "Rimuovi",
+          "removeLabel": "Rimuovi listino {{index}}",
+          "cardTitle": "Listino {{index}}",
+          "cardSummary": "{{summary}}",
+          "layout": {
+            "base": {
+              "title": "Tariffa base",
+              "hint": "Scegli se il costo è per persona al giorno, per notte o forfait fisso e indica l'importo principale."
+            },
+            "thresholds": {
+              "title": "Soglie e forfait automatici",
+              "hint": "Quando il prezzo per persona supererebbe un certo totale usa queste soglie per trasformarlo in un forfait fisso o impostare un tetto massimo."
+            },
+            "deposits": {
+              "title": "Depositi e tasse",
+              "hint": "Specifica caparra, cauzione ed eventuale tassa di soggiorno per aiutare i capi a preventivare i costi."
+            },
+            "utilities": {
+              "title": "Utenze e forfait",
+              "hint": "Definisci forfait utenze, indica se sono incluse e aggiungi note utili."
+            },
+            "notes": {
+              "title": "Metodi di pagamento e note specifiche",
+              "hint": "Inserisci come si paga e note come \"solo Agesci\" o gruppi di zona Sebino senza dover combinare altri parametri."
+            }
+          },
           "model": "Modello di costo",
           "modelPlaceholder": "Seleziona modello",
           "amount": "Importo principale",
@@ -678,13 +703,25 @@
           "utilitiesNotes": "Dettagli utenze",
           "utilitiesNotesHint": "Descrivi cosa include il forfait o eventuali note sulle utenze.",
           "minTotal": "Totale minimo (facoltativo)",
-          "minTotalHint": "Importo minimo complessivo applicato alle tariffe a persona.",
+          "minTotalHint": "Se la tariffa a persona supererebbe questo valore il prezzo diventa un forfait fisso.",
           "maxTotal": "Totale massimo (facoltativo)",
           "maxTotalHint": "Importo massimo complessivo applicato alle tariffe a persona.",
           "paymentMethods": "Metodi di pagamento accettati",
           "paymentMethodsHint": "Inserisci un metodo per riga (es. bonifico, contanti, carta).",
-          "paymentTerms": "Condizioni di pagamento",
-
+          "paymentTerms": "Note e condizioni",
+          "paymentTermsHint": "Specifiche aggiuntive come \"solo Agesci\", fasce territoriali o accordi particolari.",
+          "summaryMissingAmount": "importo non indicato",
+          "modifiers": {
+            "title": "Variazioni stagionali",
+            "hint": "Cambia il prezzo in base alla stagione con variazioni dedicate (es. estate più cara).",
+            "empty": "Nessuna variazione stagionale impostata.",
+            "addSeasonal": "Aggiungi stagione",
+            "remove": "Rimuovi",
+            "removeLabel": "Rimuovi variazione stagionale",
+            "season": "Stagione",
+            "seasonPlaceholder": "Seleziona stagione",
+            "amount": "Prezzo per questa stagione"
+          },
           "models": {
             "per_person_day": "Per persona al giorno",
             "per_person_night": "Per persona a notte",
@@ -769,6 +806,7 @@
         "costOptionsCurrencyInvalid": "La valuta deve contenere tre lettere.",
         "costOptionsExtraInvalid": "Inserisci importi validi maggiori o uguali a zero per caparra, tassa o utenze.",
         "costOptionsTotalsInvalid": "Il totale minimo deve essere minore o uguale al totale massimo.",
+        "costOptionsSeasonalInvalid": "Completa stagione e importo per ogni variazione stagionale con un numero valido maggiore di zero.",
         "postalCodeInvalid": "Inserisci un CAP valido composto da lettere o numeri."
       },
       "warnings": {
@@ -1017,7 +1055,15 @@
         "minimumTotal": "Totale minimo: {{value}}",
         "maximumTotal": "Totale massimo: {{value}}",
         "paymentMethods": "Metodi di pagamento: {{value}}",
-        "paymentTerms": "Condizioni di pagamento: {{value}}"
+        "paymentTerms": "Note e condizioni: {{value}}",
+        "seasonalAdjustments": "Tariffe stagionali",
+        "seasonalAdjustment": "{{season}}: {{value}}",
+        "seasonLabels": {
+          "winter": "Inverno",
+          "spring": "Primavera",
+          "summer": "Estate",
+          "autumn": "Autunno"
+        }
       },
       "actions": {
         "edit": "Modifica struttura"
