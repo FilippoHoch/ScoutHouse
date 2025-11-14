@@ -1,7 +1,10 @@
 import csv
 from io import StringIO
 
-from app.services.structures_import import HEADERS, parse_structures_csv
+import json
+
+from app.models.structure import WaterSource
+from app.services.structures_import import HEADERS, parse_structures_csv, parse_structures_json
 
 
 def _build_csv(rows: list[dict[str, object]]) -> bytes:
@@ -140,3 +143,29 @@ def test_contact_emails_are_normalised_and_deduplicated() -> None:
         "info@example.org",
         "contatti@example.org",
     ]
+
+
+def test_parse_structures_json_accepts_lists_and_booleans() -> None:
+    payload = [
+        {
+            "name": "Casa JSON",
+            "slug": "casa-json",
+            "province": "MI",
+            "type": "land",
+            "shelter_on_field": True,
+            "contact_emails": ["info@example.org"],
+            "website_urls": ["https://example.org"],
+            "water_sources": ["tap", "river"],
+        }
+    ]
+    data = json.dumps(payload).encode("utf-8")
+
+    result = parse_structures_json(data)
+
+    assert not result.errors
+    assert len(result.rows) == 1
+    row = result.rows[0]
+    assert row.shelter_on_field is True
+    assert row.contact_emails == ["info@example.org"]
+    assert row.website_urls == ["https://example.org"]
+    assert row.water_sources == [WaterSource.TAP, WaterSource.RIVER]

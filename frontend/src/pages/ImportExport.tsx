@@ -31,6 +31,10 @@ interface ParsedError {
   sourceFormat: StructureImportSourceFormat;
 }
 
+function isSourceFormat(value: unknown): value is StructureImportSourceFormat {
+  return value === "csv" || value === "xlsx" || value === "json";
+}
+
 function normaliseErrors(
   errors: unknown,
   fallbackFormat: StructureImportSourceFormat
@@ -53,10 +57,9 @@ function normaliseErrors(
     })
     .map((item) => {
       const entry = item as StructureImportError;
-      const format =
-        entry.source_format === "csv" || entry.source_format === "xlsx"
-          ? entry.source_format
-          : fallbackFormat;
+      const format = isSourceFormat(entry.source_format)
+        ? entry.source_format
+        : fallbackFormat;
       return { ...entry, source_format: format };
     });
 }
@@ -76,10 +79,9 @@ function useImportErrors() {
             const detail = body.detail as Record<string, unknown>;
             const message =
               typeof detail.message === "string" ? detail.message : error.message;
-            const detailFormat =
-              detail.source_format === "csv" || detail.source_format === "xlsx"
-                ? (detail.source_format as StructureImportSourceFormat)
-                : fallbackFormat;
+            const detailFormat = isSourceFormat(detail.source_format)
+              ? (detail.source_format as StructureImportSourceFormat)
+              : fallbackFormat;
             const errors = normaliseErrors(detail.errors, detailFormat);
             return { message, errors, sourceFormat: detailFormat };
           }
@@ -109,7 +111,13 @@ function inferSourceFormatFromFile(
     return "xlsx";
   }
   const extension = file.name.split(".").pop()?.toLowerCase();
-  return extension === "csv" ? "csv" : "xlsx";
+  if (extension === "csv") {
+    return "csv";
+  }
+  if (extension === "json") {
+    return "json";
+  }
+  return "xlsx";
 }
 
 const structureTypeOptions: StructureType[] = ["house", "land", "mixed"];
@@ -745,6 +753,9 @@ export const ImportExportPage = () => {
                   <a href="/api/v1/templates/structures.csv" className="button" download>
                     {t("importExport.structures.downloadTemplateCsv")}
                   </a>
+                  <a href="/api/v1/templates/structures.json" className="button" download>
+                    {t("importExport.structures.downloadTemplateJson")}
+                  </a>
                 </div>
                 <label className="file-input">
                   <span className="file-input__label">
@@ -754,7 +765,7 @@ export const ImportExportPage = () => {
                     <input
                       type="file"
                       className="file-input__field"
-                      accept=".xlsx,.csv"
+                      accept=".xlsx,.csv,.json"
                       onChange={handleFileChange}
                     />
                     <span className="file-input__button">
@@ -880,6 +891,13 @@ export const ImportExportPage = () => {
                   >
                     {t("importExport.openPeriods.downloadTemplateCsv")}
                   </a>
+                  <a
+                    href="/api/v1/templates/structure-open-periods.json"
+                    className="button"
+                    download
+                  >
+                    {t("importExport.openPeriods.downloadTemplateJson")}
+                  </a>
                 </div>
                 <label className="file-input">
                   <span className="file-input__label">
@@ -889,7 +907,7 @@ export const ImportExportPage = () => {
                     <input
                       type="file"
                       className="file-input__field"
-                      accept=".xlsx,.csv"
+                      accept=".xlsx,.csv,.json"
                       onChange={handleOpenPeriodsFileChange}
                     />
                     <span className="file-input__button">

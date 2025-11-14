@@ -517,7 +517,7 @@ export interface GeocodingResult {
   address: GeocodingAddress | null;
 }
 
-export type StructureImportSourceFormat = "csv" | "xlsx";
+export type StructureImportSourceFormat = "csv" | "xlsx" | "json";
 
 export interface StructureImportError {
   row: number;

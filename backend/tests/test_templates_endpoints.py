@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import os
 from collections.abc import Generator
 from io import BytesIO, StringIO
@@ -65,6 +66,25 @@ def test_structures_template_csv_download() -> None:
     assert header == HEADERS
 
 
+def test_structures_template_json_download() -> None:
+    client = get_client()
+    response = client.get("/api/v1/templates/structures.json")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/json; charset=utf-8"
+    assert (
+        response.headers["content-disposition"]
+        == 'attachment; filename="structures_import_template.json"'
+    )
+
+    payload = json.loads(response.content.decode("utf-8"))
+    assert isinstance(payload, list)
+    assert payload, "Expected sample rows"
+    first_row = payload[0]
+    assert isinstance(first_row, dict)
+    for header in HEADERS:
+        assert header in first_row
+
+
 def test_structure_open_periods_template_xlsx_download() -> None:
     client = get_client()
     response = client.get("/api/v1/templates/structure-open-periods.xlsx")
@@ -99,3 +119,22 @@ def test_structure_open_periods_template_csv_download() -> None:
     reader = csv.reader(buffer)
     header = next(reader)
     assert header == OPEN_PERIOD_HEADERS
+
+
+def test_structure_open_periods_template_json_download() -> None:
+    client = get_client()
+    response = client.get("/api/v1/templates/structure-open-periods.json")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/json; charset=utf-8"
+    assert (
+        response.headers["content-disposition"]
+        == 'attachment; filename="structure_open_periods_template.json"'
+    )
+
+    payload = json.loads(response.content.decode("utf-8"))
+    assert isinstance(payload, list)
+    assert payload, "Expected sample rows"
+    first_row = payload[0]
+    assert isinstance(first_row, dict)
+    for header in OPEN_PERIOD_HEADERS:
+        assert header in first_row

@@ -55,15 +55,17 @@ ALLOWED_MIME_TYPES: dict[str, TemplateFormat] = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
     "application/csv": "csv",
     "text/csv": "csv",
+    "application/json": "json",
 }
 ALLOWED_EXTENSIONS: dict[str, TemplateFormat] = {
     ".xlsx": "xlsx",
     ".csv": "csv",
+    ".json": "json",
 }
 PARSE_TIMEOUT_SECONDS = 10
 
 UNSUPPORTED_XLS_MESSAGE = (
-    "XLS files (Excel 97-2003) are not supported. Please upload a CSV or XLSX template."
+    "XLS files (Excel 97-2003) are not supported. Please upload a CSV, XLSX or JSON template."
 )
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -111,7 +113,7 @@ def _detect_source_format(file: UploadFile) -> TemplateFormat:
 
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Invalid file type. Please upload a CSV or XLSX template.",
+        detail="Invalid file type. Please upload a CSV, XLSX or JSON template.",
     )
 
 
