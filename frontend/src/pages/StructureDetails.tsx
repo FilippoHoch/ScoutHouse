@@ -1458,6 +1458,13 @@ export const StructureDetailsPage = () => {
                                 })}
                               </span>
                             )}
+                            {option.forfait_trigger_total !== null && (
+                              <span>
+                                {t("structures.details.costs.forfaitTrigger", {
+                                  value: formatCurrency(option.forfait_trigger_total, option.currency)
+                                })}
+                              </span>
+                            )}
                             {option.max_total !== null && (
                               <span>
                                 {t("structures.details.costs.maximumTotal", {

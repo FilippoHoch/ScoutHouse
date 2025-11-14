@@ -34,6 +34,7 @@ def create_user(payload: UserAdminCreate, db: DbSession) -> UserRead:
         password_hash=hash_password(payload.password),
         is_admin=payload.is_admin,
         is_active=payload.is_active,
+        user_type=payload.user_type,
     )
     db.add(user)
     db.commit()
@@ -64,6 +65,9 @@ def update_user(user_id: str, payload: UserAdminUpdate, db: DbSession) -> UserRe
 
     if payload.is_active is not None:
         user.is_active = payload.is_active
+
+    if "user_type" in payload.model_fields_set:
+        user.user_type = payload.user_type
 
     if payload.password is not None:
         if not payload.password:

@@ -237,3 +237,14 @@ export async function ensureSession(): Promise<void> {
     await restoreSession();
   }
 }
+
+export function mergeAuthUser(partial: Partial<User>): void {
+  if (!state.user) {
+    return;
+  }
+  state = {
+    ...state,
+    user: { ...state.user, ...partial }
+  };
+  notify();
+}

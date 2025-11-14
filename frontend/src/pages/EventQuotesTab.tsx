@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import {
   ApiError,
@@ -13,6 +14,7 @@ import type {
   Event,
   EventCandidate,
   EventParticipants,
+  QuoteBreakdownEntry,
   QuoteCalcResponse,
   QuoteListItem,
   QuoteOverrides,
@@ -35,6 +37,47 @@ interface EventQuotesTabProps {
 }
 
 const scenarioOrder: QuoteScenario[] = ["best", "realistic", "worst"];
+
+const formatCurrency = (value: number, currency: string) =>
+  new Intl.NumberFormat("it-IT", { style: "currency", currency }).format(value);
+
+const getMetadataBoolean = (
+  metadata: Record<string, unknown>,
+  key: string,
+): boolean => metadata[key] === true;
+
+const getMetadataNumber = (
+  metadata: Record<string, unknown>,
+  key: string,
+): number | null => {
+  const value = metadata[key];
+  return typeof value === "number" ? value : null;
+};
+
+const getMetadataNotes = (
+  entry: QuoteBreakdownEntry,
+  currency: string,
+  translate: TFunction<"translation", undefined>,
+): string[] => {
+  const metadata = entry.metadata;
+  if (!metadata || typeof metadata !== "object") {
+    return [];
+  }
+
+  const metadataRecord = metadata as Record<string, unknown>;
+  const notes: string[] = [];
+  const forfaitApplied = getMetadataBoolean(metadataRecord, "forfait_trigger_applied");
+  const forfaitTotal = getMetadataNumber(metadataRecord, "forfait_trigger_total");
+  if (forfaitApplied && forfaitTotal !== null) {
+    notes.push(
+      translate("events.quotes.breakdown.metadata.forfaitTrigger", {
+        value: formatCurrency(forfaitTotal, currency),
+      }),
+    );
+  }
+
+  return notes;
+};
 
 function computeNights(startDate: string, endDate: string): number {
   const start = new Date(startDate);
@@ -353,14 +396,28 @@ export const EventQuotesTab = ({ event }: EventQuotesTabProps) => {
                 </tr>
               </thead>
               <tbody>
-                {calcResult.breakdown.map((entry, index) => (
-                  <tr key={`${entry.type}-${entry.option_id ?? index}`}>
-                    <td>{entry.description}</td>
+                {calcResult.breakdown.map((entry, index) => {
+                  const metadataNotes = getMetadataNotes(entry, calcResult.currency, t);
+                  return (
+                    <tr key={`${entry.type}-${entry.option_id ?? index}`}>
+                      <td>
+                        <div className="quote-breakdown__description">
+                          <span>{entry.description}</span>
+                          {metadataNotes.length > 0 && (
+                            <ul className="quote-breakdown__notes">
+                              {metadataNotes.map((note, noteIndex) => (
+                                <li key={`${entry.type}-${noteIndex}`}>{note}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </td>
                     <td>{entry.quantity ?? "-"}</td>
                     <td>{entry.unit_amount ?? "-"}</td>
                     <td>{entry.total}</td>
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </TableWrapper>

@@ -194,6 +194,9 @@ def _snapshot_cost_options(options: list[StructureCostOption]) -> list[dict[str,
                 "max_total": float(_quantize(option.max_total))
                 if option.max_total is not None
                 else None,
+                "forfait_trigger_total": float(_quantize(option.forfait_trigger_total))
+                if getattr(option, "forfait_trigger_total", None) is not None
+                else None,
                 "age_rules": option.age_rules or None,
                 "payment_methods": option.payment_methods or None,
                 "payment_terms": option.payment_terms,
@@ -354,6 +357,13 @@ def calc_quote(
             StructureCostModel.PER_PERSON_DAY,
             StructureCostModel.PER_PERSON_NIGHT,
         ):
+            forfait_applied = False
+            if getattr(option, "forfait_trigger_total", None) is not None:
+                forfait_threshold = _sanitize_decimal(option.forfait_trigger_total)
+                metadata["forfait_trigger_total"] = float(_quantize(forfait_threshold))
+                if line_total >= forfait_threshold:
+                    line_total = forfait_threshold
+                    forfait_applied = True
             if option.min_total is not None:
                 minimum_total = _sanitize_decimal(option.min_total)
                 metadata["minimum_total"] = float(_quantize(minimum_total))
@@ -366,6 +376,8 @@ def calc_quote(
                 if line_total > maximum_total:
                     line_total = maximum_total
                     maximum_total_applied = True
+            if forfait_applied:
+                metadata["forfait_trigger_applied"] = True
 
         if minimum_total_applied:
             metadata["minimum_total_applied"] = True

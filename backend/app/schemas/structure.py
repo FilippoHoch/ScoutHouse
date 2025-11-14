@@ -670,6 +670,7 @@ class StructureCostOptionBase(BaseModel):
     utilities_notes: str | None = None
     min_total: Decimal | None = Field(default=None, ge=0)
     max_total: Decimal | None = Field(default=None, ge=0)
+    forfait_trigger_total: Decimal | None = Field(default=None, ge=0)
     age_rules: dict[str, Any] | None = None
     payment_methods: list[str] | None = None
     payment_terms: str | None = None

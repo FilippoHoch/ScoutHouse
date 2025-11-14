@@ -14,11 +14,13 @@ import {
   getDefaultUserPreferences,
   resetUserPreferences,
   saveUserPreferences,
+  updateUserPreferences,
   useUserPreferences
 } from "../shared/preferences";
 import type { UserPreferences } from "../shared/preferences";
-import { searchGeocoding } from "../shared/api";
-import type { EventBranch, GeocodingResult } from "../shared/types";
+import { searchGeocoding, updateProfile } from "../shared/api";
+import type { EventBranch, GeocodingResult, UserType } from "../shared/types";
+import { mergeAuthUser, useAuth } from "../shared/auth";
 import {
   Button,
   InlineActions,
@@ -28,6 +30,7 @@ import {
 } from "../shared/ui/designSystem";
 
 const branchOptions: Array<"" | EventBranch> = ["", "LC", "EG", "RS", "ALL"];
+const profileBranchOptions: Array<"" | UserType> = ["", "LC", "EG", "RS", "LEADERS", "OTHER"];
 
 const MIN_LOCATION_QUERY_LENGTH = 3;
 const LOCATION_DEBOUNCE_MS = 350;
@@ -385,18 +388,29 @@ const BaseLocationSelector = ({ value, onChange }: BaseLocationSelectorProps) =>
 
 export const SettingsPage = () => {
   const { t } = useTranslation();
+  const auth = useAuth();
   const preferences = useUserPreferences();
   const [formState, setFormState] = useState<UserPreferences>(preferences);
   const [status, setStatus] = useState<"idle" | "saved">("idle");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setFormState(preferences);
+    setStatus("idle");
   }, [preferences]);
+
+  useEffect(() => {
+    if (!preferences.profileBranch && auth.user?.user_type) {
+      updateUserPreferences({ profileBranch: auth.user.user_type });
+    }
+  }, [auth.user?.user_type, preferences.profileBranch]);
 
   const hasChanges = useMemo(() => {
     return (
       formState.homeLocation !== preferences.homeLocation ||
       formState.defaultBranch !== preferences.defaultBranch ||
+      formState.profileBranch !== preferences.profileBranch ||
       formState.pricePreferences.cheap !== preferences.pricePreferences.cheap ||
       formState.pricePreferences.medium !== preferences.pricePreferences.medium ||
       formState.pricePreferences.expensive !== preferences.pricePreferences.expensive ||
@@ -405,10 +419,26 @@ export const SettingsPage = () => {
     );
   }, [formState, preferences]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    saveUserPreferences(formState);
-    setStatus("saved");
+    setError(null);
+    setSaving(true);
+    try {
+      saveUserPreferences(formState);
+      if (formState.profileBranch !== (auth.user?.user_type ?? "")) {
+        const updated = await updateProfile({
+          user_type: formState.profileBranch ? formState.profileBranch : null
+        });
+        mergeAuthUser({ user_type: updated.user_type });
+      }
+      setStatus("saved");
+    } catch (submissionError) {
+      console.error(submissionError);
+      setStatus("idle");
+      setError(t("settings.actions.error"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReset = () => {
@@ -424,6 +454,7 @@ export const SettingsPage = () => {
       [key]: value
     }));
     setStatus("idle");
+    setError(null);
   };
 
   const handlePriceChange = (key: "cheap" | "medium" | "expensive", value: boolean) => {
@@ -435,6 +466,7 @@ export const SettingsPage = () => {
       }
     }));
     setStatus("idle");
+    setError(null);
   };
 
   const handleThresholdChange = (key: "cheapMax" | "mediumMax", rawValue: string) => {
@@ -464,6 +496,7 @@ export const SettingsPage = () => {
       };
     });
     setStatus("idle");
+    setError(null);
   };
 
   return (
@@ -499,6 +532,22 @@ export const SettingsPage = () => {
                   ))}
                 </select>
                 <span className="helper-text">{t("settings.fields.defaultBranch.helper")}</span>
+              </label>
+              <label className="settings-field">
+                {t("settings.fields.profileBranch.label")}
+                <select
+                  value={formState.profileBranch}
+                  onChange={(event) => handleChange("profileBranch", event.target.value as "" | UserType)}
+                >
+                  {profileBranchOptions.map((branch) => (
+                    <option key={branch || "none"} value={branch}>
+                      {branch
+                        ? t(`settings.fields.profileBranch.options.${branch}`)
+                        : t("settings.fields.profileBranch.none")}
+                    </option>
+                  ))}
+                </select>
+                <span className="helper-text">{t("settings.fields.profileBranch.helper")}</span>
               </label>
             </div>
           </div>
@@ -575,12 +624,15 @@ export const SettingsPage = () => {
             </fieldset>
           </div>
 
+          {error && (
+            <InlineMessage tone="danger">{error}</InlineMessage>
+          )}
           {status === "saved" && (
             <InlineMessage>{t("settings.actions.saved")}</InlineMessage>
           )}
 
           <InlineActions>
-            <Button type="submit" disabled={!hasChanges}>
+            <Button type="submit" disabled={!hasChanges || saving}>
               {t("settings.actions.save")}
             </Button>
             <Button type="button" variant="subtle" onClick={handleReset}>

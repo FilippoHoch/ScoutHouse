@@ -18,6 +18,7 @@ import {
   EventCreateDto,
   EventParticipants,
 } from "../shared/types";
+import { useUserPreferences } from "../shared/preferences";
 import { LogisticsSummary } from "../shared/ui/LogisticsSummary";
 import {
   Button,
@@ -77,27 +78,32 @@ interface WizardState {
   branchSelection: EventBranch[];
 }
 
-const defaultWizardState: WizardState = {
-  title: "",
-  branch: "LC",
-  start_date: "",
-  end_date: "",
-  budget_total: "",
-  notes: "",
-  status: "draft",
-  planningMode: "simple",
-  branchSegments: [],
-  participants: {
-    lc: "",
-    lcKambusieri: "",
-    eg: "",
-    egKambusieri: "",
-    rs: "",
-    leaders: "",
-    detachedLeaders: "",
-    detachedGuests: "",
-  },
-  branchSelection: ["LC"],
+const createDefaultWizardState = (preferredBranch?: "" | EventBranch): WizardState => {
+  const selection: EventBranch[] =
+    preferredBranch && preferredBranch !== "" ? [preferredBranch] : ["LC"];
+  const fallback = selection[0] ?? "LC";
+  return {
+    title: "",
+    branch: resolveBranchFromSelection(selection, fallback),
+    start_date: "",
+    end_date: "",
+    budget_total: "",
+    notes: "",
+    status: "draft",
+    planningMode: "simple",
+    branchSegments: [],
+    participants: {
+      lc: "",
+      lcKambusieri: "",
+      eg: "",
+      egKambusieri: "",
+      rs: "",
+      leaders: "",
+      detachedLeaders: "",
+      detachedGuests: "",
+    },
+    branchSelection: selection,
+  };
 };
 
 const generateSegmentId = (): string => Math.random().toString(36).slice(2, 10);
@@ -158,8 +164,11 @@ interface EventCreateWizardProps {
 
 const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
   const { t } = useTranslation();
+  const preferences = useUserPreferences();
   const [step, setStep] = useState<WizardStep>(1);
-  const [state, setState] = useState<WizardState>(defaultWizardState);
+  const [state, setState] = useState<WizardState>(() =>
+    createDefaultWizardState(preferences.defaultBranch),
+  );
   const [error, setError] = useState<string | null>(null);
   const [createdEvent, setCreatedEvent] = useState<Event | null>(null);
   const [suggestions, setSuggestions] = useState<EventSuggestion[]>([]);
@@ -773,7 +782,7 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
   const handleFinish = () => {
     if (createdEvent) {
       onCreated(createdEvent);
-      setState(defaultWizardState);
+      setState(createDefaultWizardState(preferences.defaultBranch));
       setStep(1);
       setSuggestions([]);
       setAddedStructures(new Set());

@@ -62,6 +62,18 @@
           "ALL": "Tutte le branche"
         }
       },
+      "profileBranch": {
+        "label": "Branca personale",
+        "none": "Nessuna preferenza",
+        "helper": "Aiuta ScoutHouse a proporti filtri e calcoli coerenti con il tuo ruolo.",
+        "options": {
+          "LC": "Lupetti (LC)",
+          "EG": "Esploratori (EG)",
+          "RS": "Rover (RS)",
+          "LEADERS": "Comunità capi",
+          "OTHER": "Altro"
+        }
+      },
       "pricePreferences": {
         "label": "Fasce di prezzo preferite",
         "helper": "Le fasce selezionate verranno messe in evidenza nelle ricerche e nei filtri rapidi.",
@@ -85,7 +97,8 @@
     "actions": {
       "save": "Salva preferenze",
       "saved": "Preferenze salvate correttamente.",
-      "reset": "Ripristina valori predefiniti"
+      "reset": "Ripristina valori predefiniti",
+      "error": "Impossibile salvare le preferenze. Riprova."
     }
   },
   "admin": {
@@ -124,6 +137,7 @@
         "name": "Nome",
         "email": "Email",
         "role": "Ruolo",
+        "branch": "Branca",
         "status": "Stato",
         "created": "Creato il",
         "actions": "Azioni"
@@ -141,6 +155,7 @@
         "email": "Email",
         "password": "Password",
         "passwordHint": "Lascia vuoto per non modificarla.",
+        "userType": "Branca preferita",
         "isAdmin": "Amministratore",
         "isActive": "Utente attivo"
       },
@@ -730,6 +745,8 @@
           "minTotalHint": "Se la tariffa a persona supererebbe questo valore il prezzo diventa un forfait fisso.",
           "maxTotal": "Totale massimo (facoltativo)",
           "maxTotalHint": "Importo massimo complessivo applicato alle tariffe a persona.",
+          "forfaitTrigger": "Forfait automatico",
+          "forfaitTriggerHint": "Quando il calcolo a persona supera questa soglia applica direttamente il forfait indicato.",
           "paymentMethods": "Metodi di pagamento accettati",
           "paymentMethodsHint": "Inserisci un metodo per riga (es. bonifico, contanti, carta).",
           "paymentTerms": "Note e condizioni",
@@ -1077,6 +1094,7 @@
         "utilitiesIncluded": "Utenze incluse: {{value}}",
         "utilitiesNotes": "Note utenze: {{value}}",
         "minimumTotal": "Totale minimo: {{value}}",
+        "forfaitTrigger": "Forfait automatico: {{value}}",
         "maximumTotal": "Totale massimo: {{value}}",
         "paymentMethods": "Metodi di pagamento: {{value}}",
         "paymentTerms": "Note e condizioni: {{value}}",
@@ -1722,11 +1740,14 @@
       },
       "resultTitle": "Risultato preventivo",
       "breakdown": {
-        "item": "Voce",
-        "quantity": "Quantità",
-        "unit": "Unitario",
-        "total": "Totale"
-      },
+    "item": "Voce",
+    "quantity": "Quantità",
+    "unit": "Unitario",
+    "total": "Totale",
+    "metadata": {
+      "forfaitTrigger": "Superato il tetto di {{value}}: applicato forfait fisso."
+    }
+  },
       "totals": {
         "subtotal": "Subtotale",
         "utilities": "Utenze",

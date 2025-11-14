@@ -24,6 +24,14 @@ if TYPE_CHECKING:
     from .event import Event
 
 
+class UserType(str, Enum):
+    LC = "LC"
+    EG = "EG"
+    RS = "RS"
+    LEADERS = "LEADERS"
+    OTHER = "OTHER"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -33,6 +41,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    user_type: Mapped[UserType | None] = mapped_column(
+        sqla_enum(UserType, name="user_type"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -115,4 +126,5 @@ __all__ = [
     "PasswordResetToken",
     "RefreshToken",
     "User",
+    "UserType",
 ]

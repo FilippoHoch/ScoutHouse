@@ -11,7 +11,7 @@ import {
   UserAdminUpdateRequest
 } from "../shared/api";
 import { useAuth } from "../shared/auth";
-import type { MailTemplate, User } from "../shared/types";
+import type { MailTemplate, User, UserType } from "../shared/types";
 
 const templateValues: MailTemplate[] = [
   "reset_password",
@@ -25,7 +25,10 @@ interface UserFormState {
   password: string;
   is_admin: boolean;
   is_active: boolean;
+  user_type: "" | UserType;
 }
+
+const userTypeOptions: Array<"" | UserType> = ["", "LC", "EG", "RS", "LEADERS", "OTHER"];
 
 export const AdminPage = () => {
   const { t } = useTranslation();
@@ -47,7 +50,8 @@ export const AdminPage = () => {
     email: "",
     password: "",
     is_admin: false,
-    is_active: true
+    is_active: true,
+    user_type: ""
   });
   const [createStatus, setCreateStatus] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -167,7 +171,8 @@ export const AdminPage = () => {
         email: selectedUser.email,
         password: "",
         is_admin: selectedUser.is_admin,
-        is_active: selectedUser.is_active
+        is_active: selectedUser.is_active,
+        user_type: selectedUser.user_type ?? ""
       });
       setEditStatus(null);
       setEditError(null);
@@ -206,7 +211,8 @@ export const AdminPage = () => {
         email: createForm.email,
         password: createForm.password,
         is_admin: createForm.is_admin,
-        is_active: createForm.is_active
+        is_active: createForm.is_active,
+        user_type: createForm.user_type ? createForm.user_type : null
       };
       const created = await createUser(payload);
       setCreateStatus(t("admin.users.createSuccess", { name: created.name }));
@@ -215,7 +221,8 @@ export const AdminPage = () => {
         email: "",
         password: "",
         is_admin: false,
-        is_active: true
+        is_active: true,
+        user_type: ""
       });
       await loadUsers();
       handleSelectUser(String(created.id));
@@ -259,6 +266,9 @@ export const AdminPage = () => {
       }
       if (editForm.is_active !== selectedUser.is_active) {
         payload.is_active = editForm.is_active;
+      }
+      if ((editForm.user_type || "") !== (selectedUser.user_type ?? "")) {
+        payload.user_type = editForm.user_type ? editForm.user_type : null;
       }
       if (editForm.password.trim()) {
         payload.password = editForm.password;
@@ -347,6 +357,7 @@ export const AdminPage = () => {
                   <th scope="col">{t("admin.users.table.name")}</th>
                   <th scope="col">{t("admin.users.table.email")}</th>
                   <th scope="col">{t("admin.users.table.role")}</th>
+                  <th scope="col">{t("admin.users.table.branch")}</th>
                   <th scope="col">{t("admin.users.table.status")}</th>
                   <th scope="col">{t("admin.users.table.created")}</th>
                   <th scope="col">{t("admin.users.table.actions")}</th>
@@ -361,6 +372,11 @@ export const AdminPage = () => {
                       {user.is_admin
                         ? t("admin.users.role.admin")
                         : t("admin.users.role.user")}
+                    </td>
+                    <td>
+                      {user.user_type
+                        ? t(`settings.fields.profileBranch.options.${user.user_type}`)
+                        : t("settings.fields.profileBranch.none")}
                     </td>
                     <td>
                       {user.is_active
@@ -417,6 +433,21 @@ export const AdminPage = () => {
               required
             />
           </label>
+          <label>
+            {t("admin.users.form.userType")}
+            <select
+              value={createForm.user_type}
+              onChange={(event) => handleCreateChange("user_type", event.target.value as "" | UserType)}
+            >
+              {userTypeOptions.map((option) => (
+                <option key={option || "none"} value={option}>
+                  {option
+                    ? t(`settings.fields.profileBranch.options.${option}`)
+                    : t("settings.fields.profileBranch.none")}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="checkbox-field">
             <input
               type="checkbox"
@@ -471,6 +502,21 @@ export const AdminPage = () => {
                 onChange={(event) => handleEditChange("password", event.target.value)}
                 placeholder={t("admin.users.form.passwordHint") ?? undefined}
               />
+            </label>
+            <label>
+              {t("admin.users.form.userType")}
+              <select
+                value={editForm.user_type}
+                onChange={(event) => handleEditChange("user_type", event.target.value as "" | UserType)}
+              >
+                {userTypeOptions.map((option) => (
+                  <option key={option || "none"} value={option}>
+                    {option
+                      ? t(`settings.fields.profileBranch.options.${option}`)
+                      : t("settings.fields.profileBranch.none")}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="checkbox-field">
               <input

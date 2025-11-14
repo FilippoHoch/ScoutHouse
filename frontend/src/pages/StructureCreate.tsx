@@ -399,6 +399,7 @@ type CostOptionFormRow = {
   paymentTerms: string;
   minTotal: string;
   maxTotal: string;
+  forfaitTrigger: string;
   modifiers: CostModifierFormRow[];
   hadModifiers: boolean;
 };
@@ -429,6 +430,7 @@ const createCostOptionRow = (): CostOptionFormRow => ({
   paymentTerms: "",
   minTotal: "",
   maxTotal: "",
+  forfaitTrigger: "",
   modifiers: [],
   hadModifiers: false
 });
@@ -1514,7 +1516,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       | "paymentMethods"
       | "paymentTerms"
       | "minTotal"
-      | "maxTotal",
+      | "maxTotal"
+      | "forfaitTrigger",
     value: string
   ) => {
     const updates: Partial<CostOptionFormRow> = { [field]: value } as Partial<CostOptionFormRow>;
@@ -2410,6 +2413,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           option.max_total !== null && option.max_total !== undefined
             ? String(option.max_total)
             : "",
+        forfaitTrigger:
+          option.forfait_trigger_total !== null && option.forfait_trigger_total !== undefined
+            ? String(option.forfait_trigger_total)
+            : "",
         modifiers: seasonalModifiers.map((modifier) => ({
           key: createCostModifierKey(),
           id: modifier.id,
@@ -2936,6 +2943,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       !option.utilitiesFlat &&
       !option.minTotal &&
       !option.maxTotal &&
+      !option.forfaitTrigger &&
       !option.utilitiesNotes &&
       !option.paymentMethods &&
       !option.paymentTerms &&
@@ -2970,7 +2978,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         option.cityTaxPerNight,
         option.utilitiesFlat,
         option.minTotal,
-        option.maxTotal
+        option.maxTotal,
+        option.forfaitTrigger
       ];
       for (const candidate of extraFields) {
         if (!candidate) {
@@ -3379,6 +3388,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           !option.utilitiesFlat &&
           !option.minTotal &&
           !option.maxTotal &&
+          !option.forfaitTrigger &&
           !option.utilitiesNotes &&
           !option.paymentMethods &&
           !option.paymentTerms &&
@@ -3434,6 +3444,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         const maxTotalValue = parseOptional(option.maxTotal);
         if (maxTotalValue !== null) {
           payloadItem.max_total = maxTotalValue;
+        }
+        const forfaitTriggerValue = parseOptional(option.forfaitTrigger);
+        if (forfaitTriggerValue !== null) {
+          payloadItem.forfait_trigger_total = forfaitTriggerValue;
         }
         const paymentMethods = option.paymentMethods
           .split(/\r?\n|,/)
@@ -5851,6 +5865,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                         const utilitiesNotesId = `structure-cost-option-${option.key}-utilities-notes`;
                         const minTotalId = `structure-cost-option-${option.key}-min-total`;
                         const maxTotalId = `structure-cost-option-${option.key}-max-total`;
+                        const forfaitTriggerId = `structure-cost-option-${option.key}-forfait-trigger`;
                         const paymentMethodsId = `structure-cost-option-${option.key}-payment-methods`;
                         const paymentTermsId = `structure-cost-option-${option.key}-payment-terms`;
                         const cardTitle = t("structures.create.form.costOptions.cardTitle", {
@@ -6016,6 +6031,27 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                                       {t("structures.create.form.costOptions.maxTotalHint")}
                                     </span>
                                   </div>
+                                </div>
+                                <div className="structure-cost-option-field">
+                                  <label htmlFor={forfaitTriggerId}>
+                                    {t("structures.create.form.costOptions.forfaitTrigger")}
+                                  </label>
+                                  <input
+                                    id={forfaitTriggerId}
+                                    value={option.forfaitTrigger}
+                                    onChange={(event) =>
+                                      handleCostOptionFieldChange(
+                                        option.key,
+                                        "forfaitTrigger",
+                                        event.target.value
+                                      )
+                                    }
+                                    inputMode="decimal"
+                                    placeholder="0,00"
+                                  />
+                                  <span className="helper-text">
+                                    {t("structures.create.form.costOptions.forfaitTriggerHint")}
+                                  </span>
                                 </div>
                               </div>
                               <div className="structure-cost-option-section">

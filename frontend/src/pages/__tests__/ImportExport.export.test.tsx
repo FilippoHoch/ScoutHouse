@@ -34,6 +34,7 @@ describe("ImportExportPage exports", () => {
         is_admin: true,
         can_edit_structures: true,
         is_active: true,
+        user_type: null,
         created_at: "2024-01-01T00:00:00Z"
       },
       accessToken: "token",
@@ -126,6 +127,7 @@ describe("ImportExportPage exports", () => {
         is_admin: false,
         can_edit_structures: false,
         is_active: true,
+        user_type: null,
         created_at: "2024-01-01T00:00:00Z"
       },
       accessToken: "token",

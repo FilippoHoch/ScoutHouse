@@ -137,6 +137,28 @@ def test_calc_quote_applies_maximum_total(sample_event: Event) -> None:
     assert line["metadata"]["maximum_total_applied"] is True
 
 
+def test_calc_quote_applies_forfait_trigger(sample_event: Event) -> None:
+    option = StructureCostOption(
+        id=5,
+        structure_id=50,
+        model=StructureCostModel.PER_PERSON_DAY,
+        amount=Decimal("30.00"),
+        currency="EUR",
+        forfait_trigger_total=Decimal("700.00"),
+    )
+    structure = SimpleNamespace(id=50, cost_options=[option])
+
+    result = calc_quote(sample_event, structure)
+
+    totals = result["totals"]
+    assert totals["subtotal"] == pytest.approx(700.0)
+    line = next(
+        item for item in result["breakdown"] if item["type"] == StructureCostModel.PER_PERSON_DAY.value
+    )
+    assert line["metadata"]["forfait_trigger_total"] == pytest.approx(700.0)
+    assert line["metadata"]["forfait_trigger_applied"] is True
+
+
 def test_calc_quote_breakdown(sample_event: Event, structure_with_costs: SimpleNamespace) -> None:
     result = calc_quote(sample_event, structure_with_costs)
 

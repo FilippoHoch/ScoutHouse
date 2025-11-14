@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import type { EventBranch } from "./types";
+import type { EventBranch, UserType } from "./types";
 
 export interface PricePreferences {
   cheap: boolean;
@@ -13,6 +13,7 @@ export interface PricePreferences {
 export interface UserPreferences {
   homeLocation: string;
   defaultBranch: "" | EventBranch;
+  profileBranch: "" | UserType;
   pricePreferences: PricePreferences;
 }
 
@@ -22,6 +23,7 @@ function createDefaultPreferences(): UserPreferences {
   return {
     homeLocation: "",
     defaultBranch: "",
+    profileBranch: "",
     pricePreferences: {
       cheap: true,
       medium: true,
@@ -33,9 +35,14 @@ function createDefaultPreferences(): UserPreferences {
 }
 
 const eventBranches: EventBranch[] = ["LC", "EG", "RS", "ALL"];
+const userTypes: UserType[] = ["LC", "EG", "RS", "LEADERS", "OTHER"];
 
 function isEventBranch(value: unknown): value is EventBranch {
   return typeof value === "string" && eventBranches.includes(value as EventBranch);
+}
+
+function isUserType(value: unknown): value is UserType {
+  return typeof value === "string" && userTypes.includes(value as UserType);
 }
 
 function parseThreshold(value: unknown, fallback: number): number {
@@ -90,6 +97,10 @@ function normalisePreferences(value: unknown): UserPreferences {
       typeof record.defaultBranch === "string" && (record.defaultBranch === "" || isEventBranch(record.defaultBranch))
         ? (record.defaultBranch as "" | EventBranch)
         : defaults.defaultBranch,
+    profileBranch:
+      typeof record.profileBranch === "string" && (record.profileBranch === "" || isUserType(record.profileBranch))
+        ? (record.profileBranch as "" | UserType)
+        : defaults.profileBranch,
     pricePreferences: normalisePricePreferences(record.pricePreferences)
   };
 }
@@ -98,6 +109,7 @@ function clonePreferences(preferences: UserPreferences): UserPreferences {
   return {
     homeLocation: preferences.homeLocation,
     defaultBranch: preferences.defaultBranch,
+    profileBranch: preferences.profileBranch,
     pricePreferences: {
       cheap: preferences.pricePreferences.cheap,
       medium: preferences.pricePreferences.medium,
@@ -186,6 +198,8 @@ export function updateUserPreferences(update: Partial<UserPreferences>): void {
     homeLocation: update.homeLocation ?? state.homeLocation,
     defaultBranch:
       update.defaultBranch !== undefined ? update.defaultBranch : state.defaultBranch,
+    profileBranch:
+      update.profileBranch !== undefined ? update.profileBranch : state.profileBranch,
     pricePreferences: {
       cheap: update.pricePreferences?.cheap ?? state.pricePreferences.cheap,
       medium: update.pricePreferences?.medium ?? state.pricePreferences.medium,

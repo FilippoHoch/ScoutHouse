@@ -23,6 +23,7 @@ from app.schemas import (
     RegisterRequest,
     ResetPasswordRequest,
     UserRead,
+    UserSelfUpdate,
 )
 from app.services.mail import schedule_password_reset_email
 from app.services.password_reset import (
@@ -188,4 +189,19 @@ def logout(
 
 @router.get("/me", response_model=UserRead)
 def get_me(user: User = Depends(get_current_user)) -> UserRead:
+    return _serialize_user(user)
+
+
+@router.patch("/me", response_model=UserRead)
+def update_me(
+    payload: UserSelfUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserRead:
+    if "user_type" in payload.model_fields_set:
+        user.user_type = payload.user_type
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return _serialize_user(user)
