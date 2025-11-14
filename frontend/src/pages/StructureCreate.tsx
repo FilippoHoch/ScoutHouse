@@ -525,6 +525,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [accessByPublicTransport, setAccessByPublicTransport] = useState<boolean | null>(null);
   const [coachTurningArea, setCoachTurningArea] = useState<boolean | null>(null);
   const [nearestBusStop, setNearestBusStop] = useState("");
+  const [nearestBusStopLocation, setNearestBusStopLocation] = useState<GoogleMapEmbedCoordinates | null>(null);
+  const [isNearestBusStopModalOpen, setIsNearestBusStopModalOpen] = useState(false);
+  const [nearestBusStopModalSelection, setNearestBusStopModalSelection] =
+    useState<GoogleMapEmbedCoordinates | null>(null);
   const [wheelchairAccessible, setWheelchairAccessible] = useState<boolean | null>(null);
   const [stepFreeAccess, setStepFreeAccess] = useState<boolean | null>(null);
   const [parkingCarSlots, setParkingCarSlots] = useState("");
@@ -666,6 +670,17 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       lon: selectedCoordinates.lng.toFixed(6)
     });
   }, [selectedCoordinates, t]);
+
+  const nearestBusStopLocationLabel = useMemo(() => {
+    if (!nearestBusStopLocation) {
+      return null;
+    }
+
+    return t("structures.create.form.nearestBusStopLocationPreview", {
+      lat: nearestBusStopLocation.lat.toFixed(6),
+      lon: nearestBusStopLocation.lng.toFixed(6)
+    });
+  }, [nearestBusStopLocation, t]);
 
   const automaticCoordinates = geocodingApplied && !coordinatesManuallyEdited;
   const automaticAltitude = geocodingAltitudeApplied && !altitudeManuallyEdited;
@@ -1629,9 +1644,30 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handleNearestBusStopChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleNearestBusStopChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setNearestBusStop(event.target.value);
     setApiError(null);
+  };
+
+  const handleNearestBusStopModalOpen = () => {
+    setNearestBusStopModalSelection(nearestBusStopLocation ?? selectedCoordinates ?? null);
+    setIsNearestBusStopModalOpen(true);
+  };
+
+  const handleNearestBusStopModalClose = () => {
+    setIsNearestBusStopModalOpen(false);
+  };
+
+  const handleNearestBusStopLocationConfirm = () => {
+    if (!nearestBusStopModalSelection) {
+      return;
+    }
+    setNearestBusStopLocation(nearestBusStopModalSelection);
+    setIsNearestBusStopModalOpen(false);
+  };
+
+  const handleNearestBusStopLocationClear = () => {
+    setNearestBusStopLocation(null);
   };
 
   const handleWheelchairAccessibleChange = (value: boolean | null) => {
@@ -3160,7 +3196,19 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (showOutdoorSection) {
       payload.land_area_m2 = trimmedLandArea ? Number.parseFloat(trimmedLandArea.replace(",", ".")) : null;
-      payload.nearest_bus_stop = trimmedNearestBusStop || null;
+      const nearestBusStopSegments: string[] = [];
+      if (trimmedNearestBusStop) {
+        nearestBusStopSegments.push(trimmedNearestBusStop);
+      }
+      if (nearestBusStopLocation) {
+        nearestBusStopSegments.push(
+          t("structures.create.form.nearestBusStopLocationSuffix", {
+            lat: nearestBusStopLocation.lat.toFixed(6),
+            lon: nearestBusStopLocation.lng.toFixed(6)
+          })
+        );
+      }
+      payload.nearest_bus_stop = nearestBusStopSegments.length > 0 ? nearestBusStopSegments.join("\n\n") : null;
       payload.water_sources = waterSources.length > 0 ? [...waterSources] : null;
       payload.fire_policy = firePolicy ? (firePolicy as FirePolicy) : null;
       payload.field_slope = fieldSlope ? (fieldSlope as FieldSlope) : null;
@@ -4578,18 +4626,49 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   />
                 </div>
 
-                <div className="structure-form-field">
-                  <label htmlFor="structure-nearest-bus-stop">
-                    {t("structures.create.form.nearestBusStop")}
-                    <input
-                      id="structure-nearest-bus-stop"
-                      value={nearestBusStop}
-                      onChange={handleNearestBusStopChange}
-                      maxLength={255}
-                    />
-                  </label>
+                <div className="structure-form-field structure-form-field--nearest-bus-stop">
+                  <div className="structure-field-with-action">
+                    <label
+                      htmlFor="structure-nearest-bus-stop"
+                      className="structure-field-with-action__control"
+                    >
+                      {t("structures.create.form.nearestBusStop")}
+                      <textarea
+                        id="structure-nearest-bus-stop"
+                        value={nearestBusStop}
+                        onChange={handleNearestBusStopChange}
+                        maxLength={255}
+                        rows={3}
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="structure-field-with-action__button"
+                      onClick={handleNearestBusStopModalOpen}
+                    >
+                      {t("structures.create.form.nearestBusStopLocationButton")}
+                    </Button>
+                  </div>
                   <span className="helper-text">
                     {t("structures.create.form.nearestBusStopHint")}
+                  </span>
+                  {nearestBusStopLocationLabel && (
+                    <p className="helper-text structure-form-field__note">
+                      {nearestBusStopLocationLabel}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleNearestBusStopLocationClear}
+                      >
+                        {t("structures.create.form.nearestBusStopLocationClear")}
+                      </Button>
+                    </p>
+                  )}
+                  <span className="helper-text">
+                    {t("structures.create.form.nearestBusStopLocationHelper")}
                   </span>
                 </div>
 
@@ -6862,6 +6941,50 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 )}
               </div>
             </fieldset>
+
+            {isNearestBusStopModalOpen && (
+              <div className="modal" role="presentation">
+                <div
+                  className="modal-content modal-content--full-width"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="nearest-bus-stop-modal-title"
+                >
+                  <header className="modal-header">
+                    <h3 id="nearest-bus-stop-modal-title">
+                      {t("structures.create.form.nearestBusStopModal.title")}
+                    </h3>
+                  </header>
+                  <div className="modal-body">
+                    <p>{t("structures.create.form.nearestBusStopModal.description")}</p>
+                    <GoogleMapEmbed
+                      coordinates={
+                        nearestBusStopModalSelection ?? nearestBusStopLocation ?? selectedCoordinates
+                      }
+                      title={t("structures.create.form.nearestBusStopModal.mapLabel")}
+                      ariaLabel={t("structures.create.form.nearestBusStopModal.mapLabel")}
+                      emptyLabel={t("structures.create.form.nearestBusStopModal.empty")}
+                      onCoordinatesChange={setNearestBusStopModalSelection}
+                    />
+                    <p className="helper-text">
+                      {t("structures.create.form.nearestBusStopModal.hint")}
+                    </p>
+                  </div>
+                  <div className="modal-actions">
+                    <Button type="button" variant="ghost" onClick={handleNearestBusStopModalClose}>
+                      {t("structures.create.form.nearestBusStopModal.cancel")}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleNearestBusStopLocationConfirm}
+                      disabled={!nearestBusStopModalSelection}
+                    >
+                      {t("structures.create.form.nearestBusStopModal.confirm")}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {apiError && <InlineMessage tone="danger">{apiError}</InlineMessage>}
 
