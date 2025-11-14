@@ -4,6 +4,8 @@ import os
 from collections.abc import Generator
 from io import BytesIO
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 from openpyxl import Workbook
@@ -42,6 +44,10 @@ def build_workbook(rows: list[dict[str, object]]) -> bytes:
     buffer = BytesIO()
     workbook.save(buffer)
     return buffer.getvalue()
+
+
+def build_json(rows: list[dict[str, object]]) -> bytes:
+    return json.dumps(rows).encode("utf-8")
 
 
 def upload_file(
@@ -215,6 +221,74 @@ def test_confirmed_import_upserts_rows() -> None:
     created_payload = created.json()
     assert created_payload["name"] == "Baite Unite"
     assert created_payload["province"] == "TO"
+
+
+def test_json_import_preview_and_confirmed_import() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+    seed_structure(client, slug="casa-alpina", name="Casa Alpina", province="BS")
+
+    payload = [
+        {
+            "name": "Casa Alpina",
+            "slug": "casa-alpina",
+            "province": "BS",
+            "address": "Via Neve 12",
+            "latitude": 46.2,
+            "longitude": 10.5,
+            "altitude": 1450,
+            "type": "house",
+            "contact_emails": ["info@example.org"],
+        },
+            {
+                "name": "Nuovo Rifugio",
+                "slug": "nuovo-rifugio",
+                "province": "TN",
+                "address": "Località Bosco",
+                "latitude": 46.0,
+                "longitude": 11.0,
+                "altitude": 980,
+                "type": "mixed",
+                "water_sources": ["tap", "river"],
+            },
+        ]
+    json_file = build_json(payload)
+
+    preview = upload_file(
+        client,
+        json_file,
+        dry_run=True,
+        filename="structures.json",
+        content_type="application/json",
+    )
+    assert preview.status_code == 200
+    dry_run_payload = preview.json()
+    assert dry_run_payload["valid_rows"] == 2
+    assert dry_run_payload["invalid_rows"] == 0
+    assert dry_run_payload["source_format"] == "json"
+    assert dry_run_payload["preview"] == [
+        {"slug": "casa-alpina", "action": "update"},
+        {"slug": "nuovo-rifugio", "action": "create"},
+    ]
+
+    response = upload_file(
+        client,
+        json_file,
+        dry_run=False,
+        filename="structures.json",
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    result = response.json()
+    assert result["created"] == 1
+    assert result["updated"] == 1
+    assert result["skipped"] == 0
+    assert result["source_format"] == "json"
+    assert result["errors"] == []
+
+    created = client.get("/api/v1/structures/by-slug/nuovo-rifugio")
+    assert created.status_code == 200
+    created_payload = created.json()
+    assert created_payload["province"] == "TN"
 
 
 def test_rejects_legacy_xls_files() -> None:

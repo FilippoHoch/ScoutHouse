@@ -3,6 +3,7 @@ import json
 import os
 from collections.abc import Generator
 from io import BytesIO
+from openpyxl import load_workbook
 from urllib.parse import quote
 from uuid import uuid4
 from zipfile import ZipFile
@@ -13,7 +14,11 @@ from fastapi.testclient import TestClient
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///./test.db")
 os.environ.setdefault("APP_ENV", "test")
 
-from app.api.v1.export import CSV_HEADERS_OPEN_PERIODS  # noqa: E402
+from app.api.v1.export import (  # noqa: E402
+    CSV_HEADERS_EVENTS,
+    CSV_HEADERS_OPEN_PERIODS,
+    CSV_HEADERS_STRUCTURES,
+)
 from app.core.db import Base, engine  # noqa: E402
 from app.core.limiter import TEST_RATE_LIMIT_HEADER  # noqa: E402
 from app.main import app  # noqa: E402
@@ -145,6 +150,39 @@ def test_export_structures_with_filters_csv() -> None:
         assert first_period_row[7] == "Disponibile in estate"
 
 
+def test_export_structures_xlsx_includes_open_periods_sheet() -> None:
+    client = get_client(authenticated=True, is_admin=True)
+    open_period = {
+        "kind": "season",
+        "season": "summer",
+        "notes": "Aperto in estate",
+        "units": ["ALL"],
+    }
+    create_structure(client, "casa-scout", "MI", open_periods=[open_period])
+
+    response = client.get("/api/v1/export/structures?format=xlsx")
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == 'attachment; filename="structures.xlsx"'
+
+    workbook = load_workbook(BytesIO(response.content), read_only=True)
+    try:
+        assert set(workbook.sheetnames) == {"structures", "structure_open_periods"}
+        structures_sheet = workbook["structures"]
+        structure_rows = list(structures_sheet.iter_rows(values_only=True))
+        assert tuple(structure_rows[0]) == CSV_HEADERS_STRUCTURES
+        data_rows = [row for row in structure_rows[1:] if any(row)]
+        assert data_rows, "Expected at least one exported structure"
+        assert data_rows[0][1] == "casa-scout"
+
+        periods_sheet = workbook["structure_open_periods"]
+        period_rows = list(periods_sheet.iter_rows(values_only=True))
+        assert tuple(period_rows[0]) == CSV_HEADERS_OPEN_PERIODS
+        period_data = [row for row in period_rows[1:] if any(row)]
+        assert period_data, "Expected open periods sheet to include data"
+        assert period_data[0][1] == "casa-scout"
+        assert period_data[0][2] == "season"
+    finally:
+        workbook.close()
 def test_export_events_json_with_date_range() -> None:
     client = get_client(authenticated=True)
     first_event = create_event(client, "Campo Invernale", "2025-01-10", "2025-01-12")
@@ -199,6 +237,26 @@ def test_export_events_with_additional_filters() -> None:
     events = json.loads(response.content.decode("utf-8"))
     assert isinstance(events, list)
     assert [event["id"] for event in events] == [matching]
+
+
+def test_export_events_xlsx_contains_headers() -> None:
+    client = get_client(authenticated=True)
+    event_id = create_event(client, "Campo Invernale", "2025-02-10", "2025-02-12")
+
+    response = client.get("/api/v1/export/events?format=xlsx")
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == 'attachment; filename="events.xlsx"'
+
+    workbook = load_workbook(BytesIO(response.content), read_only=True)
+    try:
+        sheet = workbook.active
+        header_row = next(sheet.iter_rows(max_row=1, values_only=True))
+        assert tuple(header_row) == CSV_HEADERS_EVENTS
+        data_rows = [row for row in sheet.iter_rows(min_row=2, values_only=True) if any(row)]
+        assert data_rows, "Expected at least one exported event"
+        assert data_rows[0][0] == event_id
+    finally:
+        workbook.close()
 
 
 def test_event_ical_download_and_permissions() -> None:

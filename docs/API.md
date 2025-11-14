@@ -223,6 +223,11 @@ Generate and download the CSV template for structure imports. The response is
 UTF-8 encoded, uses `,` as separator, and mirrors the XLSX headers and sample
 rows.
 
+## GET `/api/v1/templates/structures.json`
+
+Return the same template as JSON. The payload is an array of sample rows where
+each object contains the canonical headers; useful for API-driven imports.
+
 ## GET `/api/v1/templates/structure-open-periods.xlsx`
 
 Generate il template XLSX per l'import dei periodi di apertura. Il foglio
@@ -234,12 +239,17 @@ contiene le intestazioni canonicali (`structure_slug`, `kind`, `season`,
 Controparte CSV del template periodi. Il file è UTF-8, comma separated e riporta
 gli stessi esempi del foglio XLSX.
 
+## GET `/api/v1/templates/structure-open-periods.json`
+
+Versione JSON del template: array di oggetti con i campi `structure_slug`,
+`kind`, `season`, `units`, `date_start`, `date_end`, `notes`.
+
 Tutti i template vengono generati on-the-fly, quindi non è necessario versionare
 file binari nel repository.
 
 ## POST `/api/v1/import/structures`
 
-Bulk import structures from a CSV or XLSX file. The endpoint accepts
+Bulk import structures from a CSV, XLSX or JSON file. The endpoint accepts
 `multipart/form-data` uploads under the `file` field and is limited to admin
 users. Supported query parameters:
 
@@ -247,16 +257,17 @@ users. Supported query parameters:
   a summary without persisting changes.
 
 Accepted MIME types are `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
-`application/csv`, and `text/csv`, up to 5 MB in size and 2 000 data rows. CSV
-files must be UTF-8 encoded, comma-separated, and use `.` for decimals. The
-file must contain the following headers as the first row: `name`, `slug`,
-`province`, `address`, `latitude`, `longitude`, `type`, `indoor_beds`,
-`indoor_bathrooms`, `indoor_showers`, `indoor_activity_rooms`, `has_kitchen`,
-`hot_water`, `land_area_m2`, `shelter_on_field`,
-`water_sources`, `electricity_available`, `fire_policy`,
-`access_by_car`, `access_by_coach`, `access_by_public_transport`,
-`coach_turning_area`, `nearest_bus_stop`,
-`weekend_only`, `has_field_poles`, `pit_latrine_allowed`, `website_urls`, `notes_logistics`, `notes`.
+`application/csv`, `text/csv`, and `application/json`, up to 5 MB in size and 2 000
+data rows. CSV files must be UTF-8 encoded, comma-separated, and use `.` for decimals.
+JSON payloads must be UTF-8 arrays of objects following the same schema. The
+file must contain the following headers/keys: `name`, `slug`, `province`,
+`address`, `latitude`, `longitude`, `type`, `indoor_beds`, `indoor_bathrooms`,
+`indoor_showers`, `indoor_activity_rooms`, `has_kitchen`, `hot_water`,
+`land_area_m2`, `shelter_on_field`, `water_sources`, `electricity_available`,
+`fire_policy`, `access_by_car`, `access_by_coach`,
+`access_by_public_transport`, `coach_turning_area`, `nearest_bus_stop`,
+`weekend_only`, `has_field_poles`, `pit_latrine_allowed`, `contact_emails`,
+`website_urls`, `notes_logistics`, `notes`.
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/import/structures?dry_run=true" \
@@ -317,7 +328,7 @@ the response.
 ## POST `/api/v1/import/structure-open-periods`
 
 Importa periodi stagionali o intervalli di date per più strutture partendo da un
-file CSV/XLSX con le intestazioni `structure_slug`, `kind`, `season`,
+file CSV/XLSX/JSON con le intestazioni `structure_slug`, `kind`, `season`,
 `date_start`, `date_end`, `notes`. Il campo `kind` accetta `season` oppure
 `range` e determina la validazione degli altri campi (stagione obbligatoria per
 `season`, date obbligatorie per `range`).
@@ -333,7 +344,7 @@ ciascuna riga:
 Quando `dry_run=false` l'import crea solo i periodi non duplicati. I duplicati e
 le righe vuote sono conteggiati in `skipped`. Eventuali errori di validazione
 impediscono il commit e vengono restituiti con l'indicazione della sorgente
-(`csv` o `xlsx`). L'operazione è tracciata con l'audit
+(`csv`, `xlsx` o `json`). L'operazione è tracciata con l'audit
 `import_structure_open_periods`.
 
 ## POST `/api/v1/structures/`

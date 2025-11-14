@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import re
 from collections.abc import Iterator, Sequence
+import json
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -69,7 +70,7 @@ OPEN_PERIOD_HEADERS = [
 ]
 
 
-TemplateFormat = Literal["xlsx", "csv"]
+TemplateFormat = Literal["xlsx", "csv", "json"]
 
 
 TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
@@ -245,11 +246,19 @@ def _normalise_text(value: object) -> str:
 
 
 def _parse_units(value: object) -> tuple[list[StructureUnit] | None, list[str]]:
-    text = _normalise_text(value)
-    if not text:
-        return None, []
-    separators = re.compile(r"[;,]")
-    candidates = [item.strip().upper() for item in separators.split(text) if item.strip()]
+    if isinstance(value, list | tuple):
+        raw_items = value
+    else:
+        text = _normalise_text(value)
+        if not text:
+            return None, []
+        separators = re.compile(r"[;,]")
+        raw_items = [item for item in separators.split(text) if item]
+    candidates = [
+        _normalise_text(item).upper()
+        for item in raw_items
+        if _normalise_text(item)
+    ]
     units: list[StructureUnit] = []
     invalid: list[str] = []
     for candidate in candidates:
@@ -308,6 +317,8 @@ def _validate_positive_int(value: object, *, allow_empty: bool = True) -> int | 
 
 
 def _validate_bool(value: object) -> bool | None:
+    if isinstance(value, bool):
+        return value
     text = _normalise_text(value)
     if not text:
         return None
@@ -331,11 +342,22 @@ def _validate_decimal_non_negative(value: object) -> Decimal | None:
 
 
 def _parse_water_sources(value: object) -> tuple[list[WaterSource] | None, list[str]]:
-    text = _normalise_text(value)
-    if not text:
+    if value is None:
         return None, []
-    separators = re.compile(r"[;,]")
-    candidates = [item.strip().lower() for item in separators.split(text) if item.strip()]
+
+    if isinstance(value, list | tuple):
+        raw_items = value
+    else:
+        text = _normalise_text(value)
+        if not text:
+            return None, []
+        raw_items = re.split(r"[;,]", text)
+
+    candidates = [
+        _normalise_text(item).lower()
+        for item in raw_items
+        if _normalise_text(item)
+    ]
     sources: list[WaterSource] = []
     invalid: list[str] = []
     for candidate in candidates:
@@ -485,6 +507,27 @@ def _is_blank_row(values: Sequence[object]) -> bool:
         if text:
             return False
     return True
+
+
+def _load_json_rows(data: bytes) -> list[dict[str, object]]:
+    if not data:
+        raise ValueError("The uploaded file is empty")
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError("JSON must be UTF-8 encoded") from exc
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError("Invalid JSON payload") from exc
+    if not isinstance(payload, list):
+        raise ValueError("Invalid JSON payload. Expected an array of objects")
+    rows: list[dict[str, object]] = []
+    for index, entry in enumerate(payload, start=1):
+        if not isinstance(entry, dict):
+            raise ValueError(f"Invalid JSON payload at row {index}: expected an object")
+        rows.append(entry)
+    return rows
 
 
 def _process_rows(
@@ -1279,6 +1322,21 @@ def parse_structures_csv(data: bytes, *, max_rows: int = 2000) -> ParsedWorkbook
     )
 
 
+def parse_structures_json(data: bytes, *, max_rows: int = 2000) -> ParsedWorkbook:
+    rows = _load_json_rows(data)
+    return _process_rows(
+        (
+            (
+                index,
+                tuple(entry.get(header) for header in HEADERS),
+            )
+            for index, entry in enumerate(rows, start=1)
+        ),
+        source_format="json",
+        max_rows=max_rows,
+    )
+
+
 def parse_structures_file(
     data: bytes,
     *,
@@ -1289,7 +1347,9 @@ def parse_structures_file(
         return parse_structures_xlsx(data, max_rows=max_rows)
     if source_format == "csv":
         return parse_structures_csv(data, max_rows=max_rows)
-    raise ValueError("Unsupported file format. Only CSV and XLSX templates are supported.")
+    if source_format == "json":
+        return parse_structures_json(data, max_rows=max_rows)
+    raise ValueError("Unsupported file format. Only CSV, XLSX or JSON templates are supported.")
 
 
 def parse_structure_open_periods_xlsx(
@@ -1359,6 +1419,25 @@ def parse_structure_open_periods_csv(
     )
 
 
+def parse_structure_open_periods_json(
+    data: bytes,
+    *,
+    max_rows: int = 2000,
+) -> ParsedOpenPeriods:
+    rows = _load_json_rows(data)
+    return _process_open_period_rows(
+        (
+            (
+                index,
+                tuple(entry.get(header) for header in OPEN_PERIOD_HEADERS),
+            )
+            for index, entry in enumerate(rows, start=1)
+        ),
+        source_format="json",
+        max_rows=max_rows,
+    )
+
+
 def parse_structure_open_periods_file(
     data: bytes,
     *,
@@ -1369,7 +1448,9 @@ def parse_structure_open_periods_file(
         return parse_structure_open_periods_xlsx(data, max_rows=max_rows)
     if source_format == "csv":
         return parse_structure_open_periods_csv(data, max_rows=max_rows)
-    raise ValueError("Unsupported file format. Only CSV and XLSX templates are supported.")
+    if source_format == "json":
+        return parse_structure_open_periods_json(data, max_rows=max_rows)
+    raise ValueError("Unsupported file format. Only CSV, XLSX or JSON templates are supported.")
 
 
 def build_structures_template_workbook() -> bytes:
@@ -1393,6 +1474,22 @@ def build_structures_template_csv() -> str:
     return output.getvalue()
 
 
+def _serialize_template_value(value: object) -> object:
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, date):
+        return value.isoformat()
+    return value
+
+
+def build_structures_template_json() -> str:
+    serialized = [
+        {header: _serialize_template_value(row.get(header)) for header in HEADERS}
+        for row in TEMPLATE_SAMPLE_ROWS
+    ]
+    return json.dumps(serialized, ensure_ascii=False, indent=2)
+
+
 def build_structure_open_periods_template_workbook() -> bytes:
     workbook = Workbook()
     sheet = workbook.active
@@ -1414,6 +1511,17 @@ def build_structure_open_periods_template_csv() -> str:
     return output.getvalue()
 
 
+def build_structure_open_periods_template_json() -> str:
+    serialized = [
+        {
+            header: _serialize_template_value(row.get(header))
+            for header in OPEN_PERIOD_HEADERS
+        }
+        for row in OPEN_PERIOD_TEMPLATE_SAMPLE_ROWS
+    ]
+    return json.dumps(serialized, ensure_ascii=False, indent=2)
+
+
 __all__ = [
     "HEADERS",
     "OPEN_PERIOD_HEADERS",
@@ -1428,11 +1536,15 @@ __all__ = [
     "parse_structures_file",
     "parse_structures_csv",
     "parse_structures_xlsx",
+    "parse_structures_json",
     "parse_structure_open_periods_file",
     "parse_structure_open_periods_csv",
     "parse_structure_open_periods_xlsx",
+    "parse_structure_open_periods_json",
     "build_structures_template_workbook",
     "build_structures_template_csv",
+    "build_structures_template_json",
     "build_structure_open_periods_template_workbook",
     "build_structure_open_periods_template_csv",
+    "build_structure_open_periods_template_json",
 ]

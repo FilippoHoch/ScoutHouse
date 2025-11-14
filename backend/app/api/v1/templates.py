@@ -4,8 +4,10 @@ from fastapi import APIRouter, Response
 
 from app.services.structures_import import (
     build_structure_open_periods_template_csv,
+    build_structure_open_periods_template_json,
     build_structure_open_periods_template_workbook,
     build_structures_template_csv,
+    build_structures_template_json,
     build_structures_template_workbook,
 )
 
@@ -30,6 +32,13 @@ def get_structures_template_csv() -> Response:
     return Response(content, media_type="text/csv; charset=utf-8", headers=headers)
 
 
+@router.get("/structures.json")
+def get_structures_template_json() -> Response:
+    content = build_structures_template_json().encode("utf-8")
+    headers = {"Content-Disposition": 'attachment; filename="structures_import_template.json"'}
+    return Response(content, media_type="application/json; charset=utf-8", headers=headers)
+
+
 @router.get("/structure-open-periods.xlsx")
 def get_structure_open_periods_template_xlsx() -> Response:
     content = build_structure_open_periods_template_workbook()
@@ -46,6 +55,15 @@ def get_structure_open_periods_template_csv() -> Response:
     content = build_structure_open_periods_template_csv().encode("utf-8")
     headers = {"Content-Disposition": 'attachment; filename="structure_open_periods_template.csv"'}
     return Response(content, media_type="text/csv; charset=utf-8", headers=headers)
+
+
+@router.get("/structure-open-periods.json")
+def get_structure_open_periods_template_json() -> Response:
+    content = build_structure_open_periods_template_json().encode("utf-8")
+    headers = {
+        "Content-Disposition": 'attachment; filename="structure_open_periods_template.json"'
+    }
+    return Response(content, media_type="application/json; charset=utf-8", headers=headers)
 
 
 __all__ = ["router"]
