@@ -22,6 +22,10 @@ USER_TYPE_ENUM = sa.Enum("LC", "EG", "RS", "LEADERS", "OTHER", name="user_type")
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        USER_TYPE_ENUM.create(bind, checkfirst=True)
+
     op.add_column(
         "users",
         sa.Column("user_type", USER_TYPE_ENUM, nullable=True),
@@ -36,4 +40,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_column("structure_cost_option", "forfait_trigger_total")
     op.drop_column("users", "user_type")
-    USER_TYPE_ENUM.drop(op.get_bind(), checkfirst=False)
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        USER_TYPE_ENUM.drop(bind, checkfirst=True)
