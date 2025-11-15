@@ -144,7 +144,7 @@ const createdStructure = {
   governance_notes: null,
   data_quality_score: null,
   data_quality_notes: null,
-  data_quality_flags: [],
+  data_quality_status: "verified",
   created_at: "2024-05-01T10:00:00Z",
   estimated_cost: null,
   cost_band: null,
@@ -219,6 +219,10 @@ describe("StructureCreatePage", () => {
       "medium"
     );
 
+    const unverifiedRadio = screen.getByLabelText(/Da verificare/i);
+    await user.click(unverifiedRadio);
+    await waitFor(() => expect(unverifiedRadio).toBeChecked());
+
     await user.type(screen.getByLabelText(/Email di riferimento/i), "info@example.org");
     await user.click(screen.getByRole("button", { name: /Aggiungi un'altra email/i }));
     await user.type(screen.getByLabelText(/Email 2/i), "booking@example.org");
@@ -236,6 +240,7 @@ describe("StructureCreatePage", () => {
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
+    expect(screen.getByLabelText(/Da verificare/i)).toBeChecked();
     await waitFor(() => expect(createStructure).toHaveBeenCalled());
 
     const payload = vi.mocked(createStructure).mock.calls[0][0];
@@ -299,22 +304,17 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(optionalSectionPicker, "documentsRequired");
     await user.selectOptions(optionalSectionPicker, "paymentMethods");
     await user.selectOptions(optionalSectionPicker, "communicationsInfrastructure");
-    await user.selectOptions(optionalSectionPicker, "dataQualityFlags");
+    const unverifiedRadio = screen.getByLabelText(/Da verificare/i);
+    await user.click(unverifiedRadio);
+    await waitFor(() => expect(unverifiedRadio).toBeChecked());
 
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: /Risorse cartografiche/i })).toBeInTheDocument()
     );
 
     await user.click(
-      screen.getByRole("button", { name: /Aggiungi infrastruttura/i })
-    );
-    await user.click(
       screen.getByRole("button", { name: /Aggiungi attrezzatura/i })
     );
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi segnalazione/i })
-    );
-
     await user.type(
       screen.getByRole("textbox", { name: /Risorse cartografiche/i }),
       "https://maps.example.com"
@@ -350,15 +350,10 @@ describe("StructureCreatePage", () => {
     await user.type(
       screen.getByLabelText(/Note aggiuntive sulle comunicazioni/i),
       "Fibra ottica"
-
+    );
     await user.type(
       screen.getByRole("textbox", { name: /Attrezzatura attività/i }),
       "Kit pionieristica"
-    );
-
-    await user.type(
-      screen.getByRole("textbox", { name: /Segnalazioni qualità dati/i }),
-      "Verifica disponibilità"
     );
 
 
@@ -376,12 +371,11 @@ describe("StructureCreatePage", () => {
     expect(payload.wifi_available).toBe(true);
     expect(payload.landline_available).toBe(false);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
-  }, 15000);
     expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
     expect(payload).not.toHaveProperty("activity_spaces");
     expect(payload).not.toHaveProperty("inclusion_services");
-    expect(payload.data_quality_flags).toEqual(["Verifica disponibilità"]);
-  });
+    expect(payload.data_quality_status).toBe("unverified");
+  }, 15000);
 
 });
 
