@@ -612,13 +612,35 @@
           "entryLabel": "Gruppo ammesso {{index}}",
           "empty": "Nessun gruppo aggiunto."
         },
-        "communicationsInfrastructure": {
-          "label": "Infrastrutture di comunicazione",
-          "hint": "Indica reti o servizi di comunicazione disponibili (es. fibra, radio, rete mobile potenziata).",
-          "add": "Aggiungi infrastruttura",
-          "remove": "Rimuovi questa voce",
-          "entryLabel": "Infrastruttura {{index}}",
-          "empty": "Nessuna infrastruttura aggiunta."
+        "connectivity": {
+          "cellDataQuality": {
+            "label": "Qualità rete dati",
+            "placeholder": "Non specificata",
+            "hint": "Seleziona il livello di copertura dati cellulare riportato dai gestori o dai capi."
+          },
+          "cellVoiceQuality": {
+            "label": "Qualità chiamate",
+            "placeholder": "Non specificata",
+            "hint": "Indica la qualità delle chiamate vocali in base all'esperienza o alla documentazione."
+          },
+          "wifiAvailable": {
+            "label": "Wi-Fi disponibile",
+            "hint": "Specificare se è presente una rete Wi-Fi utilizzabile dai gruppi."
+          },
+          "landlineAvailable": {
+            "label": "Linea fissa disponibile",
+            "hint": "Indica se è presente un telefono fisso per le emergenze."
+          },
+          "notes": {
+            "label": "Note aggiuntive sulle comunicazioni",
+            "hint": "Aggiungi dettagli liberi (es. gestori consigliati, zone con segnale migliore, limiti d'uso)."
+          },
+          "options": {
+            "none": "Nessuna",
+            "limited": "Limitata",
+            "good": "Buona",
+            "excellent": "Ottima"
+          }
         },
         "activityEquipment": {
           "label": "Attrezzatura attività",
@@ -643,6 +665,9 @@
           "remove": "Rimuovi sezione",
           "options": {
             "allowedAudiences": "Gruppi ammessi",
+            "activitySpaces": "Spazi per attività",
+            "activityEquipment": "Attrezzatura attività",
+            "inclusionServices": "Servizi di inclusione",
             "communicationsInfrastructure": "Infrastrutture di comunicazione",
             "dataQualityFlags": "Segnalazioni qualità dati",
             "inAreaProtetta": "In area protetta",
@@ -982,6 +1007,22 @@
         "documentsRequiredFallback": "Non specificati",
         "mapResources": "Risorse cartografiche",
         "mapResourcesFallback": "Nessuna risorsa indicata",
+        "cellDataQuality": "Qualità rete dati",
+        "cellVoiceQuality": "Qualità chiamate",
+        "wifiAvailable": "Wi-Fi disponibile",
+        "landlineAvailable": "Linea fissa disponibile",
+        "communicationsNotes": "Note sulle comunicazioni",
+        "communicationsNotesFallback": "Nessuna nota sulle comunicazioni",
+        "connectivity": {
+          "signal": {
+            "none": "Nessuna copertura",
+            "limited": "Copertura limitata",
+            "good": "Buona copertura",
+            "excellent": "Ottima copertura"
+          }
+        },
+        "activitySpaces": "Spazi per attività",
+        "activitySpacesFallback": "Nessuno spazio aggiuntivo indicato",
         "communicationsInfrastructure": "Infrastrutture di comunicazione",
         "communicationsInfrastructureFallback": "Nessuna infrastruttura specificata",
         "activityEquipment": "Attrezzatura attività",

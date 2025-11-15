@@ -20,10 +20,15 @@ def _availability_matches(
     if season is not None and availability.season != season:
         return False
     if unit is not None:
-        units = {str(item) for item in availability.units}
-        if StructureUnit.ALL.value in units:
+        normalized_units: set[StructureUnit] = set()
+        for value in availability.units:
+            try:
+                normalized_units.add(StructureUnit(value))
+            except ValueError:  # pragma: no cover - ignore unexpected values
+                continue
+        if StructureUnit.ALL in normalized_units:
             return True
-        if str(unit) not in units:
+        if unit not in normalized_units:
             return False
     return True
 

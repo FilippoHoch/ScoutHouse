@@ -144,7 +144,7 @@ const createdStructure = {
   governance_notes: null,
   data_quality_score: null,
   data_quality_notes: null,
-  data_quality_flags: [],
+  data_quality_status: "verified",
   created_at: "2024-05-01T10:00:00Z",
   estimated_cost: null,
   cost_band: null,
@@ -219,6 +219,10 @@ describe("StructureCreatePage", () => {
       "medium"
     );
 
+    const unverifiedRadio = screen.getByLabelText(/Da verificare/i);
+    await user.click(unverifiedRadio);
+    await waitFor(() => expect(unverifiedRadio).toBeChecked());
+
     await user.type(screen.getByLabelText(/Email di riferimento/i), "info@example.org");
     await user.click(screen.getByRole("button", { name: /Aggiungi un'altra email/i }));
     await user.type(screen.getByLabelText(/Email 2/i), "booking@example.org");
@@ -236,6 +240,7 @@ describe("StructureCreatePage", () => {
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
+    expect(screen.getByLabelText(/Da verificare/i)).toBeChecked();
     await waitFor(() => expect(createStructure).toHaveBeenCalled());
 
     const payload = vi.mocked(createStructure).mock.calls[0][0];
@@ -271,7 +276,7 @@ describe("StructureCreatePage", () => {
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/structures/base-bosco"));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
-  });
+  }, 15000);
 
 
   it("includes optional section fields in the payload", async () => {
@@ -298,22 +303,17 @@ describe("StructureCreatePage", () => {
     await user.selectOptions(optionalSectionPicker, "mapResources");
     await user.selectOptions(optionalSectionPicker, "documentsRequired");
     await user.selectOptions(optionalSectionPicker, "communicationsInfrastructure");
-    await user.selectOptions(optionalSectionPicker, "dataQualityFlags");
+    const unverifiedRadio = screen.getByLabelText(/Da verificare/i);
+    await user.click(unverifiedRadio);
+    await waitFor(() => expect(unverifiedRadio).toBeChecked());
 
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: /Risorse cartografiche/i })).toBeInTheDocument()
     );
 
     await user.click(
-      screen.getByRole("button", { name: /Aggiungi infrastruttura/i })
-    );
-    await user.click(
       screen.getByRole("button", { name: /Aggiungi attrezzatura/i })
     );
-    await user.click(
-      screen.getByRole("button", { name: /Aggiungi segnalazione/i })
-    );
-
     await user.type(
       screen.getByRole("textbox", { name: /Risorse cartografiche/i }),
       "https://maps.example.com"
@@ -326,20 +326,32 @@ describe("StructureCreatePage", () => {
 
     await user.click(screen.getByRole("checkbox", { name: /Bonifico bancario/i }));
 
-    await user.type(
-      screen.getByRole("textbox", { name: /Infrastrutture di comunicazione/i }),
-      "Fibra ottica"
+    await user.selectOptions(
+      screen.getByLabelText(/Qualità rete dati/i),
+      "good"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Qualità chiamate/i),
+      "excellent"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Wi-Fi disponibile/i),
+      "yes"
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/Linea fissa disponibile/i),
+      "no"
     );
 
+    await user.type(
+      screen.getByLabelText(/Note aggiuntive sulle comunicazioni/i),
+      "Fibra ottica"
+    );
     await user.type(
       screen.getByRole("textbox", { name: /Attrezzatura attività/i }),
       "Kit pionieristica"
     );
 
-    await user.type(
-      screen.getByRole("textbox", { name: /Segnalazioni qualità dati/i }),
-      "Verifica disponibilità"
-    );
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
@@ -350,12 +362,17 @@ describe("StructureCreatePage", () => {
     expect(payload.map_resources_urls).toEqual(["https://maps.example.com"]);
     expect(payload.documents_required).toEqual(["Modulo autorizzazione"]);
     expect(payload.payment_methods).toEqual(["bank_transfer"]);
+    expect(payload.payment_methods).toEqual(["Bonifico"]);
+    expect(payload.cell_data_quality).toBe("good");
+    expect(payload.cell_voice_quality).toBe("excellent");
+    expect(payload.wifi_available).toBe(true);
+    expect(payload.landline_available).toBe(false);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
     expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
     expect(payload).not.toHaveProperty("activity_spaces");
     expect(payload).not.toHaveProperty("inclusion_services");
-    expect(payload.data_quality_flags).toEqual(["Verifica disponibilità"]);
-  });
+    expect(payload.data_quality_status).toBe("unverified");
+  }, 15000);
 
 });
 

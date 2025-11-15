@@ -345,6 +345,16 @@ class Structure(Base):
         nullable=True,
     )
     cell_coverage_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cell_data_quality: Mapped[CellCoverageQuality | None] = mapped_column(
+        sqla_enum(CellCoverageQuality, name="structure_cell_coverage"),
+        nullable=True,
+    )
+    cell_voice_quality: Mapped[CellCoverageQuality | None] = mapped_column(
+        sqla_enum(CellCoverageQuality, name="structure_cell_coverage"),
+        nullable=True,
+    )
+    wifi_available: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
+    landline_available: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=None)
     communications_infrastructure: Mapped[list[str] | None] = mapped_column(
         JSON,
         nullable=True,

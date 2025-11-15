@@ -13,6 +13,7 @@ import {
 } from "../shared/api";
 import type {
   Availability,
+  CellSignalQuality,
   Contact,
   ContactCreateDto,
   ContactPreferredChannel,
@@ -191,6 +192,13 @@ export const StructureDetailsPage = () => {
       return null;
     }
     return items.join(", ");
+  };
+
+  const formatSignalQuality = (value: CellSignalQuality | null | undefined) => {
+    if (!value) {
+      return t("structures.details.overview.notAvailable");
+    }
+    return t(`structures.details.overview.connectivity.signal.${value}`);
   };
 
   const formatUsageRecommendation = (
@@ -669,6 +677,10 @@ export const StructureDetailsPage = () => {
     : null;
 
   const documentsRequiredValue = formatStringList(structure.documents_required);
+  const connectivityNotesValue = formatStringList(structure.communications_infrastructure);
+  const activitySpacesValue = formatStringList(structure.activity_spaces);
+  const activityEquipmentValue = formatStringList(structure.activity_equipment);
+  const inclusionServicesValue = formatStringList(structure.inclusion_services);
   const communicationsInfrastructureValue = formatStringList(structure.communications_infrastructure);
   const rawPaymentMethods = structure.payment_methods ?? [];
   const paymentMethodLabels =
@@ -682,6 +694,40 @@ export const StructureDetailsPage = () => {
       ? paymentMethodLabels.join(", ")
       : t("structures.details.overview.paymentMethodsFallback");
   const dataQualityFlagsValue = formatStringList(structure.data_quality_flags);
+
+  const connectivityDetails: LogisticsDetail[] = filterVisibleDetails([
+    {
+      id: "cellDataQuality",
+      label: t("structures.details.overview.cellDataQuality"),
+      value: formatSignalQuality(structure.cell_data_quality),
+      icon: "📶"
+    },
+    {
+      id: "cellVoiceQuality",
+      label: t("structures.details.overview.cellVoiceQuality"),
+      value: formatSignalQuality(structure.cell_voice_quality),
+      icon: "📱"
+    },
+    {
+      id: "wifiAvailable",
+      label: t("structures.details.overview.wifiAvailable"),
+      value: formatBoolean(structure.wifi_available),
+      icon: "📡"
+    },
+    {
+      id: "landlineAvailable",
+      label: t("structures.details.overview.landlineAvailable"),
+      value: formatBoolean(structure.landline_available),
+      icon: "☎️"
+    },
+    {
+      id: "communicationsNotes",
+      label: t("structures.details.overview.communicationsNotes"),
+      value: connectivityNotesValue,
+      icon: "📝",
+      isFull: true
+    }
+  ]);
 
   const operationsDetails: LogisticsDetail[] = filterVisibleDetails([
     {
@@ -712,6 +758,7 @@ export const StructureDetailsPage = () => {
       icon: "💳",
       isFull: true
     },
+    ...connectivityDetails,
     {
       id: "weekendOnly",
       label: t("structures.details.overview.weekendOnly"),
@@ -733,6 +780,24 @@ export const StructureDetailsPage = () => {
       isFull: true
     },
     {
+      id: "activitySpaces",
+      label: t("structures.details.overview.activitySpaces"),
+      value: activitySpacesValue,
+      icon: "🏕️",
+      isFull: true
+    },
+    {
+      id: "activityEquipment",
+      label: t("structures.details.overview.activityEquipment"),
+      value: activityEquipmentValue,
+      icon: "🎒",
+      isFull: true
+    },
+    {
+      id: "inclusionServices",
+      label: t("structures.details.overview.inclusionServices"),
+      value: inclusionServicesValue,
+      icon: "♿",
       id: "communicationsInfrastructure",
       label: t("structures.details.overview.communicationsInfrastructure"),
       value: communicationsInfrastructureValue,

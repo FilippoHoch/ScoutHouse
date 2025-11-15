@@ -39,6 +39,7 @@ import {
   FloodRiskLevel,
   PAYMENT_METHODS,
   PaymentMethod,
+  CellSignalQuality,
   StructureCreateDto,
   StructureOperationalStatus,
   StructureType,
@@ -74,6 +75,12 @@ const waterSourceOptions: WaterSource[] = [
 const firePolicyOptions: FirePolicy[] = ["allowed", "with_permit", "forbidden"];
 const fieldSlopeOptions: FieldSlope[] = ["flat", "gentle", "moderate", "steep"];
 const floodRiskOptions: FloodRiskLevel[] = ["none", "low", "medium", "high"];
+const cellSignalOptions: CellSignalQuality[] = [
+  "none",
+  "limited",
+  "good",
+  "excellent"
+];
 const usageRecommendationOptions: StructureUsageRecommendation[] = [
   "outings_only",
   "camps_only",
@@ -127,6 +134,9 @@ type SeasonalAmenityRow = {
 
 type OptionalSectionKey =
   | "allowedAudiences"
+  | "activitySpaces"
+  | "activityEquipment"
+  | "inclusionServices"
   | "communicationsInfrastructure"
   | "dataQualityFlags"
   | "inAreaProtetta"
@@ -137,6 +147,9 @@ type OptionalSectionKey =
 
 const optionalSectionOrder: OptionalSectionKey[] = [
   "allowedAudiences",
+  "activitySpaces",
+  "activityEquipment",
+  "inclusionServices",
   "communicationsInfrastructure",
   "dataQualityFlags",
   "inAreaProtetta",
@@ -546,6 +559,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [allowedAudiences, setAllowedAudiences] = useState<string[]>([]);
   const [documentsRequired, setDocumentsRequired] = useState<string[]>([""]);
   const [mapResourcesUrls, setMapResourcesUrls] = useState<string[]>([""]);
+  const [cellDataQuality, setCellDataQuality] = useState<CellSignalQuality | "">("");
+  const [cellVoiceQuality, setCellVoiceQuality] = useState<CellSignalQuality | "">("");
+  const [wifiAvailable, setWifiAvailable] = useState<boolean | null>(null);
+  const [landlineAvailable, setLandlineAvailable] = useState<boolean | null>(null);
+  const [communicationsNotes, setCommunicationsNotes] = useState("");
+  const [activitySpaces, setActivitySpaces] = useState<string[]>([]);
   const [communicationsInfrastructure, setCommunicationsInfrastructure] = useState<string[]>([]);
   const [activityEquipment, setActivityEquipment] = useState<string[]>([]);
   const [structurePaymentMethods, setStructurePaymentMethods] = useState<PaymentMethod[]>([
@@ -1778,27 +1797,20 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handleCommunicationsInfrastructureChange = (
-    index: number,
-    value: string
-  ) => {
-    setCommunicationsInfrastructure((current) => {
-      const next = [...current];
-      next[index] = value;
-      return next;
-    });
+  const handleCellDataQualityChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    setCellDataQuality(value === "" ? "" : (value as CellSignalQuality));
     setApiError(null);
   };
 
-  const handleAddCommunicationsInfrastructure = () => {
-    setCommunicationsInfrastructure((current) => [...current, ""]);
+  const handleCellVoiceQualityChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    setCellVoiceQuality(value === "" ? "" : (value as CellSignalQuality));
     setApiError(null);
   };
 
-  const handleRemoveCommunicationsInfrastructure = (index: number) => {
-    setCommunicationsInfrastructure((current) =>
-      current.filter((_, itemIndex) => itemIndex !== index)
-    );
+  const handleCommunicationsNotesChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setCommunicationsNotes(event.target.value);
     setApiError(null);
   };
 
@@ -1881,6 +1893,14 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         case "allowedAudiences":
           setAllowedAudiences([]);
           break;
+        case "activitySpaces":
+          setActivitySpaces([]);
+          break;
+        case "activityEquipment":
+          setActivityEquipment([]);
+          break;
+        case "inclusionServices":
+          setInclusionServices([]);
         case "communicationsInfrastructure":
           setCommunicationsInfrastructure([]);
           break;
@@ -1907,7 +1927,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     },
     [
       setAllowedAudiences,
-      setCommunicationsInfrastructure,
       setDataQualityFlags,
       setDocumentsRequired,
       setEnteAreaProtetta,
@@ -2200,15 +2219,16 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       nextActiveSections.push("documentsRequired");
     }
 
-    const communicationsValues =
+    setCellDataQuality(existingStructure.cell_data_quality ?? "");
+    setCellVoiceQuality(existingStructure.cell_voice_quality ?? "");
+    setWifiAvailable(existingStructure.wifi_available);
+    setLandlineAvailable(existingStructure.landline_available);
+    const communicationsNotesValue =
       existingStructure.communications_infrastructure &&
       existingStructure.communications_infrastructure.length > 0
-        ? [...existingStructure.communications_infrastructure]
-        : [];
-    setCommunicationsInfrastructure(communicationsValues);
-    if (communicationsValues.length > 0) {
-      nextActiveSections.push("communicationsInfrastructure");
-    }
+        ? existingStructure.communications_infrastructure.join("\n")
+        : "";
+    setCommunicationsNotes(communicationsNotesValue);
 
     const activityEquipmentValues =
       existingStructure.activity_equipment && existingStructure.activity_equipment.length > 0
@@ -2997,6 +3017,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedEnvironmentalNotes = environmentalNotes.trim();
     const trimmedDocumentsRequired = documentsRequired.map((value) => value.trim());
     const trimmedMapResourcesUrls = mapResourcesUrls.map((value) => value.trim());
+    const trimmedCommunicationsNotes = communicationsNotes
+      .split(/\r?\n/)
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+    const trimmedActivitySpaces = activitySpaces.map((value) => value.trim());
     const trimmedCommunicationsInfrastructure = communicationsInfrastructure.map((value) =>
       value.trim()
     );
@@ -3034,6 +3059,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       type: type as StructureType,
       has_kitchen: hasKitchen,
       hot_water: hotWater,
+      cell_data_quality: cellDataQuality ? (cellDataQuality as CellSignalQuality) : null,
+      cell_voice_quality: cellVoiceQuality ? (cellVoiceQuality as CellSignalQuality) : null,
+      wifi_available: wifiAvailable,
+      landline_available: landlineAvailable,
       access_by_car: accessByCar,
       access_by_coach: accessByCoach,
       access_by_public_transport: accessByPublicTransport,
@@ -3172,9 +3201,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.map_resources_urls = nonEmptyMapResources;
     }
 
-    const nonEmptyCommunications = trimmedCommunicationsInfrastructure.filter((value) => value);
-    if (nonEmptyCommunications.length > 0) {
-      payload.communications_infrastructure = nonEmptyCommunications;
+    if (trimmedCommunicationsNotes.length > 0) {
+      payload.communications_infrastructure = trimmedCommunicationsNotes;
     }
 
     const nonEmptyActivityEquipment = trimmedActivityEquipment.filter((value) => value);
@@ -3575,6 +3603,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const documentsRequiredDescribedBy = documentsRequiredHintId;
   const mapResourcesHintId = "structure-map-resources-hint";
   const mapResourcesDescribedBy = mapResourcesHintId;
+  const activitySpacesHintId = "structure-activity-spaces-hint";
+  const activitySpacesDescribedBy = activitySpacesHintId;
+  const firstActivitySpaceInputId =
+    activitySpaces.length > 0 ? "structure-activity-space-0" : undefined;
+  const activitySpacesAddButtonId = "structure-activity-spaces-add";
+  const activitySpacesLabelFor = firstActivitySpaceInputId ?? activitySpacesAddButtonId;
   const communicationsInfrastructureHintId = "structure-communications-infrastructure-hint";
   const communicationsInfrastructureDescribedBy = communicationsInfrastructureHintId;
   const firstCommunicationsInfrastructureInputId =
@@ -4985,6 +5019,97 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </span>
                 </div>
 
+                <div className="structure-form-field">
+                  <label htmlFor="structure-cell-data-quality">
+                    {t("structures.create.form.connectivity.cellDataQuality.label")}
+                    <select
+                      id="structure-cell-data-quality"
+                      value={cellDataQuality}
+                      onChange={handleCellDataQualityChange}
+                    >
+                      <option value="">
+                        {t("structures.create.form.connectivity.cellDataQuality.placeholder")}
+                      </option>
+                      {cellSignalOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.connectivity.options.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text">
+                    {t("structures.create.form.connectivity.cellDataQuality.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-cell-voice-quality">
+                    {t("structures.create.form.connectivity.cellVoiceQuality.label")}
+                    <select
+                      id="structure-cell-voice-quality"
+                      value={cellVoiceQuality}
+                      onChange={handleCellVoiceQualityChange}
+                    >
+                      <option value="">
+                        {t("structures.create.form.connectivity.cellVoiceQuality.placeholder")}
+                      </option>
+                      {cellSignalOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.connectivity.options.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text">
+                    {t("structures.create.form.connectivity.cellVoiceQuality.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-wifi-available" className="tri-state-field__label">
+                    {t("structures.create.form.connectivity.wifiAvailable.label")}
+                  </label>
+                  <TriStateToggle
+                    id="structure-wifi-available"
+                    value={wifiAvailable}
+                    onChange={setWifiAvailable}
+                    labels={triStateLabels}
+                  />
+                  <span className="helper-text">
+                    {t("structures.create.form.connectivity.wifiAvailable.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field tri-state-field">
+                  <label htmlFor="structure-landline-available" className="tri-state-field__label">
+                    {t("structures.create.form.connectivity.landlineAvailable.label")}
+                  </label>
+                  <TriStateToggle
+                    id="structure-landline-available"
+                    value={landlineAvailable}
+                    onChange={setLandlineAvailable}
+                    labels={triStateLabels}
+                  />
+                  <span className="helper-text">
+                    {t("structures.create.form.connectivity.landlineAvailable.hint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor="structure-communications-notes">
+                    {t("structures.create.form.connectivity.notes.label")}
+                    <textarea
+                      id="structure-communications-notes"
+                      value={communicationsNotes}
+                      onChange={handleCommunicationsNotesChange}
+                      rows={3}
+                    />
+                  </label>
+                  <span className="helper-text">
+                    {t("structures.create.form.connectivity.notes.hint")}
+                  </span>
+                </div>
+
                 <div className="structure-form-field" data-span="full">
                   <label htmlFor="structure-usage-rules">
                     {t("structures.create.form.usageRules")}
@@ -5196,82 +5321,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
               </div>
             )}
 
-            {isOptionalSectionActive("communicationsInfrastructure") && (
-              <div className="structure-form-field structure-form-field--optional" data-span="full">
-                {renderOptionalSectionRemoveButton("communicationsInfrastructure")}
-                {communicationsInfrastructure.length > 0 ? (
-                  <label
-                    htmlFor={communicationsInfrastructureLabelFor}
-                    id="structure-communications-infrastructure-label"
-                  >
-                    {t("structures.create.form.communicationsInfrastructure.label")}
-                  </label>
-                ) : (
-                  <div
-                    className="field-label"
-                    id="structure-communications-infrastructure-label"
-                  >
-                    {t("structures.create.form.communicationsInfrastructure.label")}
-                  </div>
-                )}
-                <div
-                  className="structure-website-list"
-                  aria-labelledby="structure-communications-infrastructure-label"
-                >
-                  {communicationsInfrastructure.length === 0 ? (
-                    <p className="structure-website-list__empty">
-                      {t("structures.create.form.communicationsInfrastructure.empty")}
-                    </p>
-                  ) : (
-                    communicationsInfrastructure.map((value, index) => {
-                      const inputId = `structure-communications-infrastructure-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? undefined
-                          : t("structures.create.form.communicationsInfrastructure.entryLabel", {
-                              index: index + 1
-                            });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <div className="structure-website-list__input">
-                            <input
-                              id={inputId}
-                              value={value}
-                              onChange={(event) =>
-                                handleCommunicationsInfrastructureChange(index, event.target.value)
-                              }
-                              aria-describedby={communicationsInfrastructureDescribedBy}
-                              aria-label={ariaLabel}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveCommunicationsInfrastructure(index)}
-                            className="link-button"
-                          >
-                            {t("structures.create.form.communicationsInfrastructure.remove")}
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-                <div className="structure-website-actions">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    id={communicationsInfrastructureAddButtonId}
-                    onClick={handleAddCommunicationsInfrastructure}
-                  >
-                    {t("structures.create.form.communicationsInfrastructure.add")}
-                  </Button>
-                </div>
-                <span className="helper-text" id={communicationsInfrastructureHintId}>
-                  {t("structures.create.form.communicationsInfrastructure.hint")}
-                </span>
-              </div>
-            )}
 
             {isOptionalSectionActive("dataQualityFlags") && (
               <div className="structure-form-field structure-form-field--optional" data-span="full">
