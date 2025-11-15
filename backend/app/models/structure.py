@@ -140,6 +140,45 @@ class StructureUsageRecommendation(str, Enum):
     PREFER_CAMPS = "prefer_camps"
 
 
+class PaymentMethod(str, Enum):
+    UNSPECIFIED = "unspecified"
+    BANK_TRANSFER = "bank_transfer"
+    CASH = "cash"
+    CARD = "card"
+    OTHER = "other"
+
+    _ALIASES = {
+        "": UNSPECIFIED,
+        "non specificato": UNSPECIFIED,
+        "non specificati": UNSPECIFIED,
+        "unknown": UNSPECIFIED,
+        "bonifico": BANK_TRANSFER,
+        "bonifico bancario": BANK_TRANSFER,
+        "bonifici": BANK_TRANSFER,
+        "bank transfer": BANK_TRANSFER,
+        "wire transfer": BANK_TRANSFER,
+        "trasferimento bancario": BANK_TRANSFER,
+        "contanti": CASH,
+        "cash": CASH,
+        "carta": CARD,
+        "carta di credito": CARD,
+        "carta di debito": CARD,
+        "pos": CARD,
+        "bancomat": CARD,
+        "altro": OTHER,
+        "su accordo": OTHER,
+    }
+
+    @classmethod
+    def _missing_(cls, value: object) -> PaymentMethod | None:
+        if isinstance(value, str):
+            normalized = " ".join(value.strip().lower().replace("-", " ").split())
+            alias = cls._ALIASES.get(normalized)
+            if alias is not None:
+                return alias
+        return None
+
+
 class Structure(Base):
     __tablename__ = "structures"
 

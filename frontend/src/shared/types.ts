@@ -37,6 +37,16 @@ export type CostModel = "per_person_day" | "per_person_night" | "forfait";
 export type CostBand = "cheap" | "medium" | "expensive";
 export type ContactPreferredChannel = "email" | "phone" | "other";
 
+export const PAYMENT_METHODS = [
+  "unspecified",
+  "bank_transfer",
+  "cash",
+  "card",
+  "other"
+] as const;
+
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
 export type StructureOpenPeriodKind = "season" | "range";
 export type StructureOpenPeriodSeason = Season;
 
@@ -313,7 +323,7 @@ export interface Structure {
   sdi_recipient_code: string | null;
   invoice_available: boolean | null;
   iban: string | null;
-  payment_methods: string[];
+  payment_methods: PaymentMethod[];
   fiscal_notes: string | null;
   notes_logistics: string | null;
   logistics_arrival_notes: string | null;
@@ -444,7 +454,7 @@ export interface StructureCreateDto {
   sdi_recipient_code?: string | null;
   invoice_available?: boolean | null;
   iban?: string | null;
-  payment_methods?: string[];
+  payment_methods?: PaymentMethod[];
   fiscal_notes?: string | null;
   notes_logistics?: string | null;
   logistics_arrival_notes?: string | null;

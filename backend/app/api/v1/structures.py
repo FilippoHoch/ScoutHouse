@@ -384,6 +384,10 @@ def _structure_payload(
         payload["flood_risk"] = structure_in.flood_risk.value
     payload["bus_type_access"] = list(structure_in.bus_type_access or [])
     payload["allowed_audiences"] = list(structure_in.allowed_audiences or [])
+    payload["payment_methods"] = [
+        method.value if isinstance(method, Enum) else str(method)
+        for method in structure_in.payment_methods
+    ]
     if structure_in.usage_recommendation is not None:
         payload["usage_recommendation"] = structure_in.usage_recommendation.value
     else:
