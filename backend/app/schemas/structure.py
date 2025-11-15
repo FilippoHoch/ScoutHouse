@@ -26,6 +26,7 @@ from app.models.structure import (
     FieldSlope,
     FirePolicy,
     FloodRiskLevel,
+    PaymentMethod,
     RiverSwimmingOption,
     StructureContactStatus,
     StructureOpenPeriodKind,
@@ -71,6 +72,39 @@ def _normalize_optional_str_list(value: object) -> list[str] | None | object:
     if isinstance(normalized, list):
         return normalized
     return normalized
+
+
+def _normalize_payment_methods(value: object) -> list[PaymentMethod] | object:
+    if value is None:
+        return []
+    if isinstance(value, PaymentMethod):
+        return [value]
+    if isinstance(value, str):
+        value = [value]
+    if isinstance(value, Iterable) and not isinstance(value, str | bytes):
+        normalized: list[PaymentMethod] = []
+        for item in value:
+            if isinstance(item, PaymentMethod):
+                normalized.append(item)
+                continue
+            if item in (None, ""):
+                continue
+            text = str(item).strip()
+            if not text:
+                continue
+            method = PaymentMethod._missing_(text)
+            if method is None:
+                try:
+                    method = PaymentMethod(text)
+                except ValueError as exc:  # pragma: no cover - defensive
+                    allowed_values = [member.value for member in PaymentMethod]
+                    raise ValueError(
+                        "Metodo di pagamento non supportato. Valori consentiti: "
+                        f"{allowed_values}"
+                    ) from exc
+            normalized.append(method)
+        return normalized
+    return value
 
 
 def _normalize_url_list(value: object) -> list[AnyHttpUrl] | object:
@@ -267,7 +301,7 @@ class StructureBase(BaseModel):
     sdi_recipient_code: str | None = Field(default=None, min_length=7, max_length=7)
     invoice_available: bool | None = None
     iban: str | None = None
-    payment_methods: list[str] = Field(default_factory=list)
+    payment_methods: list[PaymentMethod] = Field(default_factory=list)
     fiscal_notes: str | None = None
     data_source: str | None = Field(default=None, max_length=255)
     data_source_url: AnyHttpUrl | None = None
@@ -384,11 +418,17 @@ class StructureBase(BaseModel):
     def normalize_power_outlet_types(cls, value: object) -> list[str] | None | object:
         return _normalize_optional_str_list(value)
 
+    @field_validator("payment_methods", mode="before")
+    @classmethod
+    def normalize_payment_methods_field(
+        cls, value: object
+    ) -> list[PaymentMethod] | object:
+        return _normalize_payment_methods(value)
+
     @field_validator(
         "documents_required",
         "communications_infrastructure",
         "activity_equipment",
-        "payment_methods",
         "data_quality_flags",
         mode="before",
     )

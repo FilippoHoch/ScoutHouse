@@ -132,7 +132,7 @@ const createdStructure = {
   sdi_recipient_code: null,
   invoice_available: null,
   iban: null,
-  payment_methods: [],
+  payment_methods: ["bank_transfer"],
   fiscal_notes: null,
   notes_logistics: null,
   logistics_arrival_notes: null,
@@ -297,7 +297,6 @@ describe("StructureCreatePage", () => {
     const optionalSectionPicker = screen.getByLabelText(/informazioni facoltative/i);
     await user.selectOptions(optionalSectionPicker, "mapResources");
     await user.selectOptions(optionalSectionPicker, "documentsRequired");
-    await user.selectOptions(optionalSectionPicker, "paymentMethods");
     await user.selectOptions(optionalSectionPicker, "communicationsInfrastructure");
     await user.selectOptions(optionalSectionPicker, "dataQualityFlags");
 
@@ -325,10 +324,7 @@ describe("StructureCreatePage", () => {
       "Modulo autorizzazione"
     );
 
-    await user.type(
-      screen.getByRole("textbox", { name: /Metodi di pagamento accettati/i }),
-      "Bonifico"
-    );
+    await user.click(screen.getByRole("checkbox", { name: /Bonifico bancario/i }));
 
     await user.type(
       screen.getByRole("textbox", { name: /Infrastrutture di comunicazione/i }),
@@ -353,7 +349,7 @@ describe("StructureCreatePage", () => {
     expect(payload.country).toBe("FR");
     expect(payload.map_resources_urls).toEqual(["https://maps.example.com"]);
     expect(payload.documents_required).toEqual(["Modulo autorizzazione"]);
-    expect(payload.payment_methods).toEqual(["Bonifico"]);
+    expect(payload.payment_methods).toEqual(["bank_transfer"]);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
     expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
     expect(payload).not.toHaveProperty("activity_spaces");

@@ -21,6 +21,7 @@ import type {
   FirePolicy,
   FieldSlope,
   FloodRiskLevel,
+  PaymentMethod,
   Structure,
   StructureUsageRecommendation,
   StructureOpenPeriod,
@@ -669,7 +670,17 @@ export const StructureDetailsPage = () => {
 
   const documentsRequiredValue = formatStringList(structure.documents_required);
   const communicationsInfrastructureValue = formatStringList(structure.communications_infrastructure);
-  const paymentMethodsValue = formatStringList(structure.payment_methods);
+  const rawPaymentMethods = structure.payment_methods ?? [];
+  const paymentMethodLabels =
+    rawPaymentMethods.length > 0
+      ? rawPaymentMethods.map((method: PaymentMethod) =>
+          t(`structures.create.form.paymentMethodSelector.options.${method}`)
+        )
+      : [];
+  const paymentMethodsValue =
+    paymentMethodLabels.length > 0
+      ? paymentMethodLabels.join(", ")
+      : t("structures.details.overview.paymentMethodsFallback");
   const dataQualityFlagsValue = formatStringList(structure.data_quality_flags);
 
   const operationsDetails: LogisticsDetail[] = filterVisibleDetails([

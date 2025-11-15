@@ -28,6 +28,7 @@ from .structure import (
     FieldSlope,
     FirePolicy,
     FloodRiskLevel,
+    PaymentMethod,
     RiverSwimmingOption,
     Structure,
     StructureContactStatus,
@@ -92,4 +93,5 @@ __all__ = [
     "FloodRiskLevel",
     "RiverSwimmingOption",
     "StructureUsageRecommendation",
+    "PaymentMethod",
 ]

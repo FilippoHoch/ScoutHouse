@@ -409,12 +409,16 @@
           "remove": "Rimuovi questo documento",
           "entryLabel": "Documento {{index}}"
         },
-        "paymentMethods": {
-          "label": "Metodi di pagamento accettati",
-          "hint": "Specifica i metodi di pagamento accettati in generale dalla struttura.",
-          "add": "Aggiungi metodo",
-          "remove": "Rimuovi questo metodo",
-          "entryLabel": "Metodo {{index}}"
+        "paymentMethodSelector": {
+          "label": "Modalità di pagamento accettate",
+          "hint": "Seleziona uno o più metodi. Lascia \"Non specificato\" se l'informazione non è disponibile.",
+          "options": {
+            "unspecified": "Non specificato",
+            "bank_transfer": "Bonifico bancario",
+            "cash": "Contanti",
+            "card": "Carta / POS",
+            "other": "Altro / su accordo"
+          }
         },
         "notes": "Note aggiuntive",
         "notesHint": "Condividi informazioni pratiche e includi indicazioni sulle prenotazioni: tempi di risposta, modalità o costi.",
@@ -645,8 +649,7 @@
             "floodRisk": "Rischio alluvionale",
             "environmentalNotes": "Note ambientali",
             "documentsRequired": "Documenti richiesti",
-            "mapResources": "Risorse cartografiche",
-            "paymentMethods": "Metodi di pagamento accettati"
+            "mapResources": "Risorse cartografiche"
           }
         },
         "usageRules": "Regole di utilizzo",
@@ -707,7 +710,7 @@
             },
             "notes": {
               "title": "Metodi di pagamento e note specifiche",
-              "hint": "Inserisci come si paga e note come \"solo Agesci\", \"solo oratori\" o gruppi di zona Sebino senza dover combinare altri parametri."
+              "hint": "Definisci in alto le modalità principali e usa questi campi per eccezioni o note dedicate a questo listino (es. acconto solo contanti, fasce territoriali, requisiti di fatturazione)."
             }
           },
           "model": "Modello di costo",
@@ -728,8 +731,8 @@
           "maxTotalHint": "Importo massimo complessivo applicato alle tariffe a persona.",
           "forfaitTrigger": "Forfait automatico",
           "forfaitTriggerHint": "Quando il calcolo a persona supera questa soglia applica direttamente il forfait indicato.",
-          "paymentMethods": "Metodi di pagamento accettati",
-          "paymentMethodsHint": "Inserisci un metodo per riga (es. bonifico, contanti, carta).",
+          "paymentMethods": "Dettagli sui metodi di pagamento",
+          "paymentMethodsHint": "Descrivi eccezioni o istruzioni specifiche per questo listino rispetto alle modalità principali (es. acconto in contanti, rateizzazioni).",
           "paymentTerms": "Note e condizioni",
           "paymentTermsHint": "Specifiche aggiuntive come \"solo Agesci\", \"solo oratori\", fasce territoriali o accordi particolari.",
           "summaryMissingAmount": "importo non indicato",
@@ -984,7 +987,7 @@
         "activityEquipment": "Attrezzatura attività",
         "activityEquipmentFallback": "Nessuna attrezzatura specificata",
         "paymentMethods": "Metodi di pagamento accettati",
-        "paymentMethodsFallback": "Non specificati",
+        "paymentMethodsFallback": "Non specificato",
         "dataQualityFlags": "Segnalazioni qualità dati",
         "dataQualityFlagsFallback": "Nessuna segnalazione",
         "usageRules": "Regole di utilizzo",

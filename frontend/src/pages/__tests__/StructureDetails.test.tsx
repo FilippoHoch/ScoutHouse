@@ -139,7 +139,7 @@ const sampleStructure: Structure = {
   sdi_recipient_code: null,
   invoice_available: null,
   iban: null,
-  payment_methods: ["Bonifico"],
+  payment_methods: ["bank_transfer"],
   fiscal_notes: null,
   notes_logistics: "Contattare il custode",
   logistics_arrival_notes: null,
@@ -280,7 +280,7 @@ describe("StructureDetailsPage", () => {
     expect(
       screen.getByText(/Metodi di pagamento accettati/i)
     ).toBeInTheDocument();
-    expect(screen.getByText(/Bonifico/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bonifico bancario/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Costi/i }));
     const seasonalTitle = await screen.findByText(/Tariffe stagionali/i);
     expect(seasonalTitle.parentElement?.textContent).toMatch(/Inverno:\s+22,00\s+€/i);
