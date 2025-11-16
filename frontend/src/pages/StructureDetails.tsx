@@ -567,6 +567,13 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.firePolicy"),
       value: formatFirePolicy(structure.fire_policy),
       icon: "🔥"
+    },
+    {
+      id: "activityEquipment",
+      label: t("structures.details.overview.activityEquipment"),
+      value: activityEquipmentValue,
+      icon: "🎒",
+      isFull: true
     }
   ]);
 
@@ -671,8 +678,6 @@ export const StructureDetailsPage = () => {
 
   const documentsRequiredValue = formatStringList(structure.documents_required);
   const connectivityNotesValue = formatStringList(structure.communications_infrastructure);
-  const activitySpacesValue = formatStringList(structure.activity_spaces);
-  const inclusionServicesValue = formatStringList(structure.inclusion_services);
   const rawPaymentMethods = structure.payment_methods ?? [];
   const paymentMethodLabels =
     rawPaymentMethods.length > 0
@@ -768,27 +773,6 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.allowedAudiences"),
       value: formatAllowedAudiences(structure.allowed_audiences),
       icon: "🎯",
-      isFull: true
-    },
-    {
-      id: "activitySpaces",
-      label: t("structures.details.overview.activitySpaces"),
-      value: activitySpacesValue,
-      icon: "🏕️",
-      isFull: true
-    },
-    {
-      id: "activityEquipment",
-      label: t("structures.details.overview.activityEquipment"),
-      value: activityEquipmentValue,
-      icon: "🎒",
-      isFull: true
-    },
-    {
-      id: "inclusionServices",
-      label: t("structures.details.overview.inclusionServices"),
-      value: inclusionServicesValue,
-      icon: "♿",
       isFull: true
     },
     {

@@ -431,7 +431,6 @@ class StructureBase(BaseModel):
 
     @field_validator(
         "documents_required",
-        "activity_spaces",
         "communications_infrastructure",
         "activity_equipment",
         "data_quality_flags",
