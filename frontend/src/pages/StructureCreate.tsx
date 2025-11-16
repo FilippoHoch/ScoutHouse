@@ -135,9 +135,6 @@ type SeasonalAmenityRow = {
 
 type OptionalSectionKey =
   | "allowedAudiences"
-  | "activitySpaces"
-  | "activityEquipment"
-  | "inclusionServices"
   | "dataQualityFlags"
   | "inAreaProtetta"
   | "floodRisk"
@@ -147,9 +144,6 @@ type OptionalSectionKey =
 
 const optionalSectionOrder: OptionalSectionKey[] = [
   "allowedAudiences",
-  "activitySpaces",
-  "activityEquipment",
-  "inclusionServices",
   "dataQualityFlags",
   "inAreaProtetta",
   "floodRisk",
@@ -568,8 +562,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [wifiAvailable, setWifiAvailable] = useState<boolean | null>(null);
   const [landlineAvailable, setLandlineAvailable] = useState<boolean | null>(null);
   const [communicationsNotes, setCommunicationsNotes] = useState("");
-  const [activitySpaces, setActivitySpaces] = useState<string[]>([]);
-  const [activityEquipment, setActivityEquipment] = useState<string[]>([]);
+  const [activityEquipment, setActivityEquipment] = useState<string[]>([""]);
   const [structurePaymentMethods, setStructurePaymentMethods] = useState<PaymentMethod[]>([
     defaultPaymentMethod
   ]);
@@ -1964,7 +1957,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   };
 
   const handleRemoveActivityEquipment = (index: number) => {
-    setActivityEquipment((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setActivityEquipment((current) => {
+      const next = current.filter((_, itemIndex) => itemIndex !== index);
+      return next.length > 0 ? next : [""];
+    });
     setApiError(null);
   };
 
@@ -2028,15 +2024,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         case "allowedAudiences":
           setAllowedAudiences([]);
           break;
-        case "activitySpaces":
-          setActivitySpaces([]);
-          break;
-        case "activityEquipment":
-          setActivityEquipment([]);
-          break;
-        case "inclusionServices":
-          setInclusionServices([]);
-          break;
         case "dataQualityFlags":
           setDataQualityFlags([]);
           break;
@@ -2065,7 +2052,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       setEnteAreaProtetta,
       setInAreaProtetta,
       setMapResourcesUrls,
-      setFloodRisk
+      setFloodRisk,
+      setEnvironmentalNotes
     ]
   );
 
@@ -2366,7 +2354,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const activityEquipmentValues =
       existingStructure.activity_equipment && existingStructure.activity_equipment.length > 0
         ? [...existingStructure.activity_equipment]
-        : [];
+        : [""];
     setActivityEquipment(activityEquipmentValues);
 
     const paymentMethodValues = (existingStructure.payment_methods ?? []).filter(
@@ -3154,7 +3142,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       .split(/\r?\n/)
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
-    const trimmedActivitySpaces = activitySpaces.map((value) => value.trim());
     const trimmedActivityEquipment = activityEquipment.map((value) => value.trim());
     const trimmedDataQualityFlags = dataQualityFlags.map((value) => value.trim());
     const trimmedCostOptions = costOptions.map((option) => ({
@@ -3733,12 +3720,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const documentsRequiredDescribedBy = documentsRequiredHintId;
   const mapResourcesHintId = "structure-map-resources-hint";
   const mapResourcesDescribedBy = mapResourcesHintId;
-  const activitySpacesHintId = "structure-activity-spaces-hint";
-  const activitySpacesDescribedBy = activitySpacesHintId;
-  const firstActivitySpaceInputId =
-    activitySpaces.length > 0 ? "structure-activity-space-0" : undefined;
-  const activitySpacesAddButtonId = "structure-activity-spaces-add";
-  const activitySpacesLabelFor = firstActivitySpaceInputId ?? activitySpacesAddButtonId;
   const activityEquipmentHintId = "structure-activity-equipment-hint";
   const activityEquipmentDescribedBy = activityEquipmentHintId;
   const firstActivityEquipmentInputId =
@@ -4704,76 +4685,73 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     </span>
                   </div>
 
-                  <div className="structure-form-field" data-span="full">
-                    {activityEquipment.length > 0 ? (
-                      <label htmlFor={activityEquipmentLabelFor} id="structure-activity-equipment-label">
-                        {t("structures.create.form.activityEquipment.label")}
-                      </label>
-                    ) : (
-                      <div className="field-label" id="structure-activity-equipment-label">
-                        {t("structures.create.form.activityEquipment.label")}
-                      </div>
-                    )}
-                    <div
-                      className="structure-website-list"
-                      aria-labelledby="structure-activity-equipment-label"
-                    >
-                      {activityEquipment.length === 0 ? (
-                        <p className="structure-website-list__empty">
-                          {t("structures.create.form.activityEquipment.empty")}
-                        </p>
-                      ) : (
-                        activityEquipment.map((value, index) => {
-                          const inputId = `structure-activity-equipment-${index}`;
-                          const ariaLabel =
-                            index === 0
-                              ? undefined
-                              : t("structures.create.form.activityEquipment.entryLabel", {
-                                  index: index + 1
-                                });
-                          return (
-                            <div className="structure-website-list__row" key={inputId}>
-                              <div className="structure-website-list__input">
-                                <input
-                                  id={inputId}
-                                  value={value}
-                                  onChange={(event) =>
-                                    handleActivityEquipmentChange(index, event.target.value)
-                                  }
-                                  aria-describedby={activityEquipmentDescribedBy}
-                                  aria-label={ariaLabel}
-                                />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveActivityEquipment(index)}
-                                className="link-button"
-                              >
-                                {t("structures.create.form.activityEquipment.remove")}
-                              </button>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                    <div className="structure-website-actions">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        id={activityEquipmentAddButtonId}
-                        onClick={handleAddActivityEquipment}
-                      >
-                        {t("structures.create.form.activityEquipment.add")}
-                      </Button>
-                    </div>
-                    <span className="helper-text" id={activityEquipmentHintId}>
-                      {t("structures.create.form.activityEquipment.hint")}
-                    </span>
-                  </div>
                 </div>
               </fieldset>
             )}
+
+            <fieldset className="structure-form-section">
+              <legend>{t("structures.create.form.sections.activityEquipment.title")}</legend>
+              <p className="helper-text">
+                {t("structures.create.form.sections.activityEquipment.description")}
+              </p>
+              <div className="structure-field-grid">
+                <div className="structure-form-field" data-span="full">
+                  <label htmlFor={activityEquipmentLabelFor} id="structure-activity-equipment-label">
+                    {t("structures.create.form.activityEquipment.label")}
+                  </label>
+                  <div
+                    className="structure-website-list"
+                    aria-labelledby="structure-activity-equipment-label"
+                  >
+                    {activityEquipment.map((value, index) => {
+                      const inputId = `structure-activity-equipment-${index}`;
+                      const ariaLabel =
+                        index === 0
+                          ? undefined
+                          : t("structures.create.form.activityEquipment.entryLabel", {
+                              index: index + 1
+                            });
+                      return (
+                        <div className="structure-website-list__row" key={inputId}>
+                          <div className="structure-website-list__input">
+                            <input
+                              id={inputId}
+                              value={value}
+                              onChange={(event) =>
+                                handleActivityEquipmentChange(index, event.target.value)
+                              }
+                              aria-describedby={activityEquipmentDescribedBy}
+                              aria-label={ariaLabel}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveActivityEquipment(index)}
+                            className="link-button"
+                          >
+                            {t("structures.create.form.activityEquipment.remove")}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="structure-website-actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      id={activityEquipmentAddButtonId}
+                      onClick={handleAddActivityEquipment}
+                    >
+                      {t("structures.create.form.activityEquipment.add")}
+                    </Button>
+                  </div>
+                  <span className="helper-text" id={activityEquipmentHintId}>
+                    {t("structures.create.form.activityEquipment.hint")}
+                  </span>
+                </div>
+              </div>
+            </fieldset>
 
             <fieldset className="structure-form-section">
               <legend>{t("structures.create.form.sections.accessibility.title")}</legend>

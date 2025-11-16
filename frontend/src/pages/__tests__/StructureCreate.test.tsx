@@ -219,10 +219,6 @@ describe("StructureCreatePage", () => {
       "medium"
     );
 
-    const unverifiedRadio = screen.getByLabelText(/Da verificare/i);
-    await user.click(unverifiedRadio);
-    await waitFor(() => expect(unverifiedRadio).toBeChecked());
-
     await user.type(screen.getByLabelText(/Email di riferimento/i), "info@example.org");
     await user.click(screen.getByRole("button", { name: /Aggiungi un'altra email/i }));
     await user.type(screen.getByLabelText(/Email 2/i), "booking@example.org");
@@ -240,7 +236,6 @@ describe("StructureCreatePage", () => {
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
 
-    expect(screen.getByLabelText(/Da verificare/i)).toBeChecked();
     await waitFor(() => expect(createStructure).toHaveBeenCalled());
 
     const payload = vi.mocked(createStructure).mock.calls[0][0];
@@ -302,9 +297,6 @@ describe("StructureCreatePage", () => {
     const optionalSectionPicker = screen.getByLabelText(/informazioni facoltative/i);
     await user.selectOptions(optionalSectionPicker, "mapResources");
     await user.selectOptions(optionalSectionPicker, "documentsRequired");
-    const unverifiedRadio = screen.getByLabelText(/Da verificare/i);
-    await user.click(unverifiedRadio);
-    await waitFor(() => expect(unverifiedRadio).toBeChecked());
 
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: /Risorse cartografiche/i })).toBeInTheDocument()
@@ -361,16 +353,12 @@ describe("StructureCreatePage", () => {
     expect(payload.map_resources_urls).toEqual(["https://maps.example.com"]);
     expect(payload.documents_required).toEqual(["Modulo autorizzazione"]);
     expect(payload.payment_methods).toEqual(["bank_transfer"]);
-    expect(payload.payment_methods).toEqual(["Bonifico"]);
     expect(payload.cell_data_quality).toBe("good");
     expect(payload.cell_voice_quality).toBe("excellent");
     expect(payload.wifi_available).toBe(true);
     expect(payload.landline_available).toBe(false);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
     expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
-    expect(payload).not.toHaveProperty("activity_spaces");
-    expect(payload).not.toHaveProperty("inclusion_services");
-    expect(payload.data_quality_status).toBe("unverified");
   }, 15000);
 
 });

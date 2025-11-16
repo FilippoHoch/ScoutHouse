@@ -504,6 +504,10 @@
             "title": "Spazi esterni",
             "description": "Descrivi l'area esterna, la capienza tende e le dotazioni disponibili."
           },
+          "activityEquipment": {
+            "title": "Attrezzatura attività",
+            "description": "Specifica le dotazioni utilizzabili per giochi, pionieristica o attività particolari."
+          },
           "accessibility": {
             "title": "Accessibilità e trasporti",
             "description": "Aiuta a capire come raggiungere la struttura e quali mezzi sono adatti."
@@ -655,8 +659,7 @@
           "hint": "Specifica le attrezzature disponibili (es. corde, tende, materiale pionieristica).",
           "add": "Aggiungi attrezzatura",
           "remove": "Rimuovi questa attrezzatura",
-          "entryLabel": "Attrezzatura {{index}}",
-          "empty": "Nessuna attrezzatura aggiunta."
+          "entryLabel": "Attrezzatura {{index}}"
         },
         "dataQualityFlags": {
           "label": "Segnalazioni qualità dati",
@@ -673,9 +676,6 @@
           "remove": "Rimuovi sezione",
           "options": {
             "allowedAudiences": "Gruppi ammessi",
-            "activitySpaces": "Spazi per attività",
-            "activityEquipment": "Attrezzatura attività",
-            "inclusionServices": "Servizi di inclusione",
             "dataQualityFlags": "Segnalazioni qualità dati",
             "inAreaProtetta": "In area protetta",
             "floodRisk": "Rischio alluvionale",
@@ -1028,8 +1028,6 @@
             "excellent": "Ottima copertura"
           }
         },
-        "activitySpaces": "Spazi per attività",
-        "activitySpacesFallback": "Nessuno spazio aggiuntivo indicato",
         "activityEquipment": "Attrezzatura attività",
         "activityEquipmentFallback": "Nessuna attrezzatura specificata",
         "paymentMethods": "Metodi di pagamento accettati",
