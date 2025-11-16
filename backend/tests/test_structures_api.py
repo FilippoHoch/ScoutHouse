@@ -46,6 +46,7 @@ def test_structures_flow() -> None:
         "postal_code": "20121",
         "type": "house",
         "address": "Via Scout 1, Milano",
+        "data_quality_status": "unverified",
         "latitude": 45.4642,
         "longitude": 9.1900,
         "altitude": 120.5,
@@ -104,6 +105,7 @@ def test_structures_flow() -> None:
     assert created["contact_emails"] == payload["contact_emails"]
     assert created["website_urls"] == payload["website_urls"]
     assert created["usage_recommendation"] == payload["usage_recommendation"]
+    assert created["data_quality_status"] == payload["data_quality_status"]
     assert created["cell_coverage"] == payload["cell_coverage"]
     assert created["cell_data_quality"] == payload["cell_data_quality"]
     assert created["cell_voice_quality"] == payload["cell_voice_quality"]

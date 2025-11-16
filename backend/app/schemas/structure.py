@@ -23,6 +23,7 @@ from app.models.cost_option import (
 from app.models.structure import (
     AnimalPolicy,
     CellCoverageQuality,
+    DataQualityStatus,
     FieldSlope,
     FirePolicy,
     FloodRiskLevel,
@@ -312,7 +313,7 @@ class StructureBase(BaseModel):
     data_last_verified: date | None = None
     data_quality_score: int | None = Field(default=None, ge=0, le=100)
     data_quality_notes: str | None = None
-    data_quality_flags: list[str] = Field(default_factory=list)
+    data_quality_status: DataQualityStatus = DataQualityStatus.UNVERIFIED
     governance_notes: str | None = None
     contact_emails: list[EmailStr] = Field(default_factory=list)
     website_urls: list[AnyHttpUrl] = Field(default_factory=list)
@@ -433,7 +434,6 @@ class StructureBase(BaseModel):
         "documents_required",
         "communications_infrastructure",
         "activity_equipment",
-        "data_quality_flags",
         mode="before",
     )
     @classmethod

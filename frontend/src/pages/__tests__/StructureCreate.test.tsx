@@ -209,6 +209,10 @@ describe("StructureCreatePage", () => {
     await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
     await user.selectOptions(
+      screen.getByLabelText(/Stato verifica dati/i),
+      "verified"
+    );
+    await user.selectOptions(
       screen.getByLabelText(/informazioni facoltative/i),
       "floodRisk"
     );
@@ -243,6 +247,7 @@ describe("StructureCreatePage", () => {
       name: "Base Bosco",
       slug: "base-bosco",
       type: "house",
+      data_quality_status: "verified",
       country: "IT",
       province: "BS",
       has_kitchen: null,
@@ -289,6 +294,10 @@ describe("StructureCreatePage", () => {
 
     await user.type(screen.getByLabelText(/Nome/i), "Base Appennino");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "mixed");
+    await user.selectOptions(
+      screen.getByLabelText(/Stato verifica dati/i),
+      "unverified"
+    );
 
     const countryInput = screen.getByLabelText(/Paese/i);
     await user.clear(countryInput);
@@ -350,6 +359,7 @@ describe("StructureCreatePage", () => {
     const payload = vi.mocked(createStructure).mock.calls[0][0];
 
     expect(payload.country).toBe("FR");
+    expect(payload.data_quality_status).toBe("unverified");
     expect(payload.map_resources_urls).toEqual(["https://maps.example.com"]);
     expect(payload.documents_required).toEqual(["Modulo autorizzazione"]);
     expect(payload.payment_methods).toEqual(["bank_transfer"]);

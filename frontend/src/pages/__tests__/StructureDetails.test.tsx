@@ -155,7 +155,7 @@ const sampleStructure: Structure = {
   governance_notes: null,
   data_quality_score: null,
   data_quality_notes: null,
-  data_quality_flags: ["Verifica disponibilità energia"],
+  data_quality_status: "unverified",
   created_at: new Date("2024-01-01T00:00:00Z").toISOString(),
   estimated_cost: 18.5,
   cost_band: "medium",
@@ -298,10 +298,8 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Rete cellulare potenziata/i)).toBeInTheDocument();
     expect(screen.getByText(/Attrezzatura attività/i)).toBeInTheDocument();
     expect(screen.getByText(/Proiettore/i)).toBeInTheDocument();
-    expect(screen.getByText(/Segnalazioni qualità dati/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Verifica disponibilità energia/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Stato verifica dati/i)).toBeInTheDocument();
+    expect(screen.getByText(/Da verificare/i)).toBeInTheDocument();
     expect(screen.getByText(i18n.t("structures.details.meta.estimatedDailyCost"))).toBeInTheDocument();
   });
 

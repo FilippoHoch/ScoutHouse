@@ -30,6 +30,7 @@ export type StructureUsageRecommendation =
   | "camps_only"
   | "prefer_outings"
   | "prefer_camps";
+export type DataQualityStatus = "verified" | "unverified";
 export type Season = "winter" | "spring" | "summer" | "autumn";
 export type Unit = "LC" | "EG" | "RS" | "ALL";
 export type UserType = "LC" | "EG" | "RS" | "LEADERS" | "OTHER";
@@ -335,7 +336,7 @@ export interface Structure {
   governance_notes?: string | null;
   data_quality_score: number | null;
   data_quality_notes: string | null;
-  data_quality_flags: string[];
+  data_quality_status: DataQualityStatus;
   created_at: string;
   estimated_cost?: number | null;
   cost_band?: CostBand | null;
@@ -466,7 +467,7 @@ export interface StructureCreateDto {
   governance_notes?: string | null;
   data_quality_score?: number | null;
   data_quality_notes?: string | null;
-  data_quality_flags?: string[];
+  data_quality_status?: DataQualityStatus;
   open_periods?: StructureOpenPeriodInput[];
 }
 

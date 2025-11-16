@@ -31,7 +31,7 @@ import type {
 import { useAuth } from "../shared/auth";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import { StructurePhotosSection } from "../shared/ui/StructurePhotosSection";
-import { Button, LinkButton } from "../shared/ui/designSystem";
+import { Button, LinkButton, StatusBadge } from "../shared/ui/designSystem";
 import {
   createGoogleMapsEmbedUrl,
   createGoogleMapsViewUrl
@@ -689,7 +689,15 @@ export const StructureDetailsPage = () => {
     paymentMethodLabels.length > 0
       ? paymentMethodLabels.join(", ")
       : t("structures.details.overview.paymentMethodsFallback");
-  const dataQualityFlagsValue = formatStringList(structure.data_quality_flags);
+  const dataQualityStatusValue = structure.data_quality_status
+    ? (
+        <StatusBadge status={structure.data_quality_status}>
+          {t(
+            `structures.details.overview.dataQualityStatusOptions.${structure.data_quality_status}`
+          )}
+        </StatusBadge>
+      )
+    : null;
 
   const connectivityDetails: LogisticsDetail[] = filterVisibleDetails([
     {
@@ -745,6 +753,13 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.documentsRequired"),
       value: documentsRequiredValue,
       icon: "📄",
+      isFull: true
+    },
+    {
+      id: "dataQualityStatus",
+      label: t("structures.details.overview.dataQualityStatus"),
+      value: dataQualityStatusValue,
+      icon: "📊",
       isFull: true
     },
     {
@@ -818,13 +833,6 @@ export const StructureDetailsPage = () => {
       label: t("structures.details.overview.seasonalAmenities"),
       value: formatSeasonalAmenities(structure.seasonal_amenities ?? null),
       icon: "📅",
-      isFull: true
-    },
-    {
-      id: "dataQualityFlags",
-      label: t("structures.details.overview.dataQualityFlags"),
-      value: dataQualityFlagsValue,
-      icon: "🚩",
       isFull: true
     },
     {

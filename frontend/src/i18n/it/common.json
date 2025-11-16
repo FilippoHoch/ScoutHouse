@@ -661,13 +661,14 @@
           "remove": "Rimuovi questa attrezzatura",
           "entryLabel": "Attrezzatura {{index}}"
         },
-        "dataQualityFlags": {
-          "label": "Segnalazioni qualità dati",
-          "hint": "Annota eventuali avvisi o note sulla qualità delle informazioni inserite.",
-          "add": "Aggiungi segnalazione",
-          "remove": "Rimuovi questa segnalazione",
-          "entryLabel": "Segnalazione {{index}}",
-          "empty": "Nessuna segnalazione aggiunta."
+        "dataQualityStatus": {
+          "label": "Stato verifica dati",
+          "placeholder": "Seleziona lo stato",
+          "hint": "Indica se le informazioni sono già state verificate sul campo o richiedono ancora controlli.",
+          "options": {
+            "verified": "Dati verificati",
+            "unverified": "Da verificare"
+          }
         },
         "optionalSections": {
           "label": "Aggiungi informazioni facoltative",
@@ -676,7 +677,6 @@
           "remove": "Rimuovi sezione",
           "options": {
             "allowedAudiences": "Gruppi ammessi",
-            "dataQualityFlags": "Segnalazioni qualità dati",
             "inAreaProtetta": "In area protetta",
             "floodRisk": "Rischio alluvionale",
             "environmentalNotes": "Note ambientali",
@@ -843,6 +843,7 @@
       "errors": {
         "nameRequired": "Inserisci un nome per la struttura.",
         "typeRequired": "Seleziona una tipologia.",
+        "dataQualityStatusRequired": "Seleziona lo stato di verifica dei dati.",
         "countryInvalid": "Inserisci un codice paese valido di due lettere.",
         "provinceInvalid": "La provincia deve contenere esattamente due lettere.",
         "latitudeInvalid": "La latitudine deve essere compresa tra -90 e 90.",
@@ -1032,8 +1033,11 @@
         "activityEquipmentFallback": "Nessuna attrezzatura specificata",
         "paymentMethods": "Metodi di pagamento accettati",
         "paymentMethodsFallback": "Non specificato",
-        "dataQualityFlags": "Segnalazioni qualità dati",
-        "dataQualityFlagsFallback": "Nessuna segnalazione",
+        "dataQualityStatus": "Stato verifica dati",
+        "dataQualityStatusOptions": {
+          "verified": "Dati verificati",
+          "unverified": "Da verificare"
+        },
         "usageRules": "Regole di utilizzo",
         "usageRulesFallback": "Nessuna regola specificata",
         "inAreaProtetta": "In area protetta",

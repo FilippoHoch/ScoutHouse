@@ -130,7 +130,7 @@ const structureWithDetails = {
   governance_notes: null,
   data_quality_score: null,
   data_quality_notes: null,
-  data_quality_flags: [],
+  data_quality_status: "verified",
   created_at: new Date("2024-05-01T00:00:00Z").toISOString(),
   estimated_cost: 9.5,
   cost_band: "cheap",
