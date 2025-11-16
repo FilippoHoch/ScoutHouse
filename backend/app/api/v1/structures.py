@@ -366,6 +366,8 @@ def _structure_payload(
         payload["contact_status"] = structure_in.contact_status.value
     if structure_in.operational_status is not None:
         payload["operational_status"] = structure_in.operational_status.value
+    if structure_in.data_quality_status is not None:
+        payload["data_quality_status"] = structure_in.data_quality_status.value
     if structure_in.wastewater_type is not None:
         payload["wastewater_type"] = structure_in.wastewater_type.value
     if structure_in.cell_coverage is not None:

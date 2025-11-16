@@ -41,6 +41,7 @@ import {
   PAYMENT_METHODS,
   PaymentMethod,
   CellSignalQuality,
+  DataQualityStatus,
   StructureCreateDto,
   StructureOperationalStatus,
   StructureType,
@@ -112,6 +113,7 @@ type FieldErrorKey =
   | "land_area_m2"
   | "usage_recommendation"
   | "open_periods"
+  | "data_quality_status"
   | "cost_options";
 
 type FieldErrors = Partial<Record<FieldErrorKey, string>>;
@@ -135,7 +137,6 @@ type SeasonalAmenityRow = {
 
 type OptionalSectionKey =
   | "allowedAudiences"
-  | "dataQualityFlags"
   | "inAreaProtetta"
   | "floodRisk"
   | "environmentalNotes"
@@ -144,7 +145,6 @@ type OptionalSectionKey =
 
 const optionalSectionOrder: OptionalSectionKey[] = [
   "allowedAudiences",
-  "dataQualityFlags",
   "inAreaProtetta",
   "floodRisk",
   "environmentalNotes",
@@ -566,7 +566,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [structurePaymentMethods, setStructurePaymentMethods] = useState<PaymentMethod[]>([
     defaultPaymentMethod
   ]);
-  const [dataQualityFlags, setDataQualityFlags] = useState<string[]>([]);
+  const [dataQualityStatus, setDataQualityStatus] = useState<DataQualityStatus | "">("");
   const [activeOptionalSections, setActiveOptionalSections] = useState<OptionalSectionKey[]>([]);
   const [optionalSectionSelection, setOptionalSectionSelection] = useState<
     OptionalSectionKey | ""
@@ -1982,25 +1982,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handleDataQualityFlagChange = (index: number, value: string) => {
-    setDataQualityFlags((current) => {
-      const next = [...current];
-      next[index] = value;
-      return next;
-    });
-    setApiError(null);
-  };
-
-  const handleAddDataQualityFlag = () => {
-    setDataQualityFlags((current) => [...current, ""]);
-    setApiError(null);
-  };
-
-  const handleRemoveDataQualityFlag = (index: number) => {
-    setDataQualityFlags((current) => current.filter((_, itemIndex) => itemIndex !== index));
-    setApiError(null);
-  };
-
   const optionalSectionOptions = useMemo(
     () =>
       optionalSectionOrder.map((section) => ({
@@ -2024,9 +2005,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         case "allowedAudiences":
           setAllowedAudiences([]);
           break;
-        case "dataQualityFlags":
-          setDataQualityFlags([]);
-          break;
         case "inAreaProtetta":
           setInAreaProtetta(null);
           setEnteAreaProtetta("");
@@ -2047,7 +2025,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     },
     [
       setAllowedAudiences,
-      setDataQualityFlags,
       setDocumentsRequired,
       setEnteAreaProtetta,
       setInAreaProtetta,
@@ -2366,14 +2343,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       setStructurePaymentMethods([defaultPaymentMethod]);
     }
 
-    const dataQualityFlagValues =
-      existingStructure.data_quality_flags && existingStructure.data_quality_flags.length > 0
-        ? [...existingStructure.data_quality_flags]
-        : [];
-    setDataQualityFlags(dataQualityFlagValues);
-    if (dataQualityFlagValues.length > 0) {
-      nextActiveSections.push("dataQualityFlags");
-    }
+    setDataQualityStatus(existingStructure.data_quality_status ?? "");
 
     const audiences =
       existingStructure.allowed_audiences && existingStructure.allowed_audiences.length > 0
@@ -2782,6 +2752,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
+  const handleDataQualityStatusChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setDataQualityStatus(event.target.value as DataQualityStatus | "");
+    clearFieldErrorsGroup(["data_quality_status"]);
+  };
+
   const handleTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const nextType = event.target.value as StructureType | "";
     setType(nextType);
@@ -2854,6 +2829,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (!type) {
       errors.type = t("structures.create.errors.typeRequired");
+    }
+
+    if (!dataQualityStatus) {
+      errors.data_quality_status = t(
+        "structures.create.errors.dataQualityStatusRequired"
+      );
     }
 
     if (!/^[A-Z]{2}$/.test(trimmedCountry)) {
@@ -3143,7 +3124,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
     const trimmedActivityEquipment = activityEquipment.map((value) => value.trim());
-    const trimmedDataQualityFlags = dataQualityFlags.map((value) => value.trim());
     const trimmedCostOptions = costOptions.map((option) => ({
       key: option.key,
       id: option.id,
@@ -3174,6 +3154,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       name: name.trim(),
       slug: slug.trim(),
       type: type as StructureType,
+      data_quality_status: dataQualityStatus as DataQualityStatus,
       has_kitchen: hasKitchen,
       hot_water: hotWater,
       cell_data_quality: cellDataQuality ? (cellDataQuality as CellSignalQuality) : null,
@@ -3329,11 +3310,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (structurePaymentMethods.length > 0) {
       payload.payment_methods = [...structurePaymentMethods];
-    }
-
-    const nonEmptyDataQualityFlags = trimmedDataQualityFlags.filter((value) => value);
-    if (nonEmptyDataQualityFlags.length > 0) {
-      payload.data_quality_flags = nonEmptyDataQualityFlags;
     }
 
     if (trimmedNotesLogistics) {
@@ -3629,6 +3605,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     .filter(Boolean)
     .join(" ") || undefined;
   const typeErrorId = fieldErrors.type ? "structure-type-error" : undefined;
+  const dataQualityStatusErrorId = fieldErrors.data_quality_status
+    ? "structure-data-quality-status-error"
+    : undefined;
   const indoorBedsErrorId = fieldErrors.indoor_beds ? "structure-indoor-beds-error" : undefined;
   const indoorBathroomsErrorId = fieldErrors.indoor_bathrooms
     ? "structure-indoor-bathrooms-error"
@@ -3653,6 +3632,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
   const typeHintId = "structure-type-hint";
   const typeDescribedBy = [typeHintId, typeErrorId].filter(Boolean).join(" ") || undefined;
+  const dataQualityStatusHintId = "structure-data-quality-status-hint";
+  const dataQualityStatusDescribedBy =
+    [dataQualityStatusHintId, dataQualityStatusErrorId].filter(Boolean).join(" ") || undefined;
   const operationalStatusHintId = "structure-operational-status-hint";
   const operationalStatusDescribedBy = operationalStatusHintId;
   const countryHintId = "structure-country-hint";
@@ -3728,12 +3710,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const activityEquipmentLabelFor = firstActivityEquipmentInputId ?? activityEquipmentAddButtonId;
   const paymentMethodsLabelId = "structure-payment-methods-label";
   const paymentMethodsHintId = "structure-payment-methods-hint";
-  const dataQualityFlagsHintId = "structure-data-quality-flags-hint";
-  const dataQualityFlagsDescribedBy = dataQualityFlagsHintId;
-  const firstDataQualityFlagInputId =
-    dataQualityFlags.length > 0 ? "structure-data-quality-flag-0" : undefined;
-  const dataQualityFlagsAddButtonId = "structure-data-quality-flags-add";
-  const dataQualityFlagsLabelFor = firstDataQualityFlagInputId ?? dataQualityFlagsAddButtonId;
   const usageRecommendationHintId = "structure-usage-recommendation-hint";
   const usageRecommendationDescribedBy = [
     usageRecommendationHintId,
@@ -3889,6 +3865,40 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   {fieldErrors.type && (
                     <p className="error-text" id={typeErrorId!}>
                       {fieldErrors.type}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field">
+                  <label htmlFor="structure-data_quality_status">
+                    {t("structures.create.form.dataQualityStatus.label")}
+                    <select
+                      id="structure-data_quality_status"
+                      value={dataQualityStatus}
+                      onChange={handleDataQualityStatusChange}
+                      required
+                      aria-invalid={
+                        fieldErrors.data_quality_status ? "true" : undefined
+                      }
+                      aria-describedby={dataQualityStatusDescribedBy}
+                    >
+                      <option value="">
+                        {t("structures.create.form.dataQualityStatus.placeholder")}
+                      </option>
+                      <option value="verified">
+                        {t("structures.create.form.dataQualityStatus.options.verified")}
+                      </option>
+                      <option value="unverified">
+                        {t("structures.create.form.dataQualityStatus.options.unverified")}
+                      </option>
+                    </select>
+                  </label>
+                  <span className="helper-text" id={dataQualityStatusHintId}>
+                    {t("structures.create.form.dataQualityStatus.hint")}
+                  </span>
+                  {dataQualityStatusErrorId && (
+                    <p className="error-text" id={dataQualityStatusErrorId}>
+                      {fieldErrors.data_quality_status}
                     </p>
                   )}
                 </div>
@@ -5502,75 +5512,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 </span>
               </div>
             )}
-
-
-            {isOptionalSectionActive("dataQualityFlags") && (
-              <div className="structure-form-field structure-form-field--optional" data-span="full">
-                {renderOptionalSectionRemoveButton("dataQualityFlags")}
-                {dataQualityFlags.length > 0 ? (
-                  <label htmlFor={dataQualityFlagsLabelFor} id="structure-data-quality-flags-label">
-                    {t("structures.create.form.dataQualityFlags.label")}
-                  </label>
-                ) : (
-                  <div className="field-label" id="structure-data-quality-flags-label">
-                    {t("structures.create.form.dataQualityFlags.label")}
-                  </div>
-                )}
-                <div
-                  className="structure-website-list"
-                  aria-labelledby="structure-data-quality-flags-label"
-                >
-                  {dataQualityFlags.length === 0 ? (
-                    <p className="structure-website-list__empty">
-                      {t("structures.create.form.dataQualityFlags.empty")}
-                    </p>
-                  ) : (
-                    dataQualityFlags.map((value, index) => {
-                      const inputId = `structure-data-quality-flag-${index}`;
-                      const ariaLabel =
-                        index === 0
-                          ? undefined
-                          : t("structures.create.form.dataQualityFlags.entryLabel", { index: index + 1 });
-                      return (
-                        <div className="structure-website-list__row" key={inputId}>
-                          <div className="structure-website-list__input">
-                            <input
-                              id={inputId}
-                              value={value}
-                              onChange={(event) => handleDataQualityFlagChange(index, event.target.value)}
-                              aria-describedby={dataQualityFlagsDescribedBy}
-                              aria-label={ariaLabel}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveDataQualityFlag(index)}
-                            className="link-button"
-                          >
-                            {t("structures.create.form.dataQualityFlags.remove")}
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-                <div className="structure-website-actions">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    id={dataQualityFlagsAddButtonId}
-                    onClick={handleAddDataQualityFlag}
-                  >
-                    {t("structures.create.form.dataQualityFlags.add")}
-                  </Button>
-                </div>
-                <span className="helper-text" id={dataQualityFlagsHintId}>
-                  {t("structures.create.form.dataQualityFlags.hint")}
-                </span>
-              </div>
-            )}
-
             {isOptionalSectionActive("inAreaProtetta") && (
               <>
                 <div className="structure-form-field structure-form-field--optional tri-state-field">

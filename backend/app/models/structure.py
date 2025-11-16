@@ -71,6 +71,11 @@ class StructureContactStatus(str, Enum):
     STALE = "stale"
 
 
+class DataQualityStatus(str, Enum):
+    VERIFIED = "verified"
+    UNVERIFIED = "unverified"
+
+
 class WaterSource(str, Enum):
     NONE = "none"
     TAP = "tap"
@@ -392,7 +397,11 @@ class Structure(Base):
     data_last_verified: Mapped[date | None] = mapped_column(Date, nullable=True)
     data_quality_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     data_quality_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    data_quality_flags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    data_quality_status: Mapped[DataQualityStatus] = mapped_column(
+        sqla_enum(DataQualityStatus, name="structure_data_quality_status"),
+        nullable=False,
+        default=DataQualityStatus.UNVERIFIED,
+    )
     governance_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     contact_emails: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     website_urls: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
