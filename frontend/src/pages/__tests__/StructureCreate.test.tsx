@@ -302,7 +302,6 @@ describe("StructureCreatePage", () => {
     const optionalSectionPicker = screen.getByLabelText(/informazioni facoltative/i);
     await user.selectOptions(optionalSectionPicker, "mapResources");
     await user.selectOptions(optionalSectionPicker, "documentsRequired");
-    await user.selectOptions(optionalSectionPicker, "communicationsInfrastructure");
     const unverifiedRadio = screen.getByLabelText(/Da verificare/i);
     await user.click(unverifiedRadio);
     await waitFor(() => expect(unverifiedRadio).toBeChecked());

@@ -137,7 +137,6 @@ type OptionalSectionKey =
   | "activitySpaces"
   | "activityEquipment"
   | "inclusionServices"
-  | "communicationsInfrastructure"
   | "dataQualityFlags"
   | "inAreaProtetta"
   | "floodRisk"
@@ -150,7 +149,6 @@ const optionalSectionOrder: OptionalSectionKey[] = [
   "activitySpaces",
   "activityEquipment",
   "inclusionServices",
-  "communicationsInfrastructure",
   "dataQualityFlags",
   "inAreaProtetta",
   "floodRisk",
@@ -565,7 +563,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [landlineAvailable, setLandlineAvailable] = useState<boolean | null>(null);
   const [communicationsNotes, setCommunicationsNotes] = useState("");
   const [activitySpaces, setActivitySpaces] = useState<string[]>([]);
-  const [communicationsInfrastructure, setCommunicationsInfrastructure] = useState<string[]>([]);
   const [activityEquipment, setActivityEquipment] = useState<string[]>([]);
   const [structurePaymentMethods, setStructurePaymentMethods] = useState<PaymentMethod[]>([
     defaultPaymentMethod
@@ -1901,8 +1898,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           break;
         case "inclusionServices":
           setInclusionServices([]);
-        case "communicationsInfrastructure":
-          setCommunicationsInfrastructure([]);
           break;
         case "dataQualityFlags":
           setDataQualityFlags([]);
@@ -3022,9 +3017,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
     const trimmedActivitySpaces = activitySpaces.map((value) => value.trim());
-    const trimmedCommunicationsInfrastructure = communicationsInfrastructure.map((value) =>
-      value.trim()
-    );
     const trimmedActivityEquipment = activityEquipment.map((value) => value.trim());
     const trimmedDataQualityFlags = dataQualityFlags.map((value) => value.trim());
     const trimmedCostOptions = costOptions.map((option) => ({
@@ -3609,13 +3601,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     activitySpaces.length > 0 ? "structure-activity-space-0" : undefined;
   const activitySpacesAddButtonId = "structure-activity-spaces-add";
   const activitySpacesLabelFor = firstActivitySpaceInputId ?? activitySpacesAddButtonId;
-  const communicationsInfrastructureHintId = "structure-communications-infrastructure-hint";
-  const communicationsInfrastructureDescribedBy = communicationsInfrastructureHintId;
-  const firstCommunicationsInfrastructureInputId =
-    communicationsInfrastructure.length > 0 ? "structure-communications-infrastructure-0" : undefined;
-  const communicationsInfrastructureAddButtonId = "structure-communications-infrastructure-add";
-  const communicationsInfrastructureLabelFor =
-    firstCommunicationsInfrastructureInputId ?? communicationsInfrastructureAddButtonId;
   const activityEquipmentHintId = "structure-activity-equipment-hint";
   const activityEquipmentDescribedBy = activityEquipmentHintId;
   const firstActivityEquipmentInputId =
