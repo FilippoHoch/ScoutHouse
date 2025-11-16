@@ -2,6 +2,7 @@ import {
   ChangeEvent,
   DragEvent,
   FormEvent,
+  KeyboardEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -513,6 +514,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [geocodingError, setGeocodingError] = useState<string | null>(null);
   const [geocodingApplied, setGeocodingApplied] = useState(false);
   const [geocodingAltitudeApplied, setGeocodingAltitudeApplied] = useState(false);
+  const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const [mapSearchStatus, setMapSearchStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [mapSearchError, setMapSearchError] = useState<string | null>(null);
+  const [mapSearchResults, setMapSearchResults] = useState<GeocodingResult[]>([]);
+  const [mapSearchLastQuery, setMapSearchLastQuery] = useState("");
   const [altitudeManuallyEdited, setAltitudeManuallyEdited] = useState(false);
   const [type, setType] = useState<StructureType | "">("");
   const [operationalStatus, setOperationalStatus] =
@@ -628,6 +634,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const geocodingRequestId = useRef(0);
   const geocodingDebounceRef = useRef<number | null>(null);
   const geocodingAbortController = useRef<AbortController | null>(null);
+  const mapSearchRequestId = useRef(0);
+  const mapSearchAbortController = useRef<AbortController | null>(null);
+  const mapSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const mapSearchResultsRef = useRef<HTMLDivElement | null>(null);
   const coordinatesEditedRef = useRef(false);
   const latitudeRef = useRef("");
   const longitudeRef = useRef("");
@@ -653,6 +663,15 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   useEffect(() => {
     altitudeEditedRef.current = altitudeManuallyEdited;
   }, [altitudeManuallyEdited]);
+
+  useEffect(() => {
+    return () => {
+      if (mapSearchAbortController.current) {
+        mapSearchAbortController.current.abort();
+        mapSearchAbortController.current = null;
+      }
+    };
+  }, []);
   const shouldFetchStructure = isEditing && Boolean(editingSlug);
   const {
     data: existingStructure,
@@ -758,6 +777,125 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       return changed ? next : prev;
     });
   }, []);
+
+  const handleMapSearchInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextValue = event.currentTarget.value;
+    setMapSearchQuery(nextValue);
+    if (!nextValue.trim()) {
+      setMapSearchResults([]);
+      setMapSearchStatus("idle");
+      setMapSearchError(null);
+      setMapSearchLastQuery("");
+      if (mapSearchAbortController.current) {
+        mapSearchAbortController.current.abort();
+        mapSearchAbortController.current = null;
+      }
+    }
+  };
+
+  const handleMapSearchSubmit = () => {
+    const trimmedQuery = mapSearchQuery.trim();
+    if (!trimmedQuery) {
+      setMapSearchResults([]);
+      setMapSearchStatus("idle");
+      setMapSearchError(null);
+      setMapSearchLastQuery("");
+      return;
+    }
+
+    if (mapSearchAbortController.current) {
+      mapSearchAbortController.current.abort();
+      mapSearchAbortController.current = null;
+    }
+
+    setMapSearchStatus("loading");
+    setMapSearchError(null);
+    setMapSearchLastQuery(trimmedQuery);
+    const requestId = mapSearchRequestId.current + 1;
+    mapSearchRequestId.current = requestId;
+    const controller = new AbortController();
+    mapSearchAbortController.current = controller;
+
+    void searchGeocoding({ address: trimmedQuery, limit: 6 }, { signal: controller.signal })
+      .then((results) => {
+        if (controller.signal.aborted || requestId !== mapSearchRequestId.current) {
+          return;
+        }
+        setMapSearchResults(results);
+        setMapSearchStatus("success");
+        if (results.length > 0) {
+          window.setTimeout(() => {
+            mapSearchResultsRef.current
+              ?.querySelector<HTMLButtonElement>("button.structure-map-search__result")
+              ?.focus();
+          }, 0);
+        }
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted || requestId !== mapSearchRequestId.current) {
+          return;
+        }
+        let message = t("structures.create.form.map.searchError");
+        if (error instanceof ApiError) {
+          const detailValue =
+            error.body && typeof error.body === "object" && "detail" in error.body
+              ? (error.body as Record<string, unknown>).detail
+              : null;
+          const detail = typeof detailValue === "string" ? detailValue : null;
+          message = detail ?? t("structures.create.form.map.searchError");
+        } else if (error instanceof Error) {
+          message = error.message;
+        }
+        setMapSearchResults([]);
+        setMapSearchStatus("error");
+        setMapSearchError(message);
+      })
+      .finally(() => {
+        if (mapSearchAbortController.current === controller) {
+          mapSearchAbortController.current = null;
+        }
+      });
+  };
+
+  const handleMapSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+      handleMapSearchSubmit();
+    }
+  };
+
+  const handleMapSearchSelect = (result: GeocodingResult) => {
+    const latString = result.latitude.toFixed(6);
+    const lonString = result.longitude.toFixed(6);
+    setLatitude(latString);
+    setLongitude(lonString);
+    setCoordinatesManuallyEdited(false);
+    const altitudeValue =
+      typeof result.altitude === "number" && Number.isFinite(result.altitude)
+        ? Math.round(result.altitude)
+        : null;
+    if (altitudeValue !== null) {
+      setAltitude(String(altitudeValue));
+      setAltitudeManuallyEdited(false);
+      setGeocodingAltitudeApplied(true);
+    } else {
+      setGeocodingAltitudeApplied(false);
+    }
+    setGeocodingApplied(true);
+    setGeocodingSuggestion(null);
+    setGeocodingError(null);
+    setApiError(null);
+    clearFieldErrorsGroup(["latitude", "longitude"]);
+    setMapSearchResults([]);
+    setMapSearchStatus("idle");
+    setMapSearchError(null);
+    setMapSearchLastQuery("");
+    setMapSearchQuery(result.label);
+    window.setTimeout(() => {
+      mapSearchInputRef.current?.focus();
+    }, 0);
+  };
 
   const handleMapCoordinatesChange = (next: GoogleMapEmbedCoordinates) => {
     setLatitude(next.lat.toFixed(6));
@@ -4074,6 +4212,85 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                       <span className="structure-map-field-title">
                         {t("structures.create.form.map.title")}
                       </span>
+                      <div className="structure-map-search" aria-live="polite">
+                        <div className="structure-map-search__form" role="search">
+                          <label htmlFor="structure-map-search-input">
+                            {t("structures.create.form.map.searchLabel")}
+                          </label>
+                          <div className="structure-map-search__controls">
+                            <input
+                              id="structure-map-search-input"
+                              ref={mapSearchInputRef}
+                              value={mapSearchQuery}
+                              onChange={handleMapSearchInputChange}
+                              onKeyDown={handleMapSearchKeyDown}
+                              placeholder={t("structures.create.form.map.searchPlaceholder")}
+                              autoComplete="off"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={mapSearchStatus === "loading" || !mapSearchQuery.trim()}
+                              onClick={handleMapSearchSubmit}
+                            >
+                              {t("structures.create.form.map.searchButton")}
+                            </Button>
+                          </div>
+                        </div>
+                        {mapSearchStatus === "loading" && (
+                          <p className="structure-map-search__status" role="status">
+                            {t("structures.create.form.map.searching")}
+                          </p>
+                        )}
+                        {mapSearchStatus === "error" && mapSearchError && (
+                          <p className="structure-map-search__status structure-map-search__status--error" role="alert">
+                            {mapSearchError}
+                          </p>
+                        )}
+                        {mapSearchStatus === "success" && mapSearchResults.length === 0 && mapSearchLastQuery && (
+                          <p className="structure-map-search__status">
+                            {t("structures.create.form.map.searchNoResults", { query: mapSearchLastQuery })}
+                          </p>
+                        )}
+                        {mapSearchResults.length > 0 && (
+                          <div className="structure-map-search__results" ref={mapSearchResultsRef}>
+                            <p className="structure-map-search__results-title">
+                              {t("structures.create.form.map.searchResultsTitle")}
+                            </p>
+                            <ul className="structure-map-search__list" role="list">
+                              {mapSearchResults.map((result, index) => (
+                                <li key={`${result.latitude}-${result.longitude}-${index}`}>
+                                  <div className="structure-map-search__result">
+                                    <div className="structure-map-search__result-details">
+                                      <span className="structure-map-search__result-label">{result.label}</span>
+                                      <span className="structure-map-search__result-coords">
+                                        {result.latitude.toFixed(6)}, {result.longitude.toFixed(6)}
+                                      </span>
+                                      {typeof result.altitude === "number" &&
+                                        Number.isFinite(result.altitude) && (
+                                          <span className="structure-map-search__result-altitude">
+                                            {t("structures.create.form.geocoding.suggestionAltitude", {
+                                              alt: Math.round(result.altitude)
+                                            })}
+                                          </span>
+                                        )}
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="secondary"
+                                      className="structure-map-search__result-action"
+                                      onClick={() => handleMapSearchSelect(result)}
+                                    >
+                                      {t("structures.create.form.map.searchSelect")}
+                                    </Button>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                       <GoogleMapEmbed
                         coordinates={selectedCoordinates}
                         title={t("structures.create.form.map.title")}

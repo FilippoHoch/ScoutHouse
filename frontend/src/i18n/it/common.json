@@ -363,7 +363,15 @@
           "hint": "Clicca sulla mappa per spostare il segnaposto o modifica le coordinate nei campi dedicati.",
           "empty": "Clicca sulla mappa o completa l'indirizzo per ottenere un suggerimento automatico.",
           "selected": "Coordinate selezionate: {{lat}}, {{lon}}",
-          "ariaLabel": "Mappa interattiva di Google per scegliere le coordinate"
+          "ariaLabel": "Mappa interattiva di Google per scegliere le coordinate",
+          "searchLabel": "Cerca indirizzo o luogo",
+          "searchPlaceholder": "Es. Via Roma 1, Milano",
+          "searchButton": "Cerca sulla mappa",
+          "searching": "Ricerca manuale delle coordinate…",
+          "searchError": "Impossibile cercare l'indirizzo digitato.",
+          "searchResultsTitle": "Risultati della ricerca",
+          "searchNoResults": "Nessun risultato per \"{{query}}\".",
+          "searchSelect": "Usa queste coordinate"
         },
         "geocoding": {
           "searching": "Ricerca coordinate basata sull'indirizzo…",
