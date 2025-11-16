@@ -4621,7 +4621,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   />
                 </div>
 
-                <div className="structure-form-field structure-form-field--nearest-bus-stop">
+                <div
+                  className="structure-form-field structure-form-field--nearest-bus-stop"
+                  data-span="full"
+                >
                   <div className="structure-field-with-action">
                     <label
                       htmlFor="structure-nearest-bus-stop"
@@ -4632,8 +4635,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                         id="structure-nearest-bus-stop"
                         value={nearestBusStop}
                         onChange={handleNearestBusStopChange}
-                        maxLength={255}
-                        rows={3}
+                        rows={5}
                       />
                     </label>
                     <Button
