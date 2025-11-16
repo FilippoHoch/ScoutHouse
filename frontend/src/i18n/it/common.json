@@ -618,7 +618,7 @@
         },
         "allowedAudiences": {
           "label": "Gruppi ammessi",
-          "hint": "Elenca categorie specifiche di gruppi autorizzati (es. solo reparti, massimo 2 clan, ecc.).",
+          "hint": "Elenca categorie specifiche di gruppi autorizzati (es. solo Agesci, solo oratori, massimo 2 clan, ecc.).",
           "add": "Aggiungi gruppo",
           "remove": "Rimuovi",
           "entryLabel": "Gruppo ammesso {{index}}",
