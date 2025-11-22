@@ -3769,6 +3769,15 @@ table tbody tr:hover {
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.16), rgba(14, 165, 233, 0.08));
   border: 1px solid rgba(37, 99, 235, 0.18);
   box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: var(--space-xl);
+}
+
+@media (min-width: 960px) {
+  .structure-details__hero {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
 }
 
 .structure-details__hero-content {
@@ -3788,6 +3797,44 @@ table tbody tr:hover {
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
+}
+
+.structure-details__hero-gallery {
+  display: flex;
+  align-items: stretch;
+}
+
+.structure-details__hero-gallery .structure-photos {
+  width: 100%;
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: var(--shadow-md);
+}
+
+.structure-details__hero-gallery .structure-photos__content {
+  min-height: 220px;
+}
+
+.structure-details__hero-gallery .structure-photos__preview-item {
+  border: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.structure-details__hero-gallery .structure-photos__preview-item img {
+  height: clamp(220px, 40vw, 360px);
+}
+
+.structure-details__hero-gallery .structure-photos__nav {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.structure-details__hero-gallery .structure-photos__nav:not(:disabled):hover,
+.structure-details__hero-gallery .structure-photos__nav:not(:disabled):focus-visible {
+  background: var(--color-primary-soft);
 }
 
 .structure-details__badge {
