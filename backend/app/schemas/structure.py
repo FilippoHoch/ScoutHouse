@@ -153,6 +153,16 @@ def _validate_emergency_coordinates(value: object) -> dict[str, float] | None:
     return {"lat": lat, "lon": lon}
 
 
+class TransportAccessPoint(BaseModel):
+    type: str = Field(max_length=64)
+    coordinates: dict[str, float] | None = None
+    note: str | None = Field(default=None, max_length=255)
+
+    @field_validator("coordinates", mode="before")
+    def normalize_coordinates(cls, value: object) -> dict[str, float] | None:
+        return _validate_emergency_coordinates(value)
+
+
 def _validate_iban(value: str) -> str:
     normalized = value.replace(" ", "").upper()
     if not IBAN_PATTERN.match(normalized):
@@ -258,7 +268,7 @@ class StructureBase(BaseModel):
     access_by_coach: bool | None = None
     access_by_public_transport: bool | None = None
     coach_turning_area: bool | None = None
-    nearest_bus_stop: str | None = Field(default=None, max_length=255)
+    transport_access_points: list[TransportAccessPoint] | None = None
     bus_type_access: list[str] | None = None
     weekend_only: bool | None = None
     has_field_poles: bool | None = None
@@ -811,6 +821,7 @@ class StructureSearchItem(BaseModel):
     access_by_car: bool | None = None
     access_by_coach: bool | None = None
     access_by_public_transport: bool | None = None
+    transport_access_points: list[TransportAccessPoint] | None = None
     has_kitchen: bool | None = None
     hot_water: bool | None = None
     cell_coverage: CellCoverageQuality | None = None
@@ -843,6 +854,7 @@ class StructureSearchResponse(BaseModel):
 
 
 __all__ = [
+    "TransportAccessPoint",
     "StructureBase",
     "StructureCreate",
     "StructureUpdate",

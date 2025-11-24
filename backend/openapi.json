@@ -66,16 +66,6 @@
         ],
         "summary": "Register",
         "operationId": "register_api_v1_auth_register_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -83,16 +73,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -223,6 +203,50 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Update Me",
+        "operationId": "update_me_api_v1_auth_me_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSelfUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -442,7 +466,104 @@
         }
       }
     },
+    "/api/v1/attachments/download/{token}": {
+      "get": {
+        "tags": [
+          "attachments",
+          "attachments"
+        ],
+        "summary": "Download Attachment Content",
+        "operationId": "download_attachment_content_api_v1_attachments_download__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/attachments/{attachment_id}": {
+      "patch": {
+        "tags": [
+          "attachments",
+          "attachments"
+        ],
+        "summary": "Update Attachment",
+        "operationId": "update_attachment_api_v1_attachments__attachment_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachmentUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "tags": [
           "attachments",
@@ -641,6 +762,25 @@
         }
       }
     },
+    "/api/v1/templates/structures.json": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Get Structures Template Json",
+        "operationId": "get_structures_template_json_api_v1_templates_structures_json_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/templates/structure-open-periods.xlsx": {
       "get": {
         "tags": [
@@ -673,6 +813,174 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/templates/structure-open-periods.json": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Get Structure Open Periods Template Json",
+        "operationId": "get_structure_open_periods_template_json_api_v1_templates_structure_open_periods_json_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/geocoding/search": {
+      "get": {
+        "tags": [
+          "geocoding"
+        ],
+        "summary": "Search Geocoding",
+        "operationId": "search_geocoding_api_v1_geocoding_search_get",
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Address"
+            }
+          },
+          {
+            "name": "locality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Locality"
+            }
+          },
+          {
+            "name": "municipality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Municipality"
+            }
+          },
+          {
+            "name": "province",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Province"
+            }
+          },
+          {
+            "name": "postal_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 16
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Postal Code"
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 2
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "IT",
+              "title": "Country"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 1,
+              "default": 5,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeocodingSearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -993,6 +1301,184 @@
                 }
               ],
               "title": "Hot Water"
+            }
+          },
+          {
+            "name": "cell_coverage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CellCoverageQuality"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cell Coverage"
+            }
+          },
+          {
+            "name": "cell_data_quality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CellCoverageQuality"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cell Data Quality"
+            }
+          },
+          {
+            "name": "cell_voice_quality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CellCoverageQuality"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cell Voice Quality"
+            }
+          },
+          {
+            "name": "wifi_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wifi Available"
+            }
+          },
+          {
+            "name": "landline_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Landline Available"
+            }
+          },
+          {
+            "name": "aed_on_site",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Aed On Site"
+            }
+          },
+          {
+            "name": "river_swimming",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RiverSwimmingOption"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "River Swimming"
+            }
+          },
+          {
+            "name": "wastewater_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WastewaterType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wastewater Type"
+            }
+          },
+          {
+            "name": "min_power_capacity_kw",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Power Capacity Kw"
+            }
+          },
+          {
+            "name": "min_parking_car_slots",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Parking Car Slots"
+            }
+          },
+          {
+            "name": "flood_risk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/FloodRiskLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Flood Risk"
             }
           },
           {
@@ -1756,6 +2242,172 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/structures/{structure_id}/categorized-attachments": {
+      "get": {
+        "tags": [
+          "structures"
+        ],
+        "summary": "List Structure Attachments",
+        "operationId": "list_structure_attachments_api_v1_structures__structure_id__categorized_attachments_get",
+        "parameters": [
+          {
+            "name": "structure_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Structure Id"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StructureAttachmentKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StructureAttachmentRead"
+                  },
+                  "title": "Response List Structure Attachments Api V1 Structures  Structure Id  Categorized Attachments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "structures"
+        ],
+        "summary": "Create Structure Attachment",
+        "operationId": "create_structure_attachment_api_v1_structures__structure_id__categorized_attachments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "structure_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Structure Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StructureAttachmentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StructureAttachmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/structures/{structure_id}/categorized-attachments/{structure_attachment_id}": {
+      "delete": {
+        "tags": [
+          "structures"
+        ],
+        "summary": "Delete Structure Attachment",
+        "operationId": "delete_structure_attachment_api_v1_structures__structure_id__categorized_attachments__structure_attachment_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "structure_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Structure Id"
+            }
+          },
+          {
+            "name": "structure_attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Structure Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -3219,6 +3871,70 @@
               ],
               "title": "To"
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "branch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EventBranch"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Branch"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EventStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "budget",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Budget"
+            }
           }
         ],
         "responses": {
@@ -3383,6 +4099,27 @@
         }
       }
     },
+    "/api/v1/public/landing": {
+      "get": {
+        "tags": [
+          "public"
+        ],
+        "summary": "Landing Snapshot",
+        "operationId": "landing_snapshot_api_v1_public_landing_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandingSnapshot"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users": {
       "get": {
         "tags": [
@@ -3517,6 +4254,15 @@
   },
   "components": {
     "schemas": {
+      "AnimalPolicy": {
+        "type": "string",
+        "enum": [
+          "allowed",
+          "allowed_on_request",
+          "forbidden"
+        ],
+        "title": "AnimalPolicy"
+      },
       "AttachmentConfirmRequest": {
         "properties": {
           "owner_type": {
@@ -3630,6 +4376,17 @@
             ],
             "title": "Created By Name"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3679,6 +4436,37 @@
           "mime"
         ],
         "title": "AttachmentSignRequest"
+      },
+      "AttachmentUpdateRequest": {
+        "properties": {
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "AttachmentUpdateRequest"
       },
       "AttachmentUploadSignature": {
         "properties": {
@@ -3750,6 +4538,16 @@
           "file"
         ],
         "title": "Body_import_structures_api_v1_import_structures_post"
+      },
+      "CellCoverageQuality": {
+        "type": "string",
+        "enum": [
+          "none",
+          "limited",
+          "good",
+          "excellent"
+        ],
+        "title": "CellCoverageQuality"
       },
       "ContactCreate": {
         "properties": {
@@ -4114,6 +4912,22 @@
         ],
         "title": "CostBand"
       },
+      "DataQualityStatus": {
+        "type": "string",
+        "enum": [
+          "verified",
+          "unverified"
+        ],
+        "title": "DataQualityStatus"
+      },
+      "EventAccommodation": {
+        "type": "string",
+        "enum": [
+          "indoor",
+          "tents"
+        ],
+        "title": "EventAccommodation"
+      },
       "EventBranch": {
         "type": "string",
         "enum": [
@@ -4123,6 +4937,125 @@
           "ALL"
         ],
         "title": "EventBranch"
+      },
+      "EventBranchSegmentCreate": {
+        "properties": {
+          "branch": {
+            "$ref": "#/components/schemas/EventBranch"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "youth_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Youth Count",
+            "default": 0
+          },
+          "leaders_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Leaders Count",
+            "default": 0
+          },
+          "kambusieri_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Kambusieri Count",
+            "default": 0
+          },
+          "accommodation": {
+            "$ref": "#/components/schemas/EventAccommodation"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "branch",
+          "start_date",
+          "end_date",
+          "accommodation"
+        ],
+        "title": "EventBranchSegmentCreate"
+      },
+      "EventBranchSegmentRead": {
+        "properties": {
+          "branch": {
+            "$ref": "#/components/schemas/EventBranch"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "youth_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Youth Count",
+            "default": 0
+          },
+          "leaders_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Leaders Count",
+            "default": 0
+          },
+          "kambusieri_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Kambusieri Count",
+            "default": 0
+          },
+          "accommodation": {
+            "$ref": "#/components/schemas/EventAccommodation"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "branch",
+          "start_date",
+          "end_date",
+          "accommodation",
+          "id"
+        ],
+        "title": "EventBranchSegmentRead"
       },
       "EventCandidateCreate": {
         "properties": {
@@ -4751,6 +5684,13 @@
               }
             ],
             "title": "Notes"
+          },
+          "branch_segments": {
+            "items": {
+              "$ref": "#/components/schemas/EventBranchSegmentCreate"
+            },
+            "type": "array",
+            "title": "Branch Segments"
           }
         },
         "type": "object",
@@ -4992,6 +5932,13 @@
             ],
             "title": "Notes"
           },
+          "branch_segments": {
+            "items": {
+              "$ref": "#/components/schemas/EventBranchSegmentRead"
+            },
+            "type": "array",
+            "title": "Branch Segments"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -5218,6 +6165,20 @@
               }
             ],
             "title": "Notes"
+          },
+          "branch_segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EventBranchSegmentCreate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch Segments"
           }
         },
         "type": "object",
@@ -5276,6 +6237,13 @@
               }
             ],
             "title": "Notes"
+          },
+          "branch_segments": {
+            "items": {
+              "$ref": "#/components/schemas/EventBranchSegmentRead"
+            },
+            "type": "array",
+            "title": "Branch Segments"
           },
           "id": {
             "type": "integer",
@@ -5387,6 +6355,13 @@
             ],
             "title": "Notes"
           },
+          "branch_segments": {
+            "items": {
+              "$ref": "#/components/schemas/EventBranchSegmentRead"
+            },
+            "type": "array",
+            "title": "Branch Segments"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -5447,6 +6422,16 @@
         ],
         "title": "EventWithRelations"
       },
+      "FieldSlope": {
+        "type": "string",
+        "enum": [
+          "flat",
+          "gentle",
+          "moderate",
+          "steep"
+        ],
+        "title": "FieldSlope"
+      },
       "FirePolicy": {
         "type": "string",
         "enum": [
@@ -5455,6 +6440,169 @@
           "forbidden"
         ],
         "title": "FirePolicy"
+      },
+      "FloodRiskLevel": {
+        "type": "string",
+        "enum": [
+          "none",
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "FloodRiskLevel"
+      },
+      "GeocodingAddress": {
+        "properties": {
+          "street": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Street"
+          },
+          "house_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "House Number"
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locality"
+          },
+          "municipality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality"
+          },
+          "province": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Province"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          }
+        },
+        "type": "object",
+        "title": "GeocodingAddress"
+      },
+      "GeocodingResult": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altitude"
+          },
+          "is_approximate": {
+            "type": "boolean",
+            "title": "Is Approximate",
+            "default": true
+          },
+          "altitude_is_approximate": {
+            "type": "boolean",
+            "title": "Altitude Is Approximate",
+            "default": false
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeocodingAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude",
+          "label"
+        ],
+        "title": "GeocodingResult"
+      },
+      "GeocodingSearchResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/GeocodingResult"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "GeocodingSearchResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -5468,6 +6616,137 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LandingEventSample": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "participants_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Participants Total",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "start_date",
+          "end_date"
+        ],
+        "title": "LandingEventSample"
+      },
+      "LandingSnapshot": {
+        "properties": {
+          "structures_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Structures Total",
+            "default": 0
+          },
+          "provinces_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Provinces Total",
+            "default": 0
+          },
+          "beds_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Beds Total",
+            "default": 0
+          },
+          "events_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Events Total",
+            "default": 0
+          },
+          "participants_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Participants Total",
+            "default": 0
+          },
+          "structures": {
+            "items": {
+              "$ref": "#/components/schemas/LandingStructureSample"
+            },
+            "type": "array",
+            "title": "Structures"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/LandingEventSample"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "title": "LandingSnapshot"
+      },
+      "LandingStructureSample": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "province": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Province"
+          },
+          "indoor_beds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indoor Beds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "slug"
+        ],
+        "title": "LandingStructureSample"
       },
       "MailPreviewResponse": {
         "properties": {
@@ -5576,6 +6855,18 @@
           "job_id"
         ],
         "title": "MailTestResponse"
+      },
+      "PaymentMethod": {
+        "type": "string",
+        "enum": [
+          "unspecified",
+          "bank_transfer",
+          "cash",
+          "card",
+          "other",
+          "{'': 'unspecified', 'non specificato': 'unspecified', 'non specificati': 'unspecified', 'unknown': 'unspecified', 'bonifico': 'bank_transfer', 'bonifico bancario': 'bank_transfer', 'bonifici': 'bank_transfer', 'bank transfer': 'bank_transfer', 'wire transfer': 'bank_transfer', 'trasferimento bancario': 'bank_transfer', 'contanti': 'cash', 'cash': 'cash', 'carta': 'card', 'carta di credito': 'card', 'carta di debito': 'card', 'pos': 'card', 'bancomat': 'card', 'altro': 'other', 'su accordo': 'other'}"
+        ],
+        "title": "PaymentMethod"
       },
       "QuoteBreakdownEntry": {
         "properties": {
@@ -5998,6 +7289,14 @@
             "type": "number",
             "title": "Deposit"
           },
+          "booking_deposit": {
+            "type": "number",
+            "title": "Booking Deposit"
+          },
+          "damage_deposit": {
+            "type": "number",
+            "title": "Damage Deposit"
+          },
           "total": {
             "type": "number",
             "title": "Total"
@@ -6009,6 +7308,8 @@
           "utilities",
           "city_tax",
           "deposit",
+          "booking_deposit",
+          "damage_deposit",
           "total"
         ],
         "title": "QuoteTotals"
@@ -6031,32 +7332,6 @@
         ],
         "title": "RefreshResponse"
       },
-      "RegisterRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 8,
-            "title": "Password"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "email",
-          "password"
-        ],
-        "title": "RegisterRequest"
-      },
       "ResetPasswordRequest": {
         "properties": {
           "token": {
@@ -6076,6 +7351,62 @@
           "password"
         ],
         "title": "ResetPasswordRequest"
+      },
+      "RiverSwimmingOption": {
+        "type": "string",
+        "enum": [
+          "si",
+          "no",
+          "unknown"
+        ],
+        "title": "RiverSwimmingOption"
+      },
+      "StructureAttachmentCreate": {
+        "properties": {
+          "attachment_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Attachment Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/StructureAttachmentKind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attachment_id",
+          "kind"
+        ],
+        "title": "StructureAttachmentCreate"
+      },
+      "StructureAttachmentKind": {
+        "type": "string",
+        "enum": [
+          "map_resource",
+          "required_document"
+        ],
+        "title": "StructureAttachmentKind"
+      },
+      "StructureAttachmentRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/StructureAttachmentKind"
+          },
+          "attachment": {
+            "$ref": "#/components/schemas/AttachmentRead"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "attachment"
+        ],
+        "title": "StructureAttachmentRead"
       },
       "StructureAvailabilityCreate": {
         "properties": {
@@ -6222,6 +7553,17 @@
         ],
         "title": "StructureAvailabilityUpdate"
       },
+      "StructureContactStatus": {
+        "type": "string",
+        "enum": [
+          "unknown",
+          "to_contact",
+          "contacted",
+          "confirmed",
+          "stale"
+        ],
+        "title": "StructureContactStatus"
+      },
       "StructureCostModel": {
         "type": "string",
         "enum": [
@@ -6282,6 +7624,28 @@
               }
             ],
             "title": "Date End"
+          },
+          "price_per_resource": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Resource"
           }
         },
         "type": "object",
@@ -6352,6 +7716,28 @@
             ],
             "title": "Date End"
           },
+          "price_per_resource": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Resource"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -6408,6 +7794,21 @@
               }
             ],
             "title": "Date End"
+          },
+          "price_per_resource": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Resource"
           },
           "id": {
             "type": "integer",
@@ -6474,6 +7875,28 @@
             ],
             "title": "Date End"
           },
+          "price_per_resource": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Resource"
+          },
           "id": {
             "anyOf": [
               {
@@ -6518,7 +7941,7 @@
             "title": "Currency",
             "default": "EUR"
           },
-          "deposit": {
+          "booking_deposit": {
             "anyOf": [
               {
                 "type": "number",
@@ -6532,7 +7955,23 @@
                 "type": "null"
               }
             ],
-            "title": "Deposit"
+            "title": "Booking Deposit"
+          },
+          "damage_deposit": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damage Deposit"
           },
           "city_tax_per_night": {
             "anyOf": [
@@ -6566,6 +8005,28 @@
             ],
             "title": "Utilities Flat"
           },
+          "utilities_included": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilities Included"
+          },
+          "utilities_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilities Notes"
+          },
           "min_total": {
             "anyOf": [
               {
@@ -6598,6 +8059,22 @@
             ],
             "title": "Max Total"
           },
+          "forfait_trigger_total": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forfait Trigger Total"
+          },
           "age_rules": {
             "anyOf": [
               {
@@ -6609,6 +8086,53 @@
               }
             ],
             "title": "Age Rules"
+          },
+          "payment_methods": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PaymentMethod"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Methods"
+          },
+          "payment_terms": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Terms"
+          },
+          "price_per_resource": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Resource"
           },
           "modifiers": {
             "anyOf": [
@@ -6649,7 +8173,7 @@
             "title": "Currency",
             "default": "EUR"
           },
-          "deposit": {
+          "booking_deposit": {
             "anyOf": [
               {
                 "type": "string",
@@ -6659,7 +8183,19 @@
                 "type": "null"
               }
             ],
-            "title": "Deposit"
+            "title": "Booking Deposit"
+          },
+          "damage_deposit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damage Deposit"
           },
           "city_tax_per_night": {
             "anyOf": [
@@ -6685,6 +8221,28 @@
             ],
             "title": "Utilities Flat"
           },
+          "utilities_included": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilities Included"
+          },
+          "utilities_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilities Notes"
+          },
           "min_total": {
             "anyOf": [
               {
@@ -6709,6 +8267,18 @@
             ],
             "title": "Max Total"
           },
+          "forfait_trigger_total": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forfait Trigger Total"
+          },
           "age_rules": {
             "anyOf": [
               {
@@ -6720,6 +8290,46 @@
               }
             ],
             "title": "Age Rules"
+          },
+          "payment_methods": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PaymentMethod"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Methods"
+          },
+          "payment_terms": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Terms"
+          },
+          "price_per_resource": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Resource"
           },
           "id": {
             "type": "integer",
@@ -6773,7 +8383,7 @@
             "title": "Currency",
             "default": "EUR"
           },
-          "deposit": {
+          "booking_deposit": {
             "anyOf": [
               {
                 "type": "number",
@@ -6787,7 +8397,23 @@
                 "type": "null"
               }
             ],
-            "title": "Deposit"
+            "title": "Booking Deposit"
+          },
+          "damage_deposit": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damage Deposit"
           },
           "city_tax_per_night": {
             "anyOf": [
@@ -6821,6 +8447,28 @@
             ],
             "title": "Utilities Flat"
           },
+          "utilities_included": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilities Included"
+          },
+          "utilities_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilities Notes"
+          },
           "min_total": {
             "anyOf": [
               {
@@ -6853,6 +8501,22 @@
             ],
             "title": "Max Total"
           },
+          "forfait_trigger_total": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forfait Trigger Total"
+          },
           "age_rules": {
             "anyOf": [
               {
@@ -6864,6 +8528,53 @@
               }
             ],
             "title": "Age Rules"
+          },
+          "payment_methods": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PaymentMethod"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Methods"
+          },
+          "payment_terms": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Terms"
+          },
+          "price_per_resource": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Resource"
           },
           "id": {
             "anyOf": [
@@ -6909,6 +8620,13 @@
             "type": "string",
             "title": "Slug"
           },
+          "country": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country",
+            "default": "IT"
+          },
           "province": {
             "anyOf": [
               {
@@ -6920,6 +8638,54 @@
               }
             ],
             "title": "Province"
+          },
+          "municipality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality"
+          },
+          "municipality_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality Code"
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locality"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
           },
           "address": {
             "anyOf": [
@@ -6964,6 +8730,100 @@
               }
             ],
             "title": "Altitude"
+          },
+          "plus_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plus Code"
+          },
+          "what3words": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What3Words"
+          },
+          "emergency_coordinates": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Coordinates"
+          },
+          "winter_access_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winter Access Notes"
+          },
+          "road_weight_limit_tonnes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Road Weight Limit Tonnes"
+          },
+          "bridge_weight_limit_tonnes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bridge Weight Limit Tonnes"
+          },
+          "max_vehicle_height_m": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Vehicle Height M"
+          },
+          "road_access_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Road Access Notes"
           },
           "type": {
             "$ref": "#/components/schemas/StructureType"
@@ -7016,6 +8876,21 @@
             ],
             "title": "Indoor Activity Rooms"
           },
+          "indoor_rooms": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indoor Rooms"
+          },
           "has_kitchen": {
             "anyOf": [
               {
@@ -7049,6 +8924,39 @@
               }
             ],
             "title": "Land Area M2"
+          },
+          "field_slope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldSlope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pitches_tende": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitches Tende"
+          },
+          "water_at_field": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Water At Field"
           },
           "shelter_on_field": {
             "anyOf": [
@@ -7086,6 +8994,99 @@
             ],
             "title": "Electricity Available"
           },
+          "power_capacity_kw": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Capacity Kw"
+          },
+          "power_outlets_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Outlets Count"
+          },
+          "power_outlet_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Outlet Types"
+          },
+          "generator_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generator Available"
+          },
+          "generator_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generator Notes"
+          },
+          "water_tank_capacity_liters": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Water Tank Capacity Liters"
+          },
+          "wastewater_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WastewaterType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wastewater_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wastewater Notes"
+          },
           "fire_policy": {
             "anyOf": [
               {
@@ -7095,6 +9096,17 @@
                 "type": "null"
               }
             ]
+          },
+          "fire_rules": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fire Rules"
           },
           "access_by_car": {
             "anyOf": [
@@ -7140,17 +9152,33 @@
             ],
             "title": "Coach Turning Area"
           },
-          "nearest_bus_stop": {
+          "transport_access_points": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "items": {
+                  "$ref": "#/components/schemas/TransportAccessPoint"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Nearest Bus Stop"
+            "title": "Transport Access Points"
+          },
+          "bus_type_access": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bus Type Access"
           },
           "weekend_only": {
             "anyOf": [
@@ -7185,6 +9213,661 @@
             ],
             "title": "Pit Latrine Allowed"
           },
+          "dry_toilet": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dry Toilet"
+          },
+          "outdoor_bathrooms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outdoor Bathrooms"
+          },
+          "outdoor_showers": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outdoor Showers"
+          },
+          "wheelchair_accessible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wheelchair Accessible"
+          },
+          "step_free_access": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Free Access"
+          },
+          "parking_car_slots": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Car Slots"
+          },
+          "parking_bus_slots": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Bus Slots"
+          },
+          "parking_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Notes"
+          },
+          "accessibility_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accessibility Notes"
+          },
+          "allowed_audiences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Audiences"
+          },
+          "usage_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureUsageRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage_rules": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Rules"
+          },
+          "animal_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnimalPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "animal_policy_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Policy Notes"
+          },
+          "in_area_protetta": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Area Protetta"
+          },
+          "ente_area_protetta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ente Area Protetta"
+          },
+          "environmental_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environmental Notes"
+          },
+          "seasonal_amenities": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seasonal Amenities"
+          },
+          "booking_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Url"
+          },
+          "whatsapp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp"
+          },
+          "booking_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Required"
+          },
+          "booking_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Notes"
+          },
+          "documents_required": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Documents Required"
+          },
+          "map_resources_urls": {
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "format": "uri"
+            },
+            "type": "array",
+            "title": "Map Resources Urls"
+          },
+          "event_rules_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Rules Url"
+          },
+          "event_rules_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Rules Notes"
+          },
+          "contact_status": {
+            "$ref": "#/components/schemas/StructureContactStatus",
+            "default": "unknown"
+          },
+          "operational_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureOperationalStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_coverage_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Coverage Notes"
+          },
+          "cell_data_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_voice_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wifi_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wifi Available"
+          },
+          "landline_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landline Available"
+          },
+          "communications_infrastructure": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Communications Infrastructure"
+          },
+          "aed_on_site": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aed On Site"
+          },
+          "emergency_phone_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Phone Available"
+          },
+          "emergency_response_time_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Response Time Minutes"
+          },
+          "emergency_plan_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Plan Notes"
+          },
+          "evacuation_plan_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evacuation Plan Url"
+          },
+          "risk_assessment_template_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment Template Url"
+          },
+          "wildlife_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wildlife Notes"
+          },
+          "river_swimming": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiverSwimmingOption"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flood_risk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FloodRiskLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weather_risk_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weather Risk Notes"
+          },
+          "activity_equipment": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Activity Equipment"
+          },
+          "inclusion_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inclusion Notes"
+          },
+          "pec_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pec Email"
+          },
+          "sdi_recipient_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 7,
+                "minLength": 7
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sdi Recipient Code"
+          },
+          "invoice_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Available"
+          },
+          "iban": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iban"
+          },
+          "payment_methods": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethod"
+            },
+            "type": "array",
+            "title": "Payment Methods"
+          },
+          "fiscal_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fiscal Notes"
+          },
+          "data_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source"
+          },
+          "data_source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source Url"
+          },
+          "data_last_verified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Last Verified"
+          },
+          "data_quality_score": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Quality Score"
+          },
+          "data_quality_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Quality Notes"
+          },
+          "data_quality_status": {
+            "$ref": "#/components/schemas/DataQualityStatus",
+            "default": "unverified"
+          },
+          "governance_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Governance Notes"
+          },
           "contact_emails": {
             "items": {
               "type": "string",
@@ -7212,6 +9895,28 @@
               }
             ],
             "title": "Notes Logistics"
+          },
+          "logistics_arrival_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logistics Arrival Notes"
+          },
+          "logistics_departure_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logistics Departure Notes"
           },
           "notes": {
             "anyOf": [
@@ -7303,6 +10008,11 @@
               }
             ],
             "title": "Units"
+          },
+          "blackout": {
+            "type": "boolean",
+            "title": "Blackout",
+            "default": false
           }
         },
         "type": "object",
@@ -7382,6 +10092,11 @@
               }
             ],
             "title": "Units"
+          },
+          "blackout": {
+            "type": "boolean",
+            "title": "Blackout",
+            "default": false
           },
           "id": {
             "type": "integer",
@@ -7469,6 +10184,11 @@
             ],
             "title": "Units"
           },
+          "blackout": {
+            "type": "boolean",
+            "title": "Blackout",
+            "default": false
+          },
           "id": {
             "anyOf": [
               {
@@ -7486,6 +10206,16 @@
           "kind"
         ],
         "title": "StructureOpenPeriodUpdate"
+      },
+      "StructureOperationalStatus": {
+        "type": "string",
+        "enum": [
+          "operational",
+          "seasonal",
+          "temporarily_closed",
+          "permanently_closed"
+        ],
+        "title": "StructureOperationalStatus"
       },
       "StructurePhotoCreate": {
         "properties": {
@@ -7541,6 +10271,17 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           }
         },
         "type": "object",
@@ -7568,6 +10309,13 @@
             "type": "string",
             "title": "Slug"
           },
+          "country": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country",
+            "default": "IT"
+          },
           "province": {
             "anyOf": [
               {
@@ -7579,6 +10327,54 @@
               }
             ],
             "title": "Province"
+          },
+          "municipality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality"
+          },
+          "municipality_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality Code"
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locality"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
           },
           "address": {
             "anyOf": [
@@ -7623,6 +10419,100 @@
               }
             ],
             "title": "Altitude"
+          },
+          "plus_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plus Code"
+          },
+          "what3words": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What3Words"
+          },
+          "emergency_coordinates": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Coordinates"
+          },
+          "winter_access_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winter Access Notes"
+          },
+          "road_weight_limit_tonnes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Road Weight Limit Tonnes"
+          },
+          "bridge_weight_limit_tonnes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bridge Weight Limit Tonnes"
+          },
+          "max_vehicle_height_m": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Vehicle Height M"
+          },
+          "road_access_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Road Access Notes"
           },
           "type": {
             "$ref": "#/components/schemas/StructureType"
@@ -7675,6 +10565,21 @@
             ],
             "title": "Indoor Activity Rooms"
           },
+          "indoor_rooms": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indoor Rooms"
+          },
           "has_kitchen": {
             "anyOf": [
               {
@@ -7708,6 +10613,39 @@
               }
             ],
             "title": "Land Area M2"
+          },
+          "field_slope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldSlope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pitches_tende": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitches Tende"
+          },
+          "water_at_field": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Water At Field"
           },
           "shelter_on_field": {
             "anyOf": [
@@ -7745,6 +10683,99 @@
             ],
             "title": "Electricity Available"
           },
+          "power_capacity_kw": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Capacity Kw"
+          },
+          "power_outlets_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Outlets Count"
+          },
+          "power_outlet_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Outlet Types"
+          },
+          "generator_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generator Available"
+          },
+          "generator_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generator Notes"
+          },
+          "water_tank_capacity_liters": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Water Tank Capacity Liters"
+          },
+          "wastewater_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WastewaterType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wastewater_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wastewater Notes"
+          },
           "fire_policy": {
             "anyOf": [
               {
@@ -7754,6 +10785,17 @@
                 "type": "null"
               }
             ]
+          },
+          "fire_rules": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fire Rules"
           },
           "access_by_car": {
             "anyOf": [
@@ -7799,17 +10841,33 @@
             ],
             "title": "Coach Turning Area"
           },
-          "nearest_bus_stop": {
+          "transport_access_points": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "items": {
+                  "$ref": "#/components/schemas/TransportAccessPoint"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Nearest Bus Stop"
+            "title": "Transport Access Points"
+          },
+          "bus_type_access": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bus Type Access"
           },
           "weekend_only": {
             "anyOf": [
@@ -7844,6 +10902,661 @@
             ],
             "title": "Pit Latrine Allowed"
           },
+          "dry_toilet": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dry Toilet"
+          },
+          "outdoor_bathrooms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outdoor Bathrooms"
+          },
+          "outdoor_showers": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outdoor Showers"
+          },
+          "wheelchair_accessible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wheelchair Accessible"
+          },
+          "step_free_access": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Free Access"
+          },
+          "parking_car_slots": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Car Slots"
+          },
+          "parking_bus_slots": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Bus Slots"
+          },
+          "parking_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Notes"
+          },
+          "accessibility_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accessibility Notes"
+          },
+          "allowed_audiences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Audiences"
+          },
+          "usage_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureUsageRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage_rules": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Rules"
+          },
+          "animal_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnimalPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "animal_policy_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Policy Notes"
+          },
+          "in_area_protetta": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Area Protetta"
+          },
+          "ente_area_protetta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ente Area Protetta"
+          },
+          "environmental_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environmental Notes"
+          },
+          "seasonal_amenities": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seasonal Amenities"
+          },
+          "booking_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Url"
+          },
+          "whatsapp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp"
+          },
+          "booking_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Required"
+          },
+          "booking_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Notes"
+          },
+          "documents_required": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Documents Required"
+          },
+          "map_resources_urls": {
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "format": "uri"
+            },
+            "type": "array",
+            "title": "Map Resources Urls"
+          },
+          "event_rules_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Rules Url"
+          },
+          "event_rules_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Rules Notes"
+          },
+          "contact_status": {
+            "$ref": "#/components/schemas/StructureContactStatus",
+            "default": "unknown"
+          },
+          "operational_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureOperationalStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_coverage_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Coverage Notes"
+          },
+          "cell_data_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_voice_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wifi_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wifi Available"
+          },
+          "landline_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landline Available"
+          },
+          "communications_infrastructure": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Communications Infrastructure"
+          },
+          "aed_on_site": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aed On Site"
+          },
+          "emergency_phone_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Phone Available"
+          },
+          "emergency_response_time_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Response Time Minutes"
+          },
+          "emergency_plan_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Plan Notes"
+          },
+          "evacuation_plan_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evacuation Plan Url"
+          },
+          "risk_assessment_template_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment Template Url"
+          },
+          "wildlife_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wildlife Notes"
+          },
+          "river_swimming": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiverSwimmingOption"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flood_risk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FloodRiskLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weather_risk_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weather Risk Notes"
+          },
+          "activity_equipment": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Activity Equipment"
+          },
+          "inclusion_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inclusion Notes"
+          },
+          "pec_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pec Email"
+          },
+          "sdi_recipient_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 7,
+                "minLength": 7
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sdi Recipient Code"
+          },
+          "invoice_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Available"
+          },
+          "iban": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iban"
+          },
+          "payment_methods": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethod"
+            },
+            "type": "array",
+            "title": "Payment Methods"
+          },
+          "fiscal_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fiscal Notes"
+          },
+          "data_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source"
+          },
+          "data_source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source Url"
+          },
+          "data_last_verified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Last Verified"
+          },
+          "data_quality_score": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Quality Score"
+          },
+          "data_quality_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Quality Notes"
+          },
+          "data_quality_status": {
+            "$ref": "#/components/schemas/DataQualityStatus",
+            "default": "unverified"
+          },
+          "governance_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Governance Notes"
+          },
           "contact_emails": {
             "items": {
               "type": "string",
@@ -7871,6 +11584,28 @@
               }
             ],
             "title": "Notes Logistics"
+          },
+          "logistics_arrival_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logistics Arrival Notes"
+          },
+          "logistics_departure_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logistics Departure Notes"
           },
           "notes": {
             "anyOf": [
@@ -7983,6 +11718,20 @@
               }
             ],
             "title": "Warnings"
+          },
+          "map_resources_attachments": {
+            "items": {
+              "$ref": "#/components/schemas/StructureAttachmentRead"
+            },
+            "type": "array",
+            "title": "Map Resources Attachments"
+          },
+          "documents_required_attachments": {
+            "items": {
+              "$ref": "#/components/schemas/StructureAttachmentRead"
+            },
+            "type": "array",
+            "title": "Documents Required Attachments"
           }
         },
         "type": "object",
@@ -8019,6 +11768,17 @@
               }
             ],
             "title": "Province"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
           },
           "type": {
             "$ref": "#/components/schemas/StructureType"
@@ -8156,6 +11916,20 @@
             ],
             "title": "Access By Public Transport"
           },
+          "transport_access_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TransportAccessPoint"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport Access Points"
+          },
           "has_kitchen": {
             "anyOf": [
               {
@@ -8177,6 +11951,131 @@
               }
             ],
             "title": "Hot Water"
+          },
+          "cell_coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_data_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_voice_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wifi_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wifi Available"
+          },
+          "landline_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landline Available"
+          },
+          "aed_on_site": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aed On Site"
+          },
+          "river_swimming": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiverSwimmingOption"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wastewater_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WastewaterType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flood_risk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FloodRiskLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "power_capacity_kw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Capacity Kw"
+          },
+          "parking_car_slots": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Car Slots"
+          },
+          "usage_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureUsageRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -8277,6 +12176,13 @@
             "type": "string",
             "title": "Slug"
           },
+          "country": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country",
+            "default": "IT"
+          },
           "province": {
             "anyOf": [
               {
@@ -8288,6 +12194,54 @@
               }
             ],
             "title": "Province"
+          },
+          "municipality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality"
+          },
+          "municipality_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipality Code"
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locality"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
           },
           "address": {
             "anyOf": [
@@ -8332,6 +12286,100 @@
               }
             ],
             "title": "Altitude"
+          },
+          "plus_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plus Code"
+          },
+          "what3words": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "What3Words"
+          },
+          "emergency_coordinates": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Coordinates"
+          },
+          "winter_access_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winter Access Notes"
+          },
+          "road_weight_limit_tonnes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Road Weight Limit Tonnes"
+          },
+          "bridge_weight_limit_tonnes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bridge Weight Limit Tonnes"
+          },
+          "max_vehicle_height_m": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Vehicle Height M"
+          },
+          "road_access_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Road Access Notes"
           },
           "type": {
             "$ref": "#/components/schemas/StructureType"
@@ -8384,6 +12432,21 @@
             ],
             "title": "Indoor Activity Rooms"
           },
+          "indoor_rooms": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indoor Rooms"
+          },
           "has_kitchen": {
             "anyOf": [
               {
@@ -8417,6 +12480,39 @@
               }
             ],
             "title": "Land Area M2"
+          },
+          "field_slope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldSlope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pitches_tende": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitches Tende"
+          },
+          "water_at_field": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Water At Field"
           },
           "shelter_on_field": {
             "anyOf": [
@@ -8454,6 +12550,99 @@
             ],
             "title": "Electricity Available"
           },
+          "power_capacity_kw": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Capacity Kw"
+          },
+          "power_outlets_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Outlets Count"
+          },
+          "power_outlet_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Outlet Types"
+          },
+          "generator_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generator Available"
+          },
+          "generator_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generator Notes"
+          },
+          "water_tank_capacity_liters": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Water Tank Capacity Liters"
+          },
+          "wastewater_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WastewaterType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wastewater_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wastewater Notes"
+          },
           "fire_policy": {
             "anyOf": [
               {
@@ -8463,6 +12652,17 @@
                 "type": "null"
               }
             ]
+          },
+          "fire_rules": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fire Rules"
           },
           "access_by_car": {
             "anyOf": [
@@ -8508,17 +12708,33 @@
             ],
             "title": "Coach Turning Area"
           },
-          "nearest_bus_stop": {
+          "transport_access_points": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "items": {
+                  "$ref": "#/components/schemas/TransportAccessPoint"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Nearest Bus Stop"
+            "title": "Transport Access Points"
+          },
+          "bus_type_access": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bus Type Access"
           },
           "weekend_only": {
             "anyOf": [
@@ -8553,6 +12769,661 @@
             ],
             "title": "Pit Latrine Allowed"
           },
+          "dry_toilet": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dry Toilet"
+          },
+          "outdoor_bathrooms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outdoor Bathrooms"
+          },
+          "outdoor_showers": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outdoor Showers"
+          },
+          "wheelchair_accessible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wheelchair Accessible"
+          },
+          "step_free_access": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Free Access"
+          },
+          "parking_car_slots": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Car Slots"
+          },
+          "parking_bus_slots": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Bus Slots"
+          },
+          "parking_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parking Notes"
+          },
+          "accessibility_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accessibility Notes"
+          },
+          "allowed_audiences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Audiences"
+          },
+          "usage_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureUsageRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage_rules": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Rules"
+          },
+          "animal_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnimalPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "animal_policy_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Policy Notes"
+          },
+          "in_area_protetta": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Area Protetta"
+          },
+          "ente_area_protetta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ente Area Protetta"
+          },
+          "environmental_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environmental Notes"
+          },
+          "seasonal_amenities": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seasonal Amenities"
+          },
+          "booking_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Url"
+          },
+          "whatsapp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp"
+          },
+          "booking_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Required"
+          },
+          "booking_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Notes"
+          },
+          "documents_required": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Documents Required"
+          },
+          "map_resources_urls": {
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "format": "uri"
+            },
+            "type": "array",
+            "title": "Map Resources Urls"
+          },
+          "event_rules_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Rules Url"
+          },
+          "event_rules_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Rules Notes"
+          },
+          "contact_status": {
+            "$ref": "#/components/schemas/StructureContactStatus",
+            "default": "unknown"
+          },
+          "operational_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StructureOperationalStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_coverage_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cell Coverage Notes"
+          },
+          "cell_data_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cell_voice_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CellCoverageQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wifi_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wifi Available"
+          },
+          "landline_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landline Available"
+          },
+          "communications_infrastructure": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Communications Infrastructure"
+          },
+          "aed_on_site": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aed On Site"
+          },
+          "emergency_phone_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Phone Available"
+          },
+          "emergency_response_time_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Response Time Minutes"
+          },
+          "emergency_plan_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Plan Notes"
+          },
+          "evacuation_plan_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evacuation Plan Url"
+          },
+          "risk_assessment_template_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment Template Url"
+          },
+          "wildlife_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wildlife Notes"
+          },
+          "river_swimming": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiverSwimmingOption"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flood_risk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FloodRiskLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weather_risk_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weather Risk Notes"
+          },
+          "activity_equipment": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Activity Equipment"
+          },
+          "inclusion_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inclusion Notes"
+          },
+          "pec_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pec Email"
+          },
+          "sdi_recipient_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 7,
+                "minLength": 7
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sdi Recipient Code"
+          },
+          "invoice_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Available"
+          },
+          "iban": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iban"
+          },
+          "payment_methods": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethod"
+            },
+            "type": "array",
+            "title": "Payment Methods"
+          },
+          "fiscal_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fiscal Notes"
+          },
+          "data_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source"
+          },
+          "data_source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source Url"
+          },
+          "data_last_verified": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Last Verified"
+          },
+          "data_quality_score": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Quality Score"
+          },
+          "data_quality_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Quality Notes"
+          },
+          "data_quality_status": {
+            "$ref": "#/components/schemas/DataQualityStatus",
+            "default": "unverified"
+          },
+          "governance_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Governance Notes"
+          },
           "contact_emails": {
             "items": {
               "type": "string",
@@ -8581,6 +13452,28 @@
             ],
             "title": "Notes Logistics"
           },
+          "logistics_arrival_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logistics Arrival Notes"
+          },
+          "logistics_departure_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logistics Departure Notes"
+          },
           "notes": {
             "anyOf": [
               {
@@ -8608,6 +13501,56 @@
         ],
         "title": "StructureUpdate"
       },
+      "StructureUsageRecommendation": {
+        "type": "string",
+        "enum": [
+          "outings_only",
+          "camps_only",
+          "prefer_outings",
+          "prefer_camps"
+        ],
+        "title": "StructureUsageRecommendation"
+      },
+      "TransportAccessPoint": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Type"
+          },
+          "coordinates": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coordinates"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "TransportAccessPoint"
+      },
       "UserAdminCreate": {
         "properties": {
           "name": {
@@ -8622,6 +13565,16 @@
           "password": {
             "type": "string",
             "title": "Password"
+          },
+          "user_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "is_admin": {
             "type": "boolean",
@@ -8665,6 +13618,16 @@
               }
             ],
             "title": "Password"
+          },
+          "user_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "email": {
             "anyOf": [
@@ -8730,6 +13693,16 @@
             "title": "Is Active",
             "default": true
           },
+          "user_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -8749,6 +13722,33 @@
           "created_at"
         ],
         "title": "UserRead"
+      },
+      "UserSelfUpdate": {
+        "properties": {
+          "user_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "UserSelfUpdate"
+      },
+      "UserType": {
+        "type": "string",
+        "enum": [
+          "LC",
+          "EG",
+          "RS",
+          "LEADERS",
+          "OTHER"
+        ],
+        "title": "UserType"
       },
       "ValidationError": {
         "properties": {
@@ -8782,6 +13782,17 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WastewaterType": {
+        "type": "string",
+        "enum": [
+          "none",
+          "septic",
+          "holding_tank",
+          "mains",
+          "unknown"
+        ],
+        "title": "WastewaterType"
       },
       "WaterSource": {
         "type": "string",

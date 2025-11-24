@@ -75,7 +75,7 @@ CSV_HEADERS_STRUCTURES = (
     "access_by_coach",
     "access_by_public_transport",
     "coach_turning_area",
-    "nearest_bus_stop",
+    "transport_access_points",
     "weekend_only",
     "has_field_poles",
     "pit_latrine_allowed",
@@ -142,6 +142,14 @@ def _parse_bool(value: Any) -> bool | None:
     if text in {"0", "false", "no", "n"}:
         return False
     raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid boolean value")
+
+
+def _serialize_transport_access_points(
+    points: list[dict[str, Any]] | None,
+) -> list[dict[str, Any]] | None:
+    if not points:
+        return None
+    return points
 
 
 def _normalise_structure_filters(
@@ -318,7 +326,9 @@ def _build_structure_row(
         "access_by_coach": structure.access_by_coach,
         "access_by_public_transport": structure.access_by_public_transport,
         "coach_turning_area": structure.coach_turning_area,
-        "nearest_bus_stop": structure.nearest_bus_stop,
+        "transport_access_points": _serialize_transport_access_points(
+            cast(list[dict[str, Any]] | None, structure.transport_access_points)
+        ),
         "weekend_only": structure.weekend_only,
         "has_field_poles": structure.has_field_poles,
         "pit_latrine_allowed": structure.pit_latrine_allowed,
@@ -384,6 +394,8 @@ def _render_rows(
 
 def _format_tabular_value(value: Any) -> Any:
     if isinstance(value, list):
+        if value and isinstance(value[0], dict):
+            return json.dumps(value, ensure_ascii=False)
         return "; ".join(str(item) for item in value)
     return value
 

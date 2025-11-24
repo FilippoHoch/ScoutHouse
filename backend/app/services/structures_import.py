@@ -49,7 +49,7 @@ HEADERS = [
     "access_by_coach",
     "access_by_public_transport",
     "coach_turning_area",
-    "nearest_bus_stop",
+    "transport_access_points",
     "weekend_only",
     "has_field_poles",
     "pit_latrine_allowed",
@@ -98,7 +98,13 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "access_by_coach": True,
         "access_by_public_transport": True,
         "coach_turning_area": True,
-        "nearest_bus_stop": "Fermata Centro Scout",
+        "transport_access_points": [
+            {
+                "type": "bus_stop",
+                "note": "Fermata Centro Scout",
+                "coordinates": None,
+            }
+        ],
         "weekend_only": False,
         "has_field_poles": False,
         "pit_latrine_allowed": False,
@@ -131,7 +137,7 @@ TEMPLATE_SAMPLE_ROWS: list[dict[str, object]] = [
         "access_by_coach": False,
         "access_by_public_transport": False,
         "coach_turning_area": False,
-        "nearest_bus_stop": None,
+        "transport_access_points": None,
         "weekend_only": True,
         "has_field_poles": True,
         "pit_latrine_allowed": True,
@@ -199,7 +205,7 @@ class StructureImportRow:
     access_by_coach: bool | None
     access_by_public_transport: bool | None
     coach_turning_area: bool | None
-    nearest_bus_stop: str | None
+    transport_access_points: list[dict[str, object]] | None
     weekend_only: bool | None
     has_field_poles: bool | None
     pit_latrine_allowed: bool | None
@@ -399,6 +405,33 @@ def _validate_short_text(value: object, *, max_length: int) -> str | None:
     return text
 
 
+def _parse_transport_access_points(value: object) -> list[dict[str, object]] | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            value = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ValueError("must be a valid JSON array") from exc
+    if not isinstance(value, list):
+        raise ValueError("must be a JSON array")
+
+    normalized: list[dict[str, object]] = []
+    for index, entry in enumerate(value, start=1):
+        if not isinstance(entry, dict):
+            raise ValueError(f"entry {index} must be an object")
+        entry_type = _validate_short_text(entry.get("type"), max_length=64)
+        if not entry_type:
+            raise ValueError(f"entry {index} must include a type")
+        coordinates = _validate_emergency_coordinates(entry.get("coordinates"))
+        note = _validate_short_text(entry.get("note"), max_length=255)
+        normalized.append({"type": entry_type, "coordinates": coordinates, "note": note})
+    return normalized
+
+
 def _validate_url(value: object) -> str | None:
     text = _normalise_text(value)
     if not text:
@@ -580,7 +613,7 @@ def _process_rows(
         access_by_coach_raw = values[20]
         access_by_public_transport_raw = values[21]
         coach_turning_area_raw = values[22]
-        nearest_bus_stop_raw = values[23]
+        transport_access_points_raw = values[23]
         weekend_only_raw = values[24]
         has_field_poles_raw = values[25]
         pit_latrine_allowed_raw = values[26]
@@ -868,17 +901,19 @@ def _process_rows(
             coach_turning_area = None
 
         try:
-            nearest_bus_stop = _validate_short_text(nearest_bus_stop_raw, max_length=255)
+            transport_access_points = _parse_transport_access_points(
+                transport_access_points_raw
+            )
         except ValueError as exc:
             row_errors.append(
                 RowError(
                     row=index,
-                    field="nearest_bus_stop",
+                    field="transport_access_points",
                     message=str(exc),
                     source_format=source_format,
                 )
             )
-            nearest_bus_stop = None
+            transport_access_points = None
 
         try:
             weekend_only = _validate_bool(weekend_only_raw)
@@ -1045,7 +1080,7 @@ def _process_rows(
                 access_by_coach=access_by_coach,
                 access_by_public_transport=access_by_public_transport,
                 coach_turning_area=coach_turning_area,
-                nearest_bus_stop=nearest_bus_stop,
+                transport_access_points=transport_access_points,
                 weekend_only=weekend_only,
                 has_field_poles=has_field_poles,
                 pit_latrine_allowed=pit_latrine_allowed,

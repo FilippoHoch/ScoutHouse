@@ -285,7 +285,10 @@ class Structure(Base):
         nullable=True,
         default=None,
     )
-    nearest_bus_stop: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    transport_access_points: Mapped[list[dict[str, object]] | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
     bus_type_access: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     weekend_only: Mapped[bool | None] = mapped_column(
         Boolean,

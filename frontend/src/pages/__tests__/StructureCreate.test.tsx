@@ -97,7 +97,7 @@ const createdStructure = {
   access_by_coach: false,
   access_by_public_transport: true,
   coach_turning_area: false,
-  nearest_bus_stop: null,
+  transport_access_points: null,
   bus_type_access: null,
   weekend_only: false,
   has_field_poles: false,

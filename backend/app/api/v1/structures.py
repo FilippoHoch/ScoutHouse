@@ -919,6 +919,9 @@ def search_structures(
             access_by_car=structure.access_by_car,
             access_by_coach=structure.access_by_coach,
             access_by_public_transport=structure.access_by_public_transport,
+            transport_access_points=cast(
+                list[dict[str, Any]] | None, structure.transport_access_points
+            ),
             has_kitchen=structure.has_kitchen,
             hot_water=structure.hot_water,
             cell_coverage=structure.cell_coverage,

@@ -85,7 +85,9 @@ const sampleStructure: Structure = {
   access_by_coach: true,
   access_by_public_transport: true,
   coach_turning_area: true,
-  nearest_bus_stop: "Fermata centro",
+  transport_access_points: [
+    { type: "bus_stop", note: "Fermata centro", coordinates: null }
+  ],
   bus_type_access: null,
   weekend_only: false,
   has_field_poles: true,

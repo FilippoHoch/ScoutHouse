@@ -28,7 +28,7 @@ La tabella `structures` rappresenta l'anagrafica principale di case, basi e terr
 ### Accessibilità e logistica
 
 - `access_by_car`, `access_by_coach`, `access_by_public_transport`, `coach_turning_area` (boolean) per i mezzi ammessi.
-- `nearest_bus_stop` (stringa 255) per la fermata più vicina.
+- `transport_access_points` (array JSON di oggetti con `type`, `coordinates`, `note`) per descrivere punti di accesso ai mezzi pubblici.
 - `weekend_only` (boolean) per le strutture prenotabili solo nel weekend.
 - `notes_logistics` e `notes` (text) raccolgono note operative e generiche.
 

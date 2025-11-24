@@ -208,6 +208,17 @@ export interface Contact {
   updated_at: string;
 }
 
+export interface CoordinatePoint {
+  lat: number;
+  lon: number;
+}
+
+export interface TransportAccessPoint {
+  type: string;
+  coordinates: CoordinatePoint | null;
+  note: string | null;
+}
+
 export interface ContactCreateDto {
   contact_id?: number | null;
   first_name?: string | null;
@@ -278,7 +289,7 @@ export interface Structure {
   access_by_coach: boolean | null;
   access_by_public_transport: boolean | null;
   coach_turning_area: boolean | null;
-  nearest_bus_stop: string | null;
+  transport_access_points: TransportAccessPoint[] | null;
   bus_type_access?: string[] | null;
   weekend_only: boolean | null;
   has_field_poles: boolean | null;
@@ -411,7 +422,7 @@ export interface StructureCreateDto {
   access_by_coach?: boolean | null;
   access_by_public_transport?: boolean | null;
   coach_turning_area?: boolean | null;
-  nearest_bus_stop?: string | null;
+  transport_access_points?: TransportAccessPoint[] | null;
   bus_type_access?: string[] | null;
   weekend_only?: boolean | null;
   has_field_poles?: boolean | null;
@@ -501,6 +512,7 @@ export interface StructureSearchItem {
   access_by_car: boolean | null;
   access_by_coach: boolean | null;
   access_by_public_transport: boolean | null;
+  transport_access_points: TransportAccessPoint[] | null;
   has_kitchen: boolean | null;
   hot_water: boolean | null;
   pit_latrine_allowed: boolean | null;
