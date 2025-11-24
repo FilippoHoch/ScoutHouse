@@ -97,7 +97,9 @@ const createdStructure = {
   access_by_coach: false,
   access_by_public_transport: true,
   coach_turning_area: false,
-  transport_access_points: null,
+  transport_access_points: [
+    { type: "car", note: "Parcheggio sterrato a 200 m", coordinates: { lat: 45.111, lon: 9.222 } }
+  ],
   bus_type_access: null,
   weekend_only: false,
   has_field_poles: false,
@@ -112,7 +114,9 @@ const createdStructure = {
   booking_required: null,
   booking_notes: null,
   documents_required: [],
+  documents_required_attachments: [],
   map_resources_urls: [],
+  map_resources_attachments: [],
   event_rules_url: null,
   event_rules_notes: null,
   cell_coverage: null,
@@ -153,6 +157,8 @@ const createdStructure = {
   availabilities: null,
   cost_options: null,
   contacts: null,
+  attachments: [],
+  photos: [],
   open_periods: []
 } as Structure;
 
@@ -213,7 +219,7 @@ describe("StructureCreatePage", () => {
 
     render(<StructureCreatePage />, { wrapper: Wrapper });
 
-    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.type(screen.getByLabelText(/Nome/i, { selector: "input" }), "Base Bosco");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
     await user.selectOptions(
       screen.getByLabelText(/Stato verifica dati/i),
@@ -243,6 +249,16 @@ describe("StructureCreatePage", () => {
       expect(
         screen.getByText(/L'URL pubblico sarà \/structures\/base-bosco/i)
       ).toBeInTheDocument()
+    );
+
+    await user.click(screen.getByRole("button", { name: /Aggiungi punto di accesso/i }));
+    await user.selectOptions(
+      screen.getByLabelText(/Punto 1 - mezzo/i),
+      "car"
+    );
+    await user.type(
+      screen.getByLabelText(/Note o indicazioni/i),
+      "Parcheggio sterrato"
     );
 
     await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
@@ -276,6 +292,9 @@ describe("StructureCreatePage", () => {
       contact_emails: ["info@example.org", "booking@example.org"],
       open_periods: []
     });
+    expect(payload.transport_access_points).toEqual([
+      { type: "car", note: "Parcheggio sterrato", coordinates: null }
+    ]);
     expect(payload.website_urls).toEqual([
       "https://base.example.org",
       "https://info.example.org"
@@ -299,7 +318,7 @@ describe("StructureCreatePage", () => {
 
     render(<StructureCreatePage />, { wrapper: Wrapper });
 
-    await user.type(screen.getByLabelText(/Nome/i), "Base Appennino");
+    await user.type(screen.getByLabelText(/Nome/i, { selector: "input" }), "Base Appennino");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "mixed");
     await user.selectOptions(
       screen.getByLabelText(/Stato verifica dati/i),
@@ -438,7 +457,7 @@ describe("StructureCreatePage", () => {
 
     render(<StructureCreatePage />, { wrapper: Wrapper });
 
-    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.type(screen.getByLabelText(/Nome/i, { selector: "input" }), "Base Bosco");
     await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
     await user.selectOptions(
       screen.getByLabelText(/Stato verifica dati/i),
@@ -514,8 +533,17 @@ describe("StructureEditPage", () => {
     render(<StructureEditPage />, { wrapper: Wrapper });
 
     await waitFor(() =>
-      expect(screen.getByLabelText(/Nome/i)).toHaveValue(createdStructure.name)
+      expect(screen.getByLabelText(/Nome/i, { selector: "input" })).toHaveValue(
+        createdStructure.name
+      )
     );
+    expect(screen.getByLabelText(/Punto 1 - mezzo/i)).toHaveValue("car");
+    expect(screen.getByLabelText(/Note o indicazioni/i)).toHaveValue(
+      "Parcheggio sterrato a 200 m"
+    );
+    expect(
+      screen.getByText(/Posizione: 45\.111000, 9\.222000/i)
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Salva modifiche/i })).toBeInTheDocument();
   });
 
@@ -539,7 +567,7 @@ describe("StructureEditPage", () => {
 
     render(<StructureEditPage />, { wrapper: Wrapper });
 
-    const nameInput = await screen.findByLabelText(/Nome/i);
+    const nameInput = await screen.findByLabelText(/Nome/i, { selector: "input" });
     expect(nameInput).toHaveValue(createdStructure.name);
 
     await user.clear(nameInput);

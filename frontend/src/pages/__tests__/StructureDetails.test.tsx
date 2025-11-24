@@ -86,7 +86,8 @@ const sampleStructure: Structure = {
   access_by_public_transport: true,
   coach_turning_area: true,
   transport_access_points: [
-    { type: "bus_stop", note: "Fermata centro", coordinates: null }
+    { type: "bus", note: "Fermata centro", coordinates: { lat: 45.3333, lon: 9.4444 } },
+    { type: "car", note: "Parcheggio sterrato", coordinates: null }
   ],
   bus_type_access: null,
   weekend_only: false,
@@ -108,7 +109,9 @@ const sampleStructure: Structure = {
   booking_required: null,
   booking_notes: null,
   documents_required: ["Modulo sanitario"],
+  documents_required_attachments: [],
   map_resources_urls: ["https://maps.example.org/base"],
+  map_resources_attachments: [],
   event_rules_url: null,
   event_rules_notes: null,
   allowed_audiences: ["LC", "EG"],
@@ -196,6 +199,8 @@ const sampleStructure: Structure = {
     }
   ],
   contacts: [],
+  attachments: [],
+  photos: [],
   open_periods: [
     {
       id: 1,
@@ -267,7 +272,14 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Cucina attrezzata disponibile/i)).toBeInTheDocument();
     expect(screen.getByText(/Solo con autorizzazione/i)).toBeInTheDocument();
     expect(screen.getByText(/Rubinetto/i)).toBeInTheDocument();
-    expect(screen.getByText(/Fermata centro/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Bus o mezzi pubblici — Fermata centro — Coordinate: 45\.333300, 9\.444400/i
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Punto raggiungibile in auto — Parcheggio sterrato/i)
+    ).toBeInTheDocument();
     expect(screen.getByText(/Contattare il custode/i)).toBeInTheDocument();
     expect(
       screen.getByText(i18n.t("structures.details.overview.floodRisk"))

@@ -585,21 +585,33 @@
         "accessByPublicTransport": "Raggiungibile con mezzi pubblici",
         "accessByPublicTransportHint": "Usa le opzioni Sì/No/Non specificato per indicare se esistono collegamenti bus o treno nelle vicinanze.",
         "coachTurningArea": "Area manovra per pullman",
-        "nearestBusStop": "Fermata più vicina",
-        "nearestBusStopHint": "Inserisci il nome o la distanza della fermata utile.",
-        "nearestBusStopLocationButton": "Segna sulla mappa",
-        "nearestBusStopLocationClear": "Rimuovi posizione",
-        "nearestBusStopLocationHelper": "Le coordinate selezionate verranno aggiunte automaticamente al campo delle note.",
-        "nearestBusStopLocationPreview": "Posizione della fermata: {{lat}}, {{lon}}",
-        "nearestBusStopLocationSuffix": "Coordinate fermata: {{lat}}, {{lon}}",
-        "nearestBusStopModal": {
-          "title": "Imposta la posizione della fermata",
-          "description": "Usa la mappa per indicare il punto della fermata di autobus o treno più vicina.",
-          "mapLabel": "Mappa fermata più vicina",
-          "empty": "Clicca sulla mappa per scegliere la fermata",
-          "hint": "Clicca sulla mappa per aggiungere o spostare il segnaposto. Quando confermi, le coordinate vengono inserite nelle note.",
-          "cancel": "Annulla",
-          "confirm": "Usa questa posizione"
+        "transportAccessPoints": {
+          "label": "Punti di accesso mezzi",
+          "hint": "Aggiungi fermate utili o punti raggiungibili in auto, pullman o 4x4.",
+          "add": "Aggiungi punto di accesso",
+          "empty": "Nessun punto indicato. Aggiungi una fermata o un punto di raccolta.",
+          "pointLabel": "Punto {{index}} - mezzo",
+          "typeOptions": {
+            "bus": "Bus o mezzi pubblici",
+            "car": "Punto raggiungibile in auto",
+            "4x4": "Punto raggiungibile in 4x4"
+          },
+          "noteLabel": "Note o indicazioni",
+          "noteHelper": "Esempi: nome fermata, distanza, indicazioni per parcheggio o punto di raccolta.",
+          "coordinatesButton": "Segna sulla mappa",
+          "coordinatesPreview": "Posizione: {{lat}}, {{lon}}",
+          "coordinatesClear": "Rimuovi posizione",
+          "coordinatesHelper": "Seleziona un punto sulla mappa per bus, auto o 4x4.",
+          "remove": "Rimuovi punto",
+          "modal": {
+            "title": "Imposta la posizione",
+            "description": "Usa la mappa per indicare fermate o punti di accesso per i mezzi.",
+            "mapLabel": "Mappa punti di accesso",
+            "empty": "Clicca sulla mappa per aggiungere un punto",
+            "hint": "Clicca sulla mappa per aggiungere o spostare il segnaposto e conferma per salvare le coordinate.",
+            "cancel": "Annulla",
+            "confirm": "Usa questa posizione"
+          }
         },
         "wheelchairAccessible": "Accessibile in sedia a rotelle",
         "wheelchairAccessibleHint": "Usa le opzioni Sì/No/Non specificato per indicare se gli spazi principali sono accessibili.",
@@ -1003,7 +1015,15 @@
         "accessByCoach": "Accesso con pullman",
         "accessByPublicTransport": "Raggiungibile con mezzi pubblici",
         "coachTurningArea": "Area manovra pullman",
-        "nearestBusStop": "Fermata più vicina",
+        "transportAccessPoints": {
+          "label": "Punti di accesso mezzi",
+          "types": {
+            "bus": "Bus o mezzi pubblici",
+            "car": "Punto raggiungibile in auto",
+            "4x4": "Punto raggiungibile in 4x4"
+          },
+          "coordinates": "Coordinate: {{lat}}, {{lon}}"
+        },
         "wheelchairAccessible": "Accessibile in sedia a rotelle",
         "stepFreeAccess": "Accesso senza gradini",
         "parkingCarSlots": "Posti auto",
