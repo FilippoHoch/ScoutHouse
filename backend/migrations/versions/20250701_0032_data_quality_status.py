@@ -10,7 +10,7 @@ from sqlalchemy import JSON, Integer, inspect
 
 # revision identifiers, used by Alembic.
 revision: str = "20250701_0032_data_quality_status"
-down_revision: Union[str, None] = "20250615_0031"
+down_revision: Union[str, None] = "20250620_0031_version_len"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
