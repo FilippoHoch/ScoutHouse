@@ -9,6 +9,7 @@ import {
   ApiError,
   confirmAttachmentUpload,
   createStructure,
+  createStructureAttachment,
   createStructurePhoto,
   getStructureBySlug,
   searchGeocoding,
@@ -36,6 +37,7 @@ vi.mock("../../shared/api", async () => {
   return {
     ...actual,
     createStructure: vi.fn(),
+    createStructureAttachment: vi.fn(),
     createStructurePhoto: vi.fn(),
     getStructureBySlug: vi.fn(),
     searchGeocoding: vi.fn(),
@@ -176,6 +178,7 @@ beforeEach(() => {
   mockNavigate.mockReset();
   vi.mocked(createStructure).mockReset();
   vi.mocked(createStructurePhoto).mockReset();
+  vi.mocked(createStructureAttachment).mockReset();
   vi.mocked(getStructureBySlug).mockReset();
   vi.mocked(searchGeocoding).mockReset();
   vi.mocked(signAttachmentUpload).mockReset();
@@ -203,6 +206,10 @@ describe("StructureCreatePage", () => {
     const Wrapper = createWrapper(queryClient);
     const user = userEvent.setup();
     vi.mocked(createStructure).mockResolvedValue(createdStructure);
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue({ ok: true } as Response);
 
     render(<StructureCreatePage />, { wrapper: Wrapper });
 
@@ -369,7 +376,127 @@ describe("StructureCreatePage", () => {
     expect(payload.landline_available).toBe(false);
     expect(payload.communications_infrastructure).toEqual(["Fibra ottica"]);
     expect(payload.activity_equipment).toEqual(["Kit pionieristica"]);
+
+    expect(createStructureAttachment).not.toHaveBeenCalled();
   }, 15000);
+
+  it("queues categorized attachments for optional sections", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createWrapper(queryClient);
+    const user = userEvent.setup();
+    vi.mocked(createStructure).mockResolvedValue(createdStructure);
+
+    vi.mocked(signAttachmentUpload).mockResolvedValue({
+      url: "https://uploads.example.com",
+      fields: { key: "uploads/structure/map.pdf" }
+    });
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue({ ok: true } as Response);
+
+    const mapAttachment = {
+      id: 101,
+      owner_type: "structure",
+      owner_id: createdStructure.id,
+      filename: "map.pdf",
+      mime: "application/pdf",
+      size: 2048,
+      created_by: null,
+      created_by_name: null,
+      description: null,
+      created_at: "2024-01-01T00:00:00Z"
+    };
+
+    const docAttachment = {
+      ...mapAttachment,
+      id: 102,
+      filename: "documento.pdf",
+      size: 1024
+    };
+
+    vi.mocked(confirmAttachmentUpload)
+      .mockResolvedValueOnce(mapAttachment)
+      .mockResolvedValueOnce(docAttachment);
+
+    vi.mocked(createStructureAttachment)
+      .mockResolvedValueOnce({
+        id: 1,
+        kind: "map_resource",
+        attachment: mapAttachment
+      })
+      .mockResolvedValueOnce({
+        id: 2,
+        kind: "required_document",
+        attachment: docAttachment
+      });
+
+    render(<StructureCreatePage />, { wrapper: Wrapper });
+
+    await user.type(screen.getByLabelText(/Nome/i), "Base Bosco");
+    await user.selectOptions(screen.getByLabelText(/Tipologia/i), "house");
+    await user.selectOptions(
+      screen.getByLabelText(/Stato verifica dati/i),
+      "verified"
+    );
+    await user.type(screen.getByLabelText(/Provincia/i), "bs");
+
+    await user.selectOptions(
+      screen.getByLabelText(/informazioni facoltative/i),
+      "mapResources"
+    );
+
+    const mapSection = screen.getByLabelText(/Risorse cartografiche/i).closest(".structure-form-field");
+    const mapFileInput = mapSection?.querySelector('input[type="file"]') as HTMLInputElement;
+    const mapFile = new File(["fake"], "map.pdf", { type: "application/pdf" });
+    await user.upload(mapFileInput, mapFile);
+
+    await waitFor(() =>
+      expect(
+        within(mapSection as HTMLElement).getByText("map.pdf")
+      ).toBeInTheDocument()
+    );
+
+    await user.selectOptions(
+      screen.getByLabelText(/informazioni facoltative/i),
+      "documentsRequired"
+    );
+
+    const documentsSection = screen.getByLabelText(/Documenti richiesti/i).closest(".structure-form-field");
+    const documentInput = documentsSection?.querySelector('input[type="file"]') as HTMLInputElement;
+    const docFile = new File(["fake-doc"], "documento.pdf", { type: "application/pdf" });
+    await user.upload(documentInput, docFile);
+
+    await waitFor(() =>
+      expect(
+        within(documentsSection as HTMLElement).getByText("documento.pdf")
+      ).toBeInTheDocument()
+    );
+
+    await user.click(screen.getByRole("button", { name: /Crea struttura/i }));
+
+    await waitFor(() => expect(createStructure).toHaveBeenCalled());
+    await waitFor(
+      () => expect(signAttachmentUpload).toHaveBeenCalledTimes(2),
+      { timeout: 3000 }
+    );
+    await waitFor(
+      () => expect(createStructureAttachment).toHaveBeenCalledTimes(2),
+      { timeout: 3000 }
+    );
+
+    const [firstCall, secondCall] = vi.mocked(createStructureAttachment).mock.calls;
+    expect(firstCall?.[0]).toBe(createdStructure.id);
+    expect(firstCall?.[1]).toEqual({ attachment_id: mapAttachment.id, kind: "map_resource" });
+    expect(secondCall?.[1]).toEqual({ attachment_id: docAttachment.id, kind: "required_document" });
+
+    fetchMock.mockRestore();
+  });
 
 });
 
