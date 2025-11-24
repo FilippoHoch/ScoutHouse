@@ -265,7 +265,7 @@ file must contain the following headers/keys: `name`, `slug`, `province`,
 `indoor_showers`, `indoor_activity_rooms`, `has_kitchen`, `hot_water`,
 `land_area_m2`, `shelter_on_field`, `water_sources`, `electricity_available`,
 `fire_policy`, `access_by_car`, `access_by_coach`,
-`access_by_public_transport`, `coach_turning_area`, `nearest_bus_stop`,
+`access_by_public_transport`, `coach_turning_area`, `transport_access_points`,
 `weekend_only`, `has_field_poles`, `pit_latrine_allowed`, `contact_emails`,
 `website_urls`, `notes_logistics`, `notes`.
 
@@ -360,7 +360,7 @@ e modifica:
   `water_sources` (array), `electricity_available`, `fire_policy`,
   `has_field_poles`, `pit_latrine_allowed`.
 - Accessibilità: `access_by_car`, `access_by_coach`,
-  `access_by_public_transport`, `coach_turning_area`, `nearest_bus_stop`.
+  `access_by_public_transport`, `coach_turning_area`, `transport_access_points`.
 - Operatività: `weekend_only`, `notes_logistics`, `notes`, insieme alle liste
   pubbliche `contact_emails` e `website_urls`.
 - Periodi di apertura strutturati in `open_periods` (`season` o `range`).

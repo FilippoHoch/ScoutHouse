@@ -223,7 +223,7 @@ async def import_structures(
                 coach_turning_area=row.coach_turning_area
                 if row.coach_turning_area is not None
                 else False,
-                nearest_bus_stop=row.nearest_bus_stop,
+                transport_access_points=row.transport_access_points,
                 weekend_only=row.weekend_only if row.weekend_only is not None else False,
                 has_field_poles=row.has_field_poles if row.has_field_poles is not None else False,
                 pit_latrine_allowed=(
@@ -267,7 +267,7 @@ async def import_structures(
                 structure.access_by_public_transport = row.access_by_public_transport
             if row.coach_turning_area is not None:
                 structure.coach_turning_area = row.coach_turning_area
-            structure.nearest_bus_stop = row.nearest_bus_stop
+            structure.transport_access_points = row.transport_access_points
             if row.weekend_only is not None:
                 structure.weekend_only = row.weekend_only
             if row.has_field_poles is not None:

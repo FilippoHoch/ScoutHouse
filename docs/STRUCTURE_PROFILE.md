@@ -34,7 +34,7 @@ Il wizard di creazione è suddiviso in sezioni tematiche. Ogni sezione presenta 
 ### Accessibilità e trasporti
 - Flag tri-stato `access_by_car`, `access_by_coach`, `access_by_public_transport`, `coach_turning_area`, `wheelchair_accessible`, `step_free_access`.
 - Campi numerici `parking_car_slots`, `parking_bus_slots` con note libere `parking_notes`.
-- Campo libero `nearest_bus_stop`.
+- Lista `transport_access_points` (type, coordinates, note) per fermate o nodi di trasporto.
 - Textarea `accessibility_notes`.
 
 ### Operatività
@@ -76,7 +76,7 @@ La pagina dettaglio mostra gli stessi campi organizzati in tab.
 - Blocco Posizione con indirizzo, coordinate, `altitude` e link Google Maps.
 - Griglia "Spazi interni" con `has_kitchen`, `hot_water`, `indoor_*`.
 - Griglia "Spazi esterni" con `land_area_m2`, `field_slope`, `pitches_tende`, `water_at_field`, `shelter_on_field`, `has_field_poles`, `water_sources`, `pit_latrine_allowed`, `electricity_available`, `fire_policy`.
-- Griglia "Accessibilità" con `access_by_car`, `access_by_coach`, `coach_turning_area`, `access_by_public_transport`, `nearest_bus_stop`, `wheelchair_accessible`, `step_free_access`, `parking_car_slots`, `parking_bus_slots`, `parking_notes`, `accessibility_notes`.
+- Griglia "Accessibilità" con `access_by_car`, `access_by_coach`, `coach_turning_area`, `access_by_public_transport`, `transport_access_points`, `wheelchair_accessible`, `step_free_access`, `parking_car_slots`, `parking_bus_slots`, `parking_notes`, `accessibility_notes`.
 - Sezione Operatività con `website_urls`, `weekend_only`, `allowed_audiences`, `usage_rules`, `animal_policy`, `animal_policy_notes`, `in_area_protetta`, `ente_area_protetta`, `environmental_notes`, `seasonal_amenities`, `notes_logistics`, `notes`.
 
 ### Tab "Disponibilità"

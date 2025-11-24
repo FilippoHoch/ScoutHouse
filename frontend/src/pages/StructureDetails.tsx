@@ -27,6 +27,7 @@ import type {
   Structure,
   StructureUsageRecommendation,
   StructureOpenPeriod,
+  TransportAccessPoint,
   WaterSource
 } from "../shared/types";
 import { PAYMENT_METHODS } from "../shared/types";
@@ -45,6 +46,33 @@ const formatCurrency = (value: number, currency: string) =>
 
 const formatCostBand = (band: CostBand | null | undefined) =>
   band ? band.charAt(0).toUpperCase() + band.slice(1) : null;
+
+const formatTransportAccessPoints = (
+  points: TransportAccessPoint[] | null | undefined
+): string | null => {
+  if (!points || points.length === 0) {
+    return null;
+  }
+
+  const primaryPoint = points.find((point) => point.type === "bus_stop") ?? points[0];
+  if (!primaryPoint) {
+    return null;
+  }
+
+  const details: string[] = [];
+
+  if (primaryPoint.note) {
+    details.push(primaryPoint.note);
+  }
+
+  if (primaryPoint.coordinates) {
+    details.push(
+      `lat: ${primaryPoint.coordinates.lat.toFixed(6)}, lon: ${primaryPoint.coordinates.lon.toFixed(6)}`
+    );
+  }
+
+  return details.length > 0 ? details.join(" — ") : primaryPoint.type;
+};
 
 type ContactFormState = {
   first_name: string;
@@ -649,7 +677,9 @@ export const StructureDetailsPage = () => {
     {
       id: "nearestBusStop",
       label: t("structures.details.overview.nearestBusStop"),
-      value: formatOptionalText(structure.nearest_bus_stop),
+      value: formatOptionalText(
+        formatTransportAccessPoints(structure.transport_access_points)
+      ),
       icon: "🚏"
     },
     {

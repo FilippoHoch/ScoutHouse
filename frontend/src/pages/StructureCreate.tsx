@@ -53,6 +53,7 @@ import {
   StructureCostOptionInput,
   StructureCostModifierInput,
   StructureUsageRecommendation,
+  TransportAccessPoint,
   Unit,
   WaterSource
 } from "../shared/types";
@@ -2454,7 +2455,16 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setAccessByCoach(toTriState(existingStructure.access_by_coach));
     setAccessByPublicTransport(toTriState(existingStructure.access_by_public_transport));
     setCoachTurningArea(toTriState(existingStructure.coach_turning_area));
-    setNearestBusStop(existingStructure.nearest_bus_stop ?? "");
+    const busStopPoint =
+      existingStructure.transport_access_points?.find((point) => point.type === "bus_stop") ??
+      existingStructure.transport_access_points?.[0];
+
+    setNearestBusStop(busStopPoint?.note ?? "");
+    setNearestBusStopLocation(
+      busStopPoint?.coordinates
+        ? { lat: busStopPoint.coordinates.lat, lng: busStopPoint.coordinates.lon }
+        : null
+    );
     setWheelchairAccessible(toTriState(existingStructure.wheelchair_accessible));
     setStepFreeAccess(toTriState(existingStructure.step_free_access));
     setParkingCarSlots(
@@ -3446,19 +3456,18 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (showOutdoorSection) {
       payload.land_area_m2 = trimmedLandArea ? Number.parseFloat(trimmedLandArea.replace(",", ".")) : null;
-      const nearestBusStopSegments: string[] = [];
-      if (trimmedNearestBusStop) {
-        nearestBusStopSegments.push(trimmedNearestBusStop);
+      const transportAccessPoints: TransportAccessPoint[] = [];
+      if (trimmedNearestBusStop || nearestBusStopLocation) {
+        transportAccessPoints.push({
+          type: "bus_stop",
+          note: trimmedNearestBusStop || null,
+          coordinates: nearestBusStopLocation
+            ? { lat: nearestBusStopLocation.lat, lon: nearestBusStopLocation.lng }
+            : null
+        });
       }
-      if (nearestBusStopLocation) {
-        nearestBusStopSegments.push(
-          t("structures.create.form.nearestBusStopLocationSuffix", {
-            lat: nearestBusStopLocation.lat.toFixed(6),
-            lon: nearestBusStopLocation.lng.toFixed(6)
-          })
-        );
-      }
-      payload.nearest_bus_stop = nearestBusStopSegments.length > 0 ? nearestBusStopSegments.join("\n\n") : null;
+      payload.transport_access_points =
+        transportAccessPoints.length > 0 ? transportAccessPoints : null;
       payload.water_sources = waterSources.length > 0 ? [...waterSources] : null;
       payload.fire_policy = firePolicy ? (firePolicy as FirePolicy) : null;
       payload.field_slope = fieldSlope ? (fieldSlope as FieldSlope) : null;
@@ -3471,7 +3480,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.water_sources = null;
       payload.electricity_available = null;
       payload.fire_policy = null;
-      payload.nearest_bus_stop = null;
+      payload.transport_access_points = null;
       payload.has_field_poles = null;
       payload.pit_latrine_allowed = null;
     }

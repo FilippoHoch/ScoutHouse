@@ -61,6 +61,7 @@ from .structure import (
     StructureRead,
     StructureSearchItem,
     StructureSearchResponse,
+    TransportAccessPoint,
     StructureUpdate,
 )
 from .structure_photo import StructurePhotoCreate, StructurePhotoRead
@@ -84,6 +85,7 @@ __all__ = [
     "StructureCostOptionCreate",
     "StructureCostOptionRead",
     "StructureCostOptionUpdate",
+    "TransportAccessPoint",
     "StructureCreate",
     "StructureAttachmentCreate",
     "StructureAttachmentRead",
