@@ -14,6 +14,9 @@ from app.models.availability import StructureSeason
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
+    from app.models.structure import PaymentMethod
+
+if TYPE_CHECKING:  # pragma: no cover
     from .structure import Structure
 
 
@@ -56,7 +59,9 @@ class StructureCostOption(Base):
         Numeric(10, 2), nullable=True
     )
     age_rules: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    payment_methods: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    payment_methods: Mapped[list["PaymentMethod"] | None] = mapped_column(
+        JSON, nullable=True
+    )
     payment_terms: Mapped[str | None] = mapped_column(Text, nullable=True)
     price_per_resource: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 

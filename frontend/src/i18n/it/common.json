@@ -429,7 +429,7 @@
         },
         "paymentMethodSelector": {
           "label": "Modalità di pagamento accettate",
-          "hint": "Seleziona uno o più metodi. Lascia \"Non specificato\" se l'informazione non è disponibile.",
+          "hint": "Seleziona uno o più metodi. Se l'informazione non è disponibile, lascia selezionato \"Non specificato\" (opzione predefinita).",
           "options": {
             "unspecified": "Non specificato",
             "bank_transfer": "Bonifico bancario",
@@ -774,7 +774,7 @@
           "forfaitTrigger": "Forfait automatico",
           "forfaitTriggerHint": "Quando il calcolo a persona supera questa soglia applica direttamente il forfait indicato.",
           "paymentMethods": "Dettagli sui metodi di pagamento",
-          "paymentMethodsHint": "Descrivi eccezioni o istruzioni specifiche per questo listino rispetto alle modalità principali (es. acconto in contanti, rateizzazioni).",
+          "paymentMethodsHint": "Seleziona i metodi accettati per questo listino. Usa le note di pagamento per indicare eccezioni o istruzioni particolari (es. acconto in contanti, rateizzazioni).",
           "paymentTerms": "Note e condizioni",
           "paymentTermsHint": "Specifiche aggiuntive come \"solo Agesci\", \"solo oratori\", fasce territoriali o accordi particolari.",
           "summaryMissingAmount": "importo non indicato",
