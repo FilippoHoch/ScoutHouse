@@ -37,63 +37,19 @@ import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import { CategorizedAttachmentsList } from "../shared/ui/CategorizedAttachmentsList";
 import { StructurePhotosSection } from "../shared/ui/StructurePhotosSection";
 import { Button, LinkButton, StatusBadge } from "../shared/ui/designSystem";
+import { createGoogleMapsViewUrl } from "../shared/utils/googleMaps";
 import {
-  createGoogleMapsEmbedUrl,
-  createGoogleMapsViewUrl
-} from "../shared/utils/googleMaps";
+  TRANSPORT_ACCESS_POINT_VISUALS,
+  getTransportAccessPointCoordinates,
+  getTransportAccessPointVisual,
+} from "../shared/utils/transportAccessPoints";
+import { TransportAccessPointsMap } from "../shared/ui/TransportAccessPointsMap";
 
 const formatCurrency = (value: number, currency: string) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency }).format(value);
 
 const formatCostBand = (band: CostBand | null | undefined) =>
   band ? band.charAt(0).toUpperCase() + band.slice(1) : null;
-
-const formatTransportAccessPoints = (
-  points: TransportAccessPoint[] | null | undefined,
-  formatType: (type: string) => string,
-  formatCoordinates: (coordinates: { lat: number; lon: number }) => string
-): ReactNode | null => {
-  if (!points || points.length === 0) {
-    return null;
-  }
-
-  const entries = points
-    .map((point, index) => {
-      const details: string[] = [];
-
-      const typeLabel = formatType(point.type);
-      if (typeLabel) {
-        details.push(typeLabel);
-      }
-
-      if (point.note) {
-        details.push(point.note);
-      }
-
-      if (point.coordinates) {
-        details.push(formatCoordinates(point.coordinates));
-      }
-
-      if (details.length === 0) {
-        return null;
-      }
-
-      return { id: `${point.type}-${index}`, text: details.join(" — ") };
-    })
-    .filter((entry): entry is { id: string; text: string } => Boolean(entry));
-
-  if (entries.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="transport-access-points-summary">
-      {entries.map((entry) => (
-        <span key={entry.id}>{entry.text}</span>
-      ))}
-    </div>
-  );
-};
 
 type ContactFormState = {
   first_name: string;
@@ -195,6 +151,64 @@ export const StructureDetailsPage = () => {
     (type: string) => transportAccessPointTypeLabels[type as TransportAccessPointType] ?? type,
     [transportAccessPointTypeLabels]
   );
+
+  const renderTransportAccessPoints = (
+    points: TransportAccessPoint[] | null | undefined
+  ): ReactNode | null => {
+    if (!points || points.length === 0) {
+      return null;
+    }
+
+    const entries = points
+      .map((point, index) => {
+        const coordinatesLabel = point.coordinates
+          ? formatTransportAccessPointCoordinates(point.coordinates)
+          : null;
+        const typeLabel = formatTransportAccessPointType(point.type);
+        if (!typeLabel && !coordinatesLabel && !point.note) {
+          return null;
+        }
+        const visual = getTransportAccessPointVisual(point.type as TransportAccessPointType);
+        return {
+          id: `${point.type}-${index}`,
+          typeLabel,
+          note: point.note?.trim(),
+          coordinatesLabel,
+          visual,
+          type: point.type as TransportAccessPointType,
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+
+    if (entries.length === 0) {
+      return null;
+    }
+
+    return (
+      <ul className="transport-access-points-list">
+        {entries.map((entry) => (
+          <li className="transport-access-points-list__item" key={entry.id}>
+            <span
+              className="transport-access-points-list__icon"
+              data-variant={entry.type}
+              aria-hidden="true"
+            >
+              {entry.visual.icon}
+            </span>
+            <div className="transport-access-points-list__content">
+              <div className="transport-access-points-list__header">
+                <span className="transport-access-points-list__type">{entry.typeLabel}</span>
+                {entry.note && <span className="transport-access-points-list__note">{entry.note}</span>}
+              </div>
+              {entry.coordinatesLabel && (
+                <p className="transport-access-points-list__coordinates">{entry.coordinatesLabel}</p>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  };
 
   const formatTransportAccessPointCoordinates = useCallback(
     (coordinates: { lat: number; lon: number }) =>
@@ -552,18 +566,16 @@ export const StructureDetailsPage = () => {
   const googleMapsCoordinates = hasCoordinates
     ? { lat: structure.latitude as number, lng: structure.longitude as number }
     : null;
-  const googleMapsEmbedUrl = googleMapsCoordinates
-    ? createGoogleMapsEmbedUrl(googleMapsCoordinates)
-    : null;
   const googleMapsUrl = googleMapsCoordinates
     ? createGoogleMapsViewUrl(googleMapsCoordinates)
     : null;
-  const googleMapsEmbedTitle = t("structures.details.location.mapTitle", {
-    name: mapDisplayName
-  });
-  const googleMapsEmbedAriaLabel = t("structures.details.location.mapAriaLabel", {
-    name: mapDisplayName
-  });
+  const hasAccessPointCoordinates = (structure.transport_access_points ?? []).some(
+    (point) => getTransportAccessPointCoordinates(point) !== null
+  );
+  const hasMapData = hasCoordinates || hasAccessPointCoordinates;
+  const mapLegendLabel = t("structures.details.location.transportAccessPoints.legend");
+  const structureMarkerLabel = t("structures.details.location.transportAccessPoints.structureLabel");
+  const mapEmptyLabel = t("structures.details.location.placeholder");
   const kitchenLabel =
     structure.has_kitchen === true
       ? t("structures.details.overview.hasKitchen.yes")
@@ -719,11 +731,7 @@ export const StructureDetailsPage = () => {
     {
       id: "transportAccessPoints",
       label: t("structures.details.overview.transportAccessPoints.label"),
-      value: formatTransportAccessPoints(
-        structure.transport_access_points,
-        formatTransportAccessPointType,
-        formatTransportAccessPointCoordinates
-      ),
+      value: renderTransportAccessPoints(structure.transport_access_points),
       icon: "🚏",
       isFull: true
     },
@@ -1318,40 +1326,40 @@ export const StructureDetailsPage = () => {
             </h3>
           <div
             className="structure-details__map"
-            data-has-coordinates={hasCoordinates ? "true" : "false"}
+            data-has-coordinates={hasMapData ? "true" : "false"}
           >
-            {hasCoordinates ? (
-                <>
-                  {googleMapsEmbedUrl && (
-                    <iframe
-                      className="structure-details__map-embed"
-                      src={googleMapsEmbedUrl}
-                      title={googleMapsEmbedTitle}
-                      aria-label={googleMapsEmbedAriaLabel}
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                    />
-                  )}
+            {hasMapData ? (
+              <>
+                <TransportAccessPointsMap
+                  structureName={mapDisplayName}
+                  structureLabel={structureMarkerLabel}
+                  structureCoordinates={googleMapsCoordinates ? { lat: googleMapsCoordinates.lat, lon: googleMapsCoordinates.lng } : null}
+                  accessPoints={structure.transport_access_points}
+                  typeLabels={transportAccessPointTypeLabels}
+                  emptyLabel={mapEmptyLabel}
+                  legendLabel={mapLegendLabel}
+                />
+                {hasCoordinates && (
                   <p className="structure-details__map-coordinates">
                     {t("structures.details.location.coordinates", {
                       lat: structure.latitude?.toFixed(4),
                       lon: structure.longitude?.toFixed(4)
                     })}
                   </p>
-                  {altitudeLabel && (
-                    <p className="structure-details__map-coordinates">{altitudeLabel}</p>
-                  )}
-                  <p className="structure-details__map-note">
-                    {t("structures.details.location.placeholder")}
-                  </p>
-                </>
-              ) : (
+                )}
+                {altitudeLabel && (
+                  <p className="structure-details__map-coordinates">{altitudeLabel}</p>
+                )}
                 <p className="structure-details__map-note">
-                  {t("structures.details.location.unavailable")}
+                  {t("structures.details.location.placeholder")}
                 </p>
-              )}
-            </div>
+              </>
+            ) : (
+              <p className="structure-details__map-note">
+                {t("structures.details.location.unavailable")}
+              </p>
+            )}
+          </div>
             {locationDetails.length > 0 && (
               <dl className="structure-details__location-list">
                 {locationDetails.map((detail) => (

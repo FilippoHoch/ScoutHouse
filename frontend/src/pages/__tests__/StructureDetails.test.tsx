@@ -8,10 +8,7 @@ import { ApiError, getStructureBySlug, getStructurePhotos } from "../../shared/a
 import type { Structure } from "../../shared/types";
 import { StructureDetailsPage } from "../StructureDetails";
 import i18n from "../../i18n";
-import {
-  createGoogleMapsEmbedUrl,
-  createGoogleMapsViewUrl
-} from "../../shared/utils/googleMaps";
+import { createGoogleMapsViewUrl } from "../../shared/utils/googleMaps";
 
 vi.mock("../../shared/api", async () => {
   const actual = await vi.importActual<typeof import("../../shared/api")>("../../shared/api");
@@ -241,21 +238,16 @@ describe("StructureDetailsPage", () => {
     );
 
     await waitFor(() => expect(screen.getByText("Casa Alpina")).toBeInTheDocument());
-    const mapLink = screen.getByRole("link", { name: /Google Maps/i });
+    const mapLinkLabel = i18n.t("structures.cards.openMap");
+    const mapLink = screen.getByRole("link", { name: mapLinkLabel });
     const expectedViewUrl = createGoogleMapsViewUrl({
       lat: sampleStructure.latitude!,
       lng: sampleStructure.longitude!
     });
     expect(mapLink).toHaveAttribute("href", expectedViewUrl);
-    const mapTitle = i18n.t("structures.details.location.mapTitle", {
-      name: sampleStructure.name
-    });
-    const mapEmbed = screen.getByTitle(mapTitle);
-    const expectedEmbedUrl = createGoogleMapsEmbedUrl({
-      lat: sampleStructure.latitude!,
-      lng: sampleStructure.longitude!
-    });
-    expect(mapEmbed).toHaveAttribute("src", expectedEmbedUrl);
+    expect(
+      screen.getByRole("figure", { name: sampleStructure.name ?? mapLinkLabel })
+    ).toBeInTheDocument();
     const coordinatesLabel = i18n.t("structures.details.location.coordinates", {
       lat: sampleStructure.latitude?.toFixed(4),
       lon: sampleStructure.longitude?.toFixed(4)
@@ -272,14 +264,11 @@ describe("StructureDetailsPage", () => {
     expect(screen.getByText(/Cucina attrezzata disponibile/i)).toBeInTheDocument();
     expect(screen.getByText(/Solo con autorizzazione/i)).toBeInTheDocument();
     expect(screen.getByText(/Rubinetto/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Bus o mezzi pubblici — Fermata centro — Coordinate: 45\.333300, 9\.444400/i
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Punto raggiungibile in auto — Parcheggio sterrato/i)
-    ).toBeInTheDocument();
+    expect(screen.getAllByText(/Bus o mezzi pubblici/i)[0]).toBeInTheDocument();
+    expect(screen.getByText(/Fermata centro/i)).toBeInTheDocument();
+    expect(screen.getByText(/Coordinate: 45\.333300, 9\.444400/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Punto raggiungibile in auto/i)[0]).toBeInTheDocument();
+    expect(screen.getByText(/Parcheggio sterrato/i)).toBeInTheDocument();
     expect(screen.getByText(/Contattare il custode/i)).toBeInTheDocument();
     expect(
       screen.getByText(i18n.t("structures.details.overview.floodRisk"))
