@@ -1105,6 +1105,10 @@
         "placeholder": "La mappa mostra la posizione indicativa della struttura su Google Maps.",
         "mapTitle": "Mappa di Google Maps per {{name}}",
         "mapAriaLabel": "Mappa incorporata di Google Maps per {{name}}",
+        "transportAccessPoints": {
+          "legend": "Legenda punti di accesso",
+          "structureLabel": "Posizione struttura"
+        },
         "details": {
           "address": "Indirizzo",
           "locality": "Località / frazione",

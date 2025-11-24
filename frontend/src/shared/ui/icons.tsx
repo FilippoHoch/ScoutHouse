@@ -61,3 +61,25 @@ export const HotWaterIcon = (props: SVGProps<SVGSVGElement>) => (
     <path d="M10 9l4 0" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+export const CarIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...defaultProps} {...props}>
+    <path d="M3 17v-6l2 -4h12l2 4v6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3 13h18" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M6 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M18 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M6 9l1.5 4m9.5 -4l-1.5 4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M7 8h10" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const OffroadCarIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...defaultProps} {...props}>
+    <path d="M4 17l-1 -3l3 -4h10l3 4l-1 3" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9 17a2 2 0 1 0 -4 0a2 2 0 1 0 4 0" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M19 17a2 2 0 1 0 -4 0a2 2 0 1 0 4 0" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M7 13l1.5 -2h7l1.5 2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M5 17h14" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9 9l1 -2h4l1 2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);

@@ -3030,6 +3030,84 @@ table tbody tr:hover {
   pointer-events: none;
 }
 
+.transport-access-map {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: var(--space-md);
+  display: grid;
+  gap: var(--space-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+.transport-access-map--empty {
+  min-height: clamp(320px, 45vh, 520px);
+  display: grid;
+  place-items: center;
+}
+
+.transport-access-map__map {
+  width: 100%;
+  height: clamp(320px, 45vh, 520px);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.transport-access-map__marker {
+  background: transparent;
+  border: 0;
+}
+
+.transport-access-map__marker-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--color-surface);
+  font-size: 1.05rem;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+}
+
+.transport-access-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.transport-access-map__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0.35rem 0.6rem;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+}
+
+.transport-access-map__legend-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--color-surface);
+  font-size: 0.95rem;
+}
+
+.transport-access-map__legend-label {
+  font-weight: 600;
+  color: var(--color-muted-strong);
+}
+
+.transport-access-map__message {
+  margin: 0;
+  color: var(--color-muted-strong);
+  text-align: center;
+}
+
 .structure-map-field {
   display: flex;
   flex-direction: column;
@@ -3545,6 +3623,84 @@ table tbody tr:hover {
 
 .structure-logistics-item--full {
   grid-column: 1 / -1;
+}
+
+.transport-access-points-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-md);
+}
+
+.transport-access-points-list__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-md);
+  align-items: start;
+}
+
+.transport-access-points-list__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--color-primary-strong);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+
+.transport-access-points-list__icon[data-variant="car"] {
+  background: rgba(22, 163, 74, 0.14);
+  color: #166534;
+  box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.22);
+}
+
+.transport-access-points-list__icon[data-variant="bus"] {
+  background: rgba(37, 99, 235, 0.14);
+  color: #1d4ed8;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
+}
+
+.transport-access-points-list__icon[data-variant="4x4"] {
+  background: rgba(217, 119, 6, 0.15);
+  color: #92400e;
+  box-shadow: inset 0 0 0 1px rgba(217, 119, 6, 0.22);
+}
+
+.transport-access-points-list__content {
+  display: grid;
+  gap: var(--space-xxs);
+}
+
+.transport-access-points-list__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.transport-access-points-list__type {
+  font-weight: 700;
+  color: var(--color-muted-strong);
+}
+
+.transport-access-points-list__note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxs);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+
+.transport-access-points-list__coordinates {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
 }
 
 .structure-open-periods-detail {
