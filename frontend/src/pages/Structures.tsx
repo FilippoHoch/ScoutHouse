@@ -33,6 +33,10 @@ import {
   TrainIcon,
 } from "../shared/ui/icons";
 import { createGoogleMapsViewUrl } from "../shared/utils/googleMaps";
+import {
+  TRANSPORT_ACCESS_POINT_VISUALS,
+  getTransportAccessPointVisual,
+} from "../shared/utils/transportAccessPoints";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
 const seasons: Season[] = ["winter", "spring", "summer", "autumn"];
@@ -185,6 +189,26 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
   const hasQuickIcons = quickIcons.length > 0;
   const hasBadges = hasSeasons || hasUnits || item.pit_latrine_allowed;
 
+  const transportAccessPoints = item.transport_access_points ?? [];
+  const transportLegend = Array.from(
+    new Map(
+      transportAccessPoints.map((point) => {
+        const visual = getTransportAccessPointVisual(point.type);
+        return [
+          point.type,
+          {
+            symbol: visual.markerSymbol,
+            color: visual.color,
+            label:
+              t(
+                `structures.details.location.transportAccessPoints.types.${point.type as keyof typeof TRANSPORT_ACCESS_POINT_VISUALS}`,
+              ) || point.type,
+          },
+        ];
+      }),
+    ).entries(),
+  ).map(([type, entry]) => ({ type, ...entry }));
+
   const hasCoordinates = typeof item.latitude === "number" && typeof item.longitude === "number";
   const googleMapsLink = hasCoordinates
     ? createGoogleMapsViewUrl({ lat: item.latitude, lng: item.longitude })
@@ -244,6 +268,28 @@ const StructureCard = ({ item, t }: { item: StructureSearchItem; t: TFunction })
                   </span>
                 </div>
               )}
+            </div>
+          )}
+
+          {transportLegend.length > 0 && (
+            <div className="structure-card__transport">
+              <div className="structure-card__transport-label">
+                {t("structures.details.location.transportAccessPoints.label")}
+              </div>
+              <div className="structure-card__transport-legend">
+                {transportLegend.map((entry) => (
+                  <span className="structure-card__transport-item" key={`${item.id}-transport-${entry.type}`}>
+                    <span
+                      className="structure-card__transport-icon"
+                      style={{ backgroundColor: entry.color }}
+                      aria-hidden="true"
+                    >
+                      {entry.symbol}
+                    </span>
+                    <span className="structure-card__transport-text">{entry.label}</span>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
