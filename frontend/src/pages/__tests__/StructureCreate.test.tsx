@@ -304,6 +304,47 @@ describe("StructureCreatePage", () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["structures"] });
   }, 15000);
 
+  it("prefills and saves transport access points when editing", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    const Wrapper = createEditWrapper(queryClient);
+    const user = userEvent.setup();
+
+    vi.mocked(getStructureBySlug).mockResolvedValue(createdStructure);
+    vi.mocked(updateStructure).mockResolvedValue(createdStructure);
+
+    render(<StructureEditPage />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(getStructureBySlug).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Nome/i, { selector: "input" })).toHaveValue(createdStructure.name)
+    );
+
+    const typeSelect = screen.getByLabelText(/Punto 1 - mezzo/i);
+    expect(typeSelect).toHaveValue("car");
+
+    const noteField = screen.getByLabelText(/Note o indicazioni/i);
+    expect(noteField).toHaveValue("Parcheggio sterrato a 200 m");
+
+    expect(
+      screen.getByText(/Posizione:\s*45\.111000,\s*9\.222000/i)
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Salva/i }));
+
+    await waitFor(() => expect(updateStructure).toHaveBeenCalled());
+    const payload = vi.mocked(updateStructure).mock.calls[0][1];
+
+    expect(payload.transport_access_points).toEqual([
+      { type: "car", note: "Parcheggio sterrato a 200 m", coordinates: { lat: 45.111, lon: 9.222 } }
+    ]);
+    expect(payload).not.toHaveProperty("nearest_bus_stop");
+  });
+
 
   it("includes optional section fields in the payload", async () => {
     const queryClient = new QueryClient({

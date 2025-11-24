@@ -587,7 +587,7 @@
         "coachTurningArea": "Area manovra per pullman",
         "transportAccessPoints": {
           "label": "Punti di accesso mezzi",
-          "hint": "Aggiungi fermate utili o punti raggiungibili in auto, pullman o 4x4.",
+          "hint": "Aggiungi una o più fermate utili o punti raggiungibili in auto, pullman o 4x4 e segna la posizione sulla mappa condivisa.",
           "add": "Aggiungi punto di accesso",
           "empty": "Nessun punto indicato. Aggiungi una fermata o un punto di raccolta.",
           "pointLabel": "Punto {{index}} - mezzo",
@@ -601,11 +601,11 @@
           "coordinatesButton": "Segna sulla mappa",
           "coordinatesPreview": "Posizione: {{lat}}, {{lon}}",
           "coordinatesClear": "Rimuovi posizione",
-          "coordinatesHelper": "Seleziona un punto sulla mappa per bus, auto o 4x4.",
+          "coordinatesHelper": "Seleziona un punto sulla mappa condivisa per bus, auto o 4x4.",
           "remove": "Rimuovi punto",
           "modal": {
             "title": "Imposta la posizione",
-            "description": "Usa la mappa per indicare fermate o punti di accesso per i mezzi.",
+            "description": "Usa la mappa condivisa per indicare fermate o punti di accesso per bus, auto o 4x4.",
             "mapLabel": "Mappa punti di accesso",
             "empty": "Clicca sulla mappa per aggiungere un punto",
             "hint": "Clicca sulla mappa per aggiungere o spostare il segnaposto e conferma per salvare le coordinate.",
