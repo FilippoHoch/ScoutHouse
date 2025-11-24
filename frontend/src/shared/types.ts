@@ -163,7 +163,7 @@ export interface CostOption {
   max_total: number | null;
   forfait_trigger_total: number | null;
   age_rules?: Record<string, unknown> | null;
-  payment_methods?: string[] | null;
+  payment_methods?: PaymentMethod[] | null;
   payment_terms?: string | null;
   price_per_resource?: Record<string, number> | null;
   modifiers?: StructureCostModifier[] | null;
@@ -184,7 +184,7 @@ export interface StructureCostOptionInput {
   max_total?: number | null;
   forfait_trigger_total?: number | null;
   age_rules?: Record<string, unknown> | null;
-  payment_methods?: string[] | null;
+  payment_methods?: PaymentMethod[] | null;
   payment_terms?: string | null;
   price_per_resource?: Record<string, number> | null;
   modifiers?: StructureCostModifierInput[] | null;

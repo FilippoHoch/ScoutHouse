@@ -109,6 +109,13 @@ def _normalize_payment_methods(value: object) -> list[PaymentMethod] | object:
     return value
 
 
+def _normalize_optional_payment_methods(value: object) -> list[PaymentMethod] | None | object:
+    normalized = _normalize_payment_methods(value)
+    if normalized == [] and value is None:
+        return None
+    return normalized
+
+
 def _normalize_url_list(value: object) -> list[AnyHttpUrl] | object:
     if value is None:
         return []
@@ -720,7 +727,7 @@ class StructureCostOptionBase(BaseModel):
     max_total: Decimal | None = Field(default=None, ge=0)
     forfait_trigger_total: Decimal | None = Field(default=None, ge=0)
     age_rules: dict[str, Any] | None = None
-    payment_methods: list[str] | None = None
+    payment_methods: list[PaymentMethod] | None = None
     payment_terms: str | None = None
     price_per_resource: dict[str, Decimal] | None = None
 
@@ -730,6 +737,13 @@ class StructureCostOptionBase(BaseModel):
         if len(value) != 3 or not value.isalpha():
             raise ValueError("Currency must be a 3-letter ISO code")
         return value.upper()
+
+    @field_validator("payment_methods", mode="before")
+    @classmethod
+    def normalize_payment_methods(
+        cls, value: object
+    ) -> list[PaymentMethod] | None | object:
+        return _normalize_optional_payment_methods(value)
 
     @model_validator(mode="after")
     def validate_totals(self) -> StructureCostOptionBase:

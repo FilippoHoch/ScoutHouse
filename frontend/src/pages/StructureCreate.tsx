@@ -402,7 +402,7 @@ type CostOptionFormRow = {
   utilitiesFlat: string;
   utilitiesIncluded: "" | "yes" | "no";
   utilitiesNotes: string;
-  paymentMethods: string;
+  paymentMethods: PaymentMethod[];
   paymentTerms: string;
   minTotal: string;
   maxTotal: string;
@@ -433,7 +433,7 @@ const createCostOptionRow = (): CostOptionFormRow => ({
   utilitiesFlat: "",
   utilitiesIncluded: "",
   utilitiesNotes: "",
-  paymentMethods: "",
+  paymentMethods: [defaultPaymentMethod],
   paymentTerms: "",
   minTotal: "",
   maxTotal: "",
@@ -1812,7 +1812,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       | "utilitiesFlat"
       | "utilitiesIncluded"
       | "utilitiesNotes"
-      | "paymentMethods"
       | "paymentTerms"
       | "minTotal"
       | "maxTotal"
@@ -1824,6 +1823,40 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       updates.utilitiesIncluded = "";
     }
     updateCostOption(key, updates);
+  };
+
+  const handleCostOptionPaymentMethodToggle = (
+    optionKey: string,
+    method: PaymentMethod,
+    checked: boolean
+  ) => {
+    setCostOptions((prev) =>
+      prev.map((option) => {
+        if (option.key !== optionKey) {
+          return option;
+        }
+        const existing = option.paymentMethods;
+        let next: PaymentMethod[];
+        if (checked) {
+          if (method === defaultPaymentMethod) {
+            next = [defaultPaymentMethod];
+          } else {
+            next = existing.filter((value) => value !== defaultPaymentMethod);
+            if (!next.includes(method)) {
+              next = [...next, method];
+            }
+          }
+        } else {
+          next = existing.filter((value) => value !== method);
+          if (next.length === 0) {
+            next = [defaultPaymentMethod];
+          }
+        }
+        return { ...option, paymentMethods: next };
+      })
+    );
+    setApiError(null);
+    clearFieldError("cost_options");
   };
 
   const handleAddSeasonalModifier = (optionKey: string) => {
@@ -2557,6 +2590,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       const seasonalModifiers = (option.modifiers ?? []).filter(
         (modifier) => modifier.kind === "season"
       );
+      const parsedPaymentMethods = (option.payment_methods ?? []).filter(
+        (method): method is PaymentMethod => isValidPaymentMethodValue(method)
+      );
       return {
         key: createCostOptionKey(),
         id: option.id,
@@ -2587,7 +2623,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
             ? "no"
             : "",
         utilitiesNotes: option.utilities_notes ?? "",
-        paymentMethods: option.payment_methods?.join("\n") ?? "",
+        paymentMethods:
+          parsedPaymentMethods.length > 0 ? parsedPaymentMethods : [defaultPaymentMethod],
         paymentTerms: option.payment_terms ?? "",
         minTotal:
           option.min_total !== null && option.min_total !== undefined
@@ -2960,7 +2997,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       utilitiesFlat: option.utilitiesFlat.trim(),
       utilitiesIncluded: option.utilitiesIncluded,
       utilitiesNotes: option.utilitiesNotes.trim(),
-      paymentMethods: option.paymentMethods.trim(),
+      paymentMethods: [...option.paymentMethods],
       paymentTerms: option.paymentTerms.trim(),
       minTotal: option.minTotal.trim(),
       maxTotal: option.maxTotal.trim(),
@@ -3129,21 +3166,28 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       }
     }
 
-    const isCostOptionEmpty = (option: typeof trimmedCostOptions[number]) =>
-      !option.model &&
-      !option.amount &&
-      !option.bookingDeposit &&
-      !option.damageDeposit &&
-      !option.cityTaxPerNight &&
-      !option.utilitiesFlat &&
-      !option.minTotal &&
-      !option.maxTotal &&
-      !option.forfaitTrigger &&
-      !option.utilitiesNotes &&
-      !option.paymentMethods &&
-      !option.paymentTerms &&
-      option.utilitiesIncluded === "" &&
-      option.modifiers.length === 0;
+    const isCostOptionEmpty = (option: typeof trimmedCostOptions[number]) => {
+      const hasMeaningfulPaymentMethods = option.paymentMethods.some(
+        (method) => method !== defaultPaymentMethod
+      );
+
+      return (
+        !hasMeaningfulPaymentMethods &&
+        !option.model &&
+        !option.amount &&
+        !option.bookingDeposit &&
+        !option.damageDeposit &&
+        !option.cityTaxPerNight &&
+        !option.utilitiesFlat &&
+        !option.minTotal &&
+        !option.maxTotal &&
+        !option.forfaitTrigger &&
+        !option.utilitiesNotes &&
+        !option.paymentTerms &&
+        option.utilitiesIncluded === "" &&
+        option.modifiers.length === 0
+      );
+    };
 
     for (const option of trimmedCostOptions) {
       if (isCostOptionEmpty(option)) {
@@ -3289,7 +3333,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       utilitiesFlat: option.utilitiesFlat.trim(),
       utilitiesIncluded: option.utilitiesIncluded,
       utilitiesNotes: option.utilitiesNotes.trim(),
-      paymentMethods: option.paymentMethods.trim(),
+      paymentMethods: [...option.paymentMethods],
       paymentTerms: option.paymentTerms.trim(),
       minTotal: option.minTotal.trim(),
       maxTotal: option.maxTotal.trim(),
@@ -3559,7 +3603,11 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     const costOptionPayloads: StructureCostOptionInput[] = trimmedCostOptions
       .map((option) => {
+        const hasMeaningfulPaymentMethods = option.paymentMethods.some(
+          (method) => method !== defaultPaymentMethod
+        );
         const isEmpty =
+          !hasMeaningfulPaymentMethods &&
           !option.model &&
           !option.amount &&
           !option.bookingDeposit &&
@@ -3570,7 +3618,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           !option.maxTotal &&
           !option.forfaitTrigger &&
           !option.utilitiesNotes &&
-          !option.paymentMethods &&
           !option.paymentTerms &&
           option.utilitiesIncluded === "";
         if (isEmpty) {
@@ -3629,10 +3676,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         if (forfaitTriggerValue !== null) {
           payloadItem.forfait_trigger_total = forfaitTriggerValue;
         }
-        const paymentMethods = option.paymentMethods
-          .split(/\r?\n|,/)
-          .map((entry) => entry.trim())
-          .filter((entry) => entry.length > 0);
+        const paymentMethods = option.paymentMethods.filter((entry): entry is PaymentMethod =>
+          isValidPaymentMethodValue(entry)
+        );
         if (paymentMethods.length > 0) {
           payloadItem.payment_methods = paymentMethods;
         }
@@ -6051,7 +6097,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                         const minTotalId = `structure-cost-option-${option.key}-min-total`;
                         const maxTotalId = `structure-cost-option-${option.key}-max-total`;
                         const forfaitTriggerId = `structure-cost-option-${option.key}-forfait-trigger`;
-                        const paymentMethodsId = `structure-cost-option-${option.key}-payment-methods`;
+                        const paymentMethodsGroupId = `structure-cost-option-${option.key}-payment-methods`;
+                        const paymentMethodsHintId = `structure-cost-option-${option.key}-payment-methods-hint`;
                         const paymentTermsId = `structure-cost-option-${option.key}-payment-terms`;
                         const cardTitle = t("structures.create.form.costOptions.cardTitle", {
                           index: index + 1,
@@ -6392,24 +6439,47 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                                 </div>
                                 <div className="structure-cost-option-grid">
                                   <div className="structure-cost-option-field structure-cost-option-field--wide">
-                                    <label htmlFor={paymentMethodsId}>
+                                    <span className="form-label" id={paymentMethodsGroupId}>
                                       {t("structures.create.form.costOptions.paymentMethods")}
-                                      <textarea
-                                        id={paymentMethodsId}
-                                        value={option.paymentMethods}
-                                        onChange={(event) =>
-                                          handleCostOptionFieldChange(
-                                            option.key,
-                                            "paymentMethods",
-                                            event.target.value
-                                          )
-                                        }
-                                        rows={2}
-                                      />
-                                    </label>
-                                    <span className="helper-text">
-                                      {t("structures.create.form.costOptions.paymentMethodsHint")}
                                     </span>
+                                    <p className="helper-text" id={paymentMethodsHintId}>
+                                      {t("structures.create.form.costOptions.paymentMethodsHint")}
+                                    </p>
+                                    <div
+                                      className="structure-checkbox-list"
+                                      role="group"
+                                      aria-labelledby={paymentMethodsGroupId}
+                                      aria-describedby={paymentMethodsHintId}
+                                    >
+                                      {paymentMethodOptions.map((method) => {
+                                        const optionId = `${paymentMethodsGroupId}-${method}`;
+                                        return (
+                                          <label
+                                            key={method}
+                                            htmlFor={optionId}
+                                            className="structure-checkbox-list__option"
+                                          >
+                                            <input
+                                              id={optionId}
+                                              type="checkbox"
+                                              checked={option.paymentMethods.includes(method)}
+                                              onChange={(event) =>
+                                                handleCostOptionPaymentMethodToggle(
+                                                  option.key,
+                                                  method,
+                                                  event.target.checked
+                                                )
+                                              }
+                                            />
+                                            <span>
+                                              {t(
+                                                `structures.create.form.paymentMethodSelector.options.${method}`
+                                              )}
+                                            </span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
                                   <div className="structure-cost-option-field structure-cost-option-field--wide">
                                     <label htmlFor={paymentTermsId}>

@@ -29,6 +29,7 @@ import type {
   StructureOpenPeriod,
   WaterSource
 } from "../shared/types";
+import { PAYMENT_METHODS } from "../shared/types";
 import { useAuth } from "../shared/auth";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import { CategorizedAttachmentsList } from "../shared/ui/CategorizedAttachmentsList";
@@ -121,6 +122,17 @@ export const StructureDetailsPage = () => {
     [t]
   );
 
+  const paymentMethodLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        PAYMENT_METHODS.map((method) => [
+          method,
+          t(`structures.create.form.paymentMethodSelector.options.${method}`)
+        ])
+      ) as Record<PaymentMethod, string>,
+    [t]
+  );
+
   const formatBoolean = (value: boolean | null | undefined) => {
     if (value === null || value === undefined) {
       return null;
@@ -139,6 +151,24 @@ export const StructureDetailsPage = () => {
       : t("structures.details.overview.landAreaValue", {
           value: new Intl.NumberFormat("it-IT").format(value)
         });
+
+  const formatPaymentMethods = (methods: PaymentMethod[] | null | undefined) => {
+    if (!methods || methods.length === 0) {
+      return t("structures.details.overview.paymentMethodsFallback");
+    }
+
+    const labels = methods
+      .filter((method): method is PaymentMethod =>
+        (PAYMENT_METHODS as readonly string[]).includes(method)
+      )
+      .map((method) => paymentMethodLabels[method]);
+
+    if (labels.length === 0) {
+      return t("structures.details.overview.paymentMethodsFallback");
+    }
+
+    return labels.join(", ");
+  };
 
   const formatOptionalText = (
     value: string | null | undefined,
@@ -725,17 +755,7 @@ export const StructureDetailsPage = () => {
       </>
     ) : null;
   const connectivityNotesValue = formatStringList(structure.communications_infrastructure);
-  const rawPaymentMethods = structure.payment_methods ?? [];
-  const paymentMethodLabels =
-    rawPaymentMethods.length > 0
-      ? rawPaymentMethods.map((method: PaymentMethod) =>
-          t(`structures.create.form.paymentMethodSelector.options.${method}`)
-        )
-      : [];
-  const paymentMethodsValue =
-    paymentMethodLabels.length > 0
-      ? paymentMethodLabels.join(", ")
-      : t("structures.details.overview.paymentMethodsFallback");
+  const paymentMethodsValue = formatPaymentMethods(structure.payment_methods);
   const dataQualityStatusValue = structure.data_quality_status
     ? (
         <StatusBadge status={structure.data_quality_status}>
@@ -1559,13 +1579,11 @@ export const StructureDetailsPage = () => {
                                 })}
                               </span>
                             )}
-                            {option.payment_methods && option.payment_methods.length > 0 && (
-                              <span>
-                                {t("structures.details.costs.paymentMethods", {
-                                  value: option.payment_methods.join(", ")
-                                })}
-                              </span>
-                            )}
+                            <span>
+                              {t("structures.details.costs.paymentMethods", {
+                                value: formatPaymentMethods(option.payment_methods)
+                              })}
+                            </span>
                             {option.payment_terms && (
                               <span>
                                 {t("structures.details.costs.paymentTerms", {
