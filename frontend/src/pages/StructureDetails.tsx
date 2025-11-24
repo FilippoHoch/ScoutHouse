@@ -8,6 +8,7 @@ import {
   createStructureContact,
   deleteStructureContact,
   getStructureBySlug,
+  signAttachmentDownload,
   searchContacts,
   updateStructureContact
 } from "../shared/api";
@@ -30,6 +31,7 @@ import type {
 } from "../shared/types";
 import { useAuth } from "../shared/auth";
 import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
+import { CategorizedAttachmentsList } from "../shared/ui/CategorizedAttachmentsList";
 import { StructurePhotosSection } from "../shared/ui/StructurePhotosSection";
 import { Button, LinkButton, StatusBadge } from "../shared/ui/designSystem";
 import {
@@ -97,6 +99,7 @@ export const StructureDetailsPage = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [savingContact, setSavingContact] = useState(false);
+  const [attachmentDownloadError, setAttachmentDownloadError] = useState<string | null>(null);
   const [duplicateMatches, setDuplicateMatches] = useState<Contact[]>([]);
   const [allowDuplicate, setAllowDuplicate] = useState(false);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
@@ -192,6 +195,17 @@ export const StructureDetailsPage = () => {
       return null;
     }
     return items.join(", ");
+  };
+
+  const handleAttachmentDownload = async (attachmentId: number) => {
+    setAttachmentDownloadError(null);
+    try {
+      const signature = await signAttachmentDownload(attachmentId);
+      window.open(signature.url, "_blank", "noopener,noreferrer");
+    } catch (downloadError) {
+      console.error("Unable to download attachment", downloadError);
+      setAttachmentDownloadError(t("attachments.state.error"));
+    }
   };
 
   const formatSignalQuality = (value: CellSignalQuality | null | undefined) => {
@@ -662,21 +676,54 @@ export const StructureDetailsPage = () => {
       )
     : null;
 
-  const mapResourcesValue = structure.map_resources_urls.length > 0
-    ? (
-        <ul className="structure-website-links">
-          {structure.map_resources_urls.map((url) => (
-            <li key={url}>
-              <a href={url} target="_blank" rel="noopener noreferrer">
-                {url}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )
-    : null;
+  const mapResourcesUrlList =
+    structure.map_resources_urls.length > 0 ? (
+      <ul className="structure-website-links">
+        {structure.map_resources_urls.map((url) => (
+          <li key={url}>
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              {url}
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : null;
 
-  const documentsRequiredValue = formatStringList(structure.documents_required);
+  const mapResourcesValue =
+    mapResourcesUrlList || structure.map_resources_attachments.length > 0 ? (
+      <>
+        {mapResourcesUrlList}
+        <CategorizedAttachmentsList
+          attachments={structure.map_resources_attachments}
+          kinds={["map_resource"]}
+          onDownload={handleAttachmentDownload}
+        />
+        {attachmentDownloadError && (
+          <p className="error-text">{attachmentDownloadError}</p>
+        )}
+      </>
+    ) : null;
+
+  const documentsRequiredValue =
+    structure.documents_required.length > 0 || structure.documents_required_attachments.length > 0 ? (
+      <>
+        {structure.documents_required.length > 0 && (
+          <ul className="structure-website-links">
+            {structure.documents_required.map((document, index) => (
+              <li key={`${document}-${index}`}>{document}</li>
+            ))}
+          </ul>
+        )}
+        <CategorizedAttachmentsList
+          attachments={structure.documents_required_attachments}
+          kinds={["required_document"]}
+          onDownload={handleAttachmentDownload}
+        />
+        {attachmentDownloadError && (
+          <p className="error-text">{attachmentDownloadError}</p>
+        )}
+      </>
+    ) : null;
   const connectivityNotesValue = formatStringList(structure.communications_infrastructure);
   const rawPaymentMethods = structure.payment_methods ?? [];
   const paymentMethodLabels =

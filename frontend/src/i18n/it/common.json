@@ -405,17 +405,27 @@
         "websiteInvalidStatus": "Questo link non sembra valido. Puoi comunque procedere, ma controlla che sia corretto.",
         "mapResources": {
           "label": "Risorse cartografiche",
-          "hint": "Aggiungi URL utili a mappe o risorse di orientamento.",
+          "hint": "Aggiungi URL utili a mappe o carica file con indicazioni cartografiche.",
           "add": "Aggiungi una risorsa",
           "remove": "Rimuovi questa risorsa",
-          "entryLabel": "Risorsa {{index}}"
+          "entryLabel": "Risorsa {{index}}",
+          "uploadPrompt": "Trascina o carica file di mappe o orientamento.",
+          "queueHint": "I file verranno caricati dopo aver salvato la scheda.",
+          "queueEmpty": "Nessun file in coda.",
+          "uploadFailed": "Caricamento delle risorse cartografiche non riuscito.",
+          "removeFile": "Rimuovi questo file"
         },
         "documentsRequired": {
           "label": "Documenti richiesti",
-          "hint": "Elenca i documenti necessari per prenotare o utilizzare la struttura.",
+          "hint": "Elenca o carica i documenti necessari per prenotare o utilizzare la struttura.",
           "add": "Aggiungi documento",
           "remove": "Rimuovi questo documento",
-          "entryLabel": "Documento {{index}}"
+          "entryLabel": "Documento {{index}}",
+          "uploadPrompt": "Trascina o carica i documenti richiesti (PDF, immagini).",
+          "queueHint": "I file verranno caricati dopo aver salvato la scheda.",
+          "queueEmpty": "Nessun file in coda.",
+          "uploadFailed": "Caricamento dei documenti richiesti non riuscito.",
+          "removeFile": "Rimuovi questo file"
         },
         "paymentMethodSelector": {
           "label": "Modalità di pagamento accettate",

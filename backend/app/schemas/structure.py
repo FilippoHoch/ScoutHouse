@@ -41,6 +41,7 @@ from app.models.structure import (
 from app.services.costs import CostBand
 
 from .contact import ContactRead
+from .structure_attachment import StructureAttachmentRead
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 PLUS_CODE_PATTERN = re.compile(r"^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}$")
@@ -767,6 +768,8 @@ class StructureRead(StructureBase):
     contacts: list[ContactRead] | None = None
     open_periods: list[StructureOpenPeriodRead] | None = None
     warnings: list[str] | None = None
+    map_resources_attachments: list[StructureAttachmentRead] = Field(default_factory=list)
+    documents_required_attachments: list[StructureAttachmentRead] = Field(default_factory=list)
 
     model_config = {
         "from_attributes": True,

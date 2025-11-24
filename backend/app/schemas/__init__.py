@@ -43,6 +43,7 @@ from .quote import (
     QuoteScenarios,
     QuoteTotals,
 )
+from .structure_attachment import StructureAttachmentCreate, StructureAttachmentRead
 from .structure import (
     StructureAvailabilityCreate,
     StructureAvailabilityRead,
@@ -84,6 +85,8 @@ __all__ = [
     "StructureCostOptionRead",
     "StructureCostOptionUpdate",
     "StructureCreate",
+    "StructureAttachmentCreate",
+    "StructureAttachmentRead",
     "StructureOpenPeriodCreate",
     "StructureOpenPeriodUpdate",
     "StructureOpenPeriodRead",

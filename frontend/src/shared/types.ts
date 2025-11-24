@@ -73,6 +73,8 @@ export interface StructureOpenPeriodInput {
 
 export type AttachmentOwnerType = "structure" | "event";
 
+export type StructureAttachmentKind = "map_resource" | "required_document";
+
 export interface Attachment {
   id: number;
   owner_type: AttachmentOwnerType;
@@ -84,6 +86,12 @@ export interface Attachment {
   created_by_name: string | null;
   description: string | null;
   created_at: string;
+}
+
+export interface StructureAttachment {
+  id: number;
+  kind: StructureAttachmentKind;
+  attachment: Attachment;
 }
 
 export interface StructurePhoto {
@@ -291,7 +299,9 @@ export interface Structure {
   booking_required: boolean | null;
   booking_notes: string | null;
   documents_required: string[];
+  documents_required_attachments: StructureAttachment[];
   map_resources_urls: string[];
+  map_resources_attachments: StructureAttachment[];
   event_rules_url: string | null;
   event_rules_notes: string | null;
   allowed_audiences: string[];

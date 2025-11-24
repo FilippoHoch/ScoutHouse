@@ -41,6 +41,7 @@ from .structure import (
     WastewaterType,
     WaterSource,
 )
+from .structure_attachment import StructureAttachment, StructureAttachmentKind
 from .structure_photo import StructurePhoto
 from .user import EventMember, EventMemberRole, PasswordResetToken, RefreshToken, User, UserType
 
@@ -87,6 +88,8 @@ __all__ = [
     "StructureContactStatus",
     "AnimalPolicy",
     "FieldSlope",
+    "StructureAttachment",
+    "StructureAttachmentKind",
     "StructurePhoto",
     "CellCoverageQuality",
     "WastewaterType",

@@ -30,6 +30,8 @@ import {
   ContactUpdateDto,
   CostOption,
   Structure,
+  StructureAttachment,
+  StructureAttachmentKind,
   StructurePhoto,
   StructureCreateDto,
   StructureCostOptionInput,
@@ -294,6 +296,41 @@ export async function updateAttachment(
     auth: true,
     body: JSON.stringify(payload)
   });
+}
+
+export async function listStructureAttachments(
+  structureId: number,
+  kind?: StructureAttachmentKind
+): Promise<StructureAttachment[]> {
+  const query = kind ? `?kind=${kind}` : "";
+  return apiFetch<StructureAttachment[]>(
+    `/api/v1/structures/${structureId}/categorized-attachments${query}`,
+    { auth: true }
+  );
+}
+
+export async function createStructureAttachment(
+  structureId: number,
+  payload: { attachment_id: number; kind: StructureAttachmentKind }
+): Promise<StructureAttachment> {
+  return apiFetch<StructureAttachment>(`/api/v1/structures/${structureId}/categorized-attachments`, {
+    auth: true,
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteStructureAttachment(
+  structureId: number,
+  structureAttachmentId: number
+): Promise<void> {
+  await apiFetch<void>(
+    `/api/v1/structures/${structureId}/categorized-attachments/${structureAttachmentId}`,
+    {
+      auth: true,
+      method: "DELETE"
+    }
+  );
 }
 
 export interface StructurePhotoCreateRequest {
