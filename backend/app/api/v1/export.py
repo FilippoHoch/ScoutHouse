@@ -5,7 +5,7 @@ import json
 import time
 from datetime import date
 from io import BytesIO, StringIO
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
