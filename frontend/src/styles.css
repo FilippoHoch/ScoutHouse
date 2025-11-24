@@ -2483,6 +2483,76 @@ table tbody tr:hover {
   resize: vertical;
 }
 
+.transport-access-points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.transport-access-points__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.transport-access-points__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.transport-access-point {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.transport-access-point__row {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.transport-access-point__label {
+  gap: var(--space-xs);
+}
+
+.transport-access-point__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.transport-access-point__coordinates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.transport-access-point__coordinates-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.transport-access-points-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+@media (min-width: 640px) {
+  .transport-access-point__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .structure-field-with-action {
   display: flex;
   flex-direction: column;

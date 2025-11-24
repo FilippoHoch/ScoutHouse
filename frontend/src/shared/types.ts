@@ -213,8 +213,10 @@ export interface CoordinatePoint {
   lon: number;
 }
 
+export type TransportAccessPointType = "car" | "bus" | "4x4";
+
 export interface TransportAccessPoint {
-  type: string;
+  type: TransportAccessPointType | string;
   coordinates: CoordinatePoint | null;
   note: string | null;
 }

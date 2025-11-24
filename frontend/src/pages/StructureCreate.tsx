@@ -54,6 +54,7 @@ import {
   StructureCostModifierInput,
   StructureUsageRecommendation,
   TransportAccessPoint,
+  TransportAccessPointType,
   Unit,
   WaterSource
 } from "../shared/types";
@@ -65,6 +66,10 @@ import {
   Surface
 } from "../shared/ui/designSystem";
 import { GoogleMapEmbed, type GoogleMapEmbedCoordinates } from "../shared/ui/GoogleMapEmbed";
+import {
+  TransportAccessPointFormValue,
+  TransportAccessPointsField
+} from "../shared/ui/TransportAccessPointsField";
 import { TriStateToggle } from "../shared/ui/TriStateToggle";
 import { isImageFile } from "../shared/utils/image";
 
@@ -98,6 +103,8 @@ const operationalStatusOptions: StructureOperationalStatus[] = [
   "temporarily_closed",
   "permanently_closed"
 ];
+const createTransportAccessPointId = () =>
+  crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 type FieldErrorKey =
   | "name"
   | "country"
@@ -114,6 +121,7 @@ type FieldErrorKey =
   | "contact_emails"
   | "website_urls"
   | "land_area_m2"
+  | "transport_access_points"
   | "usage_recommendation"
   | "open_periods"
   | "data_quality_status"
@@ -539,11 +547,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [accessByCoach, setAccessByCoach] = useState<boolean | null>(null);
   const [accessByPublicTransport, setAccessByPublicTransport] = useState<boolean | null>(null);
   const [coachTurningArea, setCoachTurningArea] = useState<boolean | null>(null);
-  const [nearestBusStop, setNearestBusStop] = useState("");
-  const [nearestBusStopLocation, setNearestBusStopLocation] = useState<GoogleMapEmbedCoordinates | null>(null);
-  const [isNearestBusStopModalOpen, setIsNearestBusStopModalOpen] = useState(false);
-  const [nearestBusStopModalSelection, setNearestBusStopModalSelection] =
-    useState<GoogleMapEmbedCoordinates | null>(null);
+  const [transportAccessPoints, setTransportAccessPoints] = useState<TransportAccessPointFormValue[]>([]);
   const [wheelchairAccessible, setWheelchairAccessible] = useState<boolean | null>(null);
   const [stepFreeAccess, setStepFreeAccess] = useState<boolean | null>(null);
   const [parkingCarSlots, setParkingCarSlots] = useState("");
@@ -708,17 +712,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       lon: selectedCoordinates.lng.toFixed(6)
     });
   }, [selectedCoordinates, t]);
-
-  const nearestBusStopLocationLabel = useMemo(() => {
-    if (!nearestBusStopLocation) {
-      return null;
-    }
-
-    return t("structures.create.form.nearestBusStopLocationPreview", {
-      lat: nearestBusStopLocation.lat.toFixed(6),
-      lon: nearestBusStopLocation.lng.toFixed(6)
-    });
-  }, [nearestBusStopLocation, t]);
 
   const automaticCoordinates = geocodingApplied && !coordinatesManuallyEdited;
   const automaticAltitude = geocodingAltitudeApplied && !altitudeManuallyEdited;
@@ -960,7 +953,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setWaterSources([]);
     setElectricityAvailable(null);
     setFirePolicy("");
-    setNearestBusStop("");
+    setTransportAccessPoints([]);
     setHasFieldPoles(null);
     clearFieldErrorsGroup([
       "land_area_m2",
@@ -1980,30 +1973,10 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setApiError(null);
   };
 
-  const handleNearestBusStopChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setNearestBusStop(event.target.value);
+  const handleTransportAccessPointsChange = (points: TransportAccessPointFormValue[]) => {
+    setTransportAccessPoints(points);
     setApiError(null);
-  };
-
-  const handleNearestBusStopModalOpen = () => {
-    setNearestBusStopModalSelection(nearestBusStopLocation ?? selectedCoordinates ?? null);
-    setIsNearestBusStopModalOpen(true);
-  };
-
-  const handleNearestBusStopModalClose = () => {
-    setIsNearestBusStopModalOpen(false);
-  };
-
-  const handleNearestBusStopLocationConfirm = () => {
-    if (!nearestBusStopModalSelection) {
-      return;
-    }
-    setNearestBusStopLocation(nearestBusStopModalSelection);
-    setIsNearestBusStopModalOpen(false);
-  };
-
-  const handleNearestBusStopLocationClear = () => {
-    setNearestBusStopLocation(null);
+    clearFieldError("transport_access_points");
   };
 
   const handleWheelchairAccessibleChange = (value: boolean | null) => {
@@ -2455,16 +2428,21 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setAccessByCoach(toTriState(existingStructure.access_by_coach));
     setAccessByPublicTransport(toTriState(existingStructure.access_by_public_transport));
     setCoachTurningArea(toTriState(existingStructure.coach_turning_area));
-    const busStopPoint =
-      existingStructure.transport_access_points?.find((point) => point.type === "bus_stop") ??
-      existingStructure.transport_access_points?.[0];
+    const prefilledTransportAccessPoints =
+      existingStructure.transport_access_points?.map<TransportAccessPointFormValue>((point, index) => {
+        const normalizedType: TransportAccessPointType =
+          point.type === "car" || point.type === "4x4" ? point.type : "bus";
+        return {
+          id: createTransportAccessPointId() + index,
+          type: normalizedType,
+          note: point.note ?? "",
+          coordinates: point.coordinates
+            ? { lat: point.coordinates.lat, lng: point.coordinates.lon }
+            : null
+        };
+      }) ?? [];
 
-    setNearestBusStop(busStopPoint?.note ?? "");
-    setNearestBusStopLocation(
-      busStopPoint?.coordinates
-        ? { lat: busStopPoint.coordinates.lat, lng: busStopPoint.coordinates.lon }
-        : null
-    );
+    setTransportAccessPoints(prefilledTransportAccessPoints);
     setWheelchairAccessible(toTriState(existingStructure.wheelchair_accessible));
     setStepFreeAccess(toTriState(existingStructure.step_free_access));
     setParkingCarSlots(
@@ -3310,7 +3288,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     const trimmedIndoorShowers = indoorShowers.trim();
     const trimmedIndoorActivityRooms = indoorActivityRooms.trim();
     const trimmedLandArea = landArea.trim();
-    const trimmedNearestBusStop = nearestBusStop.trim();
     const trimmedPitchesTende = pitchesTende.trim();
     const trimmedParkingCarSlots = parkingCarSlots.trim();
     const trimmedParkingBusSlots = parkingBusSlots.trim();
@@ -3357,6 +3334,19 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       hadModifiers: option.hadModifiers
     }));
 
+    const normalizedTransportAccessPoints: TransportAccessPoint[] = transportAccessPoints
+      .map((point) => {
+        const note = point.note.trim();
+        return {
+          type: point.type,
+          note: note ? note : null,
+          coordinates: point.coordinates
+            ? { lat: point.coordinates.lat, lon: point.coordinates.lng }
+            : null
+        };
+      })
+      .filter((point) => point.note || point.coordinates);
+
     const payload: StructureCreateDto = {
       name: name.trim(),
       slug: slug.trim(),
@@ -3378,6 +3368,9 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       has_field_poles: hasFieldPoles,
       pit_latrine_allowed: pitLatrineAllowed,
     };
+
+    payload.transport_access_points =
+      normalizedTransportAccessPoints.length > 0 ? normalizedTransportAccessPoints : null;
 
     payload.country = trimmedCountry;
 
@@ -3456,18 +3449,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
 
     if (showOutdoorSection) {
       payload.land_area_m2 = trimmedLandArea ? Number.parseFloat(trimmedLandArea.replace(",", ".")) : null;
-      const transportAccessPoints: TransportAccessPoint[] = [];
-      if (trimmedNearestBusStop || nearestBusStopLocation) {
-        transportAccessPoints.push({
-          type: "bus_stop",
-          note: trimmedNearestBusStop || null,
-          coordinates: nearestBusStopLocation
-            ? { lat: nearestBusStopLocation.lat, lon: nearestBusStopLocation.lng }
-            : null
-        });
-      }
-      payload.transport_access_points =
-        transportAccessPoints.length > 0 ? transportAccessPoints : null;
       payload.water_sources = waterSources.length > 0 ? [...waterSources] : null;
       payload.fire_policy = firePolicy ? (firePolicy as FirePolicy) : null;
       payload.field_slope = fieldSlope ? (fieldSlope as FieldSlope) : null;
@@ -3480,7 +3461,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       payload.water_sources = null;
       payload.electricity_available = null;
       payload.fire_policy = null;
-      payload.transport_access_points = null;
       payload.has_field_poles = null;
       payload.pit_latrine_allowed = null;
     }
@@ -5048,53 +5028,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   />
                 </div>
 
-                <div
-                  className="structure-form-field structure-form-field--nearest-bus-stop"
-                  data-span="full"
-                >
-                  <div className="structure-field-with-action">
-                    <label
-                      htmlFor="structure-nearest-bus-stop"
-                      className="structure-field-with-action__control"
-                    >
-                      {t("structures.create.form.nearestBusStop")}
-                      <textarea
-                        id="structure-nearest-bus-stop"
-                        value={nearestBusStop}
-                        onChange={handleNearestBusStopChange}
-                        rows={5}
-                      />
-                    </label>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="structure-field-with-action__button"
-                      onClick={handleNearestBusStopModalOpen}
-                    >
-                      {t("structures.create.form.nearestBusStopLocationButton")}
-                    </Button>
-                  </div>
-                  <span className="helper-text">
-                    {t("structures.create.form.nearestBusStopHint")}
-                  </span>
-                  {nearestBusStopLocationLabel && (
-                    <p className="helper-text structure-form-field__note">
-                      {nearestBusStopLocationLabel}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleNearestBusStopLocationClear}
-                      >
-                        {t("structures.create.form.nearestBusStopLocationClear")}
-                      </Button>
-                    </p>
-                  )}
-                  <span className="helper-text">
-                    {t("structures.create.form.nearestBusStopLocationHelper")}
-                  </span>
-                </div>
+                <TransportAccessPointsField
+                  points={transportAccessPoints}
+                  onChange={handleTransportAccessPointsChange}
+                  selectedCoordinates={selectedCoordinates}
+                  error={fieldErrors.transport_access_points}
+                />
 
                 <div className="structure-form-field tri-state-field">
                   <label htmlFor="structure-wheelchair-accessible" className="tri-state-field__label">
@@ -7241,50 +7180,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                 )}
               </div>
             </fieldset>
-
-            {isNearestBusStopModalOpen && (
-              <div className="modal" role="presentation">
-                <div
-                  className="modal-content modal-content--full-width"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="nearest-bus-stop-modal-title"
-                >
-                  <header className="modal-header">
-                    <h3 id="nearest-bus-stop-modal-title">
-                      {t("structures.create.form.nearestBusStopModal.title")}
-                    </h3>
-                  </header>
-                  <div className="modal-body">
-                    <p>{t("structures.create.form.nearestBusStopModal.description")}</p>
-                    <GoogleMapEmbed
-                      coordinates={
-                        nearestBusStopModalSelection ?? nearestBusStopLocation ?? selectedCoordinates
-                      }
-                      title={t("structures.create.form.nearestBusStopModal.mapLabel")}
-                      ariaLabel={t("structures.create.form.nearestBusStopModal.mapLabel")}
-                      emptyLabel={t("structures.create.form.nearestBusStopModal.empty")}
-                      onCoordinatesChange={setNearestBusStopModalSelection}
-                    />
-                    <p className="helper-text">
-                      {t("structures.create.form.nearestBusStopModal.hint")}
-                    </p>
-                  </div>
-                  <div className="modal-actions">
-                    <Button type="button" variant="ghost" onClick={handleNearestBusStopModalClose}>
-                      {t("structures.create.form.nearestBusStopModal.cancel")}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleNearestBusStopLocationConfirm}
-                      disabled={!nearestBusStopModalSelection}
-                    >
-                      {t("structures.create.form.nearestBusStopModal.confirm")}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {apiError && <InlineMessage tone="danger">{apiError}</InlineMessage>}
 

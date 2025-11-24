@@ -1,4 +1,4 @@
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -28,6 +28,7 @@ import type {
   StructureUsageRecommendation,
   StructureOpenPeriod,
   TransportAccessPoint,
+  TransportAccessPointType,
   WaterSource
 } from "../shared/types";
 import { PAYMENT_METHODS } from "../shared/types";
@@ -48,30 +49,50 @@ const formatCostBand = (band: CostBand | null | undefined) =>
   band ? band.charAt(0).toUpperCase() + band.slice(1) : null;
 
 const formatTransportAccessPoints = (
-  points: TransportAccessPoint[] | null | undefined
-): string | null => {
+  points: TransportAccessPoint[] | null | undefined,
+  formatType: (type: string) => string,
+  formatCoordinates: (coordinates: { lat: number; lon: number }) => string
+): ReactNode | null => {
   if (!points || points.length === 0) {
     return null;
   }
 
-  const primaryPoint = points.find((point) => point.type === "bus_stop") ?? points[0];
-  if (!primaryPoint) {
+  const entries = points
+    .map((point, index) => {
+      const details: string[] = [];
+
+      const typeLabel = formatType(point.type);
+      if (typeLabel) {
+        details.push(typeLabel);
+      }
+
+      if (point.note) {
+        details.push(point.note);
+      }
+
+      if (point.coordinates) {
+        details.push(formatCoordinates(point.coordinates));
+      }
+
+      if (details.length === 0) {
+        return null;
+      }
+
+      return { id: `${point.type}-${index}`, text: details.join(" — ") };
+    })
+    .filter((entry): entry is { id: string; text: string } => Boolean(entry));
+
+  if (entries.length === 0) {
     return null;
   }
 
-  const details: string[] = [];
-
-  if (primaryPoint.note) {
-    details.push(primaryPoint.note);
-  }
-
-  if (primaryPoint.coordinates) {
-    details.push(
-      `lat: ${primaryPoint.coordinates.lat.toFixed(6)}, lon: ${primaryPoint.coordinates.lon.toFixed(6)}`
-    );
-  }
-
-  return details.length > 0 ? details.join(" — ") : primaryPoint.type;
+  return (
+    <div className="transport-access-points-summary">
+      {entries.map((entry) => (
+        <span key={entry.id}>{entry.text}</span>
+      ))}
+    </div>
+  );
 };
 
 type ContactFormState = {
@@ -158,6 +179,29 @@ export const StructureDetailsPage = () => {
           t(`structures.create.form.paymentMethodSelector.options.${method}`)
         ])
       ) as Record<PaymentMethod, string>,
+    [t]
+  );
+
+  const transportAccessPointTypeLabels = useMemo(
+    () => ({
+      bus: t("structures.details.overview.transportAccessPoints.types.bus"),
+      car: t("structures.details.overview.transportAccessPoints.types.car"),
+      "4x4": t("structures.details.overview.transportAccessPoints.types.4x4")
+    }),
+    [t]
+  );
+
+  const formatTransportAccessPointType = useCallback(
+    (type: string) => transportAccessPointTypeLabels[type as TransportAccessPointType] ?? type,
+    [transportAccessPointTypeLabels]
+  );
+
+  const formatTransportAccessPointCoordinates = useCallback(
+    (coordinates: { lat: number; lon: number }) =>
+      t("structures.details.overview.transportAccessPoints.coordinates", {
+        lat: coordinates.lat.toFixed(6),
+        lon: coordinates.lon.toFixed(6)
+      }),
     [t]
   );
 
@@ -314,8 +358,6 @@ export const StructureDetailsPage = () => {
     }
     return true;
   };
-
-  ;
 
   const filterVisibleDetails = (items: LogisticsDetail[]): LogisticsDetail[] =>
     items.filter(({ value }) => isValuePresent(value));
@@ -675,12 +717,15 @@ export const StructureDetailsPage = () => {
       icon: "🚉"
     },
     {
-      id: "nearestBusStop",
-      label: t("structures.details.overview.nearestBusStop"),
-      value: formatOptionalText(
-        formatTransportAccessPoints(structure.transport_access_points)
+      id: "transportAccessPoints",
+      label: t("structures.details.overview.transportAccessPoints.label"),
+      value: formatTransportAccessPoints(
+        structure.transport_access_points,
+        formatTransportAccessPointType,
+        formatTransportAccessPointCoordinates
       ),
-      icon: "🚏"
+      icon: "🚏",
+      isFull: true
     },
     {
       id: "wheelchairAccessible",
