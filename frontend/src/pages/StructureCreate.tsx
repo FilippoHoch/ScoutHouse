@@ -21,6 +21,7 @@ import {
   createStructure,
   createStructureContact,
   createStructurePhoto,
+  createStructureAttachment,
   getStructureBySlug,
   searchContacts,
   searchGeocoding,
@@ -43,6 +44,7 @@ import {
   CellSignalQuality,
   DataQualityStatus,
   StructureCreateDto,
+  StructureAttachmentKind,
   StructureOperationalStatus,
   StructureType,
   StructureOpenPeriodKind,
@@ -620,10 +622,16 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [attachmentDropActive, setAttachmentDropActive] = useState(false);
+  const [mapResourceAttachmentFiles, setMapResourceAttachmentFiles] = useState<File[]>([]);
+  const [mapResourceDropActive, setMapResourceDropActive] = useState(false);
+  const [documentAttachmentFiles, setDocumentAttachmentFiles] = useState<File[]>([]);
+  const [documentDropActive, setDocumentDropActive] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const mapResourceAttachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const documentAttachmentInputRef = useRef<HTMLInputElement | null>(null);
   const geocodingRequestId = useRef(0);
   const geocodingDebounceRef = useRef<number | null>(null);
   const geocodingAbortController = useRef<AbortController | null>(null);
@@ -1047,6 +1055,54 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     });
   }, []);
 
+  const addMapResourceAttachmentFiles = useCallback((files: File[]) => {
+    if (files.length === 0) {
+      return;
+    }
+    setMapResourceAttachmentFiles((previous) => {
+      let changed = false;
+      const next = [...previous];
+      for (const file of files) {
+        const duplicate = next.some(
+          (existing) =>
+            existing.name === file.name &&
+            existing.size === file.size &&
+            existing.lastModified === file.lastModified
+        );
+        if (duplicate) {
+          continue;
+        }
+        next.push(file);
+        changed = true;
+      }
+      return changed ? next : previous;
+    });
+  }, []);
+
+  const addDocumentAttachmentFiles = useCallback((files: File[]) => {
+    if (files.length === 0) {
+      return;
+    }
+    setDocumentAttachmentFiles((previous) => {
+      let changed = false;
+      const next = [...previous];
+      for (const file of files) {
+        const duplicate = next.some(
+          (existing) =>
+            existing.name === file.name &&
+            existing.size === file.size &&
+            existing.lastModified === file.lastModified
+        );
+        if (duplicate) {
+          continue;
+        }
+        next.push(file);
+        changed = true;
+      }
+      return changed ? next : previous;
+    });
+  }, []);
+
   const handlePhotoInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
     addPhotoFiles(files);
@@ -1121,6 +1177,74 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     setAttachmentFiles((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
   };
 
+  const handleMapAttachmentInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    addMapResourceAttachmentFiles(files);
+    event.target.value = "";
+  };
+
+  const handleMapAttachmentDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setMapResourceDropActive(false);
+    const files = event.dataTransfer.files ? Array.from(event.dataTransfer.files) : [];
+    addMapResourceAttachmentFiles(files);
+  };
+
+  const handleMapAttachmentDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!mapResourceDropActive) {
+      setMapResourceDropActive(true);
+    }
+  };
+
+  const handleMapAttachmentDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (mapResourceDropActive) {
+      setMapResourceDropActive(false);
+    }
+  };
+
+  const handleMapAttachmentRemove = (index: number) => {
+    setMapResourceAttachmentFiles((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const handleDocumentAttachmentInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    addDocumentAttachmentFiles(files);
+    event.target.value = "";
+  };
+
+  const handleDocumentAttachmentDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDocumentDropActive(false);
+    const files = event.dataTransfer.files ? Array.from(event.dataTransfer.files) : [];
+    addDocumentAttachmentFiles(files);
+  };
+
+  const handleDocumentAttachmentDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!documentDropActive) {
+      setDocumentDropActive(true);
+    }
+  };
+
+  const handleDocumentAttachmentDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (documentDropActive) {
+      setDocumentDropActive(false);
+    }
+  };
+
+  const handleDocumentAttachmentRemove = (index: number) => {
+    setDocumentAttachmentFiles((previous) => previous.filter((_, itemIndex) => itemIndex !== index));
+  };
+
   const uploadQueuedPhotos = useCallback(
     async (structureId: number) => {
       if (photoFiles.length === 0) {
@@ -1166,12 +1290,12 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
     [photoFiles]
   );
 
-  const uploadQueuedAttachments = useCallback(
-    async (structureId: number) => {
-      if (attachmentFiles.length === 0) {
+  const uploadCategorizedAttachments = useCallback(
+    async (structureId: number, files: File[], kind?: StructureAttachmentKind) => {
+      if (files.length === 0) {
         return;
       }
-      for (const file of attachmentFiles) {
+      for (const file of files) {
         const payload: AttachmentUploadRequest = {
           owner_type: "structure",
           owner_id: structureId,
@@ -1202,11 +1326,40 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
           size: file.size,
           key,
         };
-        await confirmAttachmentUpload(confirmPayload);
+        const attachment = await confirmAttachmentUpload(confirmPayload);
+        if (kind) {
+          await createStructureAttachment(structureId, {
+            attachment_id: attachment.id,
+            kind,
+          });
+        }
       }
+    },
+    []
+  );
+
+  const uploadQueuedAttachments = useCallback(
+    async (structureId: number) => {
+      await uploadCategorizedAttachments(structureId, attachmentFiles);
       setAttachmentFiles([]);
     },
-    [attachmentFiles]
+    [attachmentFiles, uploadCategorizedAttachments]
+  );
+
+  const uploadMapResourceAttachments = useCallback(
+    async (structureId: number) => {
+      await uploadCategorizedAttachments(structureId, mapResourceAttachmentFiles, "map_resource");
+      setMapResourceAttachmentFiles([]);
+    },
+    [mapResourceAttachmentFiles, uploadCategorizedAttachments]
+  );
+
+  const uploadDocumentAttachments = useCallback(
+    async (structureId: number) => {
+      await uploadCategorizedAttachments(structureId, documentAttachmentFiles, "required_document");
+      setDocumentAttachmentFiles([]);
+    },
+    [documentAttachmentFiles, uploadCategorizedAttachments]
   );
 
   const formatQueuedFileSize = useCallback(
@@ -3562,6 +3715,20 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
         window.alert(t("structures.create.attachments.uploadFailed"));
       }
 
+      try {
+        await uploadMapResourceAttachments(saved.id);
+      } catch (mapAttachmentError) {
+        console.error("Unable to upload structure map resources", mapAttachmentError);
+        window.alert(t("structures.create.mapResources.uploadFailed"));
+      }
+
+      try {
+        await uploadDocumentAttachments(saved.id);
+      } catch (documentAttachmentError) {
+        console.error("Unable to upload required documents", documentAttachmentError);
+        window.alert(t("structures.create.documentsRequired.uploadFailed"));
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["structures"] });
       if (isEditing && editingSlug) {
         await queryClient.invalidateQueries({ queryKey: ["structure", editingSlug] });
@@ -5645,6 +5812,55 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                     {t("structures.create.form.mapResources.add")}
                   </Button>
                 </div>
+                <div className="structure-photos">
+                  <div
+                    className={`structure-photos__dropzone ${mapResourceDropActive ? "is-active" : ""}`}
+                    onDragOver={handleMapAttachmentDragOver}
+                    onDragLeave={handleMapAttachmentDragLeave}
+                    onDrop={handleMapAttachmentDrop}
+                  >
+                    <p>{t("structures.create.mapResources.uploadPrompt")}</p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => mapResourceAttachmentInputRef.current?.click()}
+                    >
+                      {t("attachments.upload.button")}
+                    </Button>
+                    <input
+                      ref={mapResourceAttachmentInputRef}
+                      type="file"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={handleMapAttachmentInputChange}
+                    />
+                  </div>
+                  <div className="structure-photos__queue-wrapper">
+                    <p className="helper-text">{t("structures.create.mapResources.queueHint")}</p>
+                    {mapResourceAttachmentFiles.length === 0 ? (
+                      <p className="helper-text">{t("structures.create.mapResources.queueEmpty")}</p>
+                    ) : (
+                      <ul className="structure-photos__queue">
+                        {mapResourceAttachmentFiles.map((file, index) => (
+                          <li key={`${file.name}-${file.size}-${file.lastModified}`}>
+                            <span className="structure-photos__queue-name">{file.name}</span>
+                            <span className="structure-photos__queue-size">
+                              {formatQueuedFileSize(file.size)}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMapAttachmentRemove(index)}
+                            >
+                              {t("structures.create.mapResources.removeFile")}
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
                 <span className="helper-text" id={mapResourcesHintId}>
                   {t("structures.create.form.mapResources.hint")}
                 </span>
@@ -5697,6 +5913,55 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   >
                     {t("structures.create.form.documentsRequired.add")}
                   </Button>
+                </div>
+                <div className="structure-photos">
+                  <div
+                    className={`structure-photos__dropzone ${documentDropActive ? "is-active" : ""}`}
+                    onDragOver={handleDocumentAttachmentDragOver}
+                    onDragLeave={handleDocumentAttachmentDragLeave}
+                    onDrop={handleDocumentAttachmentDrop}
+                  >
+                    <p>{t("structures.create.documentsRequired.uploadPrompt")}</p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => documentAttachmentInputRef.current?.click()}
+                    >
+                      {t("attachments.upload.button")}
+                    </Button>
+                    <input
+                      ref={documentAttachmentInputRef}
+                      type="file"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={handleDocumentAttachmentInputChange}
+                    />
+                  </div>
+                  <div className="structure-photos__queue-wrapper">
+                    <p className="helper-text">{t("structures.create.documentsRequired.queueHint")}</p>
+                    {documentAttachmentFiles.length === 0 ? (
+                      <p className="helper-text">{t("structures.create.documentsRequired.queueEmpty")}</p>
+                    ) : (
+                      <ul className="structure-photos__queue">
+                        {documentAttachmentFiles.map((file, index) => (
+                          <li key={`${file.name}-${file.size}-${file.lastModified}`}>
+                            <span className="structure-photos__queue-name">{file.name}</span>
+                            <span className="structure-photos__queue-size">
+                              {formatQueuedFileSize(file.size)}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDocumentAttachmentRemove(index)}
+                            >
+                              {t("structures.create.documentsRequired.removeFile")}
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
                 <span className="helper-text" id={documentsRequiredHintId}>
                   {t("structures.create.form.documentsRequired.hint")}

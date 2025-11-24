@@ -28,6 +28,7 @@ from app.models.cost_option import StructureCostOption
 from app.models.enum_utils import sqla_enum
 
 if TYPE_CHECKING:  # pragma: no cover
+    from .structure_attachment import StructureAttachment
     from .structure_photo import StructurePhoto
 
 
@@ -438,6 +439,13 @@ class Structure(Base):
             StructureContact.is_primary.desc(),
             StructureContact.id,
         ),
+    )
+    categorized_attachments: Mapped[list[StructureAttachment]] = relationship(
+        "StructureAttachment",
+        back_populates="structure",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="StructureAttachment.id",
     )
     open_periods: Mapped[list[StructureOpenPeriod]] = relationship(
         "StructureOpenPeriod",

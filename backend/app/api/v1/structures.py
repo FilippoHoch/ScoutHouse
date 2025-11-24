@@ -30,6 +30,8 @@ from app.models import (
     FloodRiskLevel,
     RiverSwimmingOption,
     Structure,
+    StructureAttachment,
+    StructureAttachmentKind,
     StructureContact,
     StructureCostModifier,
     StructureCostOption,
@@ -61,6 +63,9 @@ from app.schemas import (
     StructureOpenPeriodCreate,
     StructureOpenPeriodRead,
     StructureOpenPeriodUpdate,
+    AttachmentRead,
+    StructureAttachmentCreate,
+    StructureAttachmentRead,
     StructurePhotoCreate,
     StructurePhotoRead,
     StructureRead,
@@ -313,6 +318,27 @@ def _serialize_photo(
     )
 
 
+def _serialize_structure_attachment(link: StructureAttachment) -> StructureAttachmentRead:
+    attachment = link.attachment
+    creator_name = attachment.creator.name if attachment.creator else None
+    return StructureAttachmentRead(
+        id=link.id,
+        kind=link.kind,
+        attachment=AttachmentRead(
+            id=attachment.id,
+            owner_type=attachment.owner_type,
+            owner_id=attachment.owner_id,
+            filename=attachment.filename,
+            mime=attachment.mime,
+            size=attachment.size,
+            created_by=attachment.created_by,
+            created_by_name=creator_name,
+            description=attachment.description,
+            created_at=attachment.created_at,
+        ),
+    )
+
+
 def _to_float(value: Decimal | None) -> float | None:
     if value is None:
         return None
@@ -481,7 +507,7 @@ def _build_structure_read(
     *,
     include_details: bool = False,
     include_contacts: bool = False,
-) -> StructureRead:
+    ) -> StructureRead:
     base = StructureRead.model_validate(structure)
 
     estimated_cost = estimate_mean_daily_cost(structure)
@@ -499,6 +525,18 @@ def _build_structure_read(
         ]
 
     update["open_periods"] = [_serialize_open_period(period) for period in structure.open_periods]
+
+    attachments_by_kind: dict[StructureAttachmentKind, list[StructureAttachmentRead]] = {}
+    if include_details:
+        for link in structure.categorized_attachments:
+            attachments_by_kind.setdefault(link.kind, []).append(_serialize_structure_attachment(link))
+
+    update["map_resources_attachments"] = attachments_by_kind.get(
+        StructureAttachmentKind.MAP_RESOURCE, []
+    )
+    update["documents_required_attachments"] = attachments_by_kind.get(
+        StructureAttachmentKind.REQUIRED_DOCUMENT, []
+    )
 
     if include_contacts:
         contacts = sorted(
@@ -525,6 +563,9 @@ def _get_structure_or_404(
             [
                 selectinload(Structure.availabilities),
                 selectinload(Structure.cost_options).selectinload(StructureCostOption.modifiers),
+                selectinload(Structure.categorized_attachments)
+                .selectinload(StructureAttachment.attachment)
+                .selectinload(Attachment.creator),
             ]
         )
     if with_contacts:
@@ -596,6 +637,9 @@ def get_structure_by_slug(
         query = query.options(
             selectinload(Structure.availabilities),
             selectinload(Structure.cost_options),
+            selectinload(Structure.categorized_attachments)
+            .selectinload(StructureAttachment.attachment)
+            .selectinload(Attachment.creator),
         )
     if include_contacts:
         query = query.options(selectinload(Structure.contacts))
@@ -1586,6 +1630,130 @@ def upsert_structure_cost_options(
     db.commit()
 
     return [_serialize_cost_option(option) for option in updated_structure.cost_options]
+
+
+@router.get(
+    "/{structure_id}/categorized-attachments",
+    response_model=list[StructureAttachmentRead],
+)
+def list_structure_attachments(
+    structure_id: int,
+    db: DbSession,
+    kind: StructureAttachmentKind | None = None,
+) -> list[StructureAttachmentRead]:
+    _get_structure_or_404(db, structure_id)
+
+    query = (
+        select(StructureAttachment, Attachment, User)
+        .join(Attachment, StructureAttachment.attachment_id == Attachment.id)
+        .outerjoin(User, Attachment.created_by == User.id)
+        .where(StructureAttachment.structure_id == structure_id)
+        .order_by(StructureAttachment.id.desc())
+    )
+    if kind is not None:
+        query = query.where(StructureAttachment.kind == kind)
+
+    rows = db.execute(query).all()
+    if not rows:
+        return []
+
+    return [
+        StructureAttachmentRead(
+            id=link.id,
+            kind=link.kind,
+            attachment=AttachmentRead(
+                id=attachment.id,
+                owner_type=attachment.owner_type,
+                owner_id=attachment.owner_id,
+                filename=attachment.filename,
+                mime=attachment.mime,
+                size=attachment.size,
+                created_by=attachment.created_by,
+                created_by_name=user.name if user else None,
+                description=attachment.description,
+                created_at=attachment.created_at,
+            ),
+        )
+        for link, attachment, user in rows
+    ]
+
+
+@router.post(
+    "/{structure_id}/categorized-attachments",
+    response_model=StructureAttachmentRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_structure_attachment(
+    structure_id: int,
+    payload: StructureAttachmentCreate,
+    db: DbSession,
+    _current_user: StructureEditor,
+) -> StructureAttachmentRead:
+    _get_structure_or_404(db, structure_id)
+
+    attachment = db.get(Attachment, payload.attachment_id)
+    if attachment is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+    if attachment.owner_type is not AttachmentOwnerType.STRUCTURE:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Attachment must belong to a structure",
+        )
+    if attachment.owner_id != structure_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Attachment does not belong to this structure",
+        )
+
+    existing = (
+        db.execute(select(StructureAttachment.id).where(StructureAttachment.attachment_id == attachment.id))
+        .scalars()
+        .first()
+    )
+    if existing is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="Attachment already registered")
+
+    link = StructureAttachment(
+        structure_id=structure_id,
+        attachment_id=attachment.id,
+        kind=payload.kind,
+    )
+    link.attachment = attachment
+    db.add(link)
+    db.commit()
+    db.refresh(link)
+
+    return _serialize_structure_attachment(link)
+
+
+@router.delete(
+    "/{structure_id}/categorized-attachments/{structure_attachment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_structure_attachment(
+    structure_id: int,
+    structure_attachment_id: int,
+    db: DbSession,
+    _current_user: StructureEditor,
+) -> None:
+    row = db.execute(
+        select(StructureAttachment, Attachment)
+        .join(Attachment, StructureAttachment.attachment_id == Attachment.id)
+        .where(
+            StructureAttachment.id == structure_attachment_id,
+            StructureAttachment.structure_id == structure_id,
+        )
+    ).first()
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+
+    link, attachment = row
+    bucket, client = _ensure_storage_ready()
+    delete_object(client, bucket, attachment.storage_key)
+
+    db.delete(link)
+    db.delete(attachment)
+    db.commit()
 
 
 @router.get("/{structure_id}/photos", response_model=list[StructurePhotoRead])
