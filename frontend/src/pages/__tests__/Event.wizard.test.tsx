@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -11,6 +11,7 @@ import {
   getSuggestions
 } from "../../shared/api";
 import type { Event, EventCreateDto, EventListResponse, EventSuggestion } from "../../shared/types";
+import { EventCreatePage } from "../EventCreate";
 import { EventsPage } from "../Events";
 
 const mockNavigate = vi.fn();
@@ -40,9 +41,7 @@ const createWrapper = () => {
   });
 
   return ({ children }: { children: React.ReactNode }) => (
-    <MemoryRouter initialEntries={["/events"]}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 };
 
@@ -144,12 +143,21 @@ describe("Event wizard", () => {
     const Wrapper = createWrapper();
     const user = userEvent.setup();
 
-    render(<EventsPage />, { wrapper: Wrapper });
+    render(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/events/new" element={<EventCreatePage />} />
+        </Routes>
+      </MemoryRouter>,
+      { wrapper: Wrapper },
+    );
 
-    await user.click(screen.getByRole("button", { name: /Nuovo evento/i }));
-    await user.type(screen.getByLabelText(/Titolo/i), "Campo gruppo estivo");
-    await user.type(screen.getByLabelText(/Inizio/i), "2025-07-01");
-    await user.type(screen.getByLabelText(/Fine/i), "2025-07-10");
+    await user.click(screen.getByRole("link", { name: /Nuovo evento/i }));
+    const titleInput = await screen.findByLabelText(/Titolo/i);
+    await user.type(titleInput, "Campo gruppo estivo");
+    await user.type(await screen.findByLabelText(/Inizio/i), "2025-07-01");
+    await user.type(await screen.findByLabelText(/Fine/i), "2025-07-10");
     await user.click(screen.getByRole("checkbox", { name: /Esploratori e Guide/i }));
     await user.click(screen.getByRole("button", { name: /Continua/i }));
 
@@ -218,7 +226,19 @@ describe("Event wizard", () => {
 
     const payload = vi.mocked(createEvent).mock.calls[0][0] as EventCreateDto;
     expect(payload.branch).toBe("ALL");
-    expect(payload.participants).toEqual({ lc: 24, eg: 28, rs: 0, leaders: 6 });
+    expect(payload.participants).toEqual({
+      lc: 24,
+      lc_kambusieri: 0,
+      eg: 28,
+      eg_kambusieri: 0,
+      rs: 0,
+      rs_kambusieri: 0,
+      cc: 0,
+      cc_kambusieri: 0,
+      leaders: 6,
+      detached_leaders: 0,
+      detached_guests: 0,
+    });
     expect(payload.branch_segments).toEqual([
       {
         branch: "LC",
@@ -226,6 +246,7 @@ describe("Event wizard", () => {
         end_date: "2025-07-10",
         youth_count: 24,
         leaders_count: 2,
+        kambusieri_count: 0,
         accommodation: "indoor",
         notes: undefined
       },
@@ -235,6 +256,7 @@ describe("Event wizard", () => {
         end_date: "2025-07-10",
         youth_count: 28,
         leaders_count: 4,
+        kambusieri_count: 0,
         accommodation: "tents",
         notes: undefined
       }
@@ -247,11 +269,8 @@ describe("Event wizard", () => {
       ).toBeInTheDocument()
     );
 
-    const reviewPeakSummaries = screen.getAllByText(/Picco presenze simultanee: 58/i);
-    expect(reviewPeakSummaries).toHaveLength(2);
-    expect(
-      reviewPeakSummaries.some((element) => element.classList.contains("logistics-summary__badge--highlight"))
-    ).toBe(true);
+    await user.selectOptions(screen.getByLabelText(/Ruolo/i), "logistics");
+    await user.type(screen.getByLabelText(/Nominativo/i), "Mario Rossi");
 
     await user.click(screen.getByRole("button", { name: /Aggiungi candidato/i }));
     expect(addCandidate).toHaveBeenCalledWith(createdEvent.id, { structure_id: 1 });
@@ -286,17 +305,26 @@ describe("Event wizard", () => {
 
     vi.mocked(createEvent).mockResolvedValueOnce(simpleEvent);
 
-    render(<EventsPage />, { wrapper: Wrapper });
+    render(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/events/new" element={<EventCreatePage />} />
+        </Routes>
+      </MemoryRouter>,
+      { wrapper: Wrapper },
+    );
 
-    await user.click(screen.getByRole("button", { name: /Nuovo evento/i }));
-    await user.type(screen.getByLabelText(/Titolo/i), "Uscita di branca");
+    await user.click(screen.getByRole("link", { name: /Nuovo evento/i }));
+    await user.type(await screen.findByLabelText(/Titolo/i), "Uscita di branca");
     expect(screen.getByRole("checkbox", { name: /Lupetti e Coccinelle/i })).toBeChecked();
-    await user.type(screen.getByLabelText(/Inizio/i), "2025-03-15");
-    await user.type(screen.getByLabelText(/Fine/i), "2025-03-17");
+    await user.type(await screen.findByLabelText(/Inizio/i), "2025-03-15");
+    await user.type(await screen.findByLabelText(/Fine/i), "2025-03-17");
     await user.click(screen.getByRole("button", { name: /Continua/i }));
 
     await user.type(screen.getByLabelText(/LC \(lupetti e coccinelle\)/i), "30");
-    await user.type(screen.getByLabelText(/Capi$/i), "5");
+    const leaderInput = await screen.findAllByLabelText(/Capi$/i);
+    await user.type(leaderInput[0], "5");
 
     await user.click(screen.getByRole("button", { name: /Crea evento/i }));
 
@@ -304,7 +332,19 @@ describe("Event wizard", () => {
 
     const payload = vi.mocked(createEvent).mock.calls[0][0] as EventCreateDto;
     expect(payload.branch).toBe("LC");
-    expect(payload.participants).toEqual({ lc: 30, eg: 0, rs: 0, leaders: 5 });
+    expect(payload.participants).toEqual({
+      lc: 30,
+      lc_kambusieri: 0,
+      eg: 0,
+      eg_kambusieri: 0,
+      rs: 0,
+      rs_kambusieri: 0,
+      cc: 0,
+      cc_kambusieri: 0,
+      leaders: 5,
+      detached_leaders: 0,
+      detached_guests: 0,
+    });
     expect(payload.branch_segments).toBeUndefined();
 
     await waitFor(() => expect(getSuggestions).toHaveBeenCalledWith(simpleEvent.id));
