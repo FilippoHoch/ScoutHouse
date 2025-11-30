@@ -681,6 +681,13 @@ export async function patchEvent(id: number, dto: EventUpdateDto): Promise<Event
   });
 }
 
+export async function deleteEvent(id: number): Promise<void> {
+  await apiFetch<void>(`/api/v1/events/${id}`, {
+    method: "DELETE",
+    auth: true
+  });
+}
+
 export async function addCandidate(
   eventId: number,
   dto: EventCandidateCreateDto

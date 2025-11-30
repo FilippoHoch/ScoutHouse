@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useId, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -18,6 +18,7 @@ import {
   patchCandidate,
   patchTask,
   removeEventMember,
+  deleteEvent,
   updateEventMember
 } from "../shared/api";
 import {
@@ -448,6 +449,7 @@ export const EventDetailsPage = () => {
   const { t } = useTranslation();
   const { eventId } = useParams();
   const auth = useAuth();
+  const navigate = useNavigate();
   const numericId = Number(eventId);
   const isValidEventId = Number.isFinite(numericId);
   const liveState = useEventLive(isValidEventId ? numericId : null);
@@ -464,6 +466,7 @@ export const EventDetailsPage = () => {
   const [icalError, setIcalError] = useState<string | null>(null);
   const [icalDownloading, setIcalDownloading] = useState(false);
   const [mailPreviewError, setMailPreviewError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const eventQuery = useQuery({
     queryKey: ["event", numericId],
@@ -522,6 +525,21 @@ export const EventDetailsPage = () => {
       patchTask(numericId, taskId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event", numericId] });
+    }
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: () => deleteEvent(numericId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.removeQueries({ queryKey: ["event", numericId] });
+      queryClient.removeQueries({ queryKey: ["event-summary", numericId] });
+      navigate("/events");
+    },
+    onError: (error: unknown) => {
+      setDeleteError(
+        error instanceof ApiError ? error.message : t("events.details.delete.error"),
+      );
     }
   });
 
@@ -623,6 +641,29 @@ export const EventDetailsPage = () => {
 
   const event = eventQuery.data as Event | undefined;
   const summary = summaryQuery.data as EventSummary | undefined;
+  const handleEditNavigation = () => {
+    if (event) {
+      navigate(`/events/${event.id}/edit`);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!event) {
+      return;
+    }
+    setDeleteError(null);
+    const confirmed = window.confirm(
+      t("events.delete.confirm", { title: event.title }),
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await deleteEventMutation.mutateAsync();
+    } catch (error) {
+      console.error(error);
+    }
+  };
   const tabPrefix = useId();
   const tabs = useMemo<Array<{ id: EventDetailsTab; label: string }>>(
     () => [
@@ -962,6 +1003,18 @@ export const EventDetailsPage = () => {
             >
               {liveModeLabel}
             </span>
+            <Button variant="secondary" onClick={handleEditNavigation} disabled={!event}>
+              {t("events.details.actions.edit")}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteEvent}
+              disabled={deleteEventMutation.isPending || !event}
+            >
+              {deleteEventMutation.isPending
+                ? t("common.loading")
+                : t("events.details.actions.delete")}
+            </Button>
             <Button onClick={handleDownloadIcal} disabled={icalDownloading}>
               {icalDownloading ? t("common.loading") : t("events.details.downloadIcal")}
             </Button>
@@ -972,6 +1025,7 @@ export const EventDetailsPage = () => {
             )}
           </InlineActions>
         </SectionHeader>
+        {deleteError && <InlineMessage tone="danger">{deleteError}</InlineMessage>}
         {icalError && <InlineMessage tone="danger">{icalError}</InlineMessage>}
         {mailPreviewError && <InlineMessage tone="danger">{mailPreviewError}</InlineMessage>}
         <ToolbarSection aria-label={t("events.details.metrics.title")}>
