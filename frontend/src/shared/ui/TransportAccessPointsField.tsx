@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import type { TransportAccessPointType } from "../types";
 import { Button } from "./designSystem";
 import { GoogleMapEmbed, type GoogleMapEmbedCoordinates } from "./GoogleMapEmbed";
+import { MapTypeToggle } from "./MapTypeToggle";
+import type { GoogleMapType } from "../utils/googleMaps";
 
 export type TransportAccessPointFormValue = {
   id: string;
@@ -16,6 +18,8 @@ type TransportAccessPointsFieldProps = {
   points: TransportAccessPointFormValue[];
   onChange: (points: TransportAccessPointFormValue[]) => void;
   selectedCoordinates: GoogleMapEmbedCoordinates | null;
+  mapType: GoogleMapType;
+  onMapTypeChange: (mapType: GoogleMapType) => void;
   error?: string;
 };
 
@@ -23,6 +27,8 @@ export const TransportAccessPointsField = ({
   points,
   onChange,
   selectedCoordinates,
+  mapType,
+  onMapTypeChange,
   error
 }: TransportAccessPointsFieldProps) => {
   const { t } = useTranslation();
@@ -35,6 +41,15 @@ export const TransportAccessPointsField = ({
       { value: "car", label: t("structures.create.form.transportAccessPoints.typeOptions.car") },
       { value: "4x4", label: t("structures.create.form.transportAccessPoints.typeOptions.4x4") }
     ],
+    [t]
+  );
+
+  const mapTypeLabels = useMemo(
+    () => ({
+      label: t("structures.map.type.label"),
+      roadmap: t("structures.map.type.options.roadmap"),
+      satellite: t("structures.map.type.options.satellite"),
+    }),
     [t]
   );
 
@@ -196,11 +211,21 @@ export const TransportAccessPointsField = ({
             </header>
             <div className="modal-body">
               <p>{t("structures.create.form.transportAccessPoints.modal.description")}</p>
+              <MapTypeToggle
+                mapType={mapType}
+                onChange={onMapTypeChange}
+                label={mapTypeLabels.label}
+                optionLabels={{
+                  roadmap: mapTypeLabels.roadmap,
+                  satellite: mapTypeLabels.satellite,
+                }}
+              />
               <GoogleMapEmbed
                 coordinates={modalSelection ?? activePoint.coordinates ?? selectedCoordinates}
                 title={t("structures.create.form.transportAccessPoints.modal.mapLabel")}
                 ariaLabel={t("structures.create.form.transportAccessPoints.modal.mapLabel")}
                 emptyLabel={t("structures.create.form.transportAccessPoints.modal.empty")}
+                mapType={mapType}
                 onCoordinatesChange={setModalSelection}
               />
               <p className="helper-text">

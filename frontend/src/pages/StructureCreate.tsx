@@ -66,11 +66,13 @@ import {
   Surface
 } from "../shared/ui/designSystem";
 import { GoogleMapEmbed, type GoogleMapEmbedCoordinates } from "../shared/ui/GoogleMapEmbed";
+import { MapTypeToggle } from "../shared/ui/MapTypeToggle";
 import {
   TransportAccessPointFormValue,
   TransportAccessPointsField
 } from "../shared/ui/TransportAccessPointsField";
 import { TriStateToggle } from "../shared/ui/TriStateToggle";
+import type { GoogleMapType } from "../shared/utils/googleMaps";
 import { isImageFile } from "../shared/utils/image";
 
 const structureTypes: StructureType[] = ["house", "land", "mixed"];
@@ -524,6 +526,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
   const [mapSearchError, setMapSearchError] = useState<string | null>(null);
   const [mapSearchResults, setMapSearchResults] = useState<GeocodingResult[]>([]);
   const [mapSearchLastQuery, setMapSearchLastQuery] = useState("");
+  const [mapType, setMapType] = useState<GoogleMapType>("roadmap");
   const [altitudeManuallyEdited, setAltitudeManuallyEdited] = useState(false);
   const [type, setType] = useState<StructureType | "">("");
   const [operationalStatus, setOperationalStatus] =
@@ -712,6 +715,15 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
       lon: selectedCoordinates.lng.toFixed(6)
     });
   }, [selectedCoordinates, t]);
+
+  const mapTypeLabels = useMemo(
+    () => ({
+      label: t("structures.map.type.label"),
+      roadmap: t("structures.map.type.options.roadmap"),
+      satellite: t("structures.map.type.options.satellite"),
+    }),
+    [t]
+  );
 
   const automaticCoordinates = geocodingApplied && !coordinatesManuallyEdited;
   const automaticAltitude = geocodingAltitudeApplied && !altitudeManuallyEdited;
@@ -4484,11 +4496,18 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                           </div>
                         )}
                       </div>
+                      <MapTypeToggle
+                        mapType={mapType}
+                        onChange={setMapType}
+                        label={mapTypeLabels.label}
+                        optionLabels={{ roadmap: mapTypeLabels.roadmap, satellite: mapTypeLabels.satellite }}
+                      />
                       <GoogleMapEmbed
                         coordinates={selectedCoordinates}
                         title={t("structures.create.form.map.title")}
                         ariaLabel={t("structures.create.form.map.ariaLabel")}
                         emptyLabel={t("structures.create.form.map.empty")}
+                        mapType={mapType}
                         onCoordinatesChange={handleMapCoordinatesChange}
                       />
                       <span className="helper-text">
@@ -5032,6 +5051,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   points={transportAccessPoints}
                   onChange={handleTransportAccessPointsChange}
                   selectedCoordinates={selectedCoordinates}
+                  mapType={mapType}
+                  onMapTypeChange={setMapType}
                   error={fieldErrors.transport_access_points}
                 />
 

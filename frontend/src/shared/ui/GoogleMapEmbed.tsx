@@ -4,6 +4,8 @@ import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
+import { getTileLayerVariant, type GoogleMapType } from "../utils/googleMaps";
+
 export type GoogleMapEmbedCoordinates = {
   lat: number;
   lng: number;
@@ -15,10 +17,11 @@ type GoogleMapEmbedProps = {
   ariaLabel?: string;
   emptyLabel: string;
   className?: string;
+  mapType?: GoogleMapType;
   onCoordinatesChange?: (coordinates: GoogleMapEmbedCoordinates) => void;
 };
 
-const GOOGLE_TILE_URL = "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+const GOOGLE_TILE_URL = (variant: string) => `https://{s}.google.com/vt/lyrs=${variant}&x={x}&y={y}&z={z}`;
 const GOOGLE_TILE_SUBDOMAINS = ["mt0", "mt1", "mt2", "mt3"];
 
 const DEFAULT_CENTER: GoogleMapEmbedCoordinates = {
@@ -83,10 +86,14 @@ export const GoogleMapEmbed = ({
   ariaLabel,
   emptyLabel,
   className,
+  mapType = "roadmap",
   onCoordinatesChange
 }: GoogleMapEmbedProps) => {
   const [isClient, setIsClient] = useState(false);
   const [marker, setMarker] = useState<GoogleMapEmbedCoordinates | null>(coordinates);
+
+  const tileLayerVariant = useMemo(() => getTileLayerVariant(mapType), [mapType]);
+  const tileLayerUrl = useMemo(() => GOOGLE_TILE_URL(tileLayerVariant), [tileLayerVariant]);
 
   useEffect(() => {
     setIsClient(true);
@@ -128,7 +135,8 @@ export const GoogleMapEmbed = ({
             aria-hidden="true"
           >
             <TileLayer
-              url={GOOGLE_TILE_URL}
+              key={tileLayerVariant}
+              url={tileLayerUrl}
               subdomains={GOOGLE_TILE_SUBDOMAINS}
               maxZoom={19}
               attribution='&copy; <a href="https://maps.google.com">Google Maps</a>'

@@ -3077,6 +3077,43 @@ table tbody tr:hover {
   pointer-events: none;
 }
 
+.map-type-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: 0 0 var(--space-sm);
+  padding: 0;
+  border: 0;
+}
+
+.map-type-toggle__label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.map-type-toggle__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.map-type-toggle__option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.map-type-toggle__option input {
+  margin: 0;
+}
+
 .transport-access-map {
   position: relative;
   border: 1px solid var(--color-border);
