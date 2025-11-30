@@ -1434,6 +1434,9 @@
     "actions": {
       "new": "Nuovo evento"
     },
+    "delete": {
+      "confirm": "Vuoi eliminare l'evento \"{{title}}\"?"
+    },
     "metrics": {
       "total": "Eventi totali",
       "pageHint_one": "Visualizzato ora {{count}} evento",
@@ -1452,6 +1455,13 @@
       "icalError": "Impossibile scaricare il file iCal.",
       "mailPreviewButton": "Anteprima mail stato candidatura",
       "mailPreviewError": "Impossibile mostrare l'anteprima email.",
+      "actions": {
+        "edit": "Modifica",
+        "delete": "Elimina"
+      },
+      "delete": {
+        "error": "Impossibile eliminare l'evento."
+      },
       "segments": {
         "title": "Branche coinvolte",
         "empty": "Nessuna suddivisione per branca: sono mostrati solo i totali complessivi.",
@@ -1525,6 +1535,15 @@
           "message": "L'identificativo indicato non è valido."
         }
       }
+    },
+    "edit": {
+      "title": "Modifica evento",
+      "description": "Aggiorna le informazioni principali dell'evento.",
+      "submit": "Salva modifiche",
+      "submitting": "Salvataggio…",
+      "cancel": "Annulla",
+      "loadError": "Impossibile caricare l'evento.",
+      "saveError": "Impossibile aggiornare l'evento."
     },
     "candidates": {
       "conflict": "Conflitto",

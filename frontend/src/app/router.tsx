@@ -16,6 +16,9 @@ const EventsPage = lazy(() => import("../pages/Events").then((module) => ({ defa
 const EventCreatePage = lazy(() =>
   import("../pages/EventCreate").then((module) => ({ default: module.EventCreatePage }))
 );
+const EventEditPage = lazy(() =>
+  import("../pages/EventEdit").then((module) => ({ default: module.EventEditPage }))
+);
 const StructureDetailsPage = lazy(() =>
   import("../pages/StructureDetails").then((module) => ({ default: module.StructureDetailsPage }))
 );
@@ -81,6 +84,7 @@ export const AppRouter = () => {
               <Route path="/events/new" element={<EventCreatePage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/events/:eventId" element={<EventDetailsPage />} />
+              <Route path="/events/:eventId/edit" element={<EventEditPage />} />
               <Route path="/structures/new" element={<StructureCreatePage />} />
               <Route path="/structures/:slug/edit" element={<StructureEditPage />} />
               <Route path="/import-export" element={<ImportExportPage />} />
