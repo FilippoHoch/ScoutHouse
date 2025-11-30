@@ -64,6 +64,47 @@ type ParticipantsFormValue = {
   detachedGuests: string;
 };
 
+const DAY_IN_MS = 1000 * 60 * 60 * 24;
+
+const parseDateInput = (value: string): Date | null => {
+  if (!value) {
+    return null;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  return parsed;
+};
+
+const dateToUtcTimestamp = (date: Date): number =>
+  Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+
+const differenceInDaysInclusive = (start: Date, end: Date): number => {
+  const diff = dateToUtcTimestamp(end) - dateToUtcTimestamp(start);
+  return Math.floor(diff / DAY_IN_MS) + 1;
+};
+
+const buildCalendarDays = (reference: Date): Date[] => {
+  const firstDayOfMonth = new Date(
+    reference.getFullYear(),
+    reference.getMonth(),
+    1,
+  );
+  const startOffset = (firstDayOfMonth.getDay() + 6) % 7; // Monday first
+  const startDate = new Date(firstDayOfMonth);
+  startDate.setDate(firstDayOfMonth.getDate() - startOffset);
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const day = new Date(startDate);
+    day.setDate(startDate.getDate() + index);
+    return day;
+  });
+};
+
+const isSameDay = (a: Date, b: Date): boolean =>
+  dateToUtcTimestamp(a) === dateToUtcTimestamp(b);
+
 interface WizardState {
   title: string;
   branch: EventBranch;
@@ -176,6 +217,7 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
   const [addedStructures, setAddedStructures] = useState<Set<number>>(
     new Set(),
   );
+  const [dateRangeError, setDateRangeError] = useState<string | null>(null);
   const planningModeIdPrefix = useId();
   const planningModeSimpleId = `${planningModeIdPrefix}-simple`;
   const planningModeSegmentsId = `${planningModeIdPrefix}-segments`;
@@ -240,6 +282,14 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
     ],
     [t],
   );
+  const weekdayLabels = useMemo(() => {
+    const baseDate = new Date(Date.UTC(2024, 0, 1)); // Monday
+    return Array.from({ length: 7 }, (_, index) =>
+      new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(
+        new Date(baseDate.getTime() + DAY_IN_MS * index),
+      ),
+    );
+  }, []);
 
   const parseCount = (value: string): number => {
     const parsed = Number.parseInt(value, 10);
@@ -248,6 +298,34 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
     }
     return parsed;
   };
+
+  const startDateValue = useMemo(
+    () => parseDateInput(state.start_date),
+    [state.start_date],
+  );
+  const endDateValue = useMemo(() => parseDateInput(state.end_date), [
+    state.end_date,
+  ]);
+  const isRangeInverted = useMemo(() => {
+    if (!startDateValue || !endDateValue) {
+      return false;
+    }
+    return dateToUtcTimestamp(endDateValue) < dateToUtcTimestamp(startDateValue);
+  }, [endDateValue, startDateValue]);
+  const totalDays = useMemo(() => {
+    if (!startDateValue || !endDateValue || isRangeInverted) {
+      return null;
+    }
+    return differenceInDaysInclusive(startDateValue, endDateValue);
+  }, [endDateValue, isRangeInverted, startDateValue]);
+  const calendarReferenceDate = useMemo(
+    () => startDateValue ?? endDateValue ?? new Date(),
+    [endDateValue, startDateValue],
+  );
+  const calendarDays = useMemo(
+    () => buildCalendarDays(calendarReferenceDate),
+    [calendarReferenceDate],
+  );
 
   const normalizedSegments = useMemo<NormalizedBranchSegment[]>(
     () =>
@@ -639,6 +717,19 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
     state.end_date,
   ]);
 
+  useEffect(() => {
+    if (isRangeInverted) {
+      setDateRangeError(
+        t(
+          "events.wizard.errors.segmentOrder",
+          "La data di fine deve essere successiva alla data di inizio.",
+        ),
+      );
+      return;
+    }
+    setDateRangeError(null);
+  }, [isRangeInverted, t]);
+
   const validateSimpleParticipants = (): string | null => {
     const totals = simpleParticipants;
     if (Object.values(totals).every((value) => value === 0)) {
@@ -847,50 +938,149 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
             <section className="wizard-details__form">
               <fieldset className="wizard-details__basics">
                 <legend>{t("events.wizard.details.basicsTitle")}</legend>
-                <label>
-                  {t("events.wizard.fields.title")}
-                  <input
-                    type="text"
-                    value={state.title}
-                    onChange={(event) =>
-                      setState((prev) => ({
-                        ...prev,
-                        title: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <InlineFields>
-                  <label>
-                    {t("events.wizard.fields.start")}
-                    <input
-                      type="date"
-                      value={state.start_date}
-                      onChange={(event) =>
-                        setState((prev) => ({
-                          ...prev,
-                          start_date: event.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                  <label>
-                    {t("events.wizard.fields.end")}
-                    <input
-                      type="date"
-                      value={state.end_date}
-                      onChange={(event) =>
-                        setState((prev) => ({
-                          ...prev,
-                          end_date: event.target.value,
-                        }))
-                      }
-                      required
-                    />
-                  </label>
-                </InlineFields>
+                <div className="wizard-details__basics-layout">
+                  <div className="wizard-details__basics-fields">
+                    <label>
+                      {t("events.wizard.fields.title")}
+                      <input
+                        type="text"
+                        value={state.title}
+                        onChange={(event) =>
+                          setState((prev) => ({
+                            ...prev,
+                            title: event.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </label>
+                    <InlineFields>
+                      <label>
+                        {t("events.wizard.fields.start")}
+                        <input
+                          type="date"
+                          value={state.start_date}
+                          onChange={(event) =>
+                            setState((prev) => ({
+                              ...prev,
+                              start_date: event.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </label>
+                      <label>
+                        {t("events.wizard.fields.end")}
+                        <input
+                          type="date"
+                          value={state.end_date}
+                          onChange={(event) =>
+                            setState((prev) => ({
+                              ...prev,
+                              end_date: event.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </label>
+                    </InlineFields>
+                  </div>
+                  <Surface
+                    className="wizard-details__calendar-panel"
+                    aria-live="polite"
+                  >
+                    <div className="wizard-details__calendar-header">
+                      <div>
+                        <p className="wizard-details__calendar-title">
+                          {t(
+                            "events.wizard.details.calendar.title",
+                            "Panoramica date",
+                          )}
+                        </p>
+                        <p className="wizard-details__calendar-subtitle">
+                          {t(
+                            "events.wizard.details.calendar.description",
+                            "Vedi a colpo d'occhio l'intervallo selezionato.",
+                          )}
+                        </p>
+                      </div>
+                      {totalDays !== null && (
+                        <span className="wizard-details__calendar-chip">
+                          {t(
+                            "events.wizard.details.calendar.totalDays",
+                            {
+                              count: totalDays,
+                              defaultValue: `${totalDays} giorni totali`,
+                            },
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    {dateRangeError && (
+                      <InlineMessage tone="danger">
+                        {dateRangeError}
+                      </InlineMessage>
+                    )}
+                    {!startDateValue && !endDateValue ? (
+                      <p className="wizard-details__calendar-placeholder">
+                        {t(
+                          "events.wizard.details.calendar.empty",
+                          "Seleziona le date per visualizzare il calendario.",
+                        )}
+                      </p>
+                    ) : (
+                      <>
+                        {startDateValue && endDateValue && !isRangeInverted && (
+                          <p className="wizard-details__calendar-range">
+                            {t(
+                              "events.wizard.details.calendar.range",
+                              {
+                                start: startDateValue.toLocaleDateString(),
+                                end: endDateValue.toLocaleDateString(),
+                                defaultValue: `${startDateValue.toLocaleDateString()} → ${endDateValue.toLocaleDateString()}`,
+                              },
+                            )}
+                          </p>
+                        )}
+                        <div className="wizard-details__calendar-weekdays">
+                          {weekdayLabels.map((label) => (
+                            <span key={label}>{label}</span>
+                          ))}
+                        </div>
+                        <div className="wizard-details__calendar-grid">
+                          {calendarDays.map((day) => {
+                            const dayKey = day.toISOString();
+                            const isInMonth =
+                              day.getMonth() === calendarReferenceDate.getMonth();
+                            const inRange =
+                              startDateValue &&
+                              endDateValue &&
+                              !isRangeInverted &&
+                              dateToUtcTimestamp(day) >=
+                                dateToUtcTimestamp(startDateValue) &&
+                              dateToUtcTimestamp(day) <=
+                                dateToUtcTimestamp(endDateValue);
+                            const isStart =
+                              startDateValue && isSameDay(day, startDateValue);
+                            const isEnd = endDateValue && isSameDay(day, endDateValue);
+                            return (
+                              <span
+                                key={dayKey}
+                                className="wizard-details__calendar-cell"
+                                data-in-month={isInMonth}
+                                data-in-range={inRange}
+                                data-range-start={isStart}
+                                data-range-end={isEnd}
+                              >
+                                {day.getDate()}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </Surface>
+                </div>
               </fieldset>
               <fieldset className="wizard-details__branches">
                 <legend>{t("events.wizard.details.branches.title")}</legend>
