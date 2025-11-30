@@ -39,6 +39,9 @@ export const computeParticipantTotals = (
       } else if (segment.branch === "RS") {
         acc.rs += youth;
         acc.rs_kambusieri += kambusieri;
+      } else if (segment.branch === "CC") {
+        acc.cc += youth;
+        acc.cc_kambusieri += kambusieri;
       }
       acc.leaders += leaders;
       return acc;
@@ -50,6 +53,8 @@ export const computeParticipantTotals = (
       eg_kambusieri: 0,
       rs: 0,
       rs_kambusieri: 0,
+      cc: 0,
+      cc_kambusieri: 0,
       leaders: 0,
       detached_leaders: 0,
       detached_guests: 0,

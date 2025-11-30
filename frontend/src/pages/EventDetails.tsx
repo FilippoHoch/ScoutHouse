@@ -687,6 +687,8 @@ export const EventDetailsPage = () => {
       eg_kambusieri: event?.participants?.eg_kambusieri ?? 0,
       rs: event?.participants?.rs ?? 0,
       rs_kambusieri: event?.participants?.rs_kambusieri ?? 0,
+      cc: event?.participants?.cc ?? 0,
+      cc_kambusieri: event?.participants?.cc_kambusieri ?? 0,
       leaders: event?.participants?.leaders ?? 0,
       detached_leaders: event?.participants?.detached_leaders ?? 0,
       detached_guests: event?.participants?.detached_guests ?? 0,
@@ -701,6 +703,8 @@ export const EventDetailsPage = () => {
       event?.participants?.leaders,
       event?.participants?.rs,
       event?.participants?.rs_kambusieri,
+      event?.participants?.cc,
+      event?.participants?.cc_kambusieri,
     ],
   );
   const displayedParticipantsTotals = useMemo(

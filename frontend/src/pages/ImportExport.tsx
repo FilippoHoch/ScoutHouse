@@ -124,7 +124,7 @@ const structureTypeOptions: StructureType[] = ["house", "land", "mixed"];
 const seasonOptions: Season[] = ["winter", "spring", "summer", "autumn"];
 const unitOptions: Unit[] = ["LC", "EG", "RS", "ALL"];
 const costBandOptions: CostBand[] = ["cheap", "medium", "expensive"];
-const eventBranchOptions: EventBranch[] = ["LC", "EG", "RS", "ALL"];
+const eventBranchOptions: EventBranch[] = ["LC", "EG", "RS", "CC", "ALL"];
 const eventStatusOptions: EventStatus[] = ["draft", "planning", "booked", "archived"];
 const eventBudgetOptions = ["", "with", "without"] as const;
 

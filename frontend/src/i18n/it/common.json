@@ -1444,6 +1444,7 @@
       "LC": "Lupetti e Coccinelle",
       "EG": "Esploratori e Guide",
       "RS": "Rover e Scolte",
+      "CC": "Comunità Capi / Extra Capi",
       "ALL": "Tutte le branche"
     },
     "details": {
@@ -1682,6 +1683,10 @@
               "description": "Programmi di Clan e Fuoco (Rover e Scolte).",
               "hint": "Possono usare il campo o spazi separati."
             },
+            "CC": {
+              "description": "Incontri o momenti formativi di Comunità capi o extra capi.",
+              "hint": "Prevedi spazi comodi per adulti e logistica cucina dedicata."
+            },
             "ALL": {
               "description": "Campo di gruppo con tutte le branche.",
               "hint": "Pianifica casa + terreno e coordinamento degli arrivi."
@@ -1717,10 +1722,12 @@
           "lc": "LC (lupetti e coccinelle)",
           "eg": "EG (esploratori e guide)",
           "rs": "RS (rover e scolte)",
+          "cc": "CC (comunità capi / extra capi)",
           "leaders": "Capi",
           "lcKambusieri": "Cambusieri LC",
           "egKambusieri": "Cambusieri EG",
           "rsKambusieri": "Cambusieri RS",
+          "ccKambusieri": "Cambusieri CC",
           "detachedLeaders": "Distaccati - capi",
           "detachedGuests": "Distaccati - ospiti"
         }
@@ -1742,7 +1749,7 @@
         "segmentDates": "Indica date valide per ogni branca.",
         "segmentOrder": "La data di fine della branca non può essere precedente all'inizio.",
         "segmentRange": "Le date di ogni branca devono essere comprese nell'evento.",
-        "segmentBranch": "Seleziona una branca specifica (LC, EG o RS).",
+        "segmentBranch": "Seleziona una branca specifica (LC, EG, RS o CC).",
         "simpleParticipants": "Indica almeno un partecipante o un capo.",
         "branchSelection": "Seleziona almeno una branca."
       },

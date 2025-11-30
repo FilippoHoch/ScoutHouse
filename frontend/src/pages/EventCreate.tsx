@@ -34,7 +34,7 @@ import {
   computePeakParticipants,
 } from "../shared/eventUtils";
 
-const branches: EventBranch[] = ["LC", "EG", "RS", "ALL"];
+const branches: EventBranch[] = ["LC", "EG", "RS", "CC", "ALL"];
 const statuses: EventStatus[] = ["draft", "planning", "booked", "archived"];
 
 type WizardStep = 1 | 2 | 3;
@@ -59,6 +59,8 @@ type ParticipantsFormValue = {
   eg: string;
   egKambusieri: string;
   rs: string;
+  cc: string;
+  ccKambusieri: string;
   leaders: string;
   detachedLeaders: string;
   detachedGuests: string;
@@ -139,6 +141,8 @@ const createDefaultWizardState = (preferredBranch?: "" | EventBranch): WizardSta
       eg: "",
       egKambusieri: "",
       rs: "",
+      cc: "",
+      ccKambusieri: "",
       leaders: "",
       detachedLeaders: "",
       detachedGuests: "",
@@ -149,7 +153,7 @@ const createDefaultWizardState = (preferredBranch?: "" | EventBranch): WizardSta
 
 const generateSegmentId = (): string => Math.random().toString(36).slice(2, 10);
 
-const orderedBranches: EventBranch[] = ["LC", "EG", "RS"];
+const orderedBranches: EventBranch[] = ["LC", "EG", "RS", "CC"];
 
 const resolveBranchFromSelection = (
   selection: EventBranch[],
@@ -189,7 +193,7 @@ const resolveSegmentBranchesFromSelection = (
 const defaultAccommodationForBranch = (
   branch: EventBranch,
 ): EventAccommodation => {
-  if (branch === "LC") {
+  if (branch === "LC" || branch === "CC") {
     return "indoor";
   }
   if (branch === "EG" || branch === "RS") {
@@ -351,6 +355,8 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
       eg_kambusieri: parseCount(state.participants.egKambusieri),
       rs: parseCount(state.participants.rs),
       rs_kambusieri: 0,
+      cc: parseCount(state.participants.cc),
+      cc_kambusieri: parseCount(state.participants.ccKambusieri),
       leaders: parseCount(state.participants.leaders),
       detached_leaders: parseCount(state.participants.detachedLeaders),
       detached_guests: parseCount(state.participants.detachedGuests),
@@ -364,6 +370,8 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
       state.participants.lcKambusieri,
       state.participants.leaders,
       state.participants.rs,
+      state.participants.cc,
+      state.participants.ccKambusieri,
     ],
   );
 
@@ -514,14 +522,16 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
         : (createdEvent?.participants ?? {
             lc: 0,
             lc_kambusieri: 0,
-            eg: 0,
-            eg_kambusieri: 0,
-            rs: 0,
-            rs_kambusieri: 0,
-            leaders: 0,
-            detached_leaders: 0,
-            detached_guests: 0,
-          }),
+          eg: 0,
+          eg_kambusieri: 0,
+          rs: 0,
+          rs_kambusieri: 0,
+          cc: 0,
+          cc_kambusieri: 0,
+          leaders: 0,
+          detached_leaders: 0,
+          detached_guests: 0,
+        }),
     [createdEvent, createdNormalizedSegments.length, createdSegmentsTotals],
   );
   const createdTotalParticipants = useMemo(
@@ -1474,6 +1484,45 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
                         </label>
                       </InlineFields>
                     </section>
+                    <section className="simple-participants__group">
+                      <h5>{t("events.branches.CC")}</h5>
+                      <InlineFields className="simple-participants__fields">
+                        <label>
+                          {t("events.wizard.simple.fields.cc")}
+                          <input
+                            type="number"
+                            min={0}
+                            value={state.participants.cc}
+                            onChange={(event) =>
+                              setState((prev) => ({
+                                ...prev,
+                                participants: {
+                                  ...prev.participants,
+                                  cc: event.target.value,
+                                },
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          {t("events.wizard.simple.fields.ccKambusieri")}
+                          <input
+                            type="number"
+                            min={0}
+                            value={state.participants.ccKambusieri}
+                            onChange={(event) =>
+                              setState((prev) => ({
+                                ...prev,
+                                participants: {
+                                  ...prev.participants,
+                                  ccKambusieri: event.target.value,
+                                },
+                              }))
+                            }
+                          />
+                        </label>
+                      </InlineFields>
+                    </section>
                     <section className="simple-participants__group simple-participants__group--staff">
                       <div className="simple-participants__group-header">
                         <h5>{t("events.wizard.simple.groups.staff")}</h5>
@@ -1647,6 +1696,22 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
                         })}
                       </li>
                     )}
+                    {participantsTotals.cc > 0 && (
+                      <li>
+                        {t("events.wizard.segments.summaryBranch", {
+                          branch: t("events.branches.CC"),
+                          count: participantsTotals.cc,
+                        })}
+                      </li>
+                    )}
+                    {participantsTotals.cc_kambusieri > 0 && (
+                      <li>
+                        {t("events.wizard.segments.summaryKambusieri", {
+                          branch: t("events.branches.CC"),
+                          count: participantsTotals.cc_kambusieri,
+                        })}
+                      </li>
+                    )}
                     {participantsTotals.leaders > 0 && (
                       <li>
                         {t("events.wizard.segments.summaryLeaders", {
@@ -1771,6 +1836,22 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
                   {t("events.wizard.segments.summaryBranch", {
                     branch: t("events.branches.RS"),
                     count: createdParticipantsTotals.rs,
+                  })}
+                </li>
+              )}
+              {createdParticipantsTotals.cc > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryBranch", {
+                    branch: t("events.branches.CC"),
+                    count: createdParticipantsTotals.cc,
+                  })}
+                </li>
+              )}
+              {createdParticipantsTotals.cc_kambusieri > 0 && (
+                <li>
+                  {t("events.wizard.segments.summaryKambusieri", {
+                    branch: t("events.branches.CC"),
+                    count: createdParticipantsTotals.cc_kambusieri,
                   })}
                 </li>
               )}
