@@ -221,6 +221,9 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
   const [addedStructures, setAddedStructures] = useState<Set<number>>(
     new Set(),
   );
+  const [suggestionAssignments, setSuggestionAssignments] = useState<
+    Record<number, { role: string; contact: string }>
+  >({});
   const [dateRangeError, setDateRangeError] = useState<string | null>(null);
   const planningModeIdPrefix = useId();
   const planningModeSimpleId = `${planningModeIdPrefix}-simple`;
@@ -233,6 +236,32 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
     { id: 2, label: t("events.wizard.steps.branches") },
     { id: 3, label: t("events.wizard.steps.review") },
   ];
+  const suggestionRoles = useMemo(
+    () => [
+      {
+        value: "logistics",
+        label: t(
+          "events.wizard.suggestions.roles.logistics",
+          "Referente logistica",
+        ),
+      },
+      {
+        value: "finance",
+        label: t(
+          "events.wizard.suggestions.roles.finance",
+          "Referente economato",
+        ),
+      },
+      {
+        value: "support",
+        label: t(
+          "events.wizard.suggestions.roles.support",
+          "Supporto organizzativo",
+        ),
+      },
+    ],
+    [t],
+  );
   const branchOptions = useMemo(
     () =>
       branches.map((branch) => ({
@@ -565,6 +594,19 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
     },
   });
 
+  const updateSuggestionAssignment = (
+    structureId: number,
+    partial: Partial<{ role: string; contact: string }>,
+  ) => {
+    setSuggestionAssignments((prev) => ({
+      ...prev,
+      [structureId]: {
+        role: partial.role ?? prev[structureId]?.role ?? "",
+        contact: partial.contact ?? prev[structureId]?.contact ?? "",
+      },
+    }));
+  };
+
   const handleNextFromDetails = () => {
     if (!state.title.trim() || !state.start_date || !state.end_date) {
       setError(t("events.wizard.errors.required"));
@@ -850,6 +892,15 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
       try {
         const items = await getSuggestions(event.id);
         setSuggestions(items);
+        setSuggestionAssignments((prev) => {
+          const next = { ...prev };
+          items.forEach((item) => {
+            if (!next[item.structure_id]) {
+              next[item.structure_id] = { role: "", contact: "" };
+            }
+          });
+          return next;
+        });
       } finally {
         setIsLoadingSuggestions(false);
       }
@@ -864,6 +915,16 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
 
   const handleAddSuggestion = async (structureId: number) => {
     if (!createdEvent) {
+      return;
+    }
+    const assignment = suggestionAssignments[structureId];
+    if (!assignment?.role || !assignment.contact.trim()) {
+      setError(
+        t(
+          "events.wizard.errors.suggestionAssignments",
+          "Seleziona un ruolo e un nominativo prima di aggiungere un candidato.",
+        ),
+      );
       return;
     }
     try {
@@ -881,6 +942,21 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
   };
 
   const handleFinish = () => {
+    if (addedStructures.size > 0) {
+      const missingAssignments = Array.from(addedStructures).some((structureId) => {
+        const assignment = suggestionAssignments[structureId];
+        return !assignment?.role || !assignment.contact.trim();
+      });
+      if (missingAssignments) {
+        setError(
+          t(
+            "events.wizard.errors.suggestionAssignments",
+            "Compila ruolo e nominativo per tutti i candidati selezionati prima di chiudere.",
+          ),
+        );
+        return;
+      }
+    }
     if (createdEvent) {
       onCreated(createdEvent);
       setState(createDefaultWizardState(preferences.defaultBranch));
@@ -888,9 +964,15 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
       setSuggestions([]);
       setAddedStructures(new Set());
       setCreatedEvent(null);
+      setSuggestionAssignments({});
     } else {
       onClose();
     }
+  };
+
+  const handleBackToPlanning = () => {
+    setError(null);
+    setStep(2);
   };
 
   return (
@@ -1979,6 +2061,11 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
           <ul className="suggestions">
             {suggestions.map((suggestion) => {
               const disabled = addedStructures.has(suggestion.structure_id);
+              const assignment =
+                suggestionAssignments[suggestion.structure_id] ?? {
+                  role: "",
+                  contact: "",
+                };
               return (
                 <li key={suggestion.structure_id}>
                   <div>
@@ -1990,6 +2077,47 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
                           })
                         : t("events.wizard.suggestions.distanceUnknown")}
                     </p>
+                  </div>
+                  <div className="suggestions__assignment">
+                    <label>
+                      {t("events.wizard.suggestions.roleLabel", "Ruolo")}
+                      <select
+                        value={assignment.role}
+                        onChange={(event) =>
+                          updateSuggestionAssignment(suggestion.structure_id, {
+                            role: event.target.value,
+                          })
+                        }
+                      >
+                        <option value="">
+                          {t(
+                            "events.wizard.suggestions.rolePlaceholder",
+                            "Seleziona un ruolo",
+                          )}
+                        </option>
+                        {suggestionRoles.map((role) => (
+                          <option key={role.value} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      {t("events.wizard.suggestions.contactLabel", "Nominativo")}
+                      <input
+                        type="text"
+                        value={assignment.contact}
+                        onChange={(event) =>
+                          updateSuggestionAssignment(suggestion.structure_id, {
+                            contact: event.target.value,
+                          })
+                        }
+                        placeholder={t(
+                          "events.wizard.suggestions.contactPlaceholder",
+                          "Inserisci il referente",
+                        )}
+                      />
+                    </label>
                   </div>
                   <Button
                     type="button"
@@ -2007,6 +2135,9 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
             })}
           </ul>
           <InlineActions>
+            <Button type="button" variant="ghost" onClick={handleBackToPlanning}>
+              {t("events.wizard.actions.back", "Indietro")}
+            </Button>
             <Button type="button" onClick={handleFinish}>
               {t("events.wizard.actions.open")}
             </Button>
