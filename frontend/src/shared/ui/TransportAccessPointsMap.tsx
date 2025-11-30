@@ -10,6 +10,7 @@ import {
   getTransportAccessPointCoordinates,
   getTransportAccessPointVisual,
 } from "../utils/transportAccessPoints";
+import { getTileLayerVariant, type GoogleMapType } from "../utils/googleMaps";
 
 type Coordinates = { lat: number; lon: number };
 
@@ -21,9 +22,10 @@ type TransportAccessPointsMapProps = {
   typeLabels: Record<TransportAccessPointType, string>;
   emptyLabel: string;
   legendLabel: string;
+  mapType?: GoogleMapType;
 };
 
-const GOOGLE_TILE_URL = "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+const GOOGLE_TILE_URL = (variant: string) => `https://{s}.google.com/vt/lyrs=${variant}&x={x}&y={y}&z={z}`;
 const GOOGLE_TILE_SUBDOMAINS = ["mt0", "mt1", "mt2", "mt3"] as const;
 
 const DEFAULT_CENTER = { lat: 41.8719, lng: 12.5674 };
@@ -71,8 +73,11 @@ export const TransportAccessPointsMap = ({
   typeLabels,
   emptyLabel,
   legendLabel,
+  mapType = "roadmap",
 }: TransportAccessPointsMapProps) => {
   const [isClient, setIsClient] = useState(false);
+  const tileLayerVariant = useMemo(() => getTileLayerVariant(mapType), [mapType]);
+  const tileLayerUrl = useMemo(() => GOOGLE_TILE_URL(tileLayerVariant), [tileLayerVariant]);
 
   useEffect(() => {
     setIsClient(true);
@@ -153,7 +158,8 @@ export const TransportAccessPointsMap = ({
         aria-hidden="true"
       >
         <TileLayer
-          url={GOOGLE_TILE_URL}
+          key={tileLayerVariant}
+          url={tileLayerUrl}
           subdomains={GOOGLE_TILE_SUBDOMAINS}
           maxZoom={19}
           attribution='&copy; <a href="https://maps.google.com">Google Maps</a>'

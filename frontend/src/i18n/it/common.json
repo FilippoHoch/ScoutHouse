@@ -292,6 +292,15 @@
       "error": "Impossibile caricare le strutture.",
       "empty": "Nessuna struttura corrisponde ai filtri selezionati."
     },
+    "map": {
+      "type": {
+        "label": "Vista mappa",
+        "options": {
+          "roadmap": "Mappa",
+          "satellite": "Satellite"
+        }
+      }
+    },
     "create": {
       "title": "Nuova struttura",
       "description": "Compila il modulo per aggiungere una nuova struttura al catalogo.",

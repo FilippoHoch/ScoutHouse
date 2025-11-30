@@ -37,7 +37,8 @@ import { AttachmentsSection } from "../shared/ui/AttachmentsSection";
 import { CategorizedAttachmentsList } from "../shared/ui/CategorizedAttachmentsList";
 import { StructurePhotosSection } from "../shared/ui/StructurePhotosSection";
 import { Button, LinkButton, StatusBadge } from "../shared/ui/designSystem";
-import { createGoogleMapsViewUrl } from "../shared/utils/googleMaps";
+import { MapTypeToggle } from "../shared/ui/MapTypeToggle";
+import { createGoogleMapsEmbedUrl, createGoogleMapsViewUrl, type GoogleMapType } from "../shared/utils/googleMaps";
 import {
   TRANSPORT_ACCESS_POINT_VISUALS,
   getTransportAccessPointCoordinates,
@@ -109,6 +110,7 @@ export const StructureDetailsPage = () => {
   const [duplicateMatches, setDuplicateMatches] = useState<Contact[]>([]);
   const [allowDuplicate, setAllowDuplicate] = useState(false);
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const [mapType, setMapType] = useState<GoogleMapType>("roadmap");
 
   const channelLabels = useMemo(
     () => ({
@@ -143,6 +145,15 @@ export const StructureDetailsPage = () => {
       bus: t("structures.details.overview.transportAccessPoints.types.bus"),
       car: t("structures.details.overview.transportAccessPoints.types.car"),
       "4x4": t("structures.details.overview.transportAccessPoints.types.4x4")
+    }),
+    [t]
+  );
+
+  const mapTypeLabels = useMemo(
+    () => ({
+      label: t("structures.map.type.label"),
+      roadmap: t("structures.map.type.options.roadmap"),
+      satellite: t("structures.map.type.options.satellite"),
     }),
     [t]
   );
@@ -566,8 +577,15 @@ export const StructureDetailsPage = () => {
   const googleMapsCoordinates = hasCoordinates
     ? { lat: structure.latitude as number, lng: structure.longitude as number }
     : null;
+  const mapEmbedTitle =
+    googleMapsCoordinates && mapDisplayName
+      ? t("structures.details.location.mapTitle", { name: mapDisplayName })
+      : null;
+  const googleMapsEmbedUrl = googleMapsCoordinates
+    ? createGoogleMapsEmbedUrl(googleMapsCoordinates, { mapType })
+    : null;
   const googleMapsUrl = googleMapsCoordinates
-    ? createGoogleMapsViewUrl(googleMapsCoordinates)
+    ? createGoogleMapsViewUrl(googleMapsCoordinates, { mapType })
     : null;
   const hasAccessPointCoordinates = (structure.transport_access_points ?? []).some(
     (point) => getTransportAccessPointCoordinates(point) !== null
@@ -789,10 +807,13 @@ export const StructureDetailsPage = () => {
       )
     : null;
 
+  const mapResourcesUrls = structure.map_resources_urls ?? [];
+  const mapResourcesAttachments = structure.map_resources_attachments ?? [];
+
   const mapResourcesUrlList =
-    structure.map_resources_urls.length > 0 ? (
+    mapResourcesUrls.length > 0 ? (
       <ul className="structure-website-links">
-        {structure.map_resources_urls.map((url) => (
+        {mapResourcesUrls.map((url) => (
           <li key={url}>
             <a href={url} target="_blank" rel="noopener noreferrer">
               {url}
@@ -803,11 +824,11 @@ export const StructureDetailsPage = () => {
     ) : null;
 
   const mapResourcesValue =
-    mapResourcesUrlList || structure.map_resources_attachments.length > 0 ? (
+    mapResourcesUrlList || mapResourcesAttachments.length > 0 ? (
       <>
         {mapResourcesUrlList}
         <CategorizedAttachmentsList
-          attachments={structure.map_resources_attachments}
+          attachments={mapResourcesAttachments}
           kinds={["map_resource"]}
           onDownload={handleAttachmentDownload}
         />
@@ -1324,42 +1345,61 @@ export const StructureDetailsPage = () => {
             <h3 className="structure-details-card__title">
               {t("structures.details.location.title")}
             </h3>
-          <div
-            className="structure-details__map"
-            data-has-coordinates={hasMapData ? "true" : "false"}
-          >
-            {hasMapData ? (
-              <>
-                <TransportAccessPointsMap
-                  structureName={mapDisplayName}
-                  structureLabel={structureMarkerLabel}
-                  structureCoordinates={googleMapsCoordinates ? { lat: googleMapsCoordinates.lat, lon: googleMapsCoordinates.lng } : null}
-                  accessPoints={structure.transport_access_points}
-                  typeLabels={transportAccessPointTypeLabels}
-                  emptyLabel={mapEmptyLabel}
-                  legendLabel={mapLegendLabel}
-                />
-                {hasCoordinates && (
-                  <p className="structure-details__map-coordinates">
-                    {t("structures.details.location.coordinates", {
-                      lat: structure.latitude?.toFixed(4),
-                      lon: structure.longitude?.toFixed(4)
-                    })}
+            <div
+              className="structure-details__map"
+              data-has-coordinates={hasMapData ? "true" : "false"}
+            >
+              {hasMapData ? (
+                <>
+                  <MapTypeToggle
+                    mapType={mapType}
+                    onChange={setMapType}
+                    label={mapTypeLabels.label}
+                    optionLabels={{
+                      roadmap: mapTypeLabels.roadmap,
+                      satellite: mapTypeLabels.satellite,
+                    }}
+                  />
+                  <TransportAccessPointsMap
+                    structureName={mapDisplayName}
+                    structureLabel={structureMarkerLabel}
+                    structureCoordinates={googleMapsCoordinates ? { lat: googleMapsCoordinates.lat, lon: googleMapsCoordinates.lng } : null}
+                    accessPoints={structure.transport_access_points}
+                    typeLabels={transportAccessPointTypeLabels}
+                    emptyLabel={mapEmptyLabel}
+                    legendLabel={mapLegendLabel}
+                    mapType={mapType}
+                  />
+                  {googleMapsEmbedUrl && (
+                    <iframe
+                      className="structure-details__map-embed"
+                      title={mapEmbedTitle ?? mapDisplayName}
+                      src={googleMapsEmbedUrl}
+                      loading="lazy"
+                      allowFullScreen
+                    />
+                  )}
+                  {hasCoordinates && (
+                    <p className="structure-details__map-coordinates">
+                      {t("structures.details.location.coordinates", {
+                        lat: structure.latitude?.toFixed(4),
+                        lon: structure.longitude?.toFixed(4)
+                      })}
+                    </p>
+                  )}
+                  {altitudeLabel && (
+                    <p className="structure-details__map-coordinates">{altitudeLabel}</p>
+                  )}
+                  <p className="structure-details__map-note">
+                    {t("structures.details.location.placeholder")}
                   </p>
-                )}
-                {altitudeLabel && (
-                  <p className="structure-details__map-coordinates">{altitudeLabel}</p>
-                )}
+                </>
+              ) : (
                 <p className="structure-details__map-note">
-                  {t("structures.details.location.placeholder")}
+                  {t("structures.details.location.unavailable")}
                 </p>
-              </>
-            ) : (
-              <p className="structure-details__map-note">
-                {t("structures.details.location.unavailable")}
-              </p>
-            )}
-          </div>
+              )}
+            </div>
             {locationDetails.length > 0 && (
               <dl className="structure-details__location-list">
                 {locationDetails.map((detail) => (
