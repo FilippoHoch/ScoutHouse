@@ -643,7 +643,7 @@ export interface StructureSearchParams {
 }
 
 
-export type EventBranch = "LC" | "EG" | "RS" | "ALL";
+export type EventBranch = "LC" | "EG" | "RS" | "CC" | "ALL";
 export type EventStatus = "draft" | "planning" | "booked" | "archived";
 export type EventAccommodation = "indoor" | "tents";
 export type EventCandidateStatus =
@@ -664,6 +664,8 @@ export interface EventParticipants {
   eg_kambusieri: number;
   rs: number;
   rs_kambusieri: number;
+  cc: number;
+  cc_kambusieri: number;
   leaders: number;
   detached_leaders: number;
   detached_guests: number;

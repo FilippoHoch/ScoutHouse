@@ -34,7 +34,7 @@ function createDefaultPreferences(): UserPreferences {
   };
 }
 
-const eventBranches: EventBranch[] = ["LC", "EG", "RS", "ALL"];
+const eventBranches: EventBranch[] = ["LC", "EG", "RS", "CC", "ALL"];
 const userTypes: UserType[] = ["LC", "EG", "RS", "LEADERS", "OTHER"];
 
 function isEventBranch(value: unknown): value is EventBranch {
