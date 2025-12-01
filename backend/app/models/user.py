@@ -28,6 +28,7 @@ class UserType(str, Enum):
     LC = "LC"
     EG = "EG"
     RS = "RS"
+    CC = "CC"
     LEADERS = "LEADERS"
     OTHER = "OTHER"
 

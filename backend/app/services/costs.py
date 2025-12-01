@@ -334,6 +334,7 @@ def calc_quote(
         minimum_total_applied = False
         maximum_total_applied = False
         metadata: dict[str, Any]
+        unit_amount = _quantize(amount)
         if option.model == StructureCostModel.PER_PERSON_DAY:
             quantity = people_total * days
             line_total = amount * Decimal(people_total) * Decimal(days)
@@ -362,7 +363,10 @@ def calc_quote(
                 forfait_threshold = _sanitize_decimal(option.forfait_trigger_total)
                 metadata["forfait_trigger_total"] = float(_quantize(forfait_threshold))
                 if line_total >= forfait_threshold:
+                    metadata["forfait_trigger_original_total"] = float(_quantize(line_total))
                     line_total = forfait_threshold
+                    quantity = 1
+                    unit_amount = _quantize(line_total)
                     forfait_applied = True
             if option.min_total is not None:
                 minimum_total = _sanitize_decimal(option.min_total)
@@ -393,7 +397,7 @@ def calc_quote(
                 "type": option.model.value,
                 "description": description,
                 "currency": option.currency,
-                "unit_amount": float(_quantize(amount)),
+                "unit_amount": float(unit_amount),
                 "quantity": quantity,
                 "metadata": metadata,
                 "total": float(line_total),
