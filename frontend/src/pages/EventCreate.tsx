@@ -231,10 +231,10 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
   const planningModeSimpleLabelId = `${planningModeSimpleId}-label`;
   const planningModeSegmentsLabelId = `${planningModeSegmentsId}-label`;
   const queryClient = useQueryClient();
-  const wizardSteps: Array<{ id: WizardStep; label: string }> = [
-    { id: 1, label: t("events.wizard.steps.details") },
-    { id: 2, label: t("events.wizard.steps.branches") },
-    { id: 3, label: t("events.wizard.steps.review") },
+  const wizardSteps: Array<{ id: WizardStep; label: string; icon: string }> = [
+    { id: 1, label: t("events.wizard.steps.details"), icon: "🗒️" },
+    { id: 2, label: t("events.wizard.steps.branches"), icon: "🌿" },
+    { id: 3, label: t("events.wizard.steps.review"), icon: "✨" },
   ];
   const suggestionRoles = useMemo(
     () => [
@@ -997,7 +997,12 @@ const EventCreateWizard = ({ onClose, onCreated }: EventCreateWizardProps) => {
             className="wizard-step-pill"
             data-active={(wizardStep.id === step).toString()}
           >
-            {wizardStep.id}. {wizardStep.label}
+            <span className="wizard-step-pill__icon" aria-hidden="true">
+              {wizardStep.icon}
+            </span>
+            <span className="wizard-step-pill__label">
+              <span aria-hidden="true">{wizardStep.id}.</span> {wizardStep.label}
+            </span>
           </span>
         ))}
       </div>
