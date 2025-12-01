@@ -80,7 +80,7 @@ def add_enum_value_if_missing(name: str, value: str) -> None:
                     EXECUTE format(
                         'ALTER TYPE %I ADD VALUE IF NOT EXISTS %L',
                         enum_name,
-                        enum_value,
+                        enum_value
                     );
                 END IF;
             END$$;
