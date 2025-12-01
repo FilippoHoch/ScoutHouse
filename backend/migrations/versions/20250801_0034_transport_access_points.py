@@ -7,7 +7,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "20250801_0034_transport_access_points"
+revision: str = "20250801_0034"
 down_revision: str | None = "20250715_0033_structure_attachment_categories"
 branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
