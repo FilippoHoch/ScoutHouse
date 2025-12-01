@@ -4021,8 +4021,8 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
               <p className="helper-text">
                 {t("structures.create.form.sections.general.description")}
               </p>
-              <div className="structure-field-grid">
-                <div className="structure-form-field">
+              <div className="structure-field-grid structure-general-grid">
+                <div className="structure-form-field structure-form-field--highlight" data-span="full">
                   <label htmlFor="structure-name">
                     {t("structures.create.form.name")}
                     <input
@@ -4055,7 +4055,7 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   </div>
                 </div>
 
-                <div className="structure-form-field">
+                <div className="structure-form-field structure-form-field--card">
                   <label htmlFor="structure-type">
                     {t("structures.create.form.type")}
                     <select
@@ -4083,7 +4083,61 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   )}
                 </div>
 
-                <div className="structure-form-field">
+                <div className="structure-form-field structure-form-field--card">
+                  <label htmlFor="structure-operational-status">
+                    {t("structures.create.form.operationalStatus")}
+                    <select
+                      id="structure-operational-status"
+                      value={operationalStatus}
+                      onChange={handleOperationalStatusChange}
+                      aria-describedby={operationalStatusDescribedBy}
+                    >
+                      <option value="">
+                        {t("structures.create.form.operationalStatusPlaceholder")}
+                      </option>
+                      {operationalStatusOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.operationalStatusOptions.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={operationalStatusHintId}>
+                    {t("structures.create.form.operationalStatusHint")}
+                  </span>
+                </div>
+
+                <div className="structure-form-field structure-form-field--card">
+                  <label htmlFor="structure-usage-recommendation">
+                    {t("structures.create.form.usageRecommendation.label")}
+                    <select
+                      id="structure-usage-recommendation"
+                      value={usageRecommendation}
+                      onChange={handleUsageRecommendationChange}
+                      aria-describedby={usageRecommendationDescribedBy}
+                      aria-invalid={usageRecommendationErrorId ? "true" : undefined}
+                    >
+                      <option value="">
+                        {t("structures.create.form.usageRecommendation.placeholder")}
+                      </option>
+                      {usageRecommendationOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {t(`structures.create.form.usageRecommendation.options.${option}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="helper-text" id={usageRecommendationHintId}>
+                    {t("structures.create.form.usageRecommendation.hint")}
+                  </span>
+                  {usageRecommendationErrorId && (
+                    <p className="error-text" id={usageRecommendationErrorId}>
+                      {fieldErrors.usage_recommendation}
+                    </p>
+                  )}
+                </div>
+
+                <div className="structure-form-field structure-form-field--card">
                   <label htmlFor="structure-data_quality_status">
                     {t("structures.create.form.dataQualityStatus.label")}
                     <select
@@ -4113,60 +4167,6 @@ const StructureFormPage = ({ mode }: { mode: StructureFormMode }) => {
                   {dataQualityStatusErrorId && (
                     <p className="error-text" id={dataQualityStatusErrorId}>
                       {fieldErrors.data_quality_status}
-                    </p>
-                  )}
-                </div>
-
-                <div className="structure-form-field">
-                  <label htmlFor="structure-operational-status">
-                    {t("structures.create.form.operationalStatus")}
-                    <select
-                      id="structure-operational-status"
-                      value={operationalStatus}
-                      onChange={handleOperationalStatusChange}
-                      aria-describedby={operationalStatusDescribedBy}
-                    >
-                      <option value="">
-                        {t("structures.create.form.operationalStatusPlaceholder")}
-                      </option>
-                      {operationalStatusOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {t(`structures.create.form.operationalStatusOptions.${option}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <span className="helper-text" id={operationalStatusHintId}>
-                    {t("structures.create.form.operationalStatusHint")}
-                  </span>
-                </div>
-
-                <div className="structure-form-field" data-span="full">
-                  <label htmlFor="structure-usage-recommendation">
-                    {t("structures.create.form.usageRecommendation.label")}
-                    <select
-                      id="structure-usage-recommendation"
-                      value={usageRecommendation}
-                      onChange={handleUsageRecommendationChange}
-                      aria-describedby={usageRecommendationDescribedBy}
-                      aria-invalid={usageRecommendationErrorId ? "true" : undefined}
-                    >
-                      <option value="">
-                        {t("structures.create.form.usageRecommendation.placeholder")}
-                      </option>
-                      {usageRecommendationOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {t(`structures.create.form.usageRecommendation.options.${option}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <span className="helper-text" id={usageRecommendationHintId}>
-                    {t("structures.create.form.usageRecommendation.hint")}
-                  </span>
-                  {usageRecommendationErrorId && (
-                    <p className="error-text" id={usageRecommendationErrorId}>
-                      {fieldErrors.usage_recommendation}
                     </p>
                   )}
                 </div>
