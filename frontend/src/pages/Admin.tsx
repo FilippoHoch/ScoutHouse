@@ -28,7 +28,7 @@ interface UserFormState {
   user_type: "" | UserType;
 }
 
-const userTypeOptions: Array<"" | UserType> = ["", "LC", "EG", "RS", "LEADERS", "OTHER"];
+const userTypeOptions: Array<"" | UserType> = ["", "LC", "EG", "RS", "CC", "LEADERS", "OTHER"];
 
 export const AdminPage = () => {
   const { t } = useTranslation();

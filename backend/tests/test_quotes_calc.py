@@ -155,7 +155,10 @@ def test_calc_quote_applies_forfait_trigger(sample_event: Event) -> None:
     line = next(
         item for item in result["breakdown"] if item["type"] == StructureCostModel.PER_PERSON_DAY.value
     )
+    assert line["quantity"] == 1
+    assert line["unit_amount"] == pytest.approx(700.0)
     assert line["metadata"]["forfait_trigger_total"] == pytest.approx(700.0)
+    assert line["metadata"]["forfait_trigger_original_total"] == pytest.approx(1530.0)
     assert line["metadata"]["forfait_trigger_applied"] is True
 
 

@@ -35,7 +35,7 @@ function createDefaultPreferences(): UserPreferences {
 }
 
 const eventBranches: EventBranch[] = ["LC", "EG", "RS", "CC", "ALL"];
-const userTypes: UserType[] = ["LC", "EG", "RS", "LEADERS", "OTHER"];
+const userTypes: UserType[] = ["LC", "EG", "RS", "CC", "LEADERS", "OTHER"];
 
 function isEventBranch(value: unknown): value is EventBranch {
   return typeof value === "string" && eventBranches.includes(value as EventBranch);

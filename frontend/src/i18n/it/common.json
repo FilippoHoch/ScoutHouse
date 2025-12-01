@@ -59,6 +59,7 @@
           "LC": "Lupetti (LC)",
           "EG": "Esploratori (EG)",
           "RS": "Rover (RS)",
+          "CC": "Comunità capi (CC)",
           "ALL": "Tutte le branche"
         }
       },
@@ -70,6 +71,7 @@
           "LC": "Lupetti (LC)",
           "EG": "Esploratori (EG)",
           "RS": "Rover (RS)",
+          "CC": "Comunità capi (CC)",
           "LEADERS": "Comunità capi",
           "OTHER": "Altro"
         }

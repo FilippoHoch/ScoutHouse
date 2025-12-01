@@ -29,8 +29,8 @@ import {
   Surface
 } from "../shared/ui/designSystem";
 
-const branchOptions: Array<"" | EventBranch> = ["", "LC", "EG", "RS", "ALL"];
-const profileBranchOptions: Array<"" | UserType> = ["", "LC", "EG", "RS", "LEADERS", "OTHER"];
+const branchOptions: Array<"" | EventBranch> = ["", "LC", "EG", "RS", "CC", "ALL"];
+const profileBranchOptions: Array<"" | UserType> = ["", "LC", "EG", "RS", "CC", "LEADERS", "OTHER"];
 
 const MIN_LOCATION_QUERY_LENGTH = 3;
 const LOCATION_DEBOUNCE_MS = 350;
